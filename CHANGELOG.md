@@ -1,5 +1,26 @@
 # CHANGELOG — 프롬프트 엔진니어링 시스템
 
+## [v1.4] — 2026-04-10
+
+### Added
+- `engines/PE-1_auto-refinement/upgrade_v1.4.md` — 자동개선 엔진 v1.4 업그레이드 프롬프트
+- `engines/PE-2_auto-proliferation/upgrade_v1.4.md` — 자동증식 엔진 v1.4 업그레이드 프롬프트
+- `engines/PE-3_auto-validation/upgrade_v1.4.md` — 자동검증 엔진 v1.4 업그레이드 프롬프트
+- `applied-cases/2026-04-10_3engine-upgrade-v1.4.md` — v1.4 적용 실행 기록
+
+### Changed
+- `README.md` — v1.4로 갱신, 업그레이드 내역 반영
+- `CHANGELOG.md` — v1.4 항목 추가
+- `dashboard/metrics.md` — KPI 지표 v1.4 기준 갱신
+
+### Upgrade Summary
+자동개선·자동증식·자동검증 3-Engine에 다음 방식 적용:
+- **자동개선**: Chain-of-Thought 구조 강화, 약점 탐지 정밀도 향상
+- **자동증식**: 도메인 크로스오버 변형 로직 추가 (5→8 변형 타입)
+- **자동검증**: 5차원 스코어링 + 신뢰도 가중치 시스템 도입
+
+---
+
 ## [v1.3] — 2026-04-09
 
 ### Added
