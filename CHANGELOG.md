@@ -1,48 +1,53 @@
-# CHANGELOG — 프롬프트 엔지니어링 시스템
+# CHANGELOG — 프롬프트 엔진니어링 시스템
 
-## [v1.2] — 2026-04-09
+## [v1.3] — 2026-04-09
 
 ### Added
-- `docs/index.md` — 전체 러스트 문서 허브
-- `docs/rca-capa/README.md` — RCA/CAPA 인덱스 (표준 효과 지표 포함)
-- `docs/rca-capa/RCA-001.md` — 프롬프트 구조 복잡도 (XML→Markdown 전환)
-- `docs/rca-capa/RCA-002.md` — 검증 기준 모호성 (정량 스코어 전환)
-- `docs/rca-capa/RCA-003.md` — 필수 고려사항 누락 (RISK 에이전트 개선)
-- `docs/rca-capa/RCA-004.md` — 중복 출력 과다 (Orchestrator scope 명확화)
-- Notion Mother Page: [🔧 RCA/CAPA 관리 시스템](https://www.notion.so/33d55ed436f081bfa2aeccc26f344de5)
-- Notion Child Pages: RCA-001~004 (각 5-Why + CAPA + 검증 결과)
+- `docs/agent1/README.md` — PE-1 자동개선 엔진 설명
+- `docs/agent2/README.md` — PE-2 자동증식 엔진 설명
+- `docs/agent3/README.md` — PE-3 자동검증 엔진 설명
+- `docs/agent4/README.md` — PE-4 실적용 케이스 매니저
+- `docs/agent5/README.md` — PE-5 마스터 오케스트레이터
+- `docs/support/README.md` — 공통 지원 모듈 인덱스
+- `docs/new/README.md` — 신규 기능 파이프라인
+- `dashboard/README.md` — 메트릭스 대시보드 안내
+- `dashboard/metrics.md` — KPI 추적 시트 (전체 지표 현황)
 
 ### Changed
-- `README.md` — v1.2로 갱신, docs/ 구조 표시, RCA/CAPA 섹션 추가
-- `README.md` — Notion Mother/Child 양방향 링크 표 전면 갱신
+- `docs/index.md` — Master Index로 전면 개편 (agent1~5, support, new, rca-capa, dashboard 전체 커버)
+- `README.md` — v1.3으로 갱신, 5엔진 테이블, 전체 디렉토리 트리 반영
 
-### Cross-links
+### Structure
+재현 가능한 연구 프로젝트 구조 지침 준수:
+- `docs/` — 배포 전용 문서 루트 (agent, support, new, rca-capa)
+- `dashboard/` — 메트릭스 / KPI 독립 분리
+- `engines/` — 실제 프롬프트 템플릿 저장소
+- `applied-cases/` — 실적용 케이스 로그
+- `workflows/` — 파이프라인 실행 설계
 
-| 방향 | 충료 |
-|------|------|
-| Notion Mother → GitHub | docs/index.md, docs/rca-capa/ 링크 포함 |
-| GitHub README → Notion | 6개 Notion 페이지 링크 표 |
-| GitHub RCA-00x → Notion | 각 RCA 파일 상단에 Notion URL 포함 |
-| Notion Child → GitHub | 각 Child 페이지 하단에 GitHub URL 연동 |
+---
+
+## [v1.2] — 2026-04-09
+### Added
+- `docs/index.md` — 문서 허브
+- `docs/rca-capa/README.md` + `RCA-001~004.md`
+- Notion Mother/Child 양방향 링크
+
+### Changed
+- README.md v1.2, CHANGELOG.md Cross-links 표 추가
 
 ---
 
 ## [v1.1] — 2026-04-05
 ### Added
-- `engines/` 디렉토리 구조 전체 수립 (PE-1, PE-2, PE-3)
-- `applied-cases/` 디렉토리 신설 — 실행 기록 관리
-- `workflows/3engine_pipeline.md` — 통합 파이프라인 문서
-- `applied-cases/2026-04-05_upgrade-execution.md` — 업그레이드 실행 기록
-- 각 엔진별 `prompt_template.md` 및 `examples/` 폴더 추가
-- PE-3 전용 `scoring_rubric.md` (5차원 채점 기준표)
+- `engines/` 디렉토리 구조 (PE-1, PE-2, PE-3)
+- `applied-cases/`, `workflows/3engine_pipeline.md`
 
 ### Changed
-- README.md 전면 개편 — 저장소 전체 구조 명시
+- README.md 전면 개편
 
 ---
 
 ## [v1.0] — 2026-04-05
 ### Added
-- 최초 저장소 생성
-- 3-Engine 프레임워크(PE-1/PE-2/PE-3) 개념 정립
-- Notion Hub 연동 구조 수립
+- 최초 저장소 생성, 3-Engine 프레임워크 정립
