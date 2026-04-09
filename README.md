@@ -1,8 +1,8 @@
 # 🧠 프롬프트 엔진니어링 시스템 — 자동개선·자동증식·자동검증
 
-> **Gilbert Kwak** | 최초 생성: 2026-04-05 | 현재 버전: **v1.3**
+> **Gilbert Kwak** | 최초 생성: 2026-04-05 | 현재 버전: **v1.4**
 
-[![Version](https://img.shields.io/badge/version-v1.3-blue)](https://github.com/GilbertKwak/prompt-engineering-system/releases)
+[![Version](https://img.shields.io/badge/version-v1.4-blue)](https://github.com/GilbertKwak/prompt-engineering-system/releases)
 [![Status](https://img.shields.io/badge/status-active-green)]()
 [![Notion Hub](https://img.shields.io/badge/Notion-PE%20Hub-black?logo=notion)](https://www.notion.so/33955ed436f081cc9f0bd014d631aa7b)
 [![Notion RCA](https://img.shields.io/badge/Notion-RCA%2FCAPA-orange?logo=notion)](https://www.notion.so/33d55ed436f081bfa2aeccc26f344de5)
@@ -13,13 +13,13 @@
 
 본 저장소는 **5엔진 프롬프트 자동화 시스템**을 관리하며, 재현 가능한 연구 프로젝트 구조를 따릅니다.
 
-| 엔진 | ID | 기능 | 문서 |
-|------|-----|------|------|
-| 자동개선 | PE-1 | 프롬프트 약점 탐지 → 재작성 | [docs/agent1/](./docs/agent1/README.md) |
-| 자동증식 | PE-2 | 다목적 변형 버전 생성 | [docs/agent2/](./docs/agent2/README.md) |
-| 자동검증 | PE-3 | 5차원 품질 채점 | [docs/agent3/](./docs/agent3/README.md) |
-| 케이스 매니저 | PE-4 | 실적용 기록 | [docs/agent4/](./docs/agent4/README.md) |
-| 마스터 오케스트레이터 | PE-5 | 엔진 통합 조율 | [docs/agent5/](./docs/agent5/README.md) |
+| 엔진 | ID | 기능 | 업그레이드 (v1.4) | 문서 |
+|------|-----|------|------|------|
+| 자동개선 | PE-1 | 프롬프트 약점 탐지 → 재작성 | CoT 구조 강화, 탐지 정밀도 향상 | [docs/agent1/](./docs/agent1/README.md) |
+| 자동증식 | PE-2 | 다목적 변형 버전 생성 | 도메인 크로스오버 5→8 변형 | [docs/agent2/](./docs/agent2/README.md) |
+| 자동검증 | PE-3 | 5차원 품질 체점 | 신뢰도 가중치 시스템 도입 | [docs/agent3/](./docs/agent3/README.md) |
+| 케이스 매니저 | PE-4 | 실적용 기록 | — | [docs/agent4/](./docs/agent4/README.md) |
+| 마스터 오케스트레이터 | PE-5 | 엔진 통합 조율 | — | [docs/agent5/](./docs/agent5/README.md) |
 
 ---
 
@@ -54,7 +54,8 @@ prompt-engineering-system/
 ├── workflows/
 │   └── 3engine_pipeline.md
 └── applied-cases/
-    └── 2026-04-05_upgrade-execution.md
+    ├── 2026-04-05_upgrade-execution.md
+    └── 2026-04-10_3engine-upgrade-v1.4.md
 ```
 
 ---
@@ -80,6 +81,7 @@ prompt-engineering-system/
 | v1.1 | 2026-04-05 | 엔진 파일 구조 수립 |
 | v1.2 | 2026-04-09 | docs/rca-capa + Notion 양방향 링크 |
 | v1.3 | 2026-04-09 | 재현 가능 연구 구조 전체 수립 (agent1~5, support, new, dashboard) |
+| **v1.4** | **2026-04-10** | **3-Engine 업그레이드 적용 (CoT, 크로스오버, 신뢰도 가중치)** |
 
 ---
 
@@ -106,4 +108,4 @@ prompt-engineering-system/
 
 ---
 
-> 관리자: Gilbert Kwak | 다음 리뷰: 2026-05 (v1.4 — support/ 세부 파일 완성)
+> 관리자: Gilbert Kwak | 다음 리빰: 2026-05 (v1.5 — support/ 세부 파일 완성)
