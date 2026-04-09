@@ -1,38 +1,43 @@
-# 🤖 PE-1 — 자동개선 엔진 (Auto-Refinement)
+# 🤖 PE-1 자동개선 엔진 (Auto-Refinement Engine)
 
-> **ID**: PE-1 | **상태**: ✅ 운영 | **파일**: `engines/PE-1_auto-refinement/`
+> **에이전트 ID**: PE-1 | **버전**: v3.1 | **상태**: ✅ 운영 중 | **업데이트**: 2026-04-09
 
----
-
-## 역할
-
-프롬프트의 약점을 자동 탐지하고 개선된 버전으로 재작성하는 루프 엔진입니다. 최대 3회 반복하며 품질 기준 이상일 때 종료합니다.
-
-## 입력 / 출력
-
-| 구분 | 형식 | 설명 |
-|------|------|------|
-| INPUT | Markdown | 사용자 초안 프롬프트 |
-| OUTPUT | Markdown | 개선된 프롬프트 + 변경 사항 |
-
-## 핵심 로직
-
-```
-[초안 프롬플트 입력]
-    ↓
-[약점 탐지: 모호성 / 구조 불일치 / 누락]
-    ↓
-[재작성 실행]
-    ↓
-[PE-3 검증 통과? → Yes: 완료 / No: 루프 (max 3회)]
-```
-
-## 관련 파일
-
-- `engines/PE-1_auto-refinement/prompt_template.md`
-- `engines/PE-1_auto-refinement/examples/`
-- [docs/rca-capa/RCA-001.md](../rca-capa/RCA-001.md) — 구조 복잡도 RCA
+[![Master Index](https://img.shields.io/badge/←%20Back-Master%20Index-gray)](../index.md)
 
 ---
 
-> [Master Index](../index.md) | [engines/PE-1/](../../engines/PE-1_auto-refinement/)
+## 📌 목적 (Purpose)
+
+기존 프롬프트의 품질을 자동으로 분석하고, 구조·명확성·실행 가능성 측면에서 개선된 버전을 생성합니다.
+
+---
+
+## ⚙️ 에이전트 역할 카드
+
+| 항목 | 내용 |
+|------|------|
+| **역할** | 프롬프트 품질 자동 분석 및 개선 버전 생성 |
+| **입력 (Input)** | 원본 프롬프트 텍스트, 개선 목표(선택) |
+| **출력 (Output)** | 개선된 프롬프트 v+1, 변경 요약 3줄 이내 |
+| **의존성** | PE-3 (검증), PE-5 (오케스트레이션) |
+| **실행 조건** | 품질 스코어 < 70점 또는 수동 트리거 |
+| **제한 사항** | COT 내부 수행, 최종 출력에 노출 금지 |
+
+---
+
+## 🔗 관련 문서
+
+- [Master Index](../index.md)
+- [PE-3 자동검증](../agent3/README.md)
+- [PE-5 오케스트레이터](../agent5/README.md)
+- [RCA/CAPA Hub](../rca-capa/README.md)
+
+---
+
+## 📅 버전 이력
+
+| 버전 | 날짜 | 변경 내용 |
+|------|------|-----------|
+| v3.1 | 2026-04-06 | 출력 범위(scope) 명확화, COT 내부수행 원칙 적용 |
+| v3.0 | 2026-04-05 | Markdown 헤더 기반 구조 전환 (RCA-001 해결) |
+| v2.x | 2026-03 | XML 중첩 구조 (deprecated) |

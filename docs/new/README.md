@@ -1,35 +1,38 @@
-# 🆕 New Feature Pipeline — 신규 기능 아이디어
+# 🆕 신규 기능 파이프라인 (New Feature Pipeline)
 
-> **상태**: 🟡 수앥 중 | 주기적 정렬 추진
+> **경로**: `docs/new/` | **관리자**: Gilbert Kwak | **업데이트**: 2026-04-09
 
----
+[![Master Index](https://img.shields.io/badge/←%20Back-Master%20Index-gray)](../index.md)
 
-## 사용 방법
-
-신규 기능 아이디어가 떠오르면 이 파일에 저수하고, **비용 대비 효과(코스트 대비 효과)**를 평가한 뒤 엔진 구현 여부를 결정합니다.
-
-## 파이프라인 단계
-
-```
-[아이디어 접수]
-    ↓
-[원합 / 가치 평가]
-    ↓
-[연구 스채있(스쳨 5알예 에이전트 테스트)]
-    ↓
-[루브릭 반영 및 수렴 시 docs/support 업데이트]
-    ↓
-[엔진 통합]
-```
-
-## 수옥 대기 아이디어
-
-| # | 아이디어 | 원저 | 우선순위 |
-|---|------|------|------|
-| 1 | 에이전트별 맞춤형 스코어 웨이트 | RCA-002 PA | 🔴 High |
-| 2 | 실시간 규제 콘텝스트 주입 | RCA-003 PA | 🟡 Med |
-| 3 | 다중 도메인 테스트 인프라 | PE-2 확장 | 🟡 Med |
+이 디렉토리는 프롬프트 엔지니어링 시스템에 추가될 **신규 기능 아이디어와 개발 파이프라인**을 관리합니다.
 
 ---
 
-> [Master Index](../index.md) | [docs/support/](../support/README.md)
+## 💡 아이디어 등록부
+
+| ID | 아이디어 | 우선순위 | 연계 에이전트 | 상태 |
+|----|---------|---------|-------------|------|
+| NEW-001 | PE-6 AI 신사업 발굴 멀티에이전트 시스템 | 🔴 High | PE-1~5 전체 | ✅ 적용 완료 (v3.1) |
+| NEW-002 | 자동 A/B 테스트 프롬프트 비교 모듈 | 🟡 Medium | PE-2, PE-3 | 🔵 검토 중 |
+| NEW-003 | 실시간 KPI 대시보드 자동화 | 🟡 Medium | PE-4, PE-5 | 🔵 검토 중 |
+
+---
+
+## 📋 신규 기능 등록 절차
+
+1. 이 파일의 아이디어 등록부에 행 추가 (ID: `NEW-NNN`)
+2. 상세 기획이 필요한 경우 `NEW-NNN.md` 파일 생성
+3. 우선순위 결정 후 `docs/agent*/README.md`와 연동
+4. 구현 완료 시 상태를 `✅ 적용 완료`로 변경 및 버전 명시
+
+---
+
+## 🔗 관련 문서
+
+- [Master Index](../index.md)
+- [CHANGELOG](../../CHANGELOG.md)
+- [dashboard/metrics.md](../../dashboard/metrics.md)
+
+---
+
+> 관련 문서: [Master Index](../index.md) | [RCA/CAPA Hub](../rca-capa/README.md)

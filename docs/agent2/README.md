@@ -1,33 +1,42 @@
-# 🤖 PE-2 — 자동증식 엔진 (Auto-Proliferation)
+# 🤖 PE-2 자동증식 엔진 (Auto-Proliferation Engine)
 
-> **ID**: PE-2 | **상태**: ✅ 운영 | **파일**: `engines/PE-2_auto-proliferation/`
+> **에이전트 ID**: PE-2 | **버전**: v3.1 | **상태**: ✅ 운영 중 | **업데이트**: 2026-04-09
 
----
-
-## 역할
-
-단일 프롬프트를 다양한 목적과 도메인에 맞는 여러 버전으로 자동 맞춤 확장하는 엔진입니다.
-
-## 입력 / 출력
-
-| 구분 | 형식 | 설명 |
-|------|------|------|
-| INPUT | Markdown | PE-1 통과 프롬프트 |
-| OUTPUT | Markdown 배열 | 도메인·난이도·포맷 변형 버전 |
-
-## 변형 축 (3가지)
-
-| 축 | 예시 |
-|----|------|
-| 도메인 | 반도체, 제약, 헬스케어, 금융 |
-| 난이도 | 실험적 / 표준 / 부스터 |
-| 포맷 | JSON 구조화 / 서술형 / 출력 템플릿화 |
-
-## 관련 파일
-
-- `engines/PE-2_auto-proliferation/prompt_template.md`
-- `engines/PE-2_auto-proliferation/examples/`
+[![Master Index](https://img.shields.io/badge/←%20Back-Master%20Index-gray)](../index.md)
 
 ---
 
-> [Master Index](../index.md) | [engines/PE-2/](../../engines/PE-2_auto-proliferation/)
+## 📌 목적 (Purpose)
+
+하나의 검증된 프롬프트를 기반으로 유사 사용 케이스·도메인·페르소나에 맞는 변형 버전을 자동으로 생성합니다.
+
+---
+
+## ⚙️ 에이전트 역할 카드
+
+| 항목 | 내용 |
+|------|------|
+| **역할** | 검증된 프롬프트의 변형 버전 자동 생성 |
+| **입력 (Input)** | 기준 프롬프트(PE-1 출력), 타깃 도메인/페르소나 목록 |
+| **출력 (Output)** | 변형 프롬프트 N개, 각 변형 이유 1줄 |
+| **의존성** | PE-1 (개선 엔진), PE-3 (검증) |
+| **실행 조건** | PE-3 품질 스코어 ≥ 70점인 기준 프롬프트 존재 시 |
+| **제한 사항** | 변형 당 최대 3가지 속성 변경, 원본 의도 유지 |
+
+---
+
+## 🔗 관련 문서
+
+- [Master Index](../index.md)
+- [PE-1 자동개선](../agent1/README.md)
+- [PE-3 자동검증](../agent3/README.md)
+- [RCA/CAPA Hub](../rca-capa/README.md)
+
+---
+
+## 📅 버전 이력
+
+| 버전 | 날짜 | 변경 내용 |
+|------|------|-----------|
+| v3.1 | 2026-04-06 | 출력 범위 명확화, 변형 속성 제한 3개 규칙 추가 |
+| v3.0 | 2026-04-05 | 구조 전환, PE-1 의존성 명시 |

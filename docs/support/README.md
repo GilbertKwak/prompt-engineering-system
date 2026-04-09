@@ -1,28 +1,29 @@
-# 🛠️ Support Modules — 프롬프트 엔진 공통 지원 모듈
+# 🛠️ Support Modules — 공통 템플릿 & 루브릭
 
-> **상태**: 🟡 파일 업로드 예정 | 참조: `engines/` 각 하위
+> **경로**: `docs/support/` | **관리자**: Gilbert Kwak | **업데이트**: 2026-04-09
 
----
+[![Master Index](https://img.shields.io/badge/←%20Back-Master%20Index-gray)](../index.md)
 
-## 포함 모듈
-
-| 모듈 | 위치 | 설명 | 상태 |
-|------|------|------|------|
-| 프롬프트 템플릿 | `engines/PE-*/prompt_template.md` | 각 엔진 기본 템플릿 | ✅ |
-| 스코어링 루브릭 | `engines/PE-3_auto-validation/scoring_rubric.md` | 5차원 채점 기준표 | ✅ |
-| 통합 파이프라인 | `workflows/3engine_pipeline.md` | 3엔진 연결 플로우 | ✅ |
-| 7대 체크사항 | *(docs/rca-capa/RCA-003.md 참조)* | 규제/데이터 리스크 쳋크리스트 | 🟡 |
-| 에이전트 RACI | *(docs/rca-capa/RCA-004.md 참조)* | 에이전트별 역할 경계 매트릭스 | 🟡 |
+이 디렉토리는 PE-1~5 에이전트 및 전체 시스템에서 공통으로 사용하는 **프롬프트 템플릿, 루브릭, 공통 모듈**을 관리합니다.
 
 ---
 
-## 파일 추가 가이드
+## 📁 파일 목록
 
-이 디렉토리에 고도화된 지원 모듈 파일이 추가될 예정입니다:
-- `docs/support/prompt-guidelines.md` — 개서/주제볃 프롬프트 디자인 가이드라인
-- `docs/support/raci-matrix.md` — RACI 매트릭스 단독 문서
-- `docs/support/checklist-risk.md` — 7대 체크사항 마스터 리스트
+| 파일 | 내용 | 상태 |
+|------|------|------|
+| *(예정)* `prompt-template-base.md` | 기본 프롬프트 템플릿 (역할·입력·출력·제약 포맷) | 🟡 작성 예정 |
+| *(예정)* `rubric-standard.md` | PE-3 검증용 루브릭 기준표 | 🟡 작성 예정 |
+| *(예정)* `common-constraints.md` | 공통 제약 조건 모음 (COT 규칙 등) | 🟡 작성 예정 |
 
 ---
 
-> [Master Index](../index.md)
+## 📌 사용 지침
+
+1. 새 에이전트 또는 프롬프트 작성 시 `prompt-template-base.md`를 기반으로 시작합니다.
+2. 루브릭은 PE-3의 스코어링 기준(`docs/agent3/README.md`)과 동기화를 유지합니다.
+3. 공통 제약 조건 변경 시 모든 에이전트 문서(agent1~5)에 반영 여부를 확인합니다.
+
+---
+
+> 관련 문서: [Master Index](../index.md) | [PE-3 자동검증](../agent3/README.md)
