@@ -1,5 +1,26 @@
 # CHANGELOG — 프롬프트 엔진니어링 시스템
 
+## [v1.5] — 2026-04-10
+
+### Added
+- `applied-cases/2026-04-10_3engine-upgrade-v1.5.md` — v1.5 업그레이드 실행 기록
+- `engines/PE-1_auto-refinement/prompt_template_v1.5.md` — 자동개선 엔진 v1.5 프롬프트
+- `engines/PE-2_auto-proliferation/prompt_template_v1.5.md` — 자동증식 엔진 v1.5 프롬프트
+- `engines/PE-3_auto-validation/prompt_template_v1.5.md` — 자동검증 엔진 v1.5 프롬프트
+
+### Changed
+- `README.md` — v1.5로 갱신, 버전 이력 반영
+- `CHANGELOG.md` — v1.5 항목 추가
+
+### Upgrade Summary
+이번 세션에서 적용된 **3-Engine 업그레이드 방식 통합 실행**:
+- **자동개선 (PE-1)**: 약점 탐지 → 재작성 루프 구조 고도화, 반복 루프 max 3회 완성
+- **자동증식 (PE-2)**: 단일 프롬프트 → 다목적 변형 생성 (도메인·난이도·포맷 3축 확장)
+- **자동검증 (PE-3)**: 5차원 스코어링(명확성·완전성·실행가능성·안전성·효율성) + 합격/재처리 판정 루프
+- **통합 파이프라인**: PE-1→PE-2→PE-3 순차 실행 워크플로우 확정
+
+---
+
 ## [v1.4] — 2026-04-10
 
 ### Added
