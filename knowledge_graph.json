@@ -1,0 +1,162 @@
+{
+  "meta": {
+    "generated_at": "2026-04-13T03:54:00+00:00",
+    "version": "1.0",
+    "total_nodes": 9,
+    "total_edges": 8,
+    "scan_dirs": ["docs", "engines"],
+    "note": "Seed graph — re-generate locally with: python scripts/build_knowledge_graph.py"
+  },
+  "nodes": [
+    {
+      "id": "docs/rca-capa/RCA-001.md",
+      "type": "rca",
+      "title": "📋 RCA-001 — 프롬프트 구조 복잡도",
+      "status": "resolved",
+      "version": "v3.0",
+      "date": "2026-04-06",
+      "tags": ["rca-capa", "RCA-001", "v3.0"],
+      "notion_url": "https://www.notion.so/33d55ed436f081c593ede0347d2b581a",
+      "file_size": 1636,
+      "sha": "fd9d66c82a9bd508b95b846c2f3eb0fbd7826767"
+    },
+    {
+      "id": "docs/rca-capa/RCA-002.md",
+      "type": "rca",
+      "title": "📋 RCA-002 — 검증 기준 모호성",
+      "status": "resolved",
+      "version": "v3.1",
+      "date": "2026-04-06",
+      "tags": ["rca-capa", "RCA-002", "v3.1"],
+      "notion_url": "https://www.notion.so/33d55ed436f081d0a7a1d4a2a8de4a8f",
+      "file_size": 1498,
+      "sha": "b6bbab1310b2b6aef14aecb1347e4d3c94a468e9"
+    },
+    {
+      "id": "docs/rca-capa/RCA-003.md",
+      "type": "rca",
+      "title": "📋 RCA-003 — 필수 고려사항 누락",
+      "status": "resolved",
+      "version": "v3.1",
+      "date": "2026-04-06",
+      "tags": ["rca-capa", "RCA-003", "v3.1"],
+      "notion_url": "https://www.notion.so/33d55ed436f0817e83e0f3bc0f168316",
+      "file_size": 1742,
+      "sha": "b8eedf95a457328be9f01b04bbed99cdd345cda5"
+    },
+    {
+      "id": "docs/rca-capa/RCA-004.md",
+      "type": "rca",
+      "title": "📋 RCA-004 — 중복 출력 과다",
+      "status": "resolved",
+      "version": "v3.1",
+      "date": "2026-04-06",
+      "tags": ["rca-capa", "RCA-004", "v3.1"],
+      "notion_url": "https://www.notion.so/33d55ed436f08195bd49cdd19f062644",
+      "file_size": 1516,
+      "sha": "617952e6476f8e060b8ec9a66fd5f1770128ab94"
+    },
+    {
+      "id": "docs/rca-capa/README.md",
+      "type": "rca",
+      "title": "🔧 RCA/CAPA 문제 해결 관리 시스템",
+      "status": "unknown",
+      "version": "",
+      "date": "",
+      "tags": ["rca-capa", "RCA-001", "RCA-002", "RCA-003", "RCA-004"],
+      "notion_url": "https://www.notion.so/33d55ed436f081bfa2aeccc26f344de5",
+      "file_size": 6445,
+      "sha": "ba41340392c4ab310a1166eaac343f2eb220cdec"
+    },
+    {
+      "id": "engines/PE-3_auto-validation/README.md",
+      "type": "engine",
+      "title": "PE-3 Auto-Validation Engine",
+      "status": "unknown",
+      "version": "",
+      "date": "",
+      "tags": ["PE-3_auto-validation", "engine", "validation"],
+      "notion_url": null,
+      "file_size": 1414,
+      "sha": "de40e1cdaa2fc3f6a0362c2791b2e7491924a991"
+    },
+    {
+      "id": "engines/PE-3_auto-validation/scoring_rubric.md",
+      "type": "engine",
+      "title": "Scoring Rubric",
+      "status": "unknown",
+      "version": "",
+      "date": "",
+      "tags": ["PE-3_auto-validation", "scoring", "rubric"],
+      "notion_url": null,
+      "file_size": 1874,
+      "sha": "17928085c77c5a23c89e391827480a1051d585ff"
+    },
+    {
+      "id": "engines/PE-3_auto-validation/prompt_template.md",
+      "type": "engine",
+      "title": "Prompt Template",
+      "status": "unknown",
+      "version": "",
+      "date": "",
+      "tags": ["PE-3_auto-validation", "prompt", "template"],
+      "notion_url": null,
+      "file_size": 1161,
+      "sha": "b8fd45415f0e74d5249c011662a1547a5df45db2"
+    },
+    {
+      "id": "engines/PE-3_auto-validation/upgrade_v1.4.md",
+      "type": "engine",
+      "title": "Upgrade v1.4",
+      "status": "unknown",
+      "version": "v1.4",
+      "date": "",
+      "tags": ["PE-3_auto-validation", "upgrade", "v1.4"],
+      "notion_url": null,
+      "file_size": 2843,
+      "sha": "9944f45462032af92479afe417adacf6fd6d4dd5"
+    }
+  ],
+  "edges": [
+    {
+      "source": "docs/rca-capa/RCA-001.md",
+      "target": "docs/rca-capa/README.md",
+      "relation": "prev"
+    },
+    {
+      "source": "docs/rca-capa/RCA-001.md",
+      "target": "docs/rca-capa/RCA-002.md",
+      "relation": "next"
+    },
+    {
+      "source": "docs/rca-capa/RCA-002.md",
+      "target": "docs/rca-capa/RCA-001.md",
+      "relation": "prev"
+    },
+    {
+      "source": "docs/rca-capa/RCA-002.md",
+      "target": "docs/rca-capa/RCA-003.md",
+      "relation": "next"
+    },
+    {
+      "source": "docs/rca-capa/RCA-003.md",
+      "target": "docs/rca-capa/RCA-002.md",
+      "relation": "prev"
+    },
+    {
+      "source": "docs/rca-capa/RCA-003.md",
+      "target": "docs/rca-capa/RCA-004.md",
+      "relation": "next"
+    },
+    {
+      "source": "docs/rca-capa/RCA-004.md",
+      "target": "docs/rca-capa/RCA-003.md",
+      "relation": "prev"
+    },
+    {
+      "source": "docs/rca-capa/RCA-004.md",
+      "target": "docs/rca-capa/README.md",
+      "relation": "links_to"
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+name: Build Knowledge Graph
+
+on:
+  push:
+    paths:
+      - 'docs/**/*.md'
+      - 'engines/**/*.md'
+  workflow_dispatch:
+
+jobs:
+  build-kg:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Build Knowledge Graph
+        run: |
+          python scripts/build_knowledge_graph.py \
+            --input docs engines \
+            --output knowledge_graph.json \
+            --verbose
+
+      - name: Run auto_validate (if present)
+        run: |
+          if [ -f auto_validate.py ]; then
+            python auto_validate.py \
+              --report-dir docs/rca-capa \
+              --kg knowledge_graph.json
+          else
+            echo "auto_validate.py not found — skipping validation step"
+          fi
+
+      - name: Commit updated knowledge_graph.json
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'chore(kg): auto-update knowledge_graph.json [skip ci]'
+          file_pattern: knowledge_graph.json
