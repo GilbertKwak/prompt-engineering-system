@@ -10,6 +10,12 @@ Usage:
     python scripts/build_knowledge_graph.py
     python scripts/build_knowledge_graph.py --input docs engines --output knowledge_graph.json
     python scripts/build_knowledge_graph.py --verbose
+    python scripts/build_knowledge_graph.py --sha
+    python scripts/build_knowledge_graph.py --full
+    python scripts/build_knowledge_graph.py \\
+        --input docs engines applied-cases workflows dashboard \\
+        --full --sha \\
+        --output knowledge_graph.json
 
 Output schema  (knowledge_graph.json)
 ---------------------------------------
@@ -48,6 +54,7 @@ import os
 import re
 import json
 import argparse
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -58,6 +65,9 @@ from pathlib import Path
 DEFAULT_SCAN_DIRS = ["docs", "engines", "applied-cases", "workflows", "dashboard"]
 DEFAULT_OUTPUT    = "knowledge_graph.json"
 KG_VERSION        = "1.0"
+
+# Root-level files to always include (before scan_dirs loop)
+ROOT_FILES = ["README.md", "CHANGELOG.md"]
 
 # Map path prefixes → node type
 TYPE_MAP = [
@@ -79,7 +89,25 @@ STATUS_PATTERNS = [
     (r"상태.*?해결",                      "resolved"),
     (r"🔄.*?(진행|WIP|in.progress)",     "wip"),
     (r"❌.*?(미해결|open|실패)",           "open"),
+    # CHANGELOG-specific patterns
+    (r"###\s*\[Unreleased\]",            "wip"),
+    (r"###\s*\[\d",                      "resolved"),
 ]
+
+# ---------------------------------------------------------------------------
+# Git SHA helper
+# ---------------------------------------------------------------------------
+
+def get_git_sha(filepath: str) -> str | None:
+    """Return the git blob SHA for HEAD:<filepath>, or None on failure."""
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", f"HEAD:{filepath}"],
+            capture_output=True, text=True
+        )
+        return result.stdout.strip() if result.returncode == 0 else None
+    except Exception:
+        return None
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -105,10 +133,17 @@ def extract_status(text: str) -> str:
     return "unknown"
 
 
-def extract_version(text: str) -> str:
+def extract_version(text: str, force: bool = False) -> str:
+    """
+    Extract version string.
+    - Normal mode : frontmatter / inline '버전' / 'version' keyword required.
+    - force=True  : also scan bare vX.Y patterns anywhere in the text.
+    """
     m = re.search(r"해결\s*버전[:\s]*([vV][\d.]+)", text)
     if not m:
         m = re.search(r"version[:\s]*([vV][\d.]+)", text, re.IGNORECASE)
+    if not m and force:
+        m = re.search(r"\b([vV]\d+\.\d+)\b", text)
     return m.group(1) if m else ""
 
 
@@ -155,11 +190,9 @@ def extract_links(path: str, text: str) -> list[dict]:
         target = target.replace("\\", "/")
         relation = "links_to"
         # detect next/prev from anchor text
-        anchor = re.search(r"다음", m.group(0))
-        if anchor:
+        if re.search(r"다음", m.group(0)):
             relation = "next"
-        anchor2 = re.search(r"이전", m.group(0))
-        if anchor2:
+        elif re.search(r"이전", m.group(0)):
             relation = "prev"
         edges.append({"source": path, "target": target, "relation": relation})
     return edges
@@ -169,10 +202,40 @@ def extract_links(path: str, text: str) -> list[dict]:
 # Main build
 # ---------------------------------------------------------------------------
 
-def build_graph(scan_dirs: list[str], output: str, verbose: bool = False) -> dict:
+def build_graph(
+    scan_dirs: list[str],
+    output: str,
+    verbose: bool = False,
+    sha: bool = False,
+    version_extract: bool = False,
+) -> dict:
     nodes = []
     edges = []
     seen_ids = set()
+
+    # ── ROOT_FILES block (before scan_dirs loop) ──────────────────────────
+    for rf in ROOT_FILES:
+        rf_path = Path(rf)
+        if not rf_path.exists() or rf in seen_ids:
+            continue
+        seen_ids.add(rf)
+        text = rf_path.read_text(encoding="utf-8")
+        node = {
+            "id":         rf,
+            "type":       "doc",
+            "title":      extract_title(text),
+            "status":     extract_status(text),
+            "version":    extract_version(text, force=version_extract),
+            "date":       extract_date(text),
+            "tags":       ["root", "meta"] + extract_tags(rf, text),
+            "notion_url": extract_notion_url(text),
+            "file_size":  rf_path.stat().st_size,
+            "sha":        get_git_sha(rf) if (sha or version_extract) else None,
+        }
+        nodes.append(node)
+        if verbose:
+            print(f"[ROOT] {rf}  type={node['type']}  status={node['status']}")
+    # ── ROOT_FILES block end ──────────────────────────────────────────────
 
     for scan_dir in scan_dirs:
         base = Path(scan_dir)
@@ -198,12 +261,12 @@ def build_graph(scan_dirs: list[str], output: str, verbose: bool = False) -> dic
                 "type":        infer_type(rel),
                 "title":       extract_title(text),
                 "status":      extract_status(text),
-                "version":     extract_version(text),
+                "version":     extract_version(text, force=version_extract),
                 "date":        extract_date(text),
                 "tags":        extract_tags(rel, text),
                 "notion_url":  extract_notion_url(text),
                 "file_size":   md_path.stat().st_size,
-                "sha":         None,   # populated by CI if needed
+                "sha":         get_git_sha(rel) if (sha or version_extract) else None,
             }
             nodes.append(node)
 
@@ -224,11 +287,13 @@ def build_graph(scan_dirs: list[str], output: str, verbose: bool = False) -> dic
 
     graph = {
         "meta": {
-            "generated_at":  datetime.now(timezone.utc).isoformat(),
-            "version":       KG_VERSION,
-            "total_nodes":   len(nodes),
-            "total_edges":   len(unique_edges),
-            "scan_dirs":     scan_dirs,
+            "generated_at":   datetime.now(timezone.utc).isoformat(),
+            "version":        KG_VERSION,
+            "total_nodes":    len(nodes),
+            "total_edges":    len(unique_edges),
+            "scan_dirs":      scan_dirs,
+            "sha_enabled":    sha,
+            "version_extract": version_extract,
         },
         "nodes": nodes,
         "edges": unique_edges,
@@ -262,5 +327,28 @@ if __name__ == "__main__":
         "--verbose", action="store_true",
         help="Print each node as it is processed"
     )
+    parser.add_argument(
+        "--sha", action="store_true",
+        help="Auto-extract git SHA for each file via git rev-parse"
+    )
+    parser.add_argument(
+        "--full", action="store_true",
+        help="Enable all optional features (--sha + --version-extract)"
+    )
+    parser.add_argument(
+        "--version-extract", action="store_true",
+        help="Force version extraction even if frontmatter is absent"
+    )
     args = parser.parse_args()
-    build_graph(scan_dirs=args.input, output=args.output, verbose=args.verbose)
+
+    # --full implies --sha and --version-extract
+    use_sha             = args.sha or args.full
+    use_version_extract = args.version_extract or args.full
+
+    build_graph(
+        scan_dirs=args.input,
+        output=args.output,
+        verbose=args.verbose,
+        sha=use_sha,
+        version_extract=use_version_extract,
+    )
