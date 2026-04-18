@@ -1,9 +1,9 @@
 {
   "meta": {
-    "generated_at": "2026-04-18T11:24:44.714122+00:00",
+    "generated_at": "2026-04-18T11:34:42.350785+00:00",
     "version": "1.0",
     "total_nodes": 29,
-    "total_edges": 66,
+    "total_edges": 60,
     "scan_dirs": [
       "docs",
       "engines"
@@ -214,7 +214,7 @@
     {
       "id": "docs/rca-capa/AUTO_VALIDATE_RUN.md",
       "type": "rca",
-      "title": "🤖 Auto Validate Run Log — 실행 결과 분석",
+      "title": "AUTO_VALIDATE_RUN.md",
       "status": "unknown",
       "version": "",
       "date": "2026-04-18",
@@ -224,10 +224,10 @@
         "RCA-002",
         "RCA-003",
         "RCA-004",
-        "v1.0"
+        "v1.3"
       ],
       "notion_url": "https://www.notion.so/33d55ed436f081bfa2aeccc26f344de5",
-      "file_size": 3256,
+      "file_size": 2137,
       "sha": null
     },
     {
@@ -718,36 +718,6 @@
     },
     {
       "source": "docs/new/README.md",
-      "target": "docs/rca-capa/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/rca-capa/AUTO_VALIDATE_RUN.md",
-      "target": "docs/rca-capa/AUTO_SYNC_LOG.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/rca-capa/AUTO_VALIDATE_RUN.md",
-      "target": "docs/rca-capa/RCA-001.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/rca-capa/AUTO_VALIDATE_RUN.md",
-      "target": "docs/rca-capa/RCA-002.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/rca-capa/AUTO_VALIDATE_RUN.md",
-      "target": "docs/rca-capa/RCA-003.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/rca-capa/AUTO_VALIDATE_RUN.md",
-      "target": "docs/rca-capa/RCA-004.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/rca-capa/AUTO_VALIDATE_RUN.md",
       "target": "docs/rca-capa/README.md",
       "relation": "links_to"
     },
