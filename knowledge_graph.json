@@ -1,15 +1,69 @@
 {
   "meta": {
-    "generated_at": "2026-04-15T02:28:12.837401+00:00",
+    "generated_at": "2026-04-18T11:24:44.714122+00:00",
     "version": "1.0",
-    "total_nodes": 26,
-    "total_edges": 60,
+    "total_nodes": 29,
+    "total_edges": 66,
     "scan_dirs": [
       "docs",
       "engines"
-    ]
+    ],
+    "sha_enabled": false,
+    "version_extract": false
   },
   "nodes": [
+    {
+      "id": "README.md",
+      "type": "doc",
+      "title": "🧠 프롬프트 엔진니어링 시스템 — 자동개선·자동증식·자동검증",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-05",
+      "tags": [
+        "root",
+        "meta",
+        "RCA-001",
+        "RCA-002",
+        "RCA-003",
+        "RCA-004",
+        "v1.6",
+        "v1.5",
+        "v1.4",
+        "v1.0",
+        "v1.1",
+        "v1.2",
+        "v1.3",
+        "v3.0",
+        "v4.0",
+        "v1.7"
+      ],
+      "notion_url": "https://www.notion.so/33955ed436f081cc9f0bd014d631aa7b",
+      "file_size": 7309,
+      "sha": null
+    },
+    {
+      "id": "CHANGELOG.md",
+      "type": "doc",
+      "title": "CHANGELOG — 프롬프트 엔진니어링 시스템",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-18",
+      "tags": [
+        "root",
+        "meta",
+        "RCA-001",
+        "v1.6",
+        "v1.5",
+        "v1.4",
+        "v1.3",
+        "v1.2",
+        "v1.1",
+        "v1.0"
+      ],
+      "notion_url": null,
+      "file_size": 6380,
+      "sha": null
+    },
     {
       "id": "docs/agent1/README.md",
       "type": "agent",
@@ -148,12 +202,32 @@
         "RCA-002",
         "RCA-003",
         "RCA-004",
-        "v1.1",
+        "v1.2",
         "v2.0",
+        "v1.1",
         "v1.0"
       ],
       "notion_url": "https://www.notion.so/33d55ed436f081bfa2aeccc26f344de5",
-      "file_size": 3718,
+      "file_size": 5096,
+      "sha": null
+    },
+    {
+      "id": "docs/rca-capa/AUTO_VALIDATE_RUN.md",
+      "type": "rca",
+      "title": "🤖 Auto Validate Run Log — 실행 결과 분석",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-18",
+      "tags": [
+        "rca-capa",
+        "RCA-001",
+        "RCA-002",
+        "RCA-003",
+        "RCA-004",
+        "v1.0"
+      ],
+      "notion_url": "https://www.notion.so/33d55ed436f081bfa2aeccc26f344de5",
+      "file_size": 3256,
       "sha": null
     },
     {
@@ -644,6 +718,36 @@
     },
     {
       "source": "docs/new/README.md",
+      "target": "docs/rca-capa/README.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/rca-capa/AUTO_VALIDATE_RUN.md",
+      "target": "docs/rca-capa/AUTO_SYNC_LOG.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/rca-capa/AUTO_VALIDATE_RUN.md",
+      "target": "docs/rca-capa/RCA-001.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/rca-capa/AUTO_VALIDATE_RUN.md",
+      "target": "docs/rca-capa/RCA-002.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/rca-capa/AUTO_VALIDATE_RUN.md",
+      "target": "docs/rca-capa/RCA-003.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/rca-capa/AUTO_VALIDATE_RUN.md",
+      "target": "docs/rca-capa/RCA-004.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/rca-capa/AUTO_VALIDATE_RUN.md",
       "target": "docs/rca-capa/README.md",
       "relation": "links_to"
     },
