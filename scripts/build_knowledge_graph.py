@@ -55,7 +55,7 @@ from pathlib import Path
 # Config
 # ---------------------------------------------------------------------------
 
-DEFAULT_SCAN_DIRS = ["docs", "engines"]
+DEFAULT_SCAN_DIRS = ["docs", "engines", "applied-cases", "workflows", "dashboard"]
 DEFAULT_OUTPUT    = "knowledge_graph.json"
 KG_VERSION        = "1.0"
 
@@ -149,7 +149,7 @@ def extract_links(path: str, text: str) -> list[dict]:
     base_dir = str(Path(path).parent)
     edges = []
     # Markdown links  [text](./relative)
-    for m in re.finditer(r"\[[^\]]+\]\((\.{1,2}/[^)]+\.md)", text):
+    for m in re.finditer(r"\[[^\]]+\]\((\.[^)]+\.md)", text):
         rel = m.group(1)
         target = str((Path(base_dir) / rel).resolve().relative_to(Path.cwd()))
         target = target.replace("\\", "/")
