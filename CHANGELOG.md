@@ -1,15 +1,26 @@
 # CHANGELOG — 프롬프트 엔진니어링 시스템
 
-## [v1.6] — 2026-04-10
+## [v1.6] — 2026-04-18
 
 ### Added
 - `docs/report/2026-04-10_3engine-upgrade-report-v1.6.md` — 3-Engine 업그레이드 통합 실행 보고서 (한글)
 - `applied-cases/2026-04-10_3engine-upgrade-v1.6.md` — v1.6 실행 기록 및 정량 지표
 
 ### Changed
-- `README.md` — v1.6으로 갱신, 실행 보고서 링크 반영
-- `CHANGELOG.md` — v1.6 항목 추가
+- `README.md` — v1.6으로 갱신
+  - 버전 배지 v1.5 → v1.6
+  - 디렉토리 트리에 `knowledge_graph.json` 및 `scripts/build_knowledge_graph.py` 항목 추가
+  - 🔧 KG 빌드 & 검증 실행 섹션 신설 (방법 B 커맨드, 옵션 표, SKIP 조건 명시)
+  - 버전 이력에 v1.6 항목 추가
+  - 다음 리뷰 v1.6 → v1.7로 갱신
+- `CHANGELOG.md` — v1.6 항목 날짜 및 scripts 변경사항 보완
+- `scripts/build_knowledge_graph.py` — CLI 방법 B 공식화 (alias `build_kg.py` 불필요 확정)
+  - `--input docs engines applied-cases workflows dashboard --full --sha --output knowledge_graph.json` 지원 확인
 - Notion 허브 페이지 v1.6으로 동기화 완료
+
+### Scripts
+- `build_kg.py` alias 생성 **불필요** — `build_knowledge_graph.py`가 모든 CLI 옵션 직접 지원
+- 방법 B 커맨드 README에 공식 문서화 완료
 
 ### Upgrade Summary — v1.6 통합 실행 보고서
 **실행일**: 2026-04-10 | **관리자**: Gilbert Kwak

@@ -1,8 +1,8 @@
 # 🧠 프롬프트 엔진니어링 시스템 — 자동개선·자동증식·자동검증
 
-> **Gilbert Kwak** | 최초 생성: 2026-04-05 | 현재 버전: **v1.5**
+> **Gilbert Kwak** | 최초 생성: 2026-04-05 | 현재 버전: **v1.6**
 
-[![Version](https://img.shields.io/badge/version-v1.5-blue)](https://github.com/GilbertKwak/prompt-engineering-system/releases)
+[![Version](https://img.shields.io/badge/version-v1.6-blue)](https://github.com/GilbertKwak/prompt-engineering-system/releases)
 [![Status](https://img.shields.io/badge/status-active-green)]()
 [![Notion Hub](https://img.shields.io/badge/Notion-PE%20Hub-black?logo=notion)](https://www.notion.so/33955ed436f081cc9f0bd014d631aa7b)
 [![Notion RCA](https://img.shields.io/badge/Notion-RCA%2FCAPA-orange?logo=notion)](https://www.notion.so/33d55ed436f081bfa2aeccc26f344de5)
@@ -29,6 +29,7 @@
 prompt-engineering-system/
 ├── README.md                        ← 진입점 (Mother)
 ├── CHANGELOG.md
+├── knowledge_graph.json             ← KG 빌드 산출물 (auto_validate.py 입력)
 ├── docs/
 │   ├── index.md                 ← Master Index (접근점)
 │   ├── agent1/README.md         ← PE-1 자동개선
@@ -51,6 +52,8 @@ prompt-engineering-system/
 │   ├── PE-1_auto-refinement/
 │   ├── PE-2_auto-proliferation/
 │   └── PE-3_auto-validation/
+├── scripts/
+│   └── build_knowledge_graph.py ← KG 빌드 스크립트 (방법 B 커맨드 지원)
 ├── workflows/
 │   └── 3engine_pipeline.md
 └── applied-cases/
@@ -58,6 +61,49 @@ prompt-engineering-system/
     ├── 2026-04-10_3engine-upgrade-v1.4.md
     └── 2026-04-10_3engine-upgrade-v1.5.md
 ```
+
+---
+
+## 🔧 KG 빌드 & 검증 실행
+
+> `knowledge_graph.json`이 없으면 `auto_validate.py`의 KG 체크가 **SKIP** 처리됩니다.  
+> 완전한 검증을 위해 아래 순서로 실행하세요.
+
+### Step 1 — Knowledge Graph 생성
+
+```bash
+# 방법 B: 원본 파일명 그대로 사용 (권장 — alias 불필요)
+python scripts/build_knowledge_graph.py \
+  --input docs engines applied-cases workflows dashboard \
+  --full --sha \
+  --output knowledge_graph.json
+```
+
+| 옵션 | 설명 |
+|------|------|
+| `--input` | 스캔할 디렉토리 목록 (5개 전체) |
+| `--full` | `--sha` + `--version-extract` 동시 활성화 |
+| `--sha` | 각 파일의 git blob SHA 자동 추출 |
+| `--output` | 출력 경로 (기본값: `knowledge_graph.json`) |
+
+### Step 2 — 전체 검증 실행
+
+```bash
+# KG 생성 후 완전 검증 (RCA-001~004 포함)
+python auto_validate.py --full \
+  --report-dir reports/ \
+  --kg knowledge_graph.json
+
+# 실패 항목만 필터링
+python auto_validate.py --filter FAIL --export validation_report.csv
+```
+
+### KG SKIP 조건
+
+`knowledge_graph.json`이 없을 경우 건너뛰어지는 검증:
+- 파일 간 의존성 그래프 순환 참조 탐지
+- 고립(orphan) 문서 탐지
+- 태그 클러스터 일관성 검증
 
 ---
 
@@ -83,7 +129,8 @@ prompt-engineering-system/
 | v1.2 | 2026-04-09 | docs/rca-capa + Notion 양방향 링크 |
 | v1.3 | 2026-04-09 | 재현 가능 연구 구조 전체 수립 (agent1~5, support, new, dashboard) |
 | v1.4 | 2026-04-10 | 3-Engine 업그레이드 적용 (CoT, 크로스오버, 신뢰도 가중치) |
-| **v1.5** | **2026-04-10** | **자동개선·자동증식·자동검증 방식 적용 업그레이드 실행** |
+| v1.5 | 2026-04-10 | 자동개선·자동증식·자동검증 방식 적용 업그레이드 실행 |
+| **v1.6** | **2026-04-18** | **KG 빌드 스크립트 방법 B 공식화, README 구조 갱신** |
 
 ---
 
@@ -110,4 +157,4 @@ prompt-engineering-system/
 
 ---
 
-> 관리자: Gilbert Kwak | 다음 리뷰: 2026-05 (v1.6 — support/ 세부 파일 완성)
+> 관리자: Gilbert Kwak | 다음 리뷰: 2026-05 (v1.7 — support/ 세부 파일 완성)
