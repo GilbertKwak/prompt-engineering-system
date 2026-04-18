@@ -5,6 +5,7 @@ on:
     paths:
       - 'docs/**/*.md'
       - 'engines/**/*.md'
+      - 'reports/**/*.md'        # ✅ Fix #2: reports/ 변경 시 트리거 추가
   workflow_dispatch:
 
 jobs:
@@ -29,14 +30,27 @@ jobs:
             --output knowledge_graph.json \
             --verbose
 
-      - name: Run auto_validate (if present)
+      - name: Run auto_validate        # ✅ Fix #1 & #3
         run: |
-          if [ -f auto_validate.py ]; then
+          if [ ! -f auto_validate.py ]; then
+            echo "⚠️  auto_validate.py not found — skipping validation step"
+            exit 0
+          fi
+
+          # ✅ Fix #3: KG 존재 여부 확인 후 명시적 SKIP 로그
+          if [ ! -f knowledge_graph.json ]; then
+            echo "⚠️  [KG-SKIP] knowledge_graph.json not found — KG validation will be skipped"
+            echo "    Running RCA-001~004 checks on reports/ only (no KG cross-reference)"
             python auto_validate.py \
-              --report-dir docs/rca-capa \
-              --kg knowledge_graph.json
+              --report-dir reports \
+              --skip-kg \
+              --verbose
           else
-            echo "auto_validate.py not found — skipping validation step"
+            echo "✅  knowledge_graph.json found — running full validation"
+            python auto_validate.py \
+              --report-dir reports \
+              --kg knowledge_graph.json \
+              --verbose
           fi
 
       - name: Commit updated knowledge_graph.json
