@@ -1,276 +1,234 @@
-# scripts/pe1_improver.py
-# PE-1 Engine — Prompt Auto-Improvement
-# Version: v1.0 | 2026-04-21 | Author: Gilbert Kwak
-# Repo: GilbertKwak/prompt-engineering-system
-# Depends on: pe3_validator.py (for weak_points / improvement_hints)
+#!/usr/bin/env python3
+"""
+PE-1 Improver — Prompt Auto-Improvement Engine
+v2.0: OpenAI v1+ 클라이언트, 에러 핸들링, 구조 검증, 버전 증분,
+      logs/ 자동 생성, change_log 구조화, 인코딩 지정, 타입 힌트
+"""
 
-from __future__ import annotations
-
+import datetime
 import difflib
 import json
+import logging
 import os
 import re
-import sys
-from datetime import date, datetime
+import time
 from pathlib import Path
-from typing import Optional
 
-try:
-    import openai
-except ImportError:
-    openai = None  # type: ignore
+from openai import OpenAI, APITimeoutError, RateLimitError, APIError
 
-# ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
-MODEL = os.getenv("OPENAI_MODEL", "gpt-4o")
-LOG_DIR = Path("logs")
-LOG_DIR.mkdir(exist_ok=True)
+# ─────────────────────────────────────────────
+# 설정
+# ─────────────────────────────────────────────
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s — %(message)s",
+    datefmt="%Y-%m-%dT%H:%M:%S",
+)
+logger = logging.getLogger("pe1_improver")
 
-IMPROVEMENT_SYSTEM_PROMPT = """
+MODEL: str       = os.environ.get("PE1_MODEL", "gpt-4o")
+MAX_RETRIES: int = int(os.environ.get("PE1_MAX_RETRIES", 2))
+LOG_DIR: Path    = Path(os.environ.get("PE1_LOG_DIR", "logs"))
+
+# ─────────────────────────────────────────────
+# 개선 프롬프트
+# ─────────────────────────────────────────────
+IMPROVEMENT_PROMPT = """
 당신은 프롬프트 개선 전문가입니다.
 
-작업 규칙:
-1. 아래 원본 프롬프트의 약점(weak_points)을 분석
-2. 개선 힌트(improvement_hints)를 반영하여 섹션 단위로 재작성
-3. 원본 구조(섹션 순서·헤더명)는 반드시 유지
-4. 코드 스니펫은 보강만 허용 — 삭제 절대 금지
-5. 추상적 문장 → 구체적 코드/예시로 교체
-6. 누락 섹션 → 템플릿 기반 자동 보충
-7. 버전은 자동 +0.1 증분 (예: v2.0 → v2.1)
-8. 출력: 완전한 마크다운 프롬프트 전문만 출력 (설명 문장 금지)
+작업:
+1. 아래 원본 프롬프트의 약점을 분석
+2. 개선 힌트를 반영하여 섹션 단위로 재작성
+3. 원본 구조(섹션 순서·헤더명)는 반드시 유지 — 헤더 삭제 절대 금지
+4. 코드 스니펫은 보강만 허용 (삭제 금지)
+5. 출력: 완전한 마크다운 프롬프트 전문
 
-절대 금지:
-- 원본에 없는 섹션 삭제
-- 코드 블록 제거
-- 버전 번호 감소
+규칙:
+- 추상적 문장 → 구체적 코드/예시로 교체
+- 누락 섹션 → 템플릿 기반 자동 보충
+- 버전 태그(vX.Y)는 절대 삭제하지 말 것 (Python이 직접 증분 처리함)
 """
 
 
-# ---------------------------------------------------------------------------
-# Version Auto-Increment
-# ---------------------------------------------------------------------------
-def _bump_version(text: str) -> tuple[str, str]:
-    """
-    Find version pattern (vX.Y) in text and increment minor by 0.1.
-    Returns (updated_text, new_version_string).
-    """
-    pattern = re.compile(r'v(\d+)\.(\d+)')
-    match = pattern.search(text)
-    if not match:
-        return text, "v1.0"
-    major = int(match.group(1))
-    minor = int(match.group(2)) + 1
-    new_ver = f"v{major}.{minor}"
-    updated = pattern.sub(new_ver, text, count=1)
-    return updated, new_ver
+# ─────────────────────────────────────────────
+# 내부 유틸
+# ─────────────────────────────────────────────
+def _bump_version(text: str) -> str:
+    """마크다운 내 첫 번째 'vX.Y' 패턴을 찾아 minor +1 증분."""
+    def increment(m: re.Match) -> str:
+        return f"v{m.group(1)}.{int(m.group(2)) + 1}"
+    result, count = re.subn(r'v(\d+)\.(\d+)', increment, text, count=1)
+    if count == 0:
+        logger.warning("버전 태그(vX.Y) 미발견 — 증분 스킵")
+    return result
 
 
-# ---------------------------------------------------------------------------
-# Diff Logger
-# ---------------------------------------------------------------------------
-def log_improvement_diff(before: str, after: str, label: str = "") -> Path:
-    """
-    Write unified diff of before/after to logs/improvement_YYYYMMDD.diff.
-    Returns path to written log file.
-    """
-    diff_lines = list(
-        difflib.unified_diff(
-            before.splitlines(keepends=True),
-            after.splitlines(keepends=True),
-            fromfile="before",
-            tofile="after",
-        )
-    )
-    log_path = LOG_DIR / f"improvement_{date.today().strftime('%Y%m%d')}.diff"
-    header = f"# PE-1 Improvement Diff — {datetime.utcnow().isoformat()}Z"
-    if label:
-        header += f" | {label}"
-    with open(log_path, "a", encoding="utf-8") as f:
-        f.write(header + "\n")
-        f.writelines(diff_lines)
-        f.write("\n" + "-" * 60 + "\n")
+def _check_structure(original: str, improved: str) -> list[str]:
+    """원본 헤더(##, ###)가 개선본에 모두 존재하는지 검증. 누락 헤더 반환."""
+    orig_headers = set(re.findall(r'^#{1,3} .+', original, re.MULTILINE))
+    impr_headers = set(re.findall(r'^#{1,3} .+', improved, re.MULTILINE))
+    return sorted(orig_headers - impr_headers)
+
+
+def _call_api(client: OpenAI, context: str) -> str:
+    """지수 백오프 재시도 포함 API 호출. raw content 문자열 반환."""
+    for attempt in range(MAX_RETRIES + 1):
+        try:
+            logger.info("API 요청 (시도 %d/%d)", attempt + 1, MAX_RETRIES + 1)
+            response = client.chat.completions.create(
+                model=MODEL,
+                messages=[
+                    {"role": "system", "content": IMPROVEMENT_PROMPT},
+                    {"role": "user",   "content": context},
+                ],
+                timeout=60,
+            )
+            return response.choices[0].message.content
+
+        except RateLimitError:
+            wait = 2 ** attempt
+            logger.warning("Rate Limit — %d초 후 재시도", wait)
+            if attempt < MAX_RETRIES:
+                time.sleep(wait)
+            else:
+                raise RuntimeError(f"Rate Limit 재시도 초과 ({MAX_RETRIES}회)")
+
+        except APITimeoutError:
+            raise RuntimeError("OpenAI API 타임아웃")
+
+        except APIError as e:
+            raise RuntimeError(f"OpenAI API 에러: {e}") from e
+
+
+def _save_diff(before: str, after: str, diff_lines: list[str]) -> Path:
+    """diff를 logs/ 디렉토리에 저장. 저장 경로 반환."""
+    LOG_DIR.mkdir(parents=True, exist_ok=True)  # 디렉토리 자동 생성
+    ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_path = LOG_DIR / f"improvement_{ts}.diff"
+    with open(log_path, "w", encoding="utf-8") as f:  # 인코딩 명시
+        f.write("\n".join(diff_lines))
+    logger.info("diff 저장 완료: %s (%d lines)", log_path, len(diff_lines))
     return log_path
 
 
-# ---------------------------------------------------------------------------
-# Core Improvement
-# ---------------------------------------------------------------------------
+# ─────────────────────────────────────────────
+# 퍼블릭 API
+# ─────────────────────────────────────────────
 def improve_prompt(
     original: str,
     weak_points: list[str],
     hints: list[str],
-    dry_run: bool = False,
-) -> dict:
+) -> dict[str, object]:
     """
-    Improve a prompt based on PE-3 validator output.
+    원본 프롬프트를 약점·힌트 기반으로 자동 개선한다.
 
     Args:
-        original   : Original prompt text (markdown).
-        weak_points: List of identified weaknesses from pe3_validator.
-        hints      : List of improvement directions from pe3_validator.
-        dry_run    : If True, skip LLM call and return original with bumped version.
+        original:    원본 프롬프트 마크다운 전문
+        weak_points: PE-3 검증에서 도출된 약점 목록
+        hints:       PE-3 검증에서 도출된 개선 방향 목록
 
     Returns:
-        dict with keys: improved_prompt, new_version, change_log, diff_path, timestamp
-    """
-    if not weak_points and not hints:
-        print("[SKIP] weak_points / hints 없음 — 개선 불필요")
-        return {
-            "improved_prompt": original,
-            "new_version": None,
-            "change_log": "개선 불필요 (이미 합격)",
-            "diff_path": None,
-            "timestamp": datetime.utcnow().isoformat() + "Z",
+        {
+          "improved_prompt": str,          # 개선된 프롬프트 전문
+          "change_log": dict,              # 구조화된 변경 이력
+          "missing_sections": list[str],   # 누락 감지된 섹션 (경고용)
+          "diff_path": str,                # 저장된 diff 파일 경로
         }
+
+    Raises:
+        RuntimeError: API 재시도 초과 / 타임아웃
+    """
+    client = OpenAI()
 
     context = (
         f"원본 프롬프트:\n{original}\n\n"
-        f"약점 목록:\n"
-        + "\n".join(f"- {w}" for w in weak_points)
-        + "\n\n개선 방향:\n"
-        + "\n".join(f"- {h}" for h in hints)
+        + f"약점 목록:\n" + "\n".join(f"- {w}" for w in weak_points) + "\n\n"
+        + f"개선 방향:\n" + "\n".join(f"- {h}" for h in hints)
     )
 
-    if dry_run or openai is None:
-        improved_raw = original  # 구조 유지
-        print("[dry_run] LLM 호출 생략 — 원본 반환")
+    improved_raw = _call_api(client, context)
+
+    # 버전 증분 (Python 직접 처리)
+    improved = _bump_version(improved_raw)
+
+    # 구조 무결성 검증
+    missing = _check_structure(original, improved)
+    if missing:
+        logger.warning("[W-01] 섹션 누락 감지 (%d개): %s", len(missing), missing)
     else:
-        client = openai.OpenAI(api_key=os.environ["OPENAI_API_KEY"])
-        response = client.chat.completions.create(
-            model=MODEL,
-            messages=[
-                {"role": "system", "content": IMPROVEMENT_SYSTEM_PROMPT},
-                {"role": "user", "content": context},
-            ],
-        )
-        improved_raw = response.choices[0].message.content
+        logger.info("구조 검증 통과 — 헤더 전부 보존됨")
 
-    # Version bump
-    improved, new_ver = _bump_version(improved_raw)
+    # Diff 생성 및 저장
+    diff_lines = list(difflib.unified_diff(
+        original.splitlines(),
+        improved.splitlines(),
+        fromfile="original",
+        tofile="improved",
+        lineterm="",
+    ))
+    diff_path = _save_diff(original, improved, diff_lines)
 
-    # Diff logging
-    diff_path = log_improvement_diff(original, improved, label=new_ver)
-
-    change_log = (
-        f"PE-1 자동개선 적용 → {new_ver} "
-        f"({len(weak_points)}개 약점 수정, {len(hints)}개 힌트 적용)"
-    )
-    print(f"[OK] {change_log}")
-    print(f"  Diff 로그: {diff_path}")
-
-    result = {
-        "improved_prompt": improved,
-        "new_version": new_ver,
-        "change_log": change_log,
+    # 구조화된 change_log
+    change_log = {
+        "summary": f"PE-1 자동개선 — {len(weak_points)}개 약점 처리",
+        "weak_points_addressed": weak_points,
+        "hints_applied": hints,
+        "diff_lines_total": len(diff_lines),
+        "missing_sections": missing,
         "diff_path": str(diff_path),
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.datetime.now().isoformat(),
+        "model": MODEL,
     }
-    _write_json_log(result)
-    return result
 
-
-# ---------------------------------------------------------------------------
-# JSON Log
-# ---------------------------------------------------------------------------
-def _write_json_log(result: dict) -> None:
-    today = datetime.utcnow().strftime("%Y%m%d")
-    log_path = LOG_DIR / f"pe1_improvement_{today}.json"
-    history: list = []
-    if log_path.exists():
-        try:
-            history = json.loads(log_path.read_text(encoding="utf-8"))
-        except json.JSONDecodeError:
-            history = []
-    # Store summary only (no full prompt text to keep log light)
-    summary = {
-        k: v for k, v in result.items() if k != "improved_prompt"
-    }
-    history.append(summary)
-    log_path.write_text(
-        json.dumps(history, ensure_ascii=False, indent=2), encoding="utf-8"
+    logger.info(
+        "[OK] 개선 완료 — diff %d lines | 누락섹션 %d개",
+        len(diff_lines), len(missing),
     )
 
-
-# ---------------------------------------------------------------------------
-# Iterative Improvement Loop (max 3 rounds)
-# ---------------------------------------------------------------------------
-def improve_until_pass(
-    original: str,
-    validator_fn,  # callable: (str) -> dict  — pe3_validator.validate_prompt
-    max_rounds: int = 3,
-    dry_run: bool = False,
-) -> dict:
-    """
-    Run improve → validate loop until pass=True or max_rounds reached.
-
-    Args:
-        original    : Starting prompt text.
-        validator_fn: pe3_validator.validate_prompt (injected to avoid circular import).
-        max_rounds  : Maximum improvement iterations.
-        dry_run     : Passed through to improve_prompt and validator_fn.
-
-    Returns:
-        dict with final prompt, final validation result, rounds taken.
-    """
-    current = original
-    for rnd in range(1, max_rounds + 1):
-        print(f"\n--- [Round {rnd}/{max_rounds}] 검증 실행 ---")
-        val = validator_fn(current, dry_run=dry_run)
-        if val["pass"]:
-            print(f"[합격] Round {rnd} 검증 통과 — {val['total']}/100")
-            return {
-                "final_prompt": current,
-                "validation": val,
-                "rounds": rnd,
-                "status": "pass",
-            }
-        print(f"[미달] Round {rnd} 점수: {val['total']}/100 — 개선 실행")
-        result = improve_prompt(
-            current,
-            val["weak_points"],
-            val["improvement_hints"],
-            dry_run=dry_run,
-        )
-        current = result["improved_prompt"]
-
-    print(f"[E-07] {max_rounds}회 개선 후에도 미달 — 수동 검토 필요")
     return {
-        "final_prompt": current,
-        "validation": val,
-        "rounds": max_rounds,
-        "status": "fail",
+        "improved_prompt": improved,
+        "change_log": change_log,
+        "missing_sections": missing,
+        "diff_path": str(diff_path),
     }
 
 
-# ---------------------------------------------------------------------------
-# CLI Entry Point
-# ---------------------------------------------------------------------------
+# ─────────────────────────────────────────────
+# CLI
+# ─────────────────────────────────────────────
 if __name__ == "__main__":
-    import argparse
+    import sys, argparse
 
-    parser = argparse.ArgumentParser(description="PE-1 Prompt Improver")
-    parser.add_argument("input", help="Prompt file (.md/.txt)")
-    parser.add_argument("--weak-points", nargs="*", default=[], help="Weak point strings")
-    parser.add_argument("--hints", nargs="*", default=[], help="Improvement hint strings")
-    parser.add_argument("--dry-run", action="store_true", help="Skip LLM call")
-    parser.add_argument("--output", help="Save improved prompt to file")
+    parser = argparse.ArgumentParser(description="PE-1 프롬프트 자동 개선기")
+    parser.add_argument("file",       help="원본 프롬프트 파일 경로 (.md)")
+    parser.add_argument("--weak",     nargs="+", default=[], metavar="WEAK",
+                        help="약점 항목 (공백 구분)")
+    parser.add_argument("--hints",    nargs="+", default=[], metavar="HINT",
+                        help="개선 힌트 (공백 구분)")
+    parser.add_argument("--pe3-json", metavar="FILE",
+                        help="pe3_validator 출력 JSON 파일 (--weak/--hints 대체)")
     args = parser.parse_args()
 
-    path = Path(args.input)
-    text = path.read_text(encoding="utf-8")
-
-    result = improve_prompt(
-        text,
-        weak_points=args.weak_points,
-        hints=args.hints,
-        dry_run=args.dry_run,
-    )
-
-    if args.output:
-        out_path = Path(args.output)
-        out_path.write_text(result["improved_prompt"], encoding="utf-8")
-        print(f"[저장] {out_path}")
+    # PE-3 결과 JSON에서 자동 로드
+    if args.pe3_json:
+        with open(args.pe3_json, encoding="utf-8") as f:
+            pe3 = json.load(f)
+        weak_points = pe3.get("weak_points", [])
+        hints       = pe3.get("improvement_hints", [])
     else:
-        print("\n--- 개선된 프롬프트 ---")
-        print(result["improved_prompt"])
+        weak_points = args.weak
+        hints       = args.hints
+
+    with open(args.file, encoding="utf-8") as f:
+        original = f.read()
+
+    result = improve_prompt(original, weak_points, hints)
+
+    # 개선된 프롬프트를 {stem}_improved.md 로 저장
+    out_path = Path(args.file).stem + "_improved.md"
+    with open(out_path, "w", encoding="utf-8") as f:
+        f.write(result["improved_prompt"])
+
+    print(json.dumps(result["change_log"], ensure_ascii=False, indent=2))
+    logger.info("개선 결과 저장: %s", out_path)
+    sys.exit(0 if not result["missing_sections"] else 1)
