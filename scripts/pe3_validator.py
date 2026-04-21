@@ -1,241 +1,186 @@
-# scripts/pe3_validator.py
-# PE-3 Engine — 5-Axis Prompt Validation
-# Version: v1.0 | 2026-04-21 | Author: Gilbert Kwak
-# Repo: GilbertKwak/prompt-engineering-system
-# E-0N: E-07 trigger on total < 80
-
-from __future__ import annotations
+#!/usr/bin/env python3
+"""
+PE-3 Validator — Prompt Quality Validator
+v2.0: OpenAI v1+ 클라이언트, 스키마 검증, logging, is_pass, 환경변수, domain_fit 체크리스트
+"""
 
 import json
+import logging
 import os
-import sys
-from datetime import datetime
-from pathlib import Path
-from typing import Optional
+import time
 
-try:
-    import openai
-except ImportError:
-    openai = None  # type: ignore
+from openai import OpenAI, APITimeoutError, RateLimitError, APIError
 
-# ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
-PASS_THRESHOLD = 80
-MODEL = os.getenv("OPENAI_MODEL", "gpt-4o")
-LOG_DIR = Path("logs")
-LOG_DIR.mkdir(exist_ok=True)
+# ─────────────────────────────────────────────
+# 설정
+# ─────────────────────────────────────────────
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s — %(message)s",
+    datefmt="%Y-%m-%dT%H:%M:%S",
+)
+logger = logging.getLogger("pe3_validator")
 
-VALIDATION_SYSTEM_PROMPT = """
+PASS_THRESHOLD: int = int(os.environ.get("PE3_PASS_THRESHOLD", 80))
+MODEL: str          = os.environ.get("PE3_MODEL", "gpt-4o")
+MAX_RETRIES: int    = int(os.environ.get("PE3_MAX_RETRIES", 2))
+
+REQUIRED_KEYS = {"scores", "total", "is_pass", "weak_points", "improvement_hints"}
+SCORE_KEYS    = {"clarity", "executability", "completeness", "reproducibility", "domain_fit"}
+
+# ─────────────────────────────────────────────
+# 검증 프롬프트
+# ─────────────────────────────────────────────
+VALIDATION_PROMPT = f"""
 당신은 프롬프트 품질 심사관입니다.
 아래 프롬프트를 5차원으로 채점하세요 (각 0~20점, 합계 100점).
 
 채점 기준:
-1. 명확성 (Clarity)         : 역할·목표·출력형식이 모호하지 않은가
+1. 명확성 (Clarity): 역할·목표·출력형식이 모호하지 않은가
 2. 실행가능성 (Executability): 엔지니어가 바로 사용 가능한가
-3. 완결성 (Completeness)    : 필수 섹션(역할/입력/출력/KPI/리스크)이 모두 있는가
-4. 재현성 (Reproducibility) : 동일 입력 → 동일 출력이 보장되는가
-5. 도메인 적합성 (Domain Fit): Gilbert의 반도체/열관리 도메인에 최적화되었는가
+3. 완결성 (Completeness): 필수 섹션(역할/입력/출력/KPI/리스크)이 모두 있는가
+4. 재현성 (Reproducibility): 동일 입력 → 동일 출력이 보장되는가
+5. 도메인 적합성 (Domain Fit): 아래 체크리스트 기준으로 평가하라
+   - [ ] HBM / 반도체 패키징 / 열관리 관련 기술 용어가 포함되어 있는가
+   - [ ] 출력 형식이 Notion 또는 GitHub Markdown 파이프라인과 호환되는가
+   - [ ] 한국어(KR) / 영어(EN) 병렬 출력 구조가 고려되어 있는가
+   - [ ] CFD / FEA / TIM / sCO2 등 Gilbert 도메인 특화 용어가 적절히 사용되는가
+   - [ ] 결과물이 PE-1 → PE-3 검증 체계와 연계 가능한가
 
-출력 형식 (JSON strict):
-{
-  "scores": {
+출력 형식 (JSON strict — 키 이름 변경 금지):
+{{
+  "scores": {{
     "clarity": int,
     "executability": int,
     "completeness": int,
     "reproducibility": int,
     "domain_fit": int
-  },
+  }},
   "total": int,
-  "pass": bool,
-  "weak_points": ["string"],
-  "improvement_hints": ["string"]
-}
+  "is_pass": bool,
+  "weak_points": list[str],
+  "improvement_hints": list[str]
+}}
+
+합격 기준: total >= {PASS_THRESHOLD}점이면 is_pass = true
+주의: total은 반드시 5개 점수의 합과 일치해야 한다.
 """
 
-# ---------------------------------------------------------------------------
-# E-0N Error Tags
-# ---------------------------------------------------------------------------
-ERROR_TAGS = {
-    "E-01": "SHA 불일치",
-    "E-02": "상태값 누락",
-    "E-03": "버전 역행",
-    "E-04": "Notion-GitHub 구조 불일치",
-    "E-05": "KPI 미정의",
-    "E-06": "출력 형식 불일치",
-    "E-07": "프롬프트 품질 기준 미달",
-}
 
+# ─────────────────────────────────────────────
+# 내부 함수
+# ─────────────────────────────────────────────
+def _validate_schema(result: dict) -> dict:
+    """LLM 응답 스키마 무결성 검증 및 자동 교정."""
+    missing_top = REQUIRED_KEYS - result.keys()
+    if missing_top:
+        raise ValueError(f"응답 최상위 키 누락: {missing_top}")
 
-def _tag_error(code: str, detail: str = "") -> str:
-    label = ERROR_TAGS.get(code, "알 수 없는 오류")
-    msg = f"[{code}] {label}"
-    if detail:
-        msg += f" — {detail}"
-    return msg
+    missing_scores = SCORE_KEYS - result["scores"].keys()
+    if missing_scores:
+        raise ValueError(f"scores 필드 누락: {missing_scores}")
 
+    for key in SCORE_KEYS:
+        val = result["scores"][key]
+        if not isinstance(val, int) or not (0 <= val <= 20):
+            raise ValueError(f"scores.{key} 범위 오류: {val} (0~20 정수여야 함)")
 
-# ---------------------------------------------------------------------------
-# Core Validation
-# ---------------------------------------------------------------------------
-def validate_prompt(prompt_text: str, dry_run: bool = False) -> dict:
-    """
-    Validate a prompt using PE-3 5-axis scoring.
-
-    Args:
-        prompt_text: The prompt markdown/text to validate.
-        dry_run    : If True, skip LLM call and return dummy passing result.
-
-    Returns:
-        dict with keys: scores, total, pass, weak_points, improvement_hints,
-                        error_code (optional), timestamp
-    """
-    if dry_run or openai is None:
-        result = {
-            "scores": {
-                "clarity": 18,
-                "executability": 17,
-                "completeness": 16,
-                "reproducibility": 15,
-                "domain_fit": 18,
-            },
-            "total": 84,
-            "pass": True,
-            "weak_points": [],
-            "improvement_hints": [],
-            "_mode": "dry_run",
-        }
-    else:
-        client = openai.OpenAI(api_key=os.environ["OPENAI_API_KEY"])
-        response = client.chat.completions.create(
-            model=MODEL,
-            messages=[
-                {"role": "system", "content": VALIDATION_SYSTEM_PROMPT},
-                {
-                    "role": "user",
-                    "content": f"검증 대상 프롬프트:\n\n{prompt_text}",
-                },
-            ],
-            response_format={"type": "json_object"},
+    # total 크로스체크 — LLM 합산 오류 자동 교정
+    computed = sum(result["scores"].values())
+    if computed != result["total"]:
+        logger.warning(
+            "total 불일치 — LLM: %d, 실제합산: %d → 자동 교정",
+            result["total"], computed,
         )
-        result = json.loads(response.choices[0].message.content)
+        result["total"] = computed
 
-    result["timestamp"] = datetime.utcnow().isoformat() + "Z"
-
-    # E-07 tagging
-    if not result.get("pass", False):
-        total = result.get("total", 0)
-        result["error_code"] = "E-07"
-        result["error_message"] = _tag_error(
-            "E-07", f"점수 {total}/100 (임계값 {PASS_THRESHOLD})"
-        )
-        print(result["error_message"])
-        print(f"  약점: {result.get('weak_points', [])}")
-    else:
-        result["error_code"] = None
-        print(f"[OK] 검증 합격 — 점수: {result['total']}/100")
-
-    _write_log(result)
+    # Python 측 재판정 (이중 보장)
+    result["is_pass"] = result["total"] >= PASS_THRESHOLD
     return result
 
 
-# ---------------------------------------------------------------------------
-# Logging
-# ---------------------------------------------------------------------------
-def _write_log(result: dict) -> None:
-    today = datetime.utcnow().strftime("%Y%m%d")
-    log_path = LOG_DIR / f"pe3_validation_{today}.json"
-    history: list = []
-    if log_path.exists():
+def _call_api(client: OpenAI, prompt_text: str) -> str:
+    """지수 백오프 재시도 포함 API 호출. raw content 문자열 반환."""
+    for attempt in range(MAX_RETRIES + 1):
         try:
-            history = json.loads(log_path.read_text(encoding="utf-8"))
-        except json.JSONDecodeError:
-            history = []
-    history.append(result)
-    log_path.write_text(json.dumps(history, ensure_ascii=False, indent=2), encoding="utf-8")
+            logger.info("API 요청 (시도 %d/%d)", attempt + 1, MAX_RETRIES + 1)
+            response = client.chat.completions.create(
+                model=MODEL,
+                messages=[
+                    {"role": "system", "content": VALIDATION_PROMPT},
+                    {"role": "user",   "content": f"검증 대상 프롬프트:\n\n{prompt_text}"},
+                ],
+                response_format={"type": "json_object"},
+                timeout=30,
+            )
+            return response.choices[0].message.content
+
+        except RateLimitError:
+            wait = 2 ** attempt
+            logger.warning("Rate Limit — %d초 후 재시도", wait)
+            if attempt < MAX_RETRIES:
+                time.sleep(wait)
+            else:
+                raise RuntimeError(f"Rate Limit 재시도 초과 ({MAX_RETRIES}회)")
+
+        except APITimeoutError:
+            raise RuntimeError("OpenAI API 타임아웃")
+
+        except APIError as e:
+            raise RuntimeError(f"OpenAI API 에러: {e}") from e
 
 
-# ---------------------------------------------------------------------------
-# Batch Validation
-# ---------------------------------------------------------------------------
-def validate_batch(prompt_dir: str | Path, dry_run: bool = False) -> list[dict]:
+# ─────────────────────────────────────────────
+# 퍼블릭 API
+# ─────────────────────────────────────────────
+def validate_prompt(prompt_text: str) -> dict:
     """
-    Validate all .md / .txt files in a directory.
+    프롬프트를 PE-3 기준으로 검증한다.
 
-    Returns list of validation results sorted by total score (asc).
+    Returns:
+        dict: scores, total, is_pass, weak_points, improvement_hints
+    Raises:
+        RuntimeError: API 재시도 초과 / 타임아웃
+        ValueError: 스키마 불일치
     """
-    results = []
-    for p in Path(prompt_dir).glob("*"):
-        if p.suffix not in (".md", ".txt"):
-            continue
-        text = p.read_text(encoding="utf-8")
-        result = validate_prompt(text, dry_run=dry_run)
-        result["file"] = str(p)
-        results.append(result)
-    results.sort(key=lambda r: r.get("total", 0))
-    return results
+    client = OpenAI()
+    raw = _call_api(client, prompt_text)
+
+    try:
+        result = json.loads(raw)
+    except json.JSONDecodeError as e:
+        logger.error("JSON 파싱 실패 — 원문: %s", raw[:200])
+        raise ValueError(f"LLM 응답 JSON 파싱 실패: {e}") from e
+
+    result = _validate_schema(result)
+
+    if not result["is_pass"]:
+        logger.warning(
+            "[E-07] 검증 실패 — 점수: %d/100 | 약점: %s",
+            result["total"], result["weak_points"],
+        )
+    else:
+        logger.info("[OK] 검증 합격 — 점수: %d/100", result["total"])
+
+    return result
 
 
-# ---------------------------------------------------------------------------
-# SSOT Integrity Pre-check (E-01 guard)
-# ---------------------------------------------------------------------------
-def check_ssot_integrity(
-    notion_sha: Optional[str],
-    github_sha: Optional[str],
-) -> dict:
-    """
-    E-01: Detect SHA mismatch between Notion and GitHub.
-    Call before any push operation.
-    """
-    mismatch = notion_sha != github_sha
-    return {
-        "mismatch": mismatch,
-        "notion_sha": notion_sha,
-        "github_sha": github_sha,
-        "error_code": "E-01" if mismatch else None,
-        "error_message": (
-            _tag_error("E-01", f"Notion={notion_sha} | GitHub={github_sha}")
-            if mismatch
-            else None
-        ),
-    }
-
-
-# ---------------------------------------------------------------------------
-# CLI Entry Point
-# ---------------------------------------------------------------------------
+# ─────────────────────────────────────────────
+# CLI
+# ─────────────────────────────────────────────
 if __name__ == "__main__":
-    import argparse
+    import sys, argparse
 
-    parser = argparse.ArgumentParser(description="PE-3 Prompt Validator")
-    parser.add_argument("input", nargs="?", help="Prompt file (.md/.txt) or directory")
-    parser.add_argument("--dry-run", action="store_true", help="Skip LLM call")
-    parser.add_argument("--batch", action="store_true", help="Validate entire directory")
-    parser.add_argument(
-        "--threshold",
-        type=int,
-        default=PASS_THRESHOLD,
-        help=f"Pass threshold (default: {PASS_THRESHOLD})",
-    )
+    parser = argparse.ArgumentParser(description="PE-3 프롬프트 품질 검증기")
+    parser.add_argument("file", nargs="?", help="검증할 프롬프트 파일 경로")
     args = parser.parse_args()
 
-    if not args.input:
-        parser.print_help()
-        sys.exit(0)
+    prompt_text = (
+        open(args.file, encoding="utf-8").read()
+        if args.file
+        else (print("프롬프트 입력 (Ctrl+D 종료):") or sys.stdin.read())
+    )
 
-    PASS_THRESHOLD = args.threshold
-
-    if args.batch:
-        results = validate_batch(args.input, dry_run=args.dry_run)
-        failed = [r for r in results if not r["pass"]]
-        print(f"\n총 {len(results)}개 검증 | 합격: {len(results)-len(failed)} | 실패: {len(failed)}")
-        if failed:
-            print("\n⚠️  미달 파일:")
-            for r in failed:
-                print(f"  {r['file']} — {r['total']}/100")
-            sys.exit(1)
-    else:
-        path = Path(args.input)
-        text = path.read_text(encoding="utf-8")
-        result = validate_prompt(text, dry_run=args.dry_run)
-        sys.exit(0 if result["pass"] else 1)
+    result = validate_prompt(prompt_text)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    sys.exit(0 if result["is_pass"] else 1)
