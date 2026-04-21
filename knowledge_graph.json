@@ -1,8 +1,8 @@
 {
   "meta": {
-    "generated_at": "2026-04-18T11:34:42.350785+00:00",
+    "generated_at": "2026-04-21T03:12:02.441047+00:00",
     "version": "1.0",
-    "total_nodes": 29,
+    "total_nodes": 32,
     "total_edges": 60,
     "scan_dirs": [
       "docs",
@@ -527,6 +527,51 @@
       ],
       "notion_url": null,
       "file_size": 2843,
+      "sha": null
+    },
+    {
+      "id": "engines/PE-7_ai-automation-design/CHANGELOG.md",
+      "type": "engine",
+      "title": "CHANGELOG · PE-7 AI 자동화 설계 및 구현",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-21",
+      "tags": [
+        "PE-7_ai-automation-design",
+        "v1.0"
+      ],
+      "notion_url": "https://www.notion.so/34955ed436f081149dd6de25dba027d7",
+      "file_size": 888,
+      "sha": null
+    },
+    {
+      "id": "engines/PE-7_ai-automation-design/README.md",
+      "type": "engine",
+      "title": "🤖 PE-7 · AI 자동화 설계 및 구현 — 심층 프롬프트 완전판 v1.0",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-21",
+      "tags": [
+        "PE-7_ai-automation-design",
+        "v1.0"
+      ],
+      "notion_url": "https://www.notion.so/34955ed436f081149dd6de25dba027d7",
+      "file_size": 2401,
+      "sha": null
+    },
+    {
+      "id": "engines/PE-7_ai-automation-design/prompt_template.md",
+      "type": "engine",
+      "title": "🤖 PE-7 · AI 자동화 설계 및 구현용 심층 프롬프트 — 완전판 v1.0",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-21",
+      "tags": [
+        "PE-7_ai-automation-design",
+        "v1.0"
+      ],
+      "notion_url": "https://www.notion.so/34955ed436f081149dd6de25dba027d7",
+      "file_size": 3237,
       "sha": null
     }
   ],
