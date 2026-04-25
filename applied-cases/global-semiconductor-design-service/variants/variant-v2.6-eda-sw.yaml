@@ -1,0 +1,57 @@
+# VARIANT v2.6 — EDA/SW 도구 전문 탐색 (Type C 독립 실행)
+# Parent: MASTER v2.0 (Type C 섹션 3번 독립)
+meta:
+  id: GSDSD-v2.6-EDA
+  parent: GSDSD-MASTER-v2.0
+  change_type: TYPE_C_INDEPENDENT
+  created: 2026-04-25
+
+overrides:
+  type_c_specific:
+    sub_categories:
+      eda_cloud_saas:
+        description: 클라우드 기반 EDA SaaS 플랫폼
+        examples:
+          - company: Flexcompute
+            product: Tidy3D (EM simulation)
+            country: US
+          - company: Parallel Computing (ANSYS cloud)
+            country: US
+          - company: Simyog Technology
+            country: IN
+      design_collaboration_platform:
+        description: 설계 협업·버전 관리 플랫폼
+        examples:
+          - company: AllSpice
+            product: Hardware version control
+            country: US
+          - company: Flux
+            product: Browser-based PCB/IC design
+            country: US
+      ip_core_marketplace:
+        description: IP 코어 마켓플레이스·라이선싱
+        examples:
+          - company: Silvaco
+            country: US
+          - company: ChipAgents
+            country: US
+          - company: eMemory Technology
+            country: TW
+          - company: M31 Technology
+            country: TW
+      verification_automation:
+        description: 자동화 검증(DV/PV) 서비스/툴
+        examples:
+          - company: Breker Verification Systems
+            country: US
+          - company: OneSpin Solutions (→Siemens EDA)
+            country: DE
+          - company: Metrics Design Automation
+            country: CA
+  keywords_add:
+    - EDA SaaS cloud
+    - IC design collaboration tool
+    - hardware version control
+    - IP core marketplace
+    - design verification automation
+    - silicon photonics EDA

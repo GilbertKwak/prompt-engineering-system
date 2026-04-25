@@ -1,0 +1,69 @@
+# ============================================================
+# VARIANT A v2.0 — 동남아·인도 집중 탐색
+# Parent: MASTER PROMPT v2.0 (GSDSD-MASTER-v2.0)
+# Conflict Resolution: SEARCH SCOPE 교체 → 필터 추가 방식으로 수정
+# ============================================================
+
+meta:
+  id: GSDSD-VAR-A-v2
+  version: 2.0
+  parent: GSDSD-MASTER-v2.0
+  change_type: SEARCH_SCOPE_FILTER_ADD
+  created: 2026-04-25
+
+overrides:
+  search_scope:
+    mode: FILTER_ADD  # v1에서 "교체" → "필터 추가"로 수정 (충돌 해결)
+    geographic_focus:
+      primary:
+        - code: IN
+          regions: [Bangalore, Hyderabad, Chennai, Pune, Delhi NCR]
+          target_companies:
+            - Tessolve Semiconductor
+            - eInfochips (Arrow Electronics)
+            - SASKEN Technologies
+            - Wipro VLSI Design Services
+            - HCL Technologies (Semiconductor)
+            - Tata Elxsi
+            - QuEST Global (Semiconductor)
+            - L&T Technology Services
+            - KPIT Technologies
+            - Cyient
+        - code: SG
+          target_companies:
+            - Lantronix Singapore
+            - Silergy Singapore
+            - STATS ChipPAC (Amkor)
+        - code: MY
+          target_companies:
+            - Intel Penang Design (IFS 외부 고객 부문)
+            - Inphi Malaysia
+        - code: VN
+          note: 신흥 설계 허브, 삼성전자 설계 센터 포함
+        - code: PH
+          note: Analog Devices Philippines Design Center
+      exclude_from_anchor_check: false  # 앵커 기업 체크 유지
+
+  keywords_add:
+    - VLSI design India
+    - semiconductor design Bangalore
+    - chip design Hyderabad
+    - embedded SoC Vietnam
+    - IC design Singapore
+    - ASIC verification India outsourcing
+
+  output_additions:
+    - field: india_tier_city
+      type: ENUM
+      values: [Tier1, Tier2, N/A]
+    - field: mnc_subsidiary
+      type: BOOLEAN
+      description: 글로벌 MNC 자회사 여부
+
+  validation_overrides:
+    rule_2_type_distribution:
+      minimums:
+        type_a: 3
+        type_b: 15  # 인도는 Type B(서비스) 비중 높음
+        type_c: 2
+        type_d: 2

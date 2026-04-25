@@ -1,0 +1,87 @@
+# ============================================================
+# VARIANT C v2.0 — 재무·투자 분석 집중
+# Parent: GSDSD-MASTER-v2.0
+# Conflict Resolution: IPO가능성/M&A타깃 비공개 데이터 → 신뢰도 등급 필드 추가
+# ============================================================
+
+meta:
+  id: GSDSD-VAR-C-v2
+  version: 2.0
+  parent: GSDSD-MASTER-v2.0
+  change_type: OUTPUT_FORMAT_EXTEND
+  created: 2026-04-25
+
+overrides:
+  output_format:
+    mode: FIELD_ADD
+    additional_fields:
+      funding_total_usd:
+        type: STRING
+        format: "$XXM or N/A"
+        source_priority: [Crunchbase, PitchBook, SEC Filing]
+      last_funding_round:
+        type: ENUM
+        values: [Seed, Series-A, Series-B, Series-C, Series-D+, PE, IPO, M&A, Bootstrapped, N/A]
+      lead_investor:
+        type: STRING
+        max_length: 100
+      ipo_signal:
+        type: ENUM
+        values: [HIGH, MEDIUM, LOW, NONE]
+        definition:
+          HIGH: S-1 제출 또는 공식 IPO 발표
+          MEDIUM: 투자은행 IPO 준비 보도 2건 이상
+          LOW: 임원 인터뷰 IPO 언급
+          NONE: 신호 없음
+        reliability_note: "비공개 정보 추측 금지; 공개 보도 기반만 허용"
+      ma_target_signal:
+        type: ENUM
+        values: [HIGH, MEDIUM, LOW, NONE]
+        definition:
+          HIGH: 공식 M&A 발표 또는 LOI 보도
+          MEDIUM: 업계 보도 2건 이상
+          LOW: 분석가 추정
+          NONE: 신호 없음
+        reliability_note: "추정 시 반드시 출처 명시"
+      financial_reliability_score:
+        type: INTEGER
+        range: [1, 5]
+        definition:
+          1: 추정/추론
+          2: 단일 미확인 소스
+          3: 복수 공개 자료 교차 확인
+          4: SEC/공시 서류 직접 확인
+          5: 공식 재무제표 또는 IR 발표
+      valuation_usd:
+        type: STRING
+        format: "$XXM or $XB or N/A"
+        note: 유니콘($1B+) 여부 표시
+
+  known_financial_highlights:
+    listed_majors:
+      - company: Alchip Technologies
+        exchange: TWSE
+        ticker: 3661
+        market_cap_approx: "$3-4B"
+      - company: GUC
+        exchange: TWSE
+        ticker: 3443
+        market_cap_approx: "$1-2B"
+      - company: Faraday Technology
+        exchange: TWSE
+        ticker: 3533
+      - company: eMemory Technology
+        exchange: TWSE
+        ticker: 3529
+    unicorn_candidates:
+      - company: Blaize
+        last_known_valuation: "~$1B (2021)"
+        status: 확인 필요
+      - company: Axelera AI
+        funding: Series-B
+        note: EU AI chip startup
+
+  validation_overrides:
+    rule_7_reliability_minimum:
+      minimum_score: 3  # 재무 데이터는 최소 신뢰도 3 이상
+      note: financial_reliability_score가 2 이하인 경우 별도 주석 필수

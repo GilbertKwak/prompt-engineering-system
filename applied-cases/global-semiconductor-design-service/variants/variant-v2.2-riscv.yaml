@@ -1,0 +1,28 @@
+# VARIANT v2.2 — RISC-V 전문 필터
+# Parent: VAR-B-v2 (TSMC 파트너 조건에 RISC-V 추가)
+meta:
+  id: GSDSD-v2.2-RISCV
+  parent: GSDSD-VAR-B-v2
+  change_type: KEYWORD_ADD
+  created: 2026-04-25
+
+overrides:
+  keywords_add:
+    - RISC-V design service
+    - RISC-V IP customization
+    - RISC-V SoC design house
+    - open source silicon design
+  known_targets:
+    - Codasip (CZ)
+    - Andes Technology (TW)
+    - OpenFive (US, ex-SiFive)
+    - SiFive (US)
+    - Nuclei System Technology (CN)
+    - Ventana Micro Systems (US)
+    - Esperanto Technologies (US)
+    - lowRISC (GB)
+    - PerfXLab (CN)
+  output_additions:
+    - field: riscv_extension_support
+      type: STRING
+      description: "지원 RISC-V 확장 (RV32I, RV64G, V, P 등)"

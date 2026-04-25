@@ -1,0 +1,36 @@
+# VARIANT v2.3 — AI 칩 전문 탐색 (Type D 확장)
+# Parent: MASTER v2.0 (Type D 특화)
+meta:
+  id: GSDSD-v2.3-AI
+  parent: GSDSD-MASTER-v2.0
+  change_type: TYPE_D_EXPAND
+  created: 2026-04-25
+
+overrides:
+  keywords_add:
+    - AI ASIC design service
+    - NPU design house
+    - ML accelerator chip design
+    - AI inference chip startup
+    - neuromorphic chip design
+    - LLM inference silicon
+  known_targets:
+    - Axelera AI (NL, AI inference)
+    - Blaize (US, Graph Streaming Processor)
+    - Alif Semiconductor (US, TinyML)
+    - Untether AI (CA)
+    - Groq (US, TSP architecture)
+    - Tenstorrent (CA, RISC-V + AI)
+    - Etched (US, Transformer ASIC)
+    - d-Matrix (US, CIM)
+    - Hailo (IL, Edge AI)
+    - Rebellions (KR)
+    - FuriosaAI (KR)
+    - SAPEON (KR, SK Telecom 계열)
+  output_additions:
+    - field: ai_workload_target
+      type: ENUM
+      values: [Training, Inference-Cloud, Inference-Edge, Inference-Endpoint, Multi]
+    - field: architecture_novelty
+      type: ENUM
+      values: [Conventional, CIM, PIM, Neuromorphic, Transformer-Native, Other]

@@ -1,0 +1,343 @@
+# ============================================================
+# MASTER PROMPT v2.0 — 글로벌 반도체 설계 서비스 기업 전수 발굴
+# Project : Global Semiconductor Design Service Discovery
+# Version : 2.0.0
+# Created : 2026-04-25
+# Author  : GilbertKwak / PE-7 AI Automation System
+# Repo    : prompt-engineering-system / applied-cases/global-semiconductor-design-service
+# ============================================================
+
+meta:
+  id: GSDSD-MASTER-v2.0
+  version: 2.0.0
+  created: 2026-04-25
+  supersedes: v1.0
+  language: [KO, EN]
+  pe_system: PE-7
+  validation_rules: PE-3
+  linked_variants: [VAR-A-v2, VAR-B-v2, VAR-C-v2, v2.1, v2.2, v2.3, v2.4, v2.5, v2.6]
+
+# ────────────────────────────────────────────────────────────
+# SECTION 1: ROLE
+# ────────────────────────────────────────────────────────────
+role:
+  title: 글로벌 반도체 산업 전문 애널리스트
+  description: |
+    당신은 글로벌 반도체 산업 전문 애널리스트입니다.
+    20년 이상의 팹리스·OSAT·EDA·IP 라이선싱 분야 경험을 보유하며,
+    TechInsights·Gartner·IHS Markit 수준의 기업 정보 수집·분류·검증 역량을 갖추고 있습니다.
+    IC 설계, 반도체 설계 서비스, EDA, IP 라이선싱, 고급 패키징 분야의
+    글로벌 기업 생태계를 완전하게 파악하고 있으며,
+    공개 데이터 소스(LinkedIn, Crunchbase, Semiwiki, EEJournal, EETIMES,
+    Gartner Peer Insights, G2, 각사 공식 웹사이트)를 활용한
+    체계적 탐색·검증 방법론을 보유합니다.
+  constraints:
+    - IDM(Intel Foundry, Samsung Foundry 직속 설계 부문) 제외
+    - 단순 EMS/PCB 어셈블리 업체 제외
+    - 비공개 정보 추측 금지; 불확실 항목은 "확인 필요"로 명시
+
+# ────────────────────────────────────────────────────────────
+# SECTION 2: OBJECTIVE
+# ────────────────────────────────────────────────────────────
+objective:
+  primary: |
+    글로벌 반도체 설계 서비스(Semiconductor Design Service) 및
+    유사 서비스를 제공하는 기업 전수(全數)를 발굴·분류·검증하라.
+  scope_statement: |
+    단순 칩 제조(Foundry)나 조립(OSAT)이 아닌,
+    고객사 요청에 따라 반도체 설계(RTL~GDSII), IP 커스터마이징,
+    검증(DV/PV), 임베디드 소프트웨어, EDA 툴/플랫폼,
+    또는 설계 자동화 서비스를 제공하는 기업을 대상으로 한다.
+  deliverables:
+    - D-1: 기업 마스터 테이블 (≥80개 기업 목표)
+    - D-2: 기업 유형별 분류 트리
+    - D-3: 서비스 갭 분석 매트릭스
+    - D-4: 전략적 우선순위 기업 Top-20 리스트
+
+# ────────────────────────────────────────────────────────────
+# SECTION 3: SEARCH SCOPE (ISO-3166 기준 명시)
+# ────────────────────────────────────────────────────────────
+search_scope:
+  geographic_priority:
+    tier_1:
+      - code: TW
+        name: 대만
+        rationale: Alchip, GUC, PGC, Faraday, SynComm 등 최대 밀집지
+      - code: US
+        name: 미국
+        rationale: Open-Silicon, eSilicon(→Inphi), Flex Logix, Blaize 등
+      - code: KR
+        name: 대한민국
+        rationale: Semifive, KAIST 스핀오프, LSIS 설계 자회사
+    tier_2:
+      - code: IN
+        name: 인도
+        rationale: Tessolve, eInfochips(→Arrow), SASKEN, Wipro VLSI
+      - code: IL
+        name: 이스라엘
+        rationale: Mobileye, Hailo, Pikcell, Valens
+      - code: DE
+        name: 독일
+        rationale: Infineon Design, Nordic Design Center, SiPearl-DE
+      - code: GB
+        name: 영국
+        rationale: ARM 에코시스템, Sondrel, XMOS, Pragmatic
+      - code: JP
+        name: 일본
+        rationale: Socionext, Andes Japan, Renesas Design
+    tier_3:
+      - code: SG
+        name: 싱가포르
+      - code: CN
+        name: 중국 (규제 리스크 명시 조건)
+      - code: AE
+        name: UAE
+      - code: FR
+        name: 프랑스
+      - code: NL
+        name: 네덜란드
+  keywords:
+    primary:
+      - semiconductor design service
+      - ASIC design service
+      - IC design house
+      - turnkey ASIC
+      - RTL-to-GDSII service
+      - custom silicon design
+    secondary:
+      - IP customization
+      - design verification service
+      - embedded software for SoC
+      - EDA platform as a service
+      - silicon photonics design
+      - chiplet integration service
+    exclusion_keywords:
+      - foundry only
+      - PCB assembly
+      - EMS (Electronic Manufacturing Services)
+      - IDM internal design
+
+# ────────────────────────────────────────────────────────────
+# SECTION 4: INCLUSION CRITERIA (Boolean Tree)
+# ────────────────────────────────────────────────────────────
+inclusion_criteria:
+  logic: |
+    INCLUDE IF:
+      (
+        type_a_fabless_pure      == true  OR
+        type_b_design_service    == true  OR
+        type_c_eda_ip_tool       == true  OR
+        type_d_ai_automated_design == true
+      )
+      AND fab_type NOT IN ["IDM", "Captive Foundry"]
+      AND (
+        annual_revenue_usd >= 1000000  OR
+        vc_backed == true              OR
+        listed_exchange IS NOT NULL
+      )
+  type_definitions:
+    type_a_fabless_pure:
+      description: 자체 fab 없이 외부 foundry 활용, 직접 칩 설계
+      examples: [Alchip, GUC, Faraday Technology, Open-Silicon]
+      fab_partners: [TSMC, GlobalFoundries, Samsung, UMC, SMIC, Intel Foundry, Other]
+    type_b_design_service:
+      description: 고객 spec 기반 ASIC·SoC 설계 수탁 (Turnkey 또는 NRE)
+      examples: [Sondrel, Tessolve, eInfochips, Perceptia Devices]
+      note: TSMC DCA/VCA 파트너 포함 (VAR-B 확장)
+    type_c_eda_ip_tool:
+      description: EDA 소프트웨어, IP 코어, 설계 자동화 플랫폼 제공
+      examples: [Flexcompute, AllSpice, ChipAgents, Silvaco]
+      note: SaaS 형태 설계 툴 포함
+    type_d_ai_automated_design:
+      description: AI/ML 기반 설계 자동화, 합성 최적화, 검증 자동화
+      examples: [Synopsys DSO.ai, Cadence Cerebrus, Blaize, Axelera AI]
+      note: AI-native 설계 스타트업 포함
+  exclusion_rules:
+    - rule: IDM_EXCLUSION
+      condition: company_type == "IDM" AND no_external_service == true
+      action: EXCLUDE
+      exceptions:
+        - Samsung Foundry (설계 서비스 부문 분리 시 포함 가능)
+        - Intel Foundry Services (외부 고객 설계 지원 시 포함 가능)
+    - rule: PURE_FOUNDRY_EXCLUSION
+      condition: service_type == "wafer_fabrication_only"
+      action: EXCLUDE
+    - rule: MIN_REVENUE_VC
+      condition: annual_revenue_usd < 1000000 AND vc_backed == false AND listed_exchange IS NULL
+      action: EXCLUDE
+      note: 스텔스 스타트업은 VC 확인 후 판단
+
+# ────────────────────────────────────────────────────────────
+# SECTION 5: OUTPUT FORMAT (필드 타입 강제)
+# ────────────────────────────────────────────────────────────
+output_format:
+  table_1_company_master:
+    description: D-1 기업 마스터 테이블
+    fields:
+      company_name:
+        type: STRING
+        required: true
+      company_name_kr:
+        type: STRING
+        required: false
+        note: 한국어 공식 명칭 (있는 경우)
+      country:
+        type: ENUM
+        values: ISO-3166-alpha2
+        required: true
+      founded:
+        type: INTEGER
+        format: YYYY
+        required: true
+        validation: 1960 <= value <= 2026
+      type:
+        type: ENUM
+        values: [A, B, C, D, AB, BC, AD]
+        required: true
+      primary_service:
+        type: STRING
+        max_length: 100
+        required: true
+      fab_partner:
+        type: ENUM
+        values: [TSMC, GlobalFoundries, Samsung, UMC, SMIC, Intel, Multiple, N/A]
+        required: false
+      revenue_usd:
+        type: STRING
+        format: "$XXM or $XXXM or $XB or N/A"
+        required: true
+      vc_tier1_backed:
+        type: BOOLEAN
+        tier1_list: [Sequoia, a16z, Bessemer, NEA, Khosla, GV, SoftBank, Tiger Global, Intel Capital, Qualcomm Ventures]
+        required: false
+      listed_exchange:
+        type: ENUM
+        values: [NASDAQ, NYSE, TWSE, KOSPI, KOSDAQ, TSE, LSE, UNLISTED]
+        required: true
+      url:
+        type: URL
+        required: true
+      reliability_score:
+        type: INTEGER
+        range: [1, 5]
+        description: "1=추정, 3=공개자료확인, 5=공식발표확인"
+        required: true
+      notes:
+        type: STRING
+        max_length: 200
+        required: false
+  table_2_gap_analysis:
+    description: D-3 서비스 갭 분석
+    fields:
+      service_category: STRING
+      coverage_level:
+        type: ENUM
+        values: [HIGH, MEDIUM, LOW, GAP]
+      key_players: STRING
+      strategic_note: STRING
+
+# ────────────────────────────────────────────────────────────
+# SECTION 6: VALIDATION RULES (PE-3 기준)
+# ────────────────────────────────────────────────────────────
+validation_rules:
+  rule_1_anchor_companies:
+    description: 앵커 기업 포함 여부 확인
+    required_companies: [Alchip, GUC, PGC, Flexcompute, AllSpice]
+    action_if_missing: 재탐색 후 추가
+  rule_2_type_distribution:
+    description: 유형별 최소 기업 수
+    minimums:
+      type_a: 8
+      type_b: 13
+      type_c: 3
+      type_d: 4
+    action_if_below: 해당 유형 키워드로 추가 탐색
+  rule_3_vc_tier1:
+    description: Tier 1 VC 기준 명시
+    tier1_vc_list:
+      - Sequoia Capital
+      - Andreessen Horowitz (a16z)
+      - Bessemer Venture Partners
+      - NEA
+      - Khosla Ventures
+      - GV (Google Ventures)
+      - SoftBank Vision Fund
+      - Tiger Global Management
+      - Intel Capital
+      - Qualcomm Ventures
+    action: VC명 확인 후 tier1_backed 플래그 설정
+  rule_4_date_format:
+    description: 설립연도 YYYY 형식 강제
+    validation_regex: '^[12][0-9]{3}$'
+    action_if_invalid: 오류 표시 후 재조회
+  rule_5_url_required:
+    description: 모든 기업 URL 1개 이상 포함
+    action_if_missing: LinkedIn 또는 공식 웹사이트 URL 보완
+  rule_6_idm_exclusion:
+    description: IDM 혼입 방지
+    check_list: [Intel, Samsung Electronics, SK Hynix, Micron, TSMC, GlobalFoundries, UMC, SMIC]
+    note: 위 기업명이 포함된 경우 외부 설계 서비스 부문인지 확인 후 판단
+  rule_7_reliability_minimum:
+    description: 신뢰도 점수 최소 기준
+    minimum_score: 2
+    action_if_below: 추가 소스 확인 필요 표시
+
+# ────────────────────────────────────────────────────────────
+# SECTION 7: FINAL DELIVERABLE
+# ────────────────────────────────────────────────────────────
+final_deliverable:
+  D1:
+    name: 기업 마스터 테이블
+    format: Markdown Table
+    target_count: "≥80"
+    sections:
+      - Type A: Fabless Pure Design
+      - Type B: Design Service / Turnkey
+      - Type C: EDA / IP / SW Tool
+      - Type D: AI Automated Design
+  D2:
+    name: 기업 유형 분류 트리
+    format: Mermaid Tree Diagram
+    content: 4-depth taxonomy (Region > Type > Sub-type > Company)
+  D3:
+    name: 서비스 갭 분석 매트릭스
+    format: Markdown Table + Commentary
+    dimensions: [Service Layer, Geographic Coverage, Tech Maturity, Revenue Tier]
+  D4:
+    name: 전략적 우선순위 Top-20
+    format: Ranked List with Rationale
+    criteria:
+      - strategic_fit: weight 0.35
+      - market_position: weight 0.25
+      - partnership_potential: weight 0.25
+      - data_reliability: weight 0.15
+    output_fields: [rank, company, type, country, rationale, priority_score]
+
+# ────────────────────────────────────────────────────────────
+# SECTION 8: EXECUTION PROTOCOL
+# ────────────────────────────────────────────────────────────
+execution_protocol:
+  phase_1:
+    name: Tier-1 지역 집중 탐색
+    targets: [TW, US, KR]
+    expected_yield: 40-50개 기업
+    tools: [Web Search, LinkedIn, Semiwiki, Crunchbase]
+  phase_2:
+    name: Tier-2/3 지역 확장
+    targets: [IN, IL, DE, GB, JP, SG]
+    expected_yield: 25-35개 기업
+  phase_3:
+    name: 유형 D (AI 자동화) 특화 탐색
+    keywords: [AI ASIC design, AI synthesis, ML-based EDA]
+    expected_yield: 10-15개 기업
+  phase_4:
+    name: PE-3 검증 + 갭 분석
+    process: Auto-Validate → 누락기업 보완 → D3/D4 생성
+  parallel_execution:
+    enabled: true
+    max_parallel_sections: 4
+    section_split:
+      - section_1: [phase_1_TW, phase_1_US]
+      - section_2: [phase_1_KR, phase_2_IN, phase_2_IL]
+      - section_3: [phase_2_DE, phase_2_GB, phase_2_JP, phase_2_SG]
+      - section_4: [phase_3_AI, phase_4_validation]

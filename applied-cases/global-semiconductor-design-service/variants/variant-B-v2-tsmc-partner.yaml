@@ -1,0 +1,70 @@
+# ============================================================
+# VARIANT B v2.0 — TSMC DCA/VCA 파트너 한정 정밀 탐색
+# Parent: GSDSD-MASTER-v2.0
+# Conflict Resolution: Type C 서비스 기업 탈락 방지 → 별도 Type C 서브변형 주석 추가
+# ============================================================
+
+meta:
+  id: GSDSD-VAR-B-v2
+  version: 2.0
+  parent: GSDSD-MASTER-v2.0
+  change_type: INCLUSION_CRITERIA_ADD
+  created: 2026-04-25
+
+overrides:
+  inclusion_criteria:
+    mode: AND_ADD  # 기존 조건에 AND 추가
+    additional_condition:
+      tsmc_partner_status:
+        type: ENUM
+        values: [DCA, VCA, CDMS, OIP_Partner, None]
+        filter: tsmc_partner_status IN [DCA, VCA, CDMS, OIP_Partner]
+      note: |
+        Type C(EDA/IP Tool) 기업 대다수는 TSMC DCA/VCA 미해당.
+        → Type C 기업은 별도 GSDSD-VAR-B2 (Type C 서브변형)으로 분리 탐색.
+        본 변형에서 Type C는 OIP_Partner 조건 충족 시에만 포함.
+
+  tsmc_partner_reference:
+    DCA: Design Center Alliance (설계 서비스 파트너)
+    VCA: Value Chain Aggregator (패키징·테스트 포함)
+    CDMS: Custom Design and Manufacturing Service
+    OIP_Partner: Open Innovation Platform 파트너
+
+  known_tsmc_dca_vca:
+    - company: Alchip Technologies
+      status: DCA
+      country: TW
+    - company: GUC (Global Unichip Corp)
+      status: DCA
+      country: TW
+    - company: PGC (PixelWorks Graphic Corp)
+      status: DCA
+      country: TW
+    - company: Open-Silicon
+      status: DCA
+      country: US
+    - company: Faraday Technology
+      status: DCA
+      country: TW
+    - company: SynComm Technology
+      status: DCA
+      country: TW
+    - company: eMemory Technology
+      status: OIP_Partner
+      country: TW
+    - company: Sondrel
+      status: DCA
+      country: GB
+
+  output_additions:
+    - field: tsmc_partner_status
+      type: ENUM
+      values: [DCA, VCA, CDMS, OIP_Partner, None]
+    - field: tsmc_process_nodes
+      type: STRING
+      description: "지원 공정 노드 (예: N3, N5, N7, N16)"
+
+  validation_overrides:
+    rule_1_anchor_companies:
+      required_companies: [Alchip, GUC, PGC, Faraday, Sondrel]
+      note: Open-Silicon은 Inphi 인수 후 상태 확인 필요

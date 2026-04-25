@@ -1,0 +1,27 @@
+# VARIANT v2.1 — 유럽 집중 탐색
+# Parent: VAR-A-v2 (지역 교체)
+meta:
+  id: GSDSD-v2.1-EU
+  parent: GSDSD-VAR-A-v2
+  change_type: GEOGRAPHIC_REPLACE
+  created: 2026-04-25
+
+overrides:
+  geographic_focus:
+    - code: DE
+      targets: [Infineon Design Services, SiPearl-DE, Sigenics, Nordic Semiconductor Germany]
+    - code: FR
+      targets: [SiPearl, Kalray, Tiempo Secure, Dolphin Design]
+    - code: GB
+      targets: [Sondrel, XMOS, Pragmatic Semiconductor, Graphcore, Espressif UK]
+    - code: NL
+      targets: [NXP Semiconductors Design, Embedded Artists, IMEC (Belgium adjacent)]
+    - code: SE
+      targets: [Silex Microsystems, FTDI, u-blox Sweden]
+    - code: FI
+      targets: [Nordic Semiconductor Finland, Wirepas]
+  keywords_add:
+    - European semiconductor design service
+    - EU chip design house
+    - European ASIC design
+    - Chips Act beneficiary design company

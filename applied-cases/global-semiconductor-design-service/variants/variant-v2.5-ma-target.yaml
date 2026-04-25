@@ -1,0 +1,41 @@
+# VARIANT v2.5 — M&A 타깃 특화
+# Parent: VAR-C-v2 확장
+meta:
+  id: GSDSD-v2.5-MA
+  parent: GSDSD-VAR-C-v2
+  change_type: MA_SIGNAL_EXPAND
+  created: 2026-04-25
+
+overrides:
+  ma_pattern_library:
+    historical_cases:
+      - acquirer: Marvell
+        target: Inphi
+        year: 2021
+        value: "$10B"
+        rationale: 데이터 센터 고속 인터커넥트
+      - acquirer: Qualcomm
+        target: NUVIA
+        year: 2021
+        value: "$1.4B"
+        rationale: ARM 서버 CPU 설계 역량
+      - acquirer: Renesas
+        target: Dialog Semiconductor
+        year: 2021
+        value: "$6B"
+        rationale: 전력 관리 IC 포트폴리오
+      - acquirer: Analog Devices
+        target: Maxim Integrated
+        year: 2021
+        value: "$21B"
+        rationale: 아날로그/혼합 신호 확장
+  ma_signal_criteria:
+    high_signal_indicators:
+      - 공식 M&A 발표 또는 LOI 보도 (신뢰도 5)
+      - PE 펀드 인수 후 전략적 매각 준비 (신뢰도 4)
+    medium_signal_indicators:
+      - 복수 투자은행 M&A 보도 (신뢰도 3)
+      - 창업자/주요 임원 주식 매각 (신뢰도 3)
+    low_signal_indicators:
+      - 업계 분석가 추정 (신뢰도 2)
+      - 기업 성장 정체 + 경쟁사 인수 패턴 (신뢰도 2)

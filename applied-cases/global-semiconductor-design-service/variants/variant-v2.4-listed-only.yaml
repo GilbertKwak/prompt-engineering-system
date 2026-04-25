@@ -1,0 +1,30 @@
+# VARIANT v2.4 — 상장사 한정 심층 분석
+# Parent: VAR-C-v2 (재무 분석 + 상장사 필터)
+meta:
+  id: GSDSD-v2.4-LISTED
+  parent: GSDSD-VAR-C-v2
+  change_type: FILTER_LISTED
+  created: 2026-04-25
+
+overrides:
+  inclusion_criteria:
+    additional_condition:
+      listed_exchange: NOT IN [UNLISTED]
+  target_exchanges:
+    - TWSE: 대만 상장 (Alchip 3661, GUC 3443, Faraday 3533, eMemory 3529, M31 6643)
+    - NASDAQ: 미국 나스닥 (SiTime, Pixelworks, MaxLinear)
+    - KOSDAQ: 한국 코스닥 (Semifive 상장 준비 중)
+    - TSE: 일본 (Socionext)
+    - LSE: 영국 (Graphcore IPO 후보)
+  output_additions:
+    - field: ticker_symbol
+      type: STRING
+    - field: market_cap_usd
+      type: STRING
+      format: "$XXM or $XB"
+    - field: pe_ratio
+      type: FLOAT
+      note: TTM P/E ratio
+    - field: revenue_growth_yoy
+      type: STRING
+      format: "XX%"
