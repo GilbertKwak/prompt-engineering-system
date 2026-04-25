@@ -1,0 +1,82 @@
+# =============================================================================
+# VARIANT B v2.0 — TSMC DCA/VCA/CoWoS 공식 파트너 한정 심층 탐색
+# extends: MASTER-v2.0
+# Variant  : B-v2
+# Created  : 2026-04-25
+# Fix Note : Type C 기업 대다수 탈락 문제 → B-C 서브변형 분리 명시
+# =============================================================================
+
+extends: "../MASTER-v2.0.yaml"
+variant_id: "B-v2"
+variant_name: "TSMC 공식 파트너 한정 심층 탐색"
+created: "2026-04-25"
+
+OVERRIDE:
+  INCLUSION_CRITERIA:
+    logic: |
+      Type_B
+      AND (TSMC_DCA == true OR TSMC_VCA == true OR TSMC_CoWoS_partner == true
+           OR TSMC_InFO_partner == true OR TSMC_SoIC_partner == true)
+      AND Fab_type != IDM_Direct
+
+    tsmc_partnership_levels:
+      DCA:
+        label: "Design Center Alliance"
+        description: "TSMC 공인 설계 센터, 최상위 파트너십"
+        known_members: ["Alchip", "GUC", "Faraday", "eMemory", "Liqtech"]
+      VCA:
+        label: "Value Chain Aggregator"
+        description: "TSMC 밸류체인 통합 파트너"
+        known_members: ["GUC", "Alchip", "PGC"]
+      CoWoS_Partner:
+        label: "CoWoS 첨단 패키징 파트너"
+        description: "HBM+로직 2.5D 패키징 설계 서비스"
+        known_members: ["Alchip", "GUC", "ASE Group (패키징)", "Amkor"]
+      InFO_Partner:
+        label: "InFO 팬아웃 패키징 파트너"
+        description: "모바일/IoT 팬아웃 패키징"
+        known_members: ["MediaTek (captive)", "Apple (captive)", "외부 설계 서비스 탐색"]
+      SoIC_Partner:
+        label: "SoIC 3D 스택 파트너"
+        description: "칩렛 3D 스태킹 설계 서비스 (최신)"
+        note: "신흥 영역, 발굴 기업 희소 예상"
+
+  note_type_c_exclusion: |
+    ⚠️ 이 변형(B-v2)은 TSMC 파트너십 기반 Type B 전용입니다.
+    Type C (EDA/SW/IP) 기업은 VARIANT-B-C-sub.yaml을 별도 실행하세요.
+    Type C를 이 변형에 포함하면 TSMC 파트너십 확인 불가로 데이터 오염 발생.
+
+OUTPUT_FORMAT:
+  D1_additional_fields:
+    - "TSMC 파트너십 레벨 (DCA/VCA/CoWoS/InFO/SoIC)"
+    - "파트너십 확인 연도"
+    - "TSMC 공식 발표 출처 URL"
+  D2_variant: "TSMC 파트너십 레벨별 계층도"
+  D5_new:
+    name: "TSMC 파트너 생태계 커버리지 분석"
+    description: "각 파트너십 레벨별 발굴 기업 수 vs 예상 전체 파트너 수"
+
+VALIDATION_ADD:
+  tsmc_partner_anchors:
+    - name: "Alchip Technologies"
+      partnership: ["DCA", "CoWoS"]
+      verification_source: "TSMC Annual Report 2023"
+    - name: "GUC (Global Unichip Corp)"
+      partnership: ["DCA", "VCA", "CoWoS"]
+      verification_source: "TSMC partner page"
+  min_tsmc_partner_count: 10
+  required_tsmc_verification: true  # 출처 URL 없는 TSMC 파트너 주장 불허
+
+SUB_VARIANT_REFERENCE:
+  B_C_sub:
+    file: "VARIANT-B-C-sub.yaml"
+    purpose: "TSMC CoWoS 관련 EDA/SW/IP 기업 (Type C) 탐색"
+    when_to_use: "첨단 패키징 설계 자동화 도구 탐색 시"
+
+CHANGELOG:
+  - version: "1.0"
+    date: "2026-04-24"
+    issue: "Type C 기업 탈락으로 EDA 생태계 누락, 서브변형 미분리"
+  - version: "2.0"
+    date: "2026-04-25"
+    fix: "Type C 서브변형 분리 명시, TSMC 파트너십 레벨 5단계 세분화, 검증 의무화"

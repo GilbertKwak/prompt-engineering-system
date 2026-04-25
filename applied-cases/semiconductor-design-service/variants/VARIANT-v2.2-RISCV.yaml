@@ -1,0 +1,25 @@
+# VARIANT v2.2 — RISC-V 전문 필터
+extends: "../MASTER-v2.0.yaml"
+variant_id: "v2.2-RISCV"
+created: "2026-04-25"
+
+OVERRIDE:
+  INCLUSION_CRITERIA:
+    logic: |
+      (Type_A OR Type_B OR Type_C OR Type_D)
+      AND (RISCV_related == true)
+      AND Fab_type != IDM_Direct
+  KEYWORDS_REPLACE:
+    tier_1:
+      - "RISC-V IP core design"
+      - "RISC-V processor design service"
+      - "open ISA chip design"
+      - "RISC-V SoC design house"
+  target_companies_hint:
+    - "Andes Technology (TW) — RISC-V IP"
+    - "Codasip (CZ) — RISC-V IP"
+    - "OpenFive (a SiFive company)"
+    - "Nuclei System Technology (CN)"
+    - "Imperas Software (GB) — RISC-V simulation"
+    - "Rivos (US) — RISC-V data center"
+    - "Ventana Micro (US) — RISC-V server"

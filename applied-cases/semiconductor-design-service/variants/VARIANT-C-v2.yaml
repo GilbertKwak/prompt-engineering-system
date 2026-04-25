@@ -1,0 +1,89 @@
+# =============================================================================
+# VARIANT C v2.0 — 재무·투자·M&A 분석 집중 탐색
+# extends: MASTER-v2.0
+# Variant  : C-v2
+# Created  : 2026-04-25
+# Fix Note : IPO/M&A 비공개 데이터 할루시네이션 방지 → data_confidence 필드 추가
+# =============================================================================
+
+extends: "../MASTER-v2.0.yaml"
+variant_id: "C-v2"
+variant_name: "재무·투자·M&A 분석 집중 탐색"
+created: "2026-04-25"
+
+OVERRIDE:
+  OBJECTIVE:
+    primary: "글로벌 반도체 설계 서비스 기업의 투자 현황, IPO 가능성, M&A 타깃 분석"
+    output_count_min: 30  # 재무 데이터 확보 가능한 기업 중심으로 수 조정
+
+  OUTPUT_FORMAT:
+    D1_additional_fields:
+      - name: "ipo_probability"
+        type: "ENUM(High, Medium, Low, Not_Applicable, Unknown)"
+        criteria:
+          High: "최근 12개월 내 IPO 로드쇼 또는 S-1/F-1 제출"
+          Medium: "Series C+ 완료, 매출 $50M+, 주요 VC 보유"
+          Low: "초기 단계 또는 전략적 투자자 보유"
+          Not_Applicable: "이미 상장"
+      - name: "ma_signal"
+        type: "ENUM(High, Medium, Low, None)"
+        criteria:
+          High: "복수의 전략적 투자자 + 핵심 특허 보유 + 대기업 파트너십"
+          Medium: "단일 전략적 투자자 또는 경쟁사 투자 관심 보도"
+          Low: "독립 경영 의지 표명, VC 보유"
+          None: "M&A 관련 신호 없음"
+      - name: "data_confidence"
+        type: "ENUM(Public, VC-confirmed, Estimated, Unverified)"
+        MANDATORY: true
+        rationale: |
+          ⚠️ 핵심 수정사항 (v1 → v2):
+          재무 데이터는 대부분 비공개 → 출처 없는 수치 출력 시 할루시네이션 위험
+          모든 재무 관련 셀에 data_confidence 표기 필수
+          Public: SEC/TWSE/KRX/공개 보고서 확인
+          VC-confirmed: 투자사 포트폴리오 페이지 직접 확인
+          Estimated: 업계 추정치 (출처 명시 필수)
+          Unverified: 확인 불가 (셀에 * 표시)
+      - name: "last_funding_round"
+        type: "STRING (Series X, $XM, YYYY-MM)"
+      - name: "total_funding_usd"
+        type: "STRING (approximate, data_confidence 연동)"
+      - name: "strategic_investors"
+        type: "STRING (TSMC, Qualcomm, Intel Capital 등)"
+      - name: "acquisition_history"
+        type: "STRING (acquirer → target, YYYY)"
+
+    D4_variant:
+      name: "M&A 타깃 매트릭스"
+      axes:
+        x: "전략적 자산 가치 (IP, 팀, 고객, 기술)"
+        y: "인수 가능성 (독립 의지 역수, VC 엑싯 타임라인)"
+      quadrants:
+        Q1: "즉시 타깃 (High value + High availability)"
+        Q2: "장기 모니터링 (High value + Low availability)"
+        Q3: "기회적 인수 (Low value + High availability)"
+        Q4: "제외 (Low value + Low availability)"
+
+    D6_new:
+      name: "최근 3년 주요 M&A 사례 분석"
+      description: "반도체 설계 서비스 섹터 M&A 패턴 분석 (acquirer + target + 가치 + 전략적 이유)"
+      reference_cases:
+        - "Marvell → Inphi ($10B, 2021) — 고속 광학 설계"
+        - "Synopsys → Ansys ($35B, 2024) — EDA+시뮬레이션 통합"
+        - "Cadence → Tensilica ($380M, 2013) — IP 라이선스 확장"
+
+VALIDATION_ADD:
+  hallucination_prevention:
+    rule: "data_confidence=Unverified 비율 > 30% 시 재조사 필요"
+    mandatory_source: "모든 재무 수치에 출처 URL 또는 발표일 명시"
+    forbidden:
+      - "확인되지 않은 밸류에이션 수치 직접 출력"
+      - "'약 $XB 수준으로 추정' 형태의 근거 없는 추정"
+  min_public_data_ratio: 0.5  # D1 기업의 50% 이상은 Public 또는 VC-confirmed
+
+CHANGELOG:
+  - version: "1.0"
+    date: "2026-04-24"
+    issue: "IPO/M&A 데이터 신뢰도 등급 없어 할루시네이션 위험"
+  - version: "2.0"
+    date: "2026-04-25"
+    fix: "data_confidence 필드 MANDATORY 추가, M&A 타깃 매트릭스 신설, 금지 표현 명시"

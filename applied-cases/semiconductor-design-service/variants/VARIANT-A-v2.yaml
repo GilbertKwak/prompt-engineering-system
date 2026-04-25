@@ -1,0 +1,84 @@
+# =============================================================================
+# VARIANT A v2.0 — 동남아·인도·아세안 특화 탐색
+# extends: MASTER-v2.0
+# Variant  : A-v2
+# Created  : 2026-04-25
+# Fix Note : v1에서 SEARCH_SCOPE "교체" → "filter_add"로 수정
+#            (기존 앵커기업 TW/US 누락 방지)
+# =============================================================================
+
+extends: "../MASTER-v2.0.yaml"
+variant_id: "A-v2"
+variant_name: "동남아·인도·아세안 특화 탐색"
+created: "2026-04-25"
+
+# --- 수정 핵심 ---
+# v1 문제: SEARCH_SCOPE 전체 교체 → TW/US 앵커기업 발굴 누락
+# v2 해결: filter_add 방식으로 전환 (마스터 지역 유지 + 우선순위 조정)
+
+OVERRIDE:
+  SEARCH_SCOPE:
+    filter_add:
+      - code: "IN"
+        label: "인도"
+        priority_boost: 1  # 인도를 최우선으로 부스트
+        target_cities: ["Bangalore", "Hyderabad", "Pune", "Chennai"]
+        target_companies_hint:
+          - "Sankalp Semiconductor"
+          - "InCore Semiconductors"
+          - "Saankhya Labs"
+          - "Mindgrove Technologies"
+          - "VVDN Technologies"
+      - code: "SG"
+        label: "싱가포르"
+        priority_boost: 2
+        target_cities: ["Singapore"]
+        target_companies_hint:
+          - "UTAC Group"
+          - "Achronix Singapore"
+          - "Soitec Singapore"
+      - code: "MY"
+        label: "말레이시아"
+        priority_boost: 3
+        target_cities: ["Penang", "Kuala Lumpur"]
+        target_companies_hint:
+          - "Inari Amertron"
+          - "Globetronics"
+      - code: "VN"
+        label: "베트남"
+        priority_boost: 4
+        target_cities: ["Ho Chi Minh City", "Hanoi"]
+        note: "Samsung/Intel 생산 거점 인근 설계 서비스 스핀오프 탐색"
+      - code: "PH"
+        label: "필리핀"
+        priority_boost: 5
+        target_cities: ["Manila", "Clark"]
+        note: "OSAT 클러스터 인근 설계 서비스 탐색"
+
+  SEARCH_KEYWORDS_ADD:
+    - "semiconductor design India"
+    - "VLSI design services Bangalore"
+    - "chip design ASEAN"
+    - "fabless startup Southeast Asia"
+    - "semiconductor IP India"
+
+  OUTPUT_FORMAT:
+    D1_additional_fields:
+      - "아세안/인도 생태계 연결 (government program, IIT spinoff 등)"
+      - "현지 파운드리 접근성 (TSMC/GF 대비 대안 파운드리)"
+
+VALIDATION_ADD:
+  anchor_companies_variant_A:
+    - name: "Sankalp Semiconductor (India)"
+      rationale: "인도 최고 수준 ASIC 설계 서비스 기업"
+    - name: "InCore Semiconductors (India)"
+      rationale: "RISC-V 기반 인도 팹리스 선도"
+  min_india_asean_count: 15  # 인도+아세안 기업 최소 15개 발굴
+
+CHANGELOG:
+  - version: "1.0"
+    date: "2026-04-24"
+    issue: "SEARCH_SCOPE 전체 교체로 TW/US 앵커기업 누락"
+  - version: "2.0"
+    date: "2026-04-25"
+    fix: "filter_add 방식으로 전환, 5개 우선 지역 추가, 앵커기업 힌트 포함"

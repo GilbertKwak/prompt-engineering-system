@@ -1,0 +1,26 @@
+# VARIANT v2.1 — 유럽 집중 탐색 (EU HPC / RISC-V / 자동차 칩)
+extends: "../MASTER-v2.0.yaml"
+variant_id: "v2.1-EU"
+created: "2026-04-25"
+
+OVERRIDE:
+  SEARCH_SCOPE:
+    filter_primary:
+      - {code: "DE", label: "독일", note: "자동차 반도체 설계 (Infineon 생태계)"}
+      - {code: "FR", label: "프랑스", note: "SiPearl HPC, CEA-Leti 스핀오프"}
+      - {code: "GB", label: "영국", note: "ARM 생태계, Cambridge 클러스터"}
+      - {code: "NL", label: "네덜란드", note: "ASML 생태계, NXP 연관"}
+      - {code: "FI", label: "핀란드", note: "Nokia 계보 무선 칩 설계"}
+      - {code: "SE", label: "스웨덴", note: "Ericsson 생태계"}
+  KEYWORDS_ADD:
+    - "European semiconductor design"
+    - "RISC-V Europe"
+    - "automotive chip design EU"
+    - "SiPearl HPC processor"
+    - "CEA-Leti spinoff"
+  target_companies_hint:
+    - "SiPearl (FR) — EU HPC 프로세서"
+    - "Codasip (CZ) — RISC-V IP"
+    - "SEMRON (DE) — 아날로그 AI 칩"
+    - "Pragmatic Semiconductor (GB) — 플렉서블 칩"
+    - "Minima Processor (FI) — 초저전력"

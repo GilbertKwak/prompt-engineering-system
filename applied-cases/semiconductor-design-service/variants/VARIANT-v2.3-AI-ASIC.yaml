@@ -1,0 +1,26 @@
+# VARIANT v2.3 — AI ASIC / NPU 전문 탐색
+extends: "../MASTER-v2.0.yaml"
+variant_id: "v2.3-AI-ASIC"
+created: "2026-04-25"
+
+OVERRIDE:
+  INCLUSION_CRITERIA:
+    logic: |
+      (Type_A OR Type_B OR Type_D)
+      AND (AI_ASIC == true OR NPU_design == true OR LLM_inference_chip == true)
+      AND Fab_type != IDM_Direct
+  KEYWORDS_REPLACE:
+    tier_1:
+      - "AI ASIC design service"
+      - "NPU chip design house"
+      - "LLM inference accelerator design"
+      - "custom AI silicon"
+  target_companies_hint:
+    - "Axelera AI (NL) — AI ASIC"
+    - "Blaize (US) — edge AI chip"
+    - "Alif Semiconductor (US) — MCU+AI"
+    - "Hailo (IL) — edge AI inference"
+    - "Untether AI (CA) — at-memory computing"
+    - "Groq (US) — LLM inference"
+    - "Tenstorrent (CA) — AI CPU/GPU"
+    - "Esperanto Technologies (US) — RISC-V AI"
