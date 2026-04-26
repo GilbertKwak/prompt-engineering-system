@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>T-11 Investment Strategy — Cover Page (EN)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+    background: #0a0f1e;
+    color: #e8eaf0;
+    width: 210mm;
+    min-height: 297mm;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 0;
+  }
+
+  /* ── TOP STRIPE ── */
+  .top-stripe {
+    height: 8px;
+    background: linear-gradient(90deg, #00d4ff 0%, #0057ff 50%, #7c3aed 100%);
+  }
+
+  /* ── CONFIDENTIAL RIBBON ── */
+  .ribbon {
+    background: #1a1f35;
+    border-bottom: 1px solid #2a3050;
+    padding: 10px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #ff6b6b;
+    font-weight: 600;
+  }
+  .ribbon .doc-id { color: #6b7db3; font-weight: 400; }
+
+  /* ── HERO SECTION ── */
+  .hero {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 60px 40px 40px 40px;
+  }
+
+  .tag {
+    display: inline-block;
+    background: rgba(0, 212, 255, 0.1);
+    border: 1px solid rgba(0, 212, 255, 0.3);
+    color: #00d4ff;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 6px 16px;
+    border-radius: 3px;
+    margin-bottom: 28px;
+    font-weight: 600;
+  }
+
+  .report-id {
+    font-size: 13px;
+    color: #4a5a8a;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    font-weight: 400;
+  }
+
+  h1 {
+    font-size: 38px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: #ffffff;
+    margin-bottom: 12px;
+    letter-spacing: -0.5px;
+  }
+
+  h1 .accent { color: #00d4ff; }
+
+  .subtitle {
+    font-size: 16px;
+    color: #8892b0;
+    font-weight: 300;
+    margin-bottom: 40px;
+    line-height: 1.6;
+  }
+
+  /* ── METRICS GRID ── */
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    width: 100%;
+    margin-bottom: 48px;
+  }
+
+  .metric-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 6px;
+    padding: 16px;
+  }
+
+  .metric-label {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #4a5a8a;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+
+  .metric-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1;
+  }
+
+  .metric-value .unit {
+    font-size: 13px;
+    color: #6b7db3;
+    font-weight: 400;
+    margin-left: 2px;
+  }
+
+  .metric-sub {
+    font-size: 10px;
+    color: #4a5a8a;
+    margin-top: 6px;
+  }
+
+  /* ── SECTION TABLE ── */
+  .section-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 40px;
+  }
+
+  .section-table thead tr {
+    background: rgba(0, 212, 255, 0.05);
+    border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+  }
+
+  .section-table th {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #00d4ff;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+  }
+
+  .section-table td {
+    font-size: 11px;
+    color: #8892b0;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .section-table td:first-child { color: #c0caf5; font-weight: 600; }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 2px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .badge-en { background: rgba(0,212,255,0.15); color: #00d4ff; border: 1px solid rgba(0,212,255,0.3); }
+  .badge-kr { background: rgba(124,58,237,0.15); color: #a78bfa; border: 1px solid rgba(124,58,237,0.3); }
+  .badge-conf { background: rgba(255,107,107,0.1); color: #ff6b6b; border: 1px solid rgba(255,107,107,0.2); }
+
+  /* ── DIVIDER ── */
+  .divider {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(0,212,255,0.4) 0%, rgba(124,58,237,0.2) 60%, transparent 100%);
+    margin: 24px 0;
+  }
+
+  /* ── FOOTER ── */
+  .footer {
+    background: #070b17;
+    border-top: 1px solid #1a1f35;
+    padding: 20px 40px;
+  }
+
+  .footer-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 24px;
+  }
+
+  .footer-block .label {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #2a3050;
+    margin-bottom: 4px;
+    font-weight: 600;
+  }
+
+  .footer-block .value {
+    font-size: 10px;
+    color: #4a5a8a;
+    line-height: 1.6;
+  }
+
+  .footer-block .value a { color: #00d4ff; text-decoration: none; }
+
+  .footer-bottom {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid #1a1f35;
+    text-align: center;
+    font-size: 9px;
+    color: #2a3050;
+    letter-spacing: 1px;
+  }
+
+  /* ── BOTTOM STRIPE ── */
+  .bottom-stripe {
+    height: 4px;
+    background: linear-gradient(90deg, #7c3aed 0%, #0057ff 50%, #00d4ff 100%);
+  }
+</style>
+</head>
+<body>
+
+<div class="top-stripe"></div>
+
+<div class="ribbon">
+  <span>⚠ CONFIDENTIAL — FOR AUTHORIZED LIMITED PARTNERS ONLY</span>
+  <span class="doc-id">T-11-v2.1-EN | 2026-04-26</span>
+</div>
+
+<div class="hero">
+
+  <div class="tag">LP Submission Package · April 2026</div>
+  <div class="report-id">T-11 · Glass / HBM Investment Strategy</div>
+
+  <h1>
+    Glass Vertical Integration<br>
+    &amp; <span class="accent">HBM Cycle</span> Capture<br>
+    Investment Strategy
+  </h1>
+
+  <div class="subtitle">
+    Section C — Investment Execution Model (Enhanced v2.1)<br>
+    Term Sheet · Due Diligence · IC Memorandum · Exit Structure
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- KEY METRICS -->
+  <div class="metrics">
+    <div class="metric-card">
+      <div class="metric-label">Total Commitment</div>
+      <div class="metric-value">$1,000<span class="unit">M</span></div>
+      <div class="metric-sub">A 40% · B 35% · C 25%</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">EV MOIC</div>
+      <div class="metric-value">6.149<span class="unit">x</span></div>
+      <div class="metric-sub">4-world probability-weighted</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">EV IRR</div>
+      <div class="metric-value">37.0<span class="unit">%</span></div>
+      <div class="metric-sub">Risk-adjusted baseline</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">P10 / P90</div>
+      <div class="metric-value">2.84<span class="unit">x</span></div>
+      <div class="metric-sub">Downside · Upside 9.47x</div>
+    </div>
+  </div>
+
+  <!-- SECTION TABLE -->
+  <table class="section-table">
+    <thead>
+      <tr>
+        <th>Section</th>
+        <th>Contents</th>
+        <th>Lang</th>
+        <th>Classification</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>§A – §B, §D – §F</td>
+        <td>Market analysis, financial model, risk framework, appendix</td>
+        <td><span class="badge badge-kr">KR</span></td>
+        <td><span class="badge badge-conf">Confidential</span></td>
+      </tr>
+      <tr>
+        <td>§C Enhanced v2.1</td>
+        <td>Term Sheets (A/B/C) · DD 43-item checklist · IC Memo · Exit · KPI</td>
+        <td><span class="badge badge-en">EN</span></td>
+        <td><span class="badge badge-conf">Confidential</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div class="footer-grid">
+    <div class="footer-block">
+      <div class="label">Prepared By</div>
+      <div class="value">T-11 Investment Strategy Team<br>Agent-4 Execution Framework v1.0</div>
+    </div>
+    <div class="footer-block">
+      <div class="label">Source Repository</div>
+      <div class="value">
+        <a href="https://github.com/GilbertKwak/prompt-engineering-system">GitHub · T-11 SSOT</a><br>
+        <a href="https://www.notion.so/34e55ed436f08158a641f943f4cacabe">Notion · T-11 Hub</a>
+      </div>
+    </div>
+    <div class="footer-block">
+      <div class="label">PE-3 Validation</div>
+      <div class="value">Score: 96 / 100 ✓ PASS<br>IC Status: APPROVED (conditional)</div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    UNAUTHORIZED REPRODUCTION OR DISTRIBUTION STRICTLY PROHIBITED · T-11 Investment Strategy v2.1-EN · © 2026
+  </div>
+</div>
+
+<div class="bottom-stripe"></div>
+
+</body>
+</html>

@@ -1,0 +1,12 @@
+# T-11 PDF Build Dependencies
+# Install: pip install -r requirements_pdf.txt
+
+weasyprint>=60.0          # Markdown/HTML → PDF renderer (CSS Paged Media)
+markdown>=3.5             # Python-Markdown (MD → HTML)
+PyMuPDF>=1.23             # PDF merge, bookmarks, encryption (fitz)
+rich>=13.0                # Optional: coloured console output
+
+# System dependencies (not pip — install separately):
+#   macOS  : brew install pango libffi cairo
+#   Ubuntu : apt-get install libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz0b libffi-dev
+#   Windows: install GTK3 runtime — see https://weasyprint.readthedocs.io
