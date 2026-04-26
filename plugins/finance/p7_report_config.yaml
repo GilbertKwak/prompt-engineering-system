@@ -1,0 +1,157 @@
+# P7 Word 보고서 자동 생성 설정
+# p7_report_config.yaml
+# PE-7 ExaFLOPS TCO Analysis Report Builder Configuration
+
+report:
+  title_ko: "PE-7 ExaFLOPS TCO 분석 보고서"
+  title_en: "PE-7 ExaFLOPS TCO Analysis Report"
+  subtitle_ko: "SMR 통합 자원모델 — HBM · Glass · 전력 · 패키징 4-레이어 TCO"
+  subtitle_en: "SMR Integrated Resource Model — 4-Layer TCO: HBM · Glass · Power · Packaging"
+  version: "v1.0"
+  classification: "Confidential"
+  author: "PE-7 Automation System"
+  project: "PE-7"
+  language_default: "ko"  # ko | en
+  supported_languages: ["ko", "en"]
+
+style:
+  brand_blue: "2C5F8A"
+  dark_blue: "1A3A5C"
+  light_blue: "EBF3FB"
+  gray: "F5F5F5"
+  page:
+    width_cm: 21.0
+    height_cm: 29.7
+    margin_cm: 2.5
+  fonts:
+    cover_title_pt: 26
+    cover_subtitle_pt: 14
+    body_pt: 11
+    table_header_pt: 10
+    caption_pt: 9
+  chart_width_inches: 5.8
+
+sections:
+  - id: cover
+    order: 1
+    enabled: true
+  - id: toc
+    order: 2
+    enabled: true
+  - id: executive_summary
+    order: 3
+    enabled: true
+    heading_ko: "1. Executive Summary"
+    heading_en: "1. Executive Summary"
+  - id: methodology
+    order: 4
+    enabled: true
+    heading_ko: "2. 분석 방법론 및 가정"
+    heading_en: "2. Methodology & Assumptions"
+  - id: system_definitions
+    order: 5
+    enabled: true
+    heading_ko: "3. ExaFLOPS 시스템 정의"
+    heading_en: "3. ExaFLOPS System Definitions"
+  - id: tco_results
+    order: 6
+    enabled: true
+    heading_ko: "4. 4-레이어 TCO 모델 결과"
+    heading_en: "4. 4-Layer TCO Model Results"
+  - id: sensitivity
+    order: 7
+    enabled: true
+    heading_ko: "5. SMR 시나리오별 민감도 분석"
+    heading_en: "5. SMR Scenario Sensitivity Analysis"
+  - id: portfolio
+    order: 8
+    enabled: true
+    heading_ko: "6. 포트폴리오 MOIC / IRR 분석"
+    heading_en: "6. Portfolio MOIC / IRR Analysis"
+  - id: charts
+    order: 9
+    enabled: true
+    heading_ko: "7. 차트 패키지 (P5 시각화)"
+    heading_en: "7. Chart Package (P5 Visualizations)"
+  - id: conclusions
+    order: 10
+    enabled: true
+    heading_ko: "8. 결론 및 권고사항"
+    heading_en: "8. Conclusions & Recommendations"
+  - id: appendix
+    order: 11
+    enabled: true
+    heading_ko: "부록. 데이터 출처 및 파라미터"
+    heading_en: "Appendix. Data Sources & Parameters"
+
+charts:
+  - key: tco_heatmap
+    filename: tco_heatmap.png
+    figure_no: "7-1"
+    caption_ko: "TCO NPV 절감 히트맵 — Facility Tier × 전력가"
+    caption_en: "TCO NPV Savings Heatmap — Facility Tier × Grid Price"
+    description_ko: "RR SMR 80% 침투 시 10Y NPV 절감액($M). AI DC US(SYS_C)에서 최대 절감 풀 형성."
+    description_en: "10Y NPV savings ($M) at 80% RR SMR penetration. SYS_C shows the largest savings pool."
+    width_inches: 5.8
+
+  - key: moic_grouped_bar
+    filename: moic_grouped_bar.png
+    figure_no: "7-2"
+    caption_ko: "MOIC Absolute — 시스템 × 시나리오 비교"
+    caption_en: "MOIC Absolute — System × Scenario Comparison"
+    description_ko: "SYS_C SMR Full에서 MOIC 8.83x 최대치 달성."
+    description_en: "SYS_C SMR Full achieves the maximum MOIC of 8.83x."
+    width_inches: 5.8
+
+  - key: moic_delta_bar
+    filename: moic_delta_bar.png
+    figure_no: "7-3"
+    caption_ko: "MOIC Delta Uplift — Grid Only 대비 순증분"
+    caption_en: "MOIC Delta Uplift vs Grid Only"
+    description_ko: "SMR Full에서 SYS_C +1.62x로 최대 업리프트."
+    description_en: "SMR Full delivers +1.62x maximum uplift for SYS_C."
+    width_inches: 5.8
+
+  - key: moic_waterfall
+    filename: moic_waterfall.png
+    figure_no: "7-4"
+    caption_ko: "Portfolio MOIC Waterfall — SMR 기여 분해"
+    caption_en: "Portfolio MOIC Waterfall — SMR Contribution Breakdown"
+    description_ko: "Grid Only 6.43x → SMR Net 7.83x까지 단계별 기여 구조."
+    description_en: "Step-by-step contribution from Grid Only 6.43x to SMR Net 7.83x."
+    width_inches: 5.8
+
+  - key: irr_moic_bubble
+    filename: irr_moic_bubble.png
+    figure_no: "7-5"
+    caption_ko: "IRR Alpha vs MOIC Bubble — 자본 효율 비교"
+    caption_en: "IRR Alpha vs MOIC Bubble — Capital Efficiency"
+    description_ko: "버블 크기=Net Alpha($M). SMR Partial이 최고 자본 효율 달성."
+    description_en: "Bubble size=Net Alpha($M). SMR Partial achieves highest capital efficiency."
+    width_inches: 5.2
+
+outputs:
+  report_dir: "output/reports"
+  filename_template_ko: "PE7_ExaFLOPS_TCO_Report_{date}.docx"
+  filename_template_en: "PE7_ExaFLOPS_TCO_Report_{date}_EN.docx"
+  manifest: "output/reports/build_manifest.json"
+
+dependencies:
+  python_packages:
+    - python-docx>=0.8.11
+    - pyyaml>=6.0
+    - openpyxl>=3.1.0
+  input_files:
+    - path: "output/p6_exaflops_tco.json"
+      required: false
+      fallback: "dummy_data"
+    - path: "output/p6_charts/tco_heatmap.png"
+      required: false
+    - path: "output/p6_charts/moic_grouped_bar.png"
+      required: false
+    - path: "output/p6_charts/moic_delta_bar.png"
+      required: false
+    - path: "output/p6_charts/moic_waterfall.png"
+      required: false
+    - path: "output/p6_charts/irr_moic_bubble.png"
+      required: false

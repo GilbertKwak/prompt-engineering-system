@@ -1,0 +1,176 @@
+name: PE-7 P7 Word Report Builder
+
+on:
+  workflow_dispatch:
+    inputs:
+      lang:
+        description: '보고서 언어 (ko / en / both)'
+        required: false
+        default: 'both'
+        type: choice
+        options: [ko, en, both]
+      dry_run:
+        description: 'Dry-run (파일 미생성)'
+        required: false
+        default: false
+        type: boolean
+  workflow_run:
+    workflows: ["PE-7 SMR Finance Pipeline"]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  # ──────────────────────────────────────────
+  # Job 1: 환경 준비 + P6 더미 데이터 생성
+  # ──────────────────────────────────────────
+  prepare:
+    name: 🔧 환경 준비
+    runs-on: ubuntu-latest
+    outputs:
+      timestamp: ${{ steps.ts.outputs.ts }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Python 설정
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 의존성 설치
+        run: |
+          pip install python-docx>=0.8.11 pyyaml>=6.0 openpyxl>=3.1.0
+
+      - name: 타임스탬프 생성
+        id: ts
+        run: echo "ts=$(date +'%Y%m%d_%H%M%S')" >> $GITHUB_OUTPUT
+
+      - name: output 디렉토리 생성
+        run: |
+          mkdir -p output/reports
+          mkdir -p output/p6_charts
+
+      - name: 캐시 저장 (의존성)
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: p7-pip-${{ hashFiles('**/requirements*.txt') }}
+
+  # ──────────────────────────────────────────
+  # Job 2: Dry-run 검증
+  # ──────────────────────────────────────────
+  validate:
+    name: ✅ 검증 (Dry-run)
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - run: pip install python-docx>=0.8.11 pyyaml>=6.0
+
+      - name: Dry-run 실행
+        run: |
+          cd plugins/finance
+          python docx_report_builder.py --dry-run
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+  # ──────────────────────────────────────────
+  # Job 3: 한국어 보고서 빌드
+  # ──────────────────────────────────────────
+  build_ko:
+    name: 📄 한국어 보고서 빌드
+    needs: validate
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.lang == 'ko' || github.event.inputs.lang == 'both' || github.event.inputs.lang == '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - run: pip install python-docx>=0.8.11 pyyaml>=6.0 openpyxl>=3.1.0
+
+      - name: output 디렉토리 생성
+        run: mkdir -p output/reports output/p6_charts
+
+      - name: 한국어 보고서 빌드
+        run: |
+          cd plugins/finance
+          python docx_report_builder.py --lang ko
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+      - name: 보고서 아티팩트 업로드
+        uses: actions/upload-artifact@v4
+        with:
+          name: PE7-Report-KO-${{ needs.prepare.outputs.timestamp }}
+          path: output/reports/PE7_ExaFLOPS_TCO_Report_*.docx
+          retention-days: 7
+
+      - name: 매니페스트 아티팩트 업로드
+        uses: actions/upload-artifact@v4
+        with:
+          name: PE7-Manifest-${{ needs.prepare.outputs.timestamp }}
+          path: output/reports/build_manifest.json
+          retention-days: 7
+
+  # ──────────────────────────────────────────
+  # Job 4: 영문 보고서 빌드
+  # ──────────────────────────────────────────
+  build_en:
+    name: 📄 영문 보고서 빌드
+    needs: validate
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.lang == 'en' || github.event.inputs.lang == 'both' || github.event.inputs.lang == '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - run: pip install python-docx>=0.8.11 pyyaml>=6.0 openpyxl>=3.1.0
+
+      - name: output 디렉토리 생성
+        run: mkdir -p output/reports output/p6_charts
+
+      - name: 영문 보고서 빌드
+        run: |
+          cd plugins/finance
+          python docx_report_builder.py --lang en
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+      - name: 영문 보고서 아티팩트 업로드
+        uses: actions/upload-artifact@v4
+        with:
+          name: PE7-Report-EN-${{ needs.prepare.outputs.timestamp }}
+          path: output/reports/PE7_ExaFLOPS_TCO_Report_*_EN.docx
+          retention-days: 7
+
+  # ──────────────────────────────────────────
+  # Job 5: 완료 알림
+  # ──────────────────────────────────────────
+  notify:
+    name: 🔔 완료 알림
+    needs: [build_ko, build_en]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: 빌드 결과 요약
+        run: |
+          echo "## PE-7 P7 Word 보고서 빌드 완료" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| 항목 | 상태 |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 한국어 보고서 | ${{ needs.build_ko.result == 'success' && '✅ 성공' || '❌ 실패' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 영문 보고서 | ${{ needs.build_en.result == 'success' && '✅ 성공' || '❌ 실패' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 실행 시간 | $(date +'%Y-%m-%d %H:%M:%S') KST |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📥 Actions > Artifacts 에서 DOCX 다운로드 가능 (7일 보관)" >> $GITHUB_STEP_SUMMARY
