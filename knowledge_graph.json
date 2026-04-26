@@ -1,8 +1,8 @@
 {
   "meta": {
-    "generated_at": "2026-04-21T03:12:02.441047+00:00",
+    "generated_at": "2026-04-26T01:08:14.762544+00:00",
     "version": "1.0",
-    "total_nodes": 32,
+    "total_nodes": 33,
     "total_edges": 60,
     "scan_dirs": [
       "docs",
@@ -47,21 +47,35 @@
       "title": "CHANGELOG — 프롬프트 엔진니어링 시스템",
       "status": "unknown",
       "version": "",
-      "date": "2026-04-18",
+      "date": "2026-04-25",
       "tags": [
         "root",
         "meta",
-        "RCA-001",
+        "v2.3",
+        "v1.1",
         "v1.6",
         "v1.5",
         "v1.4",
         "v1.3",
-        "v1.2",
-        "v1.1",
-        "v1.0"
+        "v1.0",
+        "v1.2"
+      ],
+      "notion_url": "https://www.notion.so/34d55ed436f0816fb1a4d12f53ba7069",
+      "file_size": 2218,
+      "sha": null
+    },
+    {
+      "id": "docs/PE-7-v2.0-Section6-ValidationReport.md",
+      "type": "doc",
+      "title": "PE-7 v2.0 섹션 6 — E-0N 통합검증 + Notion SSOT 업데이트 완료 보고서",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-26",
+      "tags": [
+        "v2.0"
       ],
       "notion_url": null,
-      "file_size": 6380,
+      "file_size": 4035,
       "sha": null
     },
     {
