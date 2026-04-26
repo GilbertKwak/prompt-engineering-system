@@ -1,8 +1,8 @@
 {
   "meta": {
-    "generated_at": "2026-04-26T03:01:31.122755+00:00",
+    "generated_at": "2026-04-26T03:29:47.566314+00:00",
     "version": "1.0",
-    "total_nodes": 36,
+    "total_nodes": 37,
     "total_edges": 60,
     "scan_dirs": [
       "docs",
@@ -228,6 +228,21 @@
       ],
       "notion_url": "https://www.notion.so/33955ed436f081cc9f0bd014d631aa7b",
       "file_size": 9501,
+      "sha": null
+    },
+    {
+      "id": "docs/integration-setup-guide.md",
+      "type": "doc",
+      "title": "🔧 Integration Setup Guide — 완전 자동화 셋업 절차",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-26",
+      "tags": [
+        "v1.0",
+        "v2.0"
+      ],
+      "notion_url": "https://www.notion.so/my-integrations",
+      "file_size": 6957,
       "sha": null
     },
     {
