@@ -1,8 +1,8 @@
 {
   "meta": {
-    "generated_at": "2026-04-26T07:57:57.804630+00:00",
+    "generated_at": "2026-04-26T08:26:47.423305+00:00",
     "version": "1.0",
-    "total_nodes": 39,
+    "total_nodes": 40,
     "total_edges": 60,
     "scan_dirs": [
       "docs",
@@ -77,6 +77,18 @@
       ],
       "notion_url": null,
       "file_size": 3660,
+      "sha": null
+    },
+    {
+      "id": "docs/P6_ExaFLOPS_TCO.md",
+      "type": "doc",
+      "title": "P6: ExaFLOPS 통합 자원모델 — HBM·Glass·전력·패키징 단일 TCO",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-26",
+      "tags": [],
+      "notion_url": null,
+      "file_size": 4724,
       "sha": null
     },
     {
