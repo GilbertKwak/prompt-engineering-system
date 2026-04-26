@@ -1,25 +1,31 @@
-# CHANGELOG · PE-7 AI 자동화 설계 및 구현
+# PE-7 Auto-Automation Design — CHANGELOG
 
----
+## [1.1.0] — 2026-04-26
 
-## v1.0 — 2026-04-21
+### Added
+- `config/secrets_schema.yaml`: PE-1/PE-2/PE-3 엔진 연계를 위한 Secrets 구조 정의
+  - NOTION_API_KEY, NOTION_KPI_DB_ID, GOOGLE_SHEETS_ID, GOOGLE_SERVICE_ACCOUNT_JSON, SLACK_WEBHOOK_URL
+  - 엔진별 의존성 매트릭스 포함
+- `config/integration_map.yaml`: 4단계 파이프라인 데이터 흐름 정의
+  - PE-1 → PE-2 → PE-3 → PE-7 완전 연계 맵
+  - Notion DB ↔ Google Sheets 컬럼 매핑
+  - Slack 알림 채널 라우팅
+- `scripts/setup_secrets.sh`: GitHub CLI 기반 대화형 Secrets 등록 헬퍼
+- `scripts/validate_secrets.py`: PE-3 연계 Secrets 유효성 자동 검증기
+  - 정규식 패턴 검증
+  - GCP Service Account JSON 구조 검증
+  - 엔진별 준비 상태 출력
+  - GitHub Actions Step Summary 통합
+- `.github/workflows/pe7_secrets_validate.yml`: PR/dispatch 시 Secrets 자동 검증 워크플로우
+  - `workflow_call` 지원 → pe7_daily_pipeline.yml에서 재사용 가능
+  - 실패 시 Slack 즉시 알림
 
-### 최초 생성
+### Changed
+- PE-7 엔진이 PE-1/PE-2/PE-3와 완전히 연계되는 통합 아키텍처로 업그레이드
 
-- AI 자동화 설계 및 구현용 심층 프롬프트 완전판
-- 7단계 수행 구조 도입
-  - 1단계: 업무 구조 분석
-  - 2단계: 자동화 가능성 평가
-  - 3단계: AI 적용 설계
-  - 4단계: 시스템 아키텍처 설계
-  - 5단계: 구현 전략 (MVP → Scaling → Fallback)
-  - 6단계: KPI 설계
-  - 7단계: 리스크 및 대응
-- KPI 프레임워크 포함 (시간절감률 · 오류감소율 · 자동화 커버리지 · 비용절감)
-- 리스크 대응 전략 포함 (데이터품질 · AI오판 · 보안)
-- PE-1 · PE-2 · PE-3 3-Engine 연계 구조 정의
-- Notion 원본: [PE-7 페이지](https://www.notion.so/34955ed436f081149dd6de25dba027d7)
+## [1.0.0] — 2026-04-20
 
----
-
-> 이후 버전은 PE-1 자동개선 엔진을 통해 품질 진단 후 업그레이드됩니다.
+### Added
+- 초기 PE-7 엔진 구조 설정
+- `prompt_template.md`: AI 자동화 설계 프롬프트 템플릿
+- `README.md`: 엔진 개요 및 사용법

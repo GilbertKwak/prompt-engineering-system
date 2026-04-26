@@ -1,0 +1,105 @@
+# PE-7 Integration Map — 엔진 간 데이터 흐름 정의
+# Version: 1.0.0 | Updated: 2026-04-26
+
+version: "1.0.0"
+
+# ─────────────────────────────────────────
+# 전체 파이프라인 흐름
+# PE-1 → PE-2 → PE-3 → PE-7 (KPI 기록 & 알림)
+# ─────────────────────────────────────────
+
+pipeline:
+  trigger: "GitHub Actions (schedule / workflow_dispatch / push)"
+  stages:
+    - stage: 1
+      engine: PE-1_auto-refinement
+      role: "프롬프트 자동 개선"
+      input:
+        - source: notion_db
+          db_id_secret: NOTION_KPI_DB_ID
+          filter: "Status = 'needs_refinement'"
+        - source: google_sheets
+          sheet_id_secret: GOOGLE_SHEETS_ID
+          range: "Experiments!A:Z"
+      output:
+        - target: notion_db
+          action: "update_property: Status → refined"
+        - target: google_sheets
+          action: "append_row: refinement log"
+      on_complete:
+        notify: slack
+        trigger_next: PE-2
+
+    - stage: 2
+      engine: PE-2_auto-proliferation
+      role: "검증된 프롬프트 자동 증식"
+      input:
+        - source: notion_db
+          filter: "Status = 'refined'"
+      output:
+        - target: notion_db
+          action: "create_pages: proliferated variants"
+      on_complete:
+        notify: slack
+        trigger_next: PE-3
+
+    - stage: 3
+      engine: PE-3_auto-validation
+      role: "품질 자동 검증 (RCA + Pass/Fail)"
+      input:
+        - source: notion_db
+          filter: "Status = 'proliferated'"
+        - source: google_sheets
+          range: "Validation!A:Z"
+      output:
+        - target: notion_db
+          action: "update_property: validation_result, quality_score"
+        - target: google_sheets
+          action: "append_row: validation results"
+      on_fail:
+        notify: slack
+        severity: "high"
+        message_template: "⚠️ PE-3 Validation FAILED — {prompt_id}: {reason}"
+      on_complete:
+        notify: slack
+        trigger_next: PE-7
+
+    - stage: 4
+      engine: PE-7_ai-automation-design
+      role: "KPI 집계 및 대시보드 업데이트"
+      input:
+        - source: notion_db
+          filter: "Status = 'validated'"
+        - source: google_sheets
+          range: "KPI_Summary!A:Z"
+      output:
+        - target: notion_db
+          action: "update_property: kpi_synced = true"
+        - target: google_sheets
+          action: "update_kpi_dashboard"
+        - target: slack
+          action: "daily_summary_report"
+
+# ─────────────────────────────────────────
+# Notion DB 속성 → Sheets 컬럼 매핑
+# ─────────────────────────────────────────
+notion_to_sheets_mapping:
+  prompt_id: "A"
+  title: "B"
+  status: "C"
+  engine: "D"
+  quality_score: "E"
+  validation_result: "F"
+  created_date: "G"
+  last_updated: "H"
+  iteration_count: "I"
+  rca_notes: "J"
+
+# ─────────────────────────────────────────
+# Slack 알림 채널 라우팅
+# ─────────────────────────────────────────
+slack_routing:
+  default_channel: "#pe-automation"
+  severity_high: "#pe-alerts"
+  daily_summary: "#pe-automation"
+  monthly_report: "#pe-automation"
