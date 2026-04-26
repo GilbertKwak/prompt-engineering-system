@@ -1,14 +1,40 @@
-# T-11 — 보고서 인덱스
+# T-11 Report Index
+> **최종 업데이트:** 2026-04-26 | **버전:** v2.0
 
-| ID | 제목 | 버전 | 날짜 | 상태 | 위치 |
-|----|------|------|------|------|------|
-| T11-R01 | Glass/HBM 투자전략 — Core/Satellite/Hedge 구조 정의서 | v1.0 | 2026-03-01 | ✅ Done | `01_strategy/` 3종 파일 |
-| T11-R02 | 포트폴리오 재무모델 시뮬레이션 | v1.0 | 2026-03-01 | ✅ Done | `02_financial_model/outputs/` |
-| T11-R03 | AstraChips LP Fund One-pager (A형 배포) | v2.0 | 2026-03-01 | ✅ Done | PE-9 레포 `outputs/` |
-| T11-R04 | T-11 SSOT 구조화 완료 보고 | v1.0 | 2026-04-26 | ✅ Done | 이 레포 전체 |
-| T11-R05 | Phase 2 — SMR+데이터센터 전력비 통합 모델 | v1.0 | TBD | 🔴 Draft | TBD |
-| T11-R06 | Phase 3 — ExaFLOPS 단위 자원모델 | v1.0 | TBD | 🔴 Draft | TBD |
+---
 
-## 다음 보고서 우선순위
-1. **T11-R05** (Phase 2): SMR 전력비 모델 → T-10 AstraChips 연계
-2. **T11-R06** (Phase 3): ExaFLOPS 통합 자원모델 → HBM·Glass·전력·패키징 단일화
+## 현재 보고서 구조
+
+### v2.0 — 섹션 A~F 병렬 구성 (Current)
+
+| 섹션 | 파일 | 내용 | 상태 |
+|------|------|------|------|
+| **A** | [A_executive_summary.md](sections/A_executive_summary.md) | Executive Summary (투자 명제·KPI·의사결정) | ✅ 완료 |
+| **B** | [B_industry_analysis.md](sections/B_industry_analysis.md) | 산업 분석 (HBM·Glass 시장·병목·4-World) | ✅ 완료 |
+| **C** | [C_financial_model.md](sections/C_financial_model.md) | 재무 모델 (IRR·MOIC·NPV·Monte Carlo) | ✅ 완료 |
+| **D** | [D_risk_analysis.md](sections/D_risk_analysis.md) | 리스크 분석 (레지스터·스트레스 5종·리밸런싱) | ✅ 완료 |
+| **E** | [E_execution_roadmap.md](sections/E_execution_roadmap.md) | 실행 로드맵 (Phase 1~Exit·KPI·거버넌스) | ✅ 완료 |
+| **F** | [F_appendix.md](sections/F_appendix.md) | 부록 (용어·가정·Agent 이력·문서 인덱스) | ✅ 완료 |
+
+### v1.0 — 초기 통합 보고서 (Archive)
+
+| 파일 | 내용 | 상태 |
+|------|------|------|
+| [T11_investment_report_v1.0.md](T11_investment_report_v1.0.md) | v1.0 통합본 | 📦 보관 |
+
+---
+
+## 버전 이력
+
+| 버전 | 날짜 | 주요 변경사항 | 커밋 |
+|------|------|-------------|---------|
+| **v2.0** | **2026-04-26** | **섹션 A~F 병렬 구성 완성 (6파일)** | **현재** |
+| v1.0 | 2026-03-01 | Core/Satellite/Hedge 초기 통합 보고서 | 91a995a |
+
+---
+
+## 다음 단계 (v3.0 예정)
+- [ ] T11_investment_report_v2.0.md — 섹션 A~F 통합 단일 파일 생성
+- [ ] Agent-4 투자 실행 모델 완성 후 Section C 업데이트
+- [ ] SMR+데이터센터 전력 모델 (2단계) 연계
+- [ ] ExaFLOPS 자원모델 통합 (3단계)
