@@ -1,0 +1,27 @@
+# PE-7 Sensitivity Sweep 설정
+# sensitivity_sweep.py 실행 시 이 파일을 --config 로 돠다.
+# (default는 finance_config.yaml 재사용)
+
+sweep:
+  # ±shock_range pp 사이를 step pp 단위로 sweep
+  shock_range_pp: 2.0   # \u00b12pp
+  step_pp: 1.0          # 1pp 단계 (0.5로 줄이면 더 세밀하게)
+  hurdle_rate: 0.08     # 8% 허들
+  pe_benchmark: 0.20    # 20% PE 벤치마크
+
+notion:
+  db_id: "c74b578b-2092-4ace-b590-59dffe37633f"   # PE-7 Finance Reports DB
+  batch_size: 10    # 배치당 업로드 수
+  delay_sec: 0.3    # 배치 사이 대기 (레이트리미트)
+
+output:
+  dir: "reports/sensitivity"
+  # 파일명: sweep_irr_shock_{timestamp}.json 자동 생성
+
+scenarios:
+  # 'all' 또는 아래 키 직접 나열
+  include:
+    - balanced
+    - conservative
+    - aggressive
+    - geo_hedge
