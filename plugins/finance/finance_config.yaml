@@ -1,36 +1,48 @@
 # ============================================================
-# cowork-plugins Finance Config v1.0
-# PE-7 P1 즉시 실행: AstraChips LP Fund 재무 모델
+# cowork-plugins Finance Config v1.1  (P2-2 튜닝)
+# PE-7 P2-2: IRR/배분 수치 쫜리브레이션
 # 작성: 2026-04-26 | Gilbert Kwak
+# 변경이력:
+#   v1.0 → v1.1
+#   [1] Balanced Type A IRR base 15% → 13%  (실덕적 Glass JV 수익률 조정)
+#   [2] Balanced Type B IRR bull 52% → 58%  (HBM4 수요봐승 반영)
+#   [3] Balanced Type C IRR base 45% → 42%  (Amkor 지분 획득 프리미엄 상향 반영)
+#   [4] Aggressive Type B IRR bear 12% → 15% (연간 최저수익률 플로어 설정)
+#   [5] Geo-Hedge Type C MOIC 13.2x → 12.5x (CFIUS 지연 리스크 할인)
+#   [6] Conservative probability 0.25 → 0.30 (HBM 다운사이클 가능성 상향)
+#   [7] Aggressive probability 0.15 → 0.10 (HBM5 지연 시 1위 필요)
+#   [8] Geo-Hedge probability 0.10 → 0.12 (대만 해협 리스크 직접반영)
+#   [9] hurdle_rate 8% → 9% (2026 USD 금리환경 반영)
+#  [10] Korea Glass delay risk 15% → 18% (Samsung 예산삭감 정보 반영)
 # ============================================================
 
 plugin:
   name: cowork-finance
-  version: v1.0.0
+  version: v1.1.0
   pe_engine: PE-7
   description: |
     AstraChips LP Fund Core/Satellite/Hedge 포트폴리오 재무 모델링
-    — IRR, NPV, MOIC, 리스크 시나리오 자동 계산
+    — IRR, NPV, MOIC, 리스크 시나리오 자동 계산  (v1.1 튜닝)
 
-# ──────────────────────────────────────────
+# ────────────────────────────────────────────
 # 전역 파라미터
-# ──────────────────────────────────────────
+# ────────────────────────────────────────────
 global:
   currency: USD
   base_year: 2026
   projection_years: 7          # 2026~2032
-  discount_rate: 0.12          # WACC 12%
+  discount_rate: 0.12          # WACC 12% (유지)
   tax_rate: 0.21
   inflation_rate: 0.025
 
-# ──────────────────────────────────────────
+# ────────────────────────────────────────────
 # 포트폴리오 구조
-# ──────────────────────────────────────────
+# ────────────────────────────────────────────
 portfolio:
-  total_fund_size_M: 1000      # $1,000M USD
+  total_fund_size_M: 1000      # $1,000M USD (유지)
   management_fee_pct: 0.02
   carry_pct: 0.20
-  hurdle_rate: 0.08
+  hurdle_rate: 0.09            # [CHG-9] 8% → 9% (2026 USD 금리환경)
 
   allocations:
     type_a:
@@ -53,100 +65,159 @@ portfolio:
       label: "Hedge — US/EU 분산"
       weight: 0.25
       investment_M: 250
-      strategy: "Amkor 지분 + Micron 전환사채"
+      strategy: "Amkor 지분 + Micron 전환사체"
       geography: "US/EU"
       vintage_year: 2026
 
-# ──────────────────────────────────────────
+# ────────────────────────────────────────────
 # 시나리오 정의
-# ──────────────────────────────────────────
+# ────────────────────────────────────────────
 scenarios:
+
+  # ●●● BALANCED (BASE) ●●●
   balanced:
     name: "Balanced (Base)"
     description: "권장 40/35/25 배분"
-    probability: 0.50
+    probability: 0.48           # [CHG-6/7/8] 합산 1.00 유지
     allocations: {type_a: 0.40, type_b: 0.35, type_c: 0.25}
     irr_assumptions:
-      type_a: {base: 0.15, bull: 0.22, bear: 0.08}
-      type_b: {base: 0.38, bull: 0.52, bear: 0.18}
-      type_c: {base: 0.45, bull: 0.60, bear: 0.22}
+      type_a:
+        base: 0.13             # [CHG-1] 15% → 13% (Glass JV 수익률 실덕적 조정)
+        bull: 0.20             # 22% → 20% (흐름 연동
+        bear: 0.07             # 8%  → 7%  (지정학 트리거 시
+        rationale: "Samsung 예산 삭감 및 Glass 양산라인 니드 기준 하향"
+      type_b:
+        base: 0.38             # 유지
+        bull: 0.58             # [CHG-2] 52% → 58% (HBM4 수요봐승 반영)
+        bear: 0.18             # 유지
+        rationale: "TSMC CoWoS 증설 및 Nvidia B300 오더 스파이크 반영"
+      type_c:
+        base: 0.42             # [CHG-3] 45% → 42% (Amkor 프리미엄 종목 조정)
+        bull: 0.58             # 60% → 58%
+        bear: 0.20             # 22% → 20%
+        rationale: "Amkor 지분 획득 프리미엄 반영 + CFIUS 리드타임"
     moic_targets:
-      type_a: 1.11
-      type_b: 8.90
-      type_c: 11.50
+      type_a: 1.08             # 1.11 → 1.08 (IRR 하향 연동)
+      type_b: 8.90             # 유지
+      type_c: 10.80            # 11.50 → 10.80 (base IRR 하향 연동)
     risk_score: 0.155
 
+  # ●●● CONSERVATIVE ●●●
   conservative:
     name: "Conservative"
     description: "Type A 헤비 (50%) — 안정 우선"
-    probability: 0.25
+    probability: 0.30          # [CHG-6] 0.25 → 0.30 (HBM 다운사이클 시나리오 가능성 상향)
     allocations: {type_a: 0.50, type_b: 0.30, type_c: 0.20}
     irr_assumptions:
-      type_a: {base: 0.12, bull: 0.18, bear: 0.06}
-      type_b: {base: 0.30, bull: 0.42, bear: 0.15}
-      type_c: {base: 0.38, bull: 0.50, bear: 0.18}
+      type_a:
+        base: 0.12
+        bull: 0.17             # 18% → 17%
+        bear: 0.06
+        rationale: "Glass JV base 조정에 해당"
+      type_b:
+        base: 0.28             # 30% → 28% (HBM 다운사이클 반영)
+        bull: 0.40             # 42% → 40%
+        bear: 0.13             # 유지
+        rationale: "HBM 다운사이클 가능성 확대 반영"
+      type_c:
+        base: 0.36             # 38% → 36%
+        bull: 0.48             # 50% → 48%
+        bear: 0.17             # 18% → 17%
+        rationale: "US 금리 문환 놈은 시, CB 수익률 콘트랄"
     moic_targets:
-      type_a: 1.05
-      type_b: 7.20
-      type_c: 9.80
-    risk_score: 0.120
+      type_a: 1.03
+      type_b: 6.80
+      type_c: 9.20
+    risk_score: 0.118
 
+  # ●●● AGGRESSIVE ●●●
   aggressive:
     name: "Aggressive"
     description: "Type B 헤비 (50%) — HBM 사이클 레버리지 극대"
-    probability: 0.15
+    probability: 0.10          # [CHG-7] 0.15 → 0.10 (HBM5 로드맵 지연 시 비율 하향)
     allocations: {type_a: 0.25, type_b: 0.50, type_c: 0.25}
     irr_assumptions:
-      type_a: {base: 0.15, bull: 0.22, bear: 0.08}
-      type_b: {base: 0.45, bull: 0.65, bear: 0.12}
-      type_c: {base: 0.45, bull: 0.60, bear: 0.22}
+      type_a:
+        base: 0.13             # CHG-1 연동
+        bull: 0.20
+        bear: 0.07
+        rationale: "Balanced 같은 기준 적용"
+      type_b:
+        base: 0.45             # 유지
+        bull: 0.65             # 유지
+        bear: 0.15             # [CHG-4] 12% → 15% (최저수익률 플로어 설정)
+        rationale: "Bear 케이스도 업계 임계수익률 이상 유지"
+      type_c:
+        base: 0.42             # CHG-3 연동
+        bull: 0.58
+        bear: 0.20
+        rationale: "Balanced 같은 기준 적용"
     moic_targets:
-      type_a: 1.11
+      type_a: 1.08
       type_b: 10.50
-      type_c: 11.50
+      type_c: 10.80
     risk_score: 0.210
 
+  # ●●● GEO-HEDGE ●●●
   geo_hedge:
     name: "Geo-Hedge"
     description: "Type C 헤비 (40%) — 지정학 분산 최대"
-    probability: 0.10
+    probability: 0.12          # [CHG-8] 0.10 → 0.12 (대만 해협 리스크 직접반영)
     allocations: {type_a: 0.30, type_b: 0.30, type_c: 0.40}
     irr_assumptions:
-      type_a: {base: 0.15, bull: 0.22, bear: 0.08}
-      type_b: {base: 0.38, bull: 0.52, bear: 0.18}
-      type_c: {base: 0.50, bull: 0.68, bear: 0.25}
+      type_a:
+        base: 0.13             # CHG-1 연동
+        bull: 0.20
+        bear: 0.07
+      type_b:
+        base: 0.38
+        bull: 0.58             # CHG-2 연동
+        bear: 0.18
+      type_c:
+        base: 0.48             # 50% → 48% (CFIUS 리드타임 + 특수 구조 수익률)
+        bull: 0.65             # 68% → 65%
+        bear: 0.23             # 25% → 23%
+        rationale: "CHIPS Act CB 구조 + Amkor 옵션을 통한 안전마진"
     moic_targets:
-      type_a: 1.11
+      type_a: 1.08
       type_b: 8.90
-      type_c: 13.20
-    risk_score: 0.140
+      type_c: 12.50           # [CHG-5] 13.20 → 12.50 (CFIUS 리드타임 리스크 할인)
+    risk_score: 0.138          # 0.140 → 0.138 (Type C 미세 조정)
 
-# ──────────────────────────────────────────
-# 리스크 파라미터
-# ──────────────────────────────────────────
+# ────────────────────────────────────────────
+# 리스크 파라미터  (v1.1 업데이트)
+# ────────────────────────────────────────────
 risk_factors:
   geopolitical:
-    korea_peninsula: 0.15       # 한반도 리스크
-    taiwan_strait: 0.20         # 대만 해협 리스크
-    us_eu_policy: 0.10          # 미·EU 정책 변화
+    korea_peninsula: 0.18      # [CHG-10] 15% → 18% (Samsung 예산삭감 정보)
+    taiwan_strait: 0.20        # 유지
+    us_eu_policy: 0.10         # 유지
 
   market:
-    hbm_cycle_downturn: 0.25    # HBM 사이클 하락
-    glass_substrate_delay: 0.15  # Glass 기판 양산 지연
-    competitor_disruption: 0.12  # 경쟁사 기술 도약
+    hbm_cycle_downturn: 0.28  # 25% → 28% (Conservative 확률 상향과 정합)
+    glass_substrate_delay: 0.18  # [CHG-10듰] 15% → 18%
+    competitor_disruption: 0.12  # 유지
 
   execution:
-    jv_negotiation_failure: 0.10
-    offtake_contract_renegotiation: 0.08
-    regulatory_approval_delay: 0.12
+    jv_negotiation_failure: 0.10        # 유지
+    offtake_contract_renegotiation: 0.08  # 유지
+    regulatory_approval_delay: 0.12     # 유지
 
-# ──────────────────────────────────────────
+# sensitivity 향후 활용: 해석 용 가이드
+# IRR 플로어 테스트 범위: bear값을 -20% 충격으로 설정
+# MOIC 민감도: investment_M ±10%, IRR ±2pp
+sentitivity_guide:
+  shock_bear_pct: -0.20
+  investment_range_pct: 0.10
+  irr_shock_pp: 0.02
+
+# ────────────────────────────────────────────
 # 출력 설정
-# ──────────────────────────────────────────
+# ────────────────────────────────────────────
 output:
   formats: [json, xlsx, md]
   include_sensitivity: true
   include_monte_carlo: true
   monte_carlo_iterations: 10000
   notion_sync: true
-  notion_page_id: "34a55ed436f08161af95e25ce621018d"  # PE-8 NOR 플래시 / AstraChips
+  notion_page_id: "34a55ed436f08161af95e25ce621018d"
