@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-04-26T09:34:31.533235+00:00",
+    "generated_at": "2026-04-26T09:43:26.277150+00:00",
     "version": "1.0",
     "total_nodes": 41,
     "total_edges": 60,
@@ -99,10 +99,11 @@
       "version": "",
       "date": "2026-04-26",
       "tags": [
-        "v1.0"
+        "v1.0",
+        "v1.1"
       ],
       "notion_url": null,
-      "file_size": 5169,
+      "file_size": 3179,
       "sha": null
     },
     {
