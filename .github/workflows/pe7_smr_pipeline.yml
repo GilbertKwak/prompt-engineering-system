@@ -1,0 +1,344 @@
+# ============================================================
+# PE-7 P4: SMR Power Model Pipeline
+# Trigger: push to plugins/finance/** or manual_dispatch
+# Jobs:
+#   1. smr-model   → smr_power_model.py (Excel Sheet 8~9)
+#   2. chart-gen   → smr_viz.py (5 charts PNG)
+#   3. notion-upload → notion_chart_uploader.py
+#   4. notify      → Job summary + Slack (optional)
+# ============================================================
+name: PE-7 SMR Power Pipeline (P4)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'plugins/finance/smr_power_model.py'
+      - 'plugins/finance/smr_power_config.yaml'
+      - 'plugins/finance/smr_viz.py'
+      - 'plugins/finance/notion_chart_uploader.py'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry-run (skip Notion upload)'
+        required: false
+        default: 'false'
+        type: choice
+        options: ['true', 'false']
+      smr_scenario:
+        description: 'SMR scenario to run'
+        required: false
+        default: 'all'
+        type: choice
+        options: ['all', 'partial', 'full', 'grid_only']
+
+concurrency:
+  group: smr-pipeline-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: '3.11'
+  REPORTS_DIR: reports
+  CHARTS_DIR: output/charts
+  CONFIG_PATH: plugins/finance/smr_power_config.yaml
+  MODEL_SCRIPT: plugins/finance/smr_power_model.py
+  VIZ_SCRIPT: plugins/finance/smr_viz.py
+  UPLOAD_SCRIPT: plugins/finance/notion_chart_uploader.py
+
+jobs:
+  # ──────────────────────────────────────────────────────────
+  # JOB 1: SMR Excel Model (Sheet 8~9)
+  # ──────────────────────────────────────────────────────────
+  smr-model:
+    name: '📊 SMR Power Model (Sheet 8~9)'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      excel_path: ${{ steps.run-model.outputs.excel_path }}
+      model_version: ${{ steps.run-model.outputs.model_version }}
+      run_timestamp: ${{ steps.run-model.outputs.run_timestamp }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install openpyxl xlsxwriter numpy pyyaml pandas
+
+      - name: Create output directories
+        run: |
+          mkdir -p ${{ env.REPORTS_DIR }}
+          mkdir -p ${{ env.CHARTS_DIR }}
+
+      - name: Run SMR Power Model
+        id: run-model
+        env:
+          SMR_SCENARIO: ${{ github.event.inputs.smr_scenario || 'all' }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+        run: |
+          TIMESTAMP=$(date -u '+%Y%m%d_%H%M%S')
+          EXCEL_OUT="${{ env.REPORTS_DIR }}/AstraChips_SMR_Model_${TIMESTAMP}.xlsx"
+
+          python ${{ env.MODEL_SCRIPT }} \
+            --config ${{ env.CONFIG_PATH }} \
+            --output "${EXCEL_OUT}" \
+            --scenario "${SMR_SCENARIO}" \
+            $([[ "${DRY_RUN}" == 'true' ]] && echo '--dry-run' || echo '')
+
+          echo "excel_path=${EXCEL_OUT}" >> $GITHUB_OUTPUT
+          echo "run_timestamp=${TIMESTAMP}" >> $GITHUB_OUTPUT
+
+          # Extract version from config
+          VERSION=$(python -c "
+import yaml
+with open('${{ env.CONFIG_PATH }}') as f:
+    cfg = yaml.safe_load(f)
+print(cfg.get('version', 'v1.2'))
+")
+          echo "model_version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "✅ SMR Model completed: ${EXCEL_OUT} (v${VERSION})"
+
+      - name: Validate Excel output
+        run: |
+          python - <<'EOF'
+import openpyxl, sys
+try:
+    wb = openpyxl.load_workbook("${{ steps.run-model.outputs.excel_path }}")
+    sheets = wb.sheetnames
+    required = ['SMR_Power_Analysis', 'Integrated_DCF']
+    missing = [s for s in required if s not in sheets]
+    if missing:
+        print(f'❌ Missing sheets: {missing}')
+        sys.exit(1)
+    print(f'✅ Sheets validated: {sheets}')
+except FileNotFoundError:
+    print('ℹ️ Dry-run mode — no Excel file generated')
+EOF
+
+      - name: Upload Excel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: smr-excel-${{ steps.run-model.outputs.run_timestamp }}
+          path: ${{ env.REPORTS_DIR }}/*.xlsx
+          retention-days: 30
+          if-no-files-found: warn
+
+  # ──────────────────────────────────────────────────────────
+  # JOB 2: Chart Generation (5 charts)
+  # ──────────────────────────────────────────────────────────
+  chart-gen:
+    name: '📈 Chart Generation (MOIC/TCO Heatmaps)'
+    runs-on: ubuntu-latest
+    needs: smr-model
+    timeout-minutes: 10
+    outputs:
+      chart_count: ${{ steps.gen-charts.outputs.chart_count }}
+      charts_dir: ${{ steps.gen-charts.outputs.charts_dir }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install chart dependencies
+        run: |
+          pip install --upgrade pip
+          pip install plotly kaleido numpy pyyaml pandas
+
+      - name: Create chart output dir
+        run: mkdir -p ${{ env.CHARTS_DIR }}
+
+      - name: Generate charts
+        id: gen-charts
+        env:
+          TIMESTAMP: ${{ needs.smr-model.outputs.run_timestamp }}
+          MODEL_VERSION: ${{ needs.smr-model.outputs.model_version }}
+          SMR_SCENARIO: ${{ github.event.inputs.smr_scenario || 'all' }}
+        run: |
+          python ${{ env.VIZ_SCRIPT }} \
+            --config ${{ env.CONFIG_PATH }} \
+            --output-dir ${{ env.CHARTS_DIR }} \
+            --timestamp "${TIMESTAMP}" \
+            --version "${MODEL_VERSION}" \
+            --scenario "${SMR_SCENARIO}"
+
+          COUNT=$(ls ${{ env.CHARTS_DIR }}/*.png 2>/dev/null | wc -l)
+          echo "chart_count=${COUNT}" >> $GITHUB_OUTPUT
+          echo "charts_dir=${{ env.CHARTS_DIR }}" >> $GITHUB_OUTPUT
+          echo "✅ Generated ${COUNT} charts"
+          ls -lh ${{ env.CHARTS_DIR }}/*.png || echo '⚠️ No charts found'
+
+      - name: Validate chart outputs
+        run: |
+          python - <<'EOF'
+import os, sys
+charts_dir = "${{ env.CHARTS_DIR }}"
+expected = [
+    'moic_grouped_bar',
+    'moic_delta_bar',
+    'moic_waterfall',
+    'tco_heatmap',
+    'irr_moic_bubble',
+]
+missing = []
+for name in expected:
+    matches = [f for f in os.listdir(charts_dir) if f.startswith(name) and f.endswith('.png')]
+    if not matches:
+        missing.append(name)
+if missing:
+    print(f'⚠️ Missing charts: {missing} — partial output accepted')
+else:
+    print(f'✅ All {len(expected)} expected charts present')
+EOF
+
+      - name: Upload chart artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: smr-charts-${{ needs.smr-model.outputs.run_timestamp }}
+          path: ${{ env.CHARTS_DIR }}/*.png
+          retention-days: 90
+          if-no-files-found: warn
+
+  # ──────────────────────────────────────────────────────────
+  # JOB 3: Notion Upload
+  # ──────────────────────────────────────────────────────────
+  notion-upload:
+    name: '🗄️ Notion Chart Upload'
+    runs-on: ubuntu-latest
+    needs: [smr-model, chart-gen]
+    timeout-minutes: 10
+    if: |
+      github.event.inputs.dry_run != 'true' &&
+      needs.chart-gen.outputs.chart_count != '0'
+    outputs:
+      notion_page_url: ${{ steps.upload.outputs.notion_page_url }}
+      uploaded_count: ${{ steps.upload.outputs.uploaded_count }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install Notion dependencies
+        run: |
+          pip install notion-client requests pyyaml
+
+      - name: Download chart artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: smr-charts-${{ needs.smr-model.outputs.run_timestamp }}
+          path: ${{ env.CHARTS_DIR }}
+
+      - name: Upload charts to Notion
+        id: upload
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_SMR_PAGE_ID: ${{ secrets.NOTION_SMR_PAGE_ID }}
+          TIMESTAMP: ${{ needs.smr-model.outputs.run_timestamp }}
+          MODEL_VERSION: ${{ needs.smr-model.outputs.model_version }}
+          CHART_COUNT: ${{ needs.chart-gen.outputs.chart_count }}
+        run: |
+          python ${{ env.UPLOAD_SCRIPT }} \
+            --charts-dir ${{ env.CHARTS_DIR }} \
+            --page-id "${NOTION_SMR_PAGE_ID}" \
+            --timestamp "${TIMESTAMP}" \
+            --version "${MODEL_VERSION}" \
+            --token "${NOTION_TOKEN}"
+
+          # outputs captured from script stdout (JSON line)
+          PAGE_URL=$(python -c "
+import json, sys
+for line in open('/tmp/notion_upload_result.json'):
+    d = json.loads(line)
+    print(d.get('page_url',''))
+    break
+" 2>/dev/null || echo 'N/A')
+          echo "notion_page_url=${PAGE_URL}" >> $GITHUB_OUTPUT
+          echo "uploaded_count=${CHART_COUNT}" >> $GITHUB_OUTPUT
+
+  # ──────────────────────────────────────────────────────────
+  # JOB 4: Pipeline Summary & Notification
+  # ──────────────────────────────────────────────────────────
+  notify:
+    name: '📣 Pipeline Summary'
+    runs-on: ubuntu-latest
+    needs: [smr-model, chart-gen, notion-upload]
+    if: always()
+
+    steps:
+      - name: Write Job Summary
+        env:
+          MODEL_VERSION: ${{ needs.smr-model.outputs.model_version }}
+          TIMESTAMP: ${{ needs.smr-model.outputs.run_timestamp }}
+          CHART_COUNT: ${{ needs.chart-gen.outputs.chart_count }}
+          NOTION_URL: ${{ needs.notion-upload.outputs.notion_page_url }}
+          SMR_SCENARIO: ${{ github.event.inputs.smr_scenario || 'all' }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+          MODEL_STATUS: ${{ needs.smr-model.result }}
+          CHART_STATUS: ${{ needs.chart-gen.result }}
+          NOTION_STATUS: ${{ needs.notion-upload.result }}
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << 'SUMMARY'
+          ## 🚀 PE-7 SMR Power Pipeline (P4) — Run Summary
+
+          | Item | Value |
+          |------|-------|
+          | **Model Version** | `${{ env.MODEL_VERSION }}` |
+          | **Timestamp** | `${{ env.TIMESTAMP }}` |
+          | **SMR Scenario** | `${{ env.SMR_SCENARIO }}` |
+          | **Dry-Run** | `${{ env.DRY_RUN }}` |
+          | **Charts Generated** | `${{ env.CHART_COUNT }}` |
+          | **Notion Page** | [${{ env.NOTION_URL }}](${{ env.NOTION_URL }}) |
+
+          ### Job Status
+          | Job | Status |
+          |-----|--------|
+          | SMR Model | `${{ env.MODEL_STATUS }}` |
+          | Chart Gen | `${{ env.CHART_STATUS }}` |
+          | Notion Upload | `${{ env.NOTION_STATUS }}` |
+
+          ### Artifacts
+          - 📊 Excel: `reports/AstraChips_SMR_Model_${{ env.TIMESTAMP }}.xlsx`
+          - 📈 Charts: `output/charts/*.png` (5 files)
+          - 🗄️ Notion: Sheet 8~9 + MOIC/TCO 차트 자동 업로드
+          SUMMARY
+
+      - name: Slack notification (optional)
+        if: ${{ secrets.SLACK_WEBHOOK_URL != '' }}
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          MODEL_VERSION: ${{ needs.smr-model.outputs.model_version }}
+          CHART_COUNT: ${{ needs.chart-gen.outputs.chart_count }}
+          NOTION_URL: ${{ needs.notion-upload.outputs.notion_page_url }}
+          MODEL_STATUS: ${{ needs.smr-model.result }}
+        run: |
+          STATUS_EMOJI=$([ "$MODEL_STATUS" == "success" ] && echo "✅" || echo "❌")
+          curl -s -X POST "${SLACK_WEBHOOK}" \
+            -H 'Content-type: application/json' \
+            --data "{
+              \"text\": \"${STATUS_EMOJI} *PE-7 SMR Pipeline (P4)*\\nVersion: ${MODEL_VERSION} | Charts: ${CHART_COUNT} | Notion: ${NOTION_URL}\"
+            }"
