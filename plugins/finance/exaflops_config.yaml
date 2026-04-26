@@ -1,0 +1,195 @@
+# ============================================================
+# P6: ExaFLOPS 통합 자원모델 설정
+# HBM · Glass Substrate · 전력(SMR) · 패키징(OSAT) 단일 TCO
+# ============================================================
+
+meta:
+  version: "1.0.0"
+  created: "2026-04-26"
+  author: "PE-7 Pipeline"
+  description: "ExaFLOPS 단위 통합 TCO 모델 — 4개 자원 레이어"
+
+# ────────────────────────────────────────
+# 1. 타겟 시스템 정의
+# ────────────────────────────────────────
+systems:
+  - id: "SYS_A"
+    name: "HPC Cluster (1 ExaFLOPS)"
+    exaflops: 1.0
+    gpu_count: 8192          # H100 기준
+    gpu_model: "H100_SXM5"
+    hbm_gen: "HBM3E"
+    facility_type: "HPC"
+    region: "US"
+    pue: 1.15
+    lifetime_years: 7
+
+  - id: "SYS_B"
+    name: "AI Training DC (5 ExaFLOPS)"
+    exaflops: 5.0
+    gpu_count: 40960
+    gpu_model: "H100_SXM5"
+    hbm_gen: "HBM3E"
+    facility_type: "AI_DC"
+    region: "US"
+    pue: 1.20
+    lifetime_years: 7
+
+  - id: "SYS_C"
+    name: "Sovereign AI DC (10 ExaFLOPS)"
+    exaflops: 10.0
+    gpu_count: 81920
+    gpu_model: "B200"
+    hbm_gen: "HBM4"
+    facility_type: "AI_DC"
+    region: "KR"
+    pue: 1.18
+    lifetime_years: 10
+
+# ────────────────────────────────────────
+# 2. HBM 자원 레이어
+# ────────────────────────────────────────
+hbm:
+  stacks_per_gpu:
+    H100_SXM5: 6     # HBM3E × 6
+    B200: 8          # HBM4 × 8
+
+  capacity_per_stack_gb:
+    HBM3E: 24
+    HBM4: 32
+
+  unit_cost_usd:
+    HBM3E: 1800      # $/stack (2026 기준)
+    HBM4: 2600       # $/stack
+
+  yield_rate:
+    HBM3E: 0.72
+    HBM4: 0.68
+
+  # 재활용/Salvage 파라미터 (HBM-Salvage-Value-Program)
+  salvage:
+    recovery_rate: 0.35        # 35% die 재활용 가능
+    salvage_value_pct: 0.18    # 원가의 18% 회수
+    reconditioning_cost_usd_per_stack: 120
+
+  annual_price_decline_pct: 0.12   # 연 12% 단가 하락
+
+# ────────────────────────────────────────
+# 3. Glass Substrate 자원 레이어
+# ────────────────────────────────────────
+glass_substrate:
+  substrates_per_gpu:
+    H100_SXM5: 1
+    B200: 1
+
+  unit_cost_usd:
+    standard: 380    # 기존 ABF 대비
+    glass_2026: 520  # Glass 패널 (초기 프리미엄)
+    glass_2028: 390  # 양산 안정화 후
+
+  yield_improvement_pct: 0.08   # 양산 시 연 8% yield 개선
+  adoption_scenario:
+    conservative: 0.15   # 2026년 Glass 채택률
+    base: 0.35
+    aggressive: 0.60
+
+  current_year: 2026
+  adoption_start_year: 2025
+
+# ────────────────────────────────────────
+# 4. 전력 자원 레이어 (SMR 연동)
+# ────────────────────────────────────────
+power:
+  gpu_tdp_w:
+    H100_SXM5: 700
+    B200: 1000
+
+  system_overhead_multiplier: 1.35   # 냉각·네트워크·스토리지 포함
+
+  grid_price_usd_per_mwh:
+    US: 85.0
+    KR: 102.0
+    EU: 118.0
+
+  smr_scenarios:
+    grid_only:
+      smr_pct: 0.0
+      lcoe_usd_per_mwh: null
+      capex_usd_m: 0
+
+    smr_partial:
+      smr_pct: 0.40
+      lcoe_usd_per_mwh: 72.0    # RR SMR LCOE
+      capex_usd_m: 360          # 300MW급
+
+    smr_full:
+      smr_pct: 0.80
+      lcoe_usd_per_mwh: 72.0
+      capex_usd_m: 900          # 750MW급
+
+  capacity_factor: 0.95         # SMR 가동률
+  discount_rate: 0.08
+
+# ────────────────────────────────────────
+# 5. 패키징(OSAT) 자원 레이어
+# ────────────────────────────────────────
+packaging:
+  process_per_gpu:
+    H100_SXM5:
+      CoWoS_size_mm2: 4500
+      cost_usd: 1200       # CoWoS-L 기준
+      yield_rate: 0.78
+      lead_time_weeks: 26
+
+    B200:
+      CoWoS_size_mm2: 6900
+      cost_usd: 1950       # CoWoS-XL
+      yield_rate: 0.72
+      lead_time_weeks: 32
+
+  osat_capacity_constraint:
+    annual_cowos_wafer_starts_k: 85    # 2026 TSMC CoWoS 총 능력
+    pe7_allocation_pct: 0.08           # PE-7 포트폴리오 배분
+
+  annual_cost_decline_pct: 0.07
+
+# ────────────────────────────────────────
+# 6. TCO 계산 파라미터
+# ────────────────────────────────────────
+tco:
+  discount_rate: 0.08
+  inflation_rate: 0.025
+  opex_escalation_rate: 0.03
+
+  # CAPEX 구성 비율 (총 시스템 비용 대비)
+  capex_breakdown:
+    gpu_die: 0.42
+    hbm: 0.18
+    substrate_packaging: 0.12
+    networking: 0.10
+    facility_infra: 0.11
+    power_infra: 0.07
+
+  # OPEX 연간 비율 (초기 CAPEX 대비)
+  opex_annual_pct:
+    power: null         # 별도 계산
+    maintenance: 0.04
+    staffing: 0.03
+    software_license: 0.02
+    cooling_fluid: 0.01
+
+  # ExaFLOPS 단위 환산
+  flops_per_gpu:
+    H100_SXM5: 3.958e15   # BF16 TFLOPS → FLOPS
+    B200: 9.0e15
+
+# ────────────────────────────────────────
+# 7. 출력 설정
+# ────────────────────────────────────────
+output:
+  excel_filename: "P6_ExaFLOPS_TCO_Model.xlsx"
+  charts_dir: "output/p6_charts"
+  report_prefix: "P6"
+  notion_upload: true
+  currency: "USD"
+  unit_scale: "M"    # 백만 달러 단위
