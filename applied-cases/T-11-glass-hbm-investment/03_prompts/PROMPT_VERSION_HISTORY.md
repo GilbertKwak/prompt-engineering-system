@@ -13,7 +13,8 @@
 | v2.0 | v2_financial_model.md | 2026-03-01 | Python IRR/MOIC/NPV 모델 완성. 시나리오 4종(Conservative/Balanced/Aggressive/Geo-Hedge). 포트폴리오 배분 최적화. | 92/100 | 🟢 Active |
 | v3.0 | agent_1_expanded_profile_v2.0.md | 2026-04-26 | Agent-1 확장 프로파일. 12국×10레이어 산업 데이터 수집 프레임워크. Sub-Agent 4종(1a/1b/1c/1d). BS/VS 공식 정의. OUTPUT 1.1~1.5 완성. G-01~G-10 해소. | 95/100 | 🟢 Active |
 | v4.0 | agent_2_dependency_bottleneck_profile_v2.0.md | 2026-04-26 | Agent-2 완전판. DSM 매트릭스, Type A/B/C VS 완전 수치화, 포트폴리오 통합 노출도(1.785), 스트레스 테스트 5종, Agent-3 핸드오프 YAML, Validation Gate 7항목. E-04/E-07 해소. | 95/100 | 🟢 Active |
-| **v5.0** | **agent_3_scenario_planning_profile_v1.0.md** | **2026-04-26** | **Agent-3 시나리오 플래닝 프로파일. Agent-2 Handoff YAML 수신. 4-World 프레임워크, 확률×수익 매트릭스, EV_MOIC 6.149x/EV_IRR 37.0%, Monte Carlo 500회(원금손실 7.3%), 동적 리밸런싱 5종, HBM 사이클 오버레이, Agent-4 핸드오프 YAML. OUTPUT 3.1~3.7 완성.** | **95/100** | **🟢 Active** |
+| v5.0 | agent_3_scenario_planning_profile_v1.0.md | 2026-04-26 | Agent-3 시나리오 플래닝 프로파일. Agent-2 Handoff YAML 수신. 4-World 프레임워크, 확률×수익 매트릭스, EV_MOIC 6.149x/EV_IRR 37.0%, Monte Carlo 500회(원금손실 7.3%), 동적 리밸런싱 5종, HBM 사이클 오버레이, Agent-4 핸드오프 YAML. OUTPUT 3.1~3.7 완성. | 95/100 | 🟢 Active |
+| **v6.0** | **agent_4_investment_execution_v1.0.md** | **2026-04-26** | **Agent-4 투자 실행 모델 완전판. Agent-3 Handoff YAML 수신. DD 체크리스트 3종(A:17항목/B:15항목/C:11항목=43항목), DD 마스터 스케줄(W+1~W+6), Term Sheet 3종(금액·조건·트리거 전수치), Exit 구조 3종+타임라인, IC 승인 메모, 모니터링 KPI 5×3. OUTPUT 4.1~4.10 완성.** | **95/100** | **🟢 Active** |
 
 ---
 
@@ -21,7 +22,7 @@
 
 | 버전 | 예정 파일명 | 내용 | 목표 일정 |
 |------|------------|------|-----------|
-| v6.0 | agent_4_investment_execution_v1.0.md | Agent-4 투자 실행 모델 — DD 체크리스트, Term Sheet, Exit 구조 | 2026-04-26 (Agent-3 후속) |
+| v7.0 | T11_investment_report_v1.0.docx | T-11 통합 투자보고서 — Agent-1~4 산출물 통합 | 2026-04-26 (Agent-4 후속) |
 
 ---
 
@@ -29,11 +30,12 @@
 
 ```
 03_prompts/
-├── PROMPT_VERSION_HISTORY.md               ← 이 파일 (v5.0 갱신)
+├── PROMPT_VERSION_HISTORY.md               ← 이 파일 (v6.0 갱신)
 ├── v1_core_satellite_hedge.md              ← v1.0
 ├── v2_financial_model.md                   ← v2.0
 ├── agent_1_expanded_profile_v2.0.md        ← v3.0 (PE-3 95/100)
 ├── agent_2_dependency_bottleneck_profile_v1.0.md  ← v4.0 구버전 보관
 ├── agent_2_dependency_bottleneck_profile_v2.0.md  ← v4.0 완전판 (PE-3 95/100)
-└── agent_3_scenario_planning_profile_v1.0.md      ← v5.0 신규 ✅
+├── agent_3_scenario_planning_profile_v1.0.md      ← v5.0 (PE-3 95/100)
+└── agent_4_investment_execution_v1.0.md           ← v6.0 신규 ✅
 ```
