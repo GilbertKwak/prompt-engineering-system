@@ -1,0 +1,208 @@
+# smr_power_config.yaml  v1.0
+# PE-7 P3: SMR 전력비 모델 파라미터
+# Author: Gilbert Kwak | 2026-04-26
+
+meta:
+  version: "1.0"
+  pe_version: "PE-7"
+  stage: "P3"
+  description: "SMR-based power cost model for HBM/Glass/AI-DC facilities"
+  currency: "USD"
+  base_year: 2026
+  projection_years: 10
+  discount_rate: 0.08
+
+# ─────────────────────────────────────────
+# SMR 기술 유형 (소형모듈원자로)
+# ─────────────────────────────────────────
+smr_types:
+  nuscale:
+    name: "NuScale VOYGR-12"
+    vendor: "NuScale Power (USA)"
+    capacity_mwe: 924        # 12모듈 × 77MWe
+    single_module_mwe: 77
+    modules: 12
+    capex_b_usd: 9.3         # 총 CAPEX ($B)
+    capex_per_kwe: 10054     # $/kWe
+    opex_per_mwh: 12.5       # $/MWh (운영비)
+    fuel_per_mwh: 8.2        # $/MWh (연료비)
+    lcoe_base_per_mwh: 89    # $/MWh LCOE 기준값
+    construction_years: 4
+    lifetime_years: 60
+    availability_factor: 0.92
+    co2_kg_per_mwh: 5.5      # gCO2eq/kWh
+    deployment_region: ["US", "EU", "Korea"]
+    status: "NRC Approved"
+    notes: "첫 상업 배치 2029년 예상"
+
+  rolls_royce:
+    name: "Rolls-Royce SMR"
+    vendor: "Rolls-Royce (UK)"
+    capacity_mwe: 470
+    single_module_mwe: 470
+    modules: 1
+    capex_b_usd: 2.5         # per unit
+    capex_per_kwe: 5319
+    opex_per_mwh: 10.0
+    fuel_per_mwh: 7.5
+    lcoe_base_per_mwh: 74
+    construction_years: 5
+    lifetime_years: 60
+    availability_factor: 0.91
+    co2_kg_per_mwh: 5.2
+    deployment_region: ["UK", "EU"]
+    status: "GDA Phase 2"
+    notes: "2030년 첫 운전 목표"
+
+  kairos:
+    name: "Kairos Power KP-FHR"
+    vendor: "Kairos Power (USA)"
+    capacity_mwe: 140
+    single_module_mwe: 140
+    modules: 1
+    capex_b_usd: 1.2
+    capex_per_kwe: 8571
+    opex_per_mwh: 9.5
+    fuel_per_mwh: 6.8
+    lcoe_base_per_mwh: 81
+    construction_years: 3
+    lifetime_years: 40
+    availability_factor: 0.93
+    co2_kg_per_mwh: 4.8
+    deployment_region: ["US"]
+    status: "NRC Construction Permit Pending"
+    notes: "Google 계약 체결 (2024). 2030 COD"
+
+# ─────────────────────────────────────────
+# 데이터센터 / 반도체 Fab Tier 정의
+# ─────────────────────────────────────────
+data_center_tiers:
+  hbm_fab:
+    name: "HBM Fab (Type A)"
+    type_link: "type_a"
+    annual_power_gwh: 1800       # GWh/year (연간 전력 소비)
+    peak_demand_mw: 300          # MW
+    pue: 1.05                    # Power Usage Effectiveness
+    it_load_mw: 286
+    grid_price_per_mwh: 95       # 한국 산업용 단가 $/MWh
+    grid_price_escalation: 0.03  # 연 3% 상승
+    co2_target_kg_per_mwh: 0     # Net-zero 목표
+    notes: "Samsung/SK hynix HBM4 Fab 기준"
+
+  glass_fab:
+    name: "Glass Substrate Fab (Type A)"
+    type_link: "type_a"
+    annual_power_gwh: 950
+    peak_demand_mw: 160
+    pue: 1.08
+    it_load_mw: 148
+    grid_price_per_mwh: 90
+    grid_price_escalation: 0.03
+    co2_target_kg_per_mwh: 0
+    notes: "Corning/AGC Glass substrate 공정 기준"
+
+  ai_datacenter_tw:
+    name: "AI DC — Taiwan Hub (Type B)"
+    type_link: "type_b"
+    annual_power_gwh: 4200       # 대형 AI DC
+    peak_demand_mw: 700
+    pue: 1.18
+    it_load_mw: 593
+    grid_price_per_mwh: 78       # 대만 전력 단가
+    grid_price_escalation: 0.04
+    co2_target_kg_per_mwh: 0
+    notes: "TSMC CoWoS + HBM 패키징 허브 기준"
+
+  ai_datacenter_us:
+    name: "AI DC — US (Type C)"
+    type_link: "type_c"
+    annual_power_gwh: 8760       # 1GW급 Hyperscale
+    peak_demand_mw: 1000
+    pue: 1.25
+    it_load_mw: 800
+    grid_price_per_mwh: 65       # 미국 평균 산업용
+    grid_price_escalation: 0.025
+    co2_target_kg_per_mwh: 0
+    notes: "Amkor/Micron US Fab + Hyperscale DC 기준"
+
+  ai_datacenter_eu:
+    name: "AI DC — EU (Type C)"
+    type_link: "type_c"
+    annual_power_gwh: 3500
+    peak_demand_mw: 500
+    pue: 1.20
+    it_load_mw: 417
+    grid_price_per_mwh: 110      # EU 산업용 (에너지 위기 반영)
+    grid_price_escalation: 0.02
+    co2_target_kg_per_mwh: 0
+    notes: "EU CHIPS Act 수혜 시설 기준"
+
+# ─────────────────────────────────────────
+# 시나리오 정의
+# ─────────────────────────────────────────
+scenarios:
+  grid_only:
+    name: "Grid Only (Baseline)"
+    description: "기존 그리드 100% 의존 — SMR 없음"
+    smr_penetration: 0.0         # SMR 전력 비중
+    smr_type: null
+    capex_addition_m: 0
+    opex_delta_pct: 0
+    irr_alpha_pp: 0.0            # IRR 추가 기여 없음
+    co2_reduction_pct: 0
+    timeline: "즉시"
+
+  smr_partial:
+    name: "SMR Partial (30%)"
+    description: "SMR 30% + 그리드 70% 혼합 — Kairos/NuScale 소형 배치"
+    smr_penetration: 0.30
+    smr_type: "kairos"
+    capex_addition_m: 360        # $360M 추가 CAPEX (Kairos 3기)
+    opex_delta_pct: -0.08        # 운영비 8% 절감
+    irr_alpha_pp: 1.2            # IRR +1.2pp 기여
+    co2_reduction_pct: 28
+    timeline: "2028 Q2 COD"
+
+  smr_full:
+    name: "SMR Full (80%)"
+    description: "SMR 80% — NuScale VOYGR 배치, 탄소중립 달성"
+    smr_penetration: 0.80
+    smr_type: "nuscale"
+    capex_addition_m: 930        # $930M NuScale 지분 참여
+    opex_delta_pct: -0.18        # 운영비 18% 절감
+    irr_alpha_pp: 2.8            # IRR +2.8pp 기여
+    co2_reduction_pct: 75
+    timeline: "2029 Q4 COD"
+
+# ─────────────────────────────────────────
+# 민감도 스윕 파라미터
+# ─────────────────────────────────────────
+sensitivity:
+  electricity_price_sweep:
+    base_price_per_mwh: 85
+    range_per_mwh: 20            # ±$20/MWh
+    step_per_mwh: 5
+    label: "Electricity Price Sensitivity ($/MWh)"
+
+  smr_capex_shock:
+    base_multiplier: 1.0
+    shocks: [-0.20, -0.10, 0.0, 0.10, 0.20]
+    label: "SMR CAPEX Shock (±20%)"
+
+  grid_escalation_sweep:
+    base_rate: 0.03
+    range: 0.02                  # ±2%
+    step: 0.005
+    label: "Grid Price Escalation Rate"
+
+# ─────────────────────────────────────────
+# ExaFLOPS TCO 단위 모델
+# ─────────────────────────────────────────
+exaflops_tco:
+  exaflops_per_mw_it: 0.1       # 1MWit = 0.1 ExaFLOPS (H100 기준)
+  hbm_tb_per_exaflops: 12.8     # ExaFLOPS당 HBM 12.8TB 필요
+  power_cost_share_pct: 0.35    # TCO 중 전력비 비중 35%
+  target_tco_per_exaflops_m: 45 # 목표 TCO $45M/ExaFLOPS
+  smr_tco_reduction_pct:
+    smr_partial: 4.2
+    smr_full: 11.8
