@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-04-26T01:45:10.122260+00:00",
+    "generated_at": "2026-04-26T03:01:31.122755+00:00",
     "version": "1.0",
     "total_nodes": 36,
     "total_edges": 60,
@@ -588,16 +588,15 @@
     {
       "id": "engines/PE-7_ai-automation-design/CHANGELOG.md",
       "type": "engine",
-      "title": "CHANGELOG · PE-7 AI 자동화 설계 및 구현",
+      "title": "PE-7 Auto-Automation Design — CHANGELOG",
       "status": "unknown",
       "version": "",
-      "date": "2026-04-21",
+      "date": "2026-04-26",
       "tags": [
-        "PE-7_ai-automation-design",
-        "v1.0"
+        "PE-7_ai-automation-design"
       ],
-      "notion_url": "https://www.notion.so/34955ed436f081149dd6de25dba027d7",
-      "file_size": 888,
+      "notion_url": null,
+      "file_size": 1349,
       "sha": null
     },
     {
