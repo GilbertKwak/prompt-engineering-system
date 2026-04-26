@@ -1,0 +1,105 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Waza Skill Standard Schema v1.0",
+  "description": "PE-7 P1: Waza skills 표준화 JSON Schema — 2026-04-26",
+  "type": "object",
+  "required": ["id", "name", "version", "category", "description", "inputs", "outputs", "metadata"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^WZ-[A-Z]{2,6}-[0-9]{3}$",
+      "description": "Waza Skill ID (예: WZ-FIN-001, WZ-SEM-012)"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 80
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Semantic version (예: v1.0.0)"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "finance",
+        "semiconductor",
+        "thermal",
+        "report_writing",
+        "validation",
+        "data_processing",
+        "research",
+        "automation"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "active", "deprecated", "archived"],
+      "default": "draft"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 500
+    },
+    "inputs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "type", "required"],
+        "properties": {
+          "name": {"type": "string"},
+          "type": {"type": "string", "enum": ["string", "number", "array", "object", "boolean", "file"]},
+          "required": {"type": "boolean"},
+          "description": {"type": "string"},
+          "default": {}
+        }
+      }
+    },
+    "outputs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "type"],
+        "properties": {
+          "name": {"type": "string"},
+          "type": {"type": "string"},
+          "description": {"type": "string"},
+          "format": {"type": "string", "enum": ["json", "csv", "xlsx", "md", "yaml", "pdf", "text"]}
+        }
+      }
+    },
+    "prompt_template": {
+      "type": "string",
+      "description": "Optional: LLM prompt template for this skill"
+    },
+    "pe_engines": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["PE-1", "PE-2", "PE-3", "PE-7", "PE-8", "PE-9"]
+      },
+      "description": "연계 PE 엔진 목록"
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["author", "created_at", "tags"],
+      "properties": {
+        "author": {"type": "string"},
+        "created_at": {"type": "string", "format": "date"},
+        "updated_at": {"type": "string", "format": "date"},
+        "tags": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 1
+        },
+        "notion_page_id": {"type": "string"},
+        "github_path": {"type": "string"}
+      }
+    }
+  }
+}

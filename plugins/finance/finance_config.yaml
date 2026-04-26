@@ -1,0 +1,152 @@
+# ============================================================
+# cowork-plugins Finance Config v1.0
+# PE-7 P1 즉시 실행: AstraChips LP Fund 재무 모델
+# 작성: 2026-04-26 | Gilbert Kwak
+# ============================================================
+
+plugin:
+  name: cowork-finance
+  version: v1.0.0
+  pe_engine: PE-7
+  description: |
+    AstraChips LP Fund Core/Satellite/Hedge 포트폴리오 재무 모델링
+    — IRR, NPV, MOIC, 리스크 시나리오 자동 계산
+
+# ──────────────────────────────────────────
+# 전역 파라미터
+# ──────────────────────────────────────────
+global:
+  currency: USD
+  base_year: 2026
+  projection_years: 7          # 2026~2032
+  discount_rate: 0.12          # WACC 12%
+  tax_rate: 0.21
+  inflation_rate: 0.025
+
+# ──────────────────────────────────────────
+# 포트폴리오 구조
+# ──────────────────────────────────────────
+portfolio:
+  total_fund_size_M: 1000      # $1,000M USD
+  management_fee_pct: 0.02
+  carry_pct: 0.20
+  hurdle_rate: 0.08
+
+  allocations:
+    type_a:
+      label: "Core — Korea Glass 수직통합"
+      weight: 0.40
+      investment_M: 400
+      strategy: "Samsung+Corning+AGC JV (15% 지분)"
+      geography: "Korea"
+      vintage_year: 2026
+
+    type_b:
+      label: "Satellite — HBM 패키징 레버리지"
+      weight: 0.35
+      investment_M: 350
+      strategy: "HBM4 오프테이크 + TSMC CoWoS"
+      geography: "Taiwan"
+      vintage_year: 2026
+
+    type_c:
+      label: "Hedge — US/EU 분산"
+      weight: 0.25
+      investment_M: 250
+      strategy: "Amkor 지분 + Micron 전환사채"
+      geography: "US/EU"
+      vintage_year: 2026
+
+# ──────────────────────────────────────────
+# 시나리오 정의
+# ──────────────────────────────────────────
+scenarios:
+  balanced:
+    name: "Balanced (Base)"
+    description: "권장 40/35/25 배분"
+    probability: 0.50
+    allocations: {type_a: 0.40, type_b: 0.35, type_c: 0.25}
+    irr_assumptions:
+      type_a: {base: 0.15, bull: 0.22, bear: 0.08}
+      type_b: {base: 0.38, bull: 0.52, bear: 0.18}
+      type_c: {base: 0.45, bull: 0.60, bear: 0.22}
+    moic_targets:
+      type_a: 1.11
+      type_b: 8.90
+      type_c: 11.50
+    risk_score: 0.155
+
+  conservative:
+    name: "Conservative"
+    description: "Type A 헤비 (50%) — 안정 우선"
+    probability: 0.25
+    allocations: {type_a: 0.50, type_b: 0.30, type_c: 0.20}
+    irr_assumptions:
+      type_a: {base: 0.12, bull: 0.18, bear: 0.06}
+      type_b: {base: 0.30, bull: 0.42, bear: 0.15}
+      type_c: {base: 0.38, bull: 0.50, bear: 0.18}
+    moic_targets:
+      type_a: 1.05
+      type_b: 7.20
+      type_c: 9.80
+    risk_score: 0.120
+
+  aggressive:
+    name: "Aggressive"
+    description: "Type B 헤비 (50%) — HBM 사이클 레버리지 극대"
+    probability: 0.15
+    allocations: {type_a: 0.25, type_b: 0.50, type_c: 0.25}
+    irr_assumptions:
+      type_a: {base: 0.15, bull: 0.22, bear: 0.08}
+      type_b: {base: 0.45, bull: 0.65, bear: 0.12}
+      type_c: {base: 0.45, bull: 0.60, bear: 0.22}
+    moic_targets:
+      type_a: 1.11
+      type_b: 10.50
+      type_c: 11.50
+    risk_score: 0.210
+
+  geo_hedge:
+    name: "Geo-Hedge"
+    description: "Type C 헤비 (40%) — 지정학 분산 최대"
+    probability: 0.10
+    allocations: {type_a: 0.30, type_b: 0.30, type_c: 0.40}
+    irr_assumptions:
+      type_a: {base: 0.15, bull: 0.22, bear: 0.08}
+      type_b: {base: 0.38, bull: 0.52, bear: 0.18}
+      type_c: {base: 0.50, bull: 0.68, bear: 0.25}
+    moic_targets:
+      type_a: 1.11
+      type_b: 8.90
+      type_c: 13.20
+    risk_score: 0.140
+
+# ──────────────────────────────────────────
+# 리스크 파라미터
+# ──────────────────────────────────────────
+risk_factors:
+  geopolitical:
+    korea_peninsula: 0.15       # 한반도 리스크
+    taiwan_strait: 0.20         # 대만 해협 리스크
+    us_eu_policy: 0.10          # 미·EU 정책 변화
+
+  market:
+    hbm_cycle_downturn: 0.25    # HBM 사이클 하락
+    glass_substrate_delay: 0.15  # Glass 기판 양산 지연
+    competitor_disruption: 0.12  # 경쟁사 기술 도약
+
+  execution:
+    jv_negotiation_failure: 0.10
+    offtake_contract_renegotiation: 0.08
+    regulatory_approval_delay: 0.12
+
+# ──────────────────────────────────────────
+# 출력 설정
+# ──────────────────────────────────────────
+output:
+  formats: [json, xlsx, md]
+  include_sensitivity: true
+  include_monte_carlo: true
+  monte_carlo_iterations: 10000
+  notion_sync: true
+  notion_page_id: "34a55ed436f08161af95e25ce621018d"  # PE-8 NOR 플래시 / AstraChips

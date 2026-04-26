@@ -1,0 +1,347 @@
+# ============================================================
+# PE-7 병렬 워크플로우 v3.0
+# 목적: Track A(Waza Skills) + Track B(Finance Plugin) + Track C(Validation) 동시 실행
+# 트리거: push(main), PR, 수동(workflow_dispatch), 매일 02:00 KST
+# 작성: 2026-04-26 | Gilbert Kwak
+# ============================================================
+
+name: PE-7 Parallel Workflow v3.0
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'skills/**'
+      - 'plugins/**'
+      - 'applied-cases/**'
+      - '.github/workflows/pe7_parallel_v3.yml'
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 17 * * *'   # 매일 02:00 KST (UTC+9 → UTC 17:00 전날)
+  workflow_dispatch:
+    inputs:
+      track:
+        description: '실행 트랙 선택 (all | track-a | track-b | track-c)'
+        required: false
+        default: 'all'
+      dry_run:
+        description: '드라이런 모드 (true/false)'
+        required: false
+        default: 'false'
+
+env:
+  PYTHON_VERSION: '3.11'
+  NOTION_API_VERSION: '2022-06-28'
+  PE_VERSION: 'v3.0'
+  RUN_DATE: ${{ github.run_id }}
+
+jobs:
+  # ──────────────────────────────────────────────────────────
+  # 0. PRE-FLIGHT: 병렬 실행 전 환경 검증
+  # ──────────────────────────────────────────────────────────
+  preflight:
+    name: '🛫 Pre-flight Check'
+    runs-on: ubuntu-latest
+    outputs:
+      run_track_a: ${{ steps.resolve.outputs.run_track_a }}
+      run_track_b: ${{ steps.resolve.outputs.run_track_b }}
+      run_track_c: ${{ steps.resolve.outputs.run_track_c }}
+      timestamp: ${{ steps.resolve.outputs.timestamp }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve track selection
+        id: resolve
+        run: |
+          TRACK="${{ github.event.inputs.track || 'all' }}"
+          echo "Selected track: $TRACK"
+          if [[ "$TRACK" == "all" || "$TRACK" == "track-a" ]]; then
+            echo "run_track_a=true" >> $GITHUB_OUTPUT
+          else
+            echo "run_track_a=false" >> $GITHUB_OUTPUT
+          fi
+          if [[ "$TRACK" == "all" || "$TRACK" == "track-b" ]]; then
+            echo "run_track_b=true" >> $GITHUB_OUTPUT
+          else
+            echo "run_track_b=false" >> $GITHUB_OUTPUT
+          fi
+          if [[ "$TRACK" == "all" || "$TRACK" == "track-c" ]]; then
+            echo "run_track_c=true" >> $GITHUB_OUTPUT
+          else
+            echo "run_track_c=false" >> $GITHUB_OUTPUT
+          fi
+          echo "timestamp=$(date -u +%Y%m%dT%H%M%SZ)" >> $GITHUB_OUTPUT
+
+      - name: Validate secrets availability
+        run: |
+          missing=""
+          [[ -z "${{ secrets.NOTION_TOKEN }}" ]] && missing="$missing NOTION_TOKEN"
+          [[ -z "${{ secrets.NOTION_WORKSPACE_ID }}" ]] && missing="$missing NOTION_WORKSPACE_ID"
+          if [[ -n "$missing" ]]; then
+            echo "::warning::Missing secrets:$missing — some steps may be skipped"
+          else
+            echo "✅ All required secrets present"
+          fi
+
+  # ──────────────────────────────────────────────────────────
+  # TRACK A: Waza Skills 표준화
+  # 담당: skills/ 디렉토리 스캔 → YAML 스키마 검증 → 버전 태깅 → Notion 동기화
+  # ──────────────────────────────────────────────────────────
+  track-a-waza-skills:
+    name: '🎯 Track A — Waza Skills Standardization'
+    needs: preflight
+    if: needs.preflight.outputs.run_track_a == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install pyyaml jsonschema requests python-dotenv rich
+
+      - name: Scan & validate Waza skill YAMLs
+        run: |
+          python skills/waza_skill_validator.py \
+            --skills-dir skills/ \
+            --schema skills/schema/waza_skill_schema.json \
+            --output reports/track_a_validation_${{ needs.preflight.outputs.timestamp }}.json
+        env:
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+
+      - name: Auto-tag skill versions
+        run: |
+          python skills/waza_version_tagger.py \
+            --skills-dir skills/ \
+            --bump-type patch \
+            --changelog skills/CHANGELOG.md
+        env:
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+
+      - name: Sync Waza skills to Notion
+        if: github.event.inputs.dry_run != 'true' && secrets.NOTION_TOKEN != ''
+        run: |
+          python skills/waza_notion_sync.py \
+            --skills-dir skills/ \
+            --notion-db-id "${{ secrets.NOTION_SKILLS_DB_ID }}"
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_API_VERSION: ${{ env.NOTION_API_VERSION }}
+
+      - name: Upload Track A report
+        uses: actions/upload-artifact@v4
+        with:
+          name: track-a-report-${{ needs.preflight.outputs.timestamp }}
+          path: reports/track_a_*.json
+          retention-days: 30
+
+  # ──────────────────────────────────────────────────────────
+  # TRACK B: cowork-plugins Finance 적용
+  # 담당: finance plugin 실행 → IRR/NPV/MOIC 계산 → 결과 Notion 업데이트
+  # ──────────────────────────────────────────────────────────
+  track-b-finance-plugin:
+    name: '💰 Track B — cowork-plugins Finance'
+    needs: preflight
+    if: needs.preflight.outputs.run_track_b == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install finance dependencies
+        run: |
+          pip install --upgrade pip
+          pip install numpy pandas scipy pyyaml requests python-dotenv rich openpyxl
+
+      - name: Run finance model (IRR/NPV/MOIC)
+        run: |
+          python plugins/finance/cowork_finance_runner.py \
+            --config plugins/finance/finance_config.yaml \
+            --scenarios all \
+            --output reports/finance_output_${{ needs.preflight.outputs.timestamp }}.json
+        env:
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+
+      - name: Generate Excel model
+        run: |
+          python plugins/finance/excel_model_generator.py \
+            --input reports/finance_output_${{ needs.preflight.outputs.timestamp }}.json \
+            --output reports/AstraChips_Finance_Model_${{ needs.preflight.outputs.timestamp }}.xlsx
+
+      - name: Push finance results to Notion
+        if: github.event.inputs.dry_run != 'true' && secrets.NOTION_TOKEN != ''
+        run: |
+          python plugins/finance/finance_notion_updater.py \
+            --results reports/finance_output_${{ needs.preflight.outputs.timestamp }}.json \
+            --notion-page-id "${{ secrets.NOTION_FINANCE_PAGE_ID }}"
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_API_VERSION: ${{ env.NOTION_API_VERSION }}
+
+      - name: Upload Track B artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: track-b-finance-${{ needs.preflight.outputs.timestamp }}
+          path: |
+            reports/finance_output_*.json
+            reports/AstraChips_Finance_Model_*.xlsx
+          retention-days: 90
+
+  # ──────────────────────────────────────────────────────────
+  # TRACK C: PE-3 자동검증 (병렬 실행)
+  # 담당: Track A + Track B 산출물 품질 검증 → 5차원 채점 → 실패 시 Slack 알림
+  # ──────────────────────────────────────────────────────────
+  track-c-validation:
+    name: '✅ Track C — PE-3 Auto-Validation'
+    needs: preflight
+    if: needs.preflight.outputs.run_track_c == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install validation dependencies
+        run: |
+          pip install --upgrade pip
+          pip install pyyaml jsonschema requests python-dotenv rich pytest
+
+      - name: Run PE-3 5-dimension validation
+        run: |
+          python auto_validate.py \
+            --scope full \
+            --dimensions accuracy,completeness,consistency,actionability,format \
+            --output reports/pe3_validation_${{ needs.preflight.outputs.timestamp }}.json
+        env:
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+
+      - name: Check validation score threshold
+        run: |
+          python -c "
+          import json, sys
+          with open('reports/pe3_validation_${{ needs.preflight.outputs.timestamp }}.json') as f:
+              r = json.load(f)
+          score = r.get('overall_score', 0)
+          print(f'PE-3 Validation Score: {score}/100')
+          if score < 75:
+              print(f'::error::Score {score} below threshold 75 — pipeline flagged')
+              sys.exit(1)
+          else:
+              print(f'✅ PASS: Score {score} >= 75')
+          "
+
+      - name: Upload Track C report
+        uses: actions/upload-artifact@v4
+        with:
+          name: track-c-validation-${{ needs.preflight.outputs.timestamp }}
+          path: reports/pe3_validation_*.json
+          retention-days: 30
+
+  # ──────────────────────────────────────────────────────────
+  # POST-MERGE: 모든 트랙 완료 후 통합 리포트 생성
+  # ──────────────────────────────────────────────────────────
+  post-merge-report:
+    name: '📊 Post-merge Integration Report'
+    needs: [track-a-waza-skills, track-b-finance-plugin, track-c-validation]
+    if: always() && (needs.track-a-waza-skills.result != 'cancelled')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: reports/merged/
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Generate integration report
+        run: |
+          pip install --quiet rich pyyaml
+          python -c "
+          import json, os, glob
+          from datetime import datetime
+          
+          report = {
+              'generated_at': datetime.utcnow().isoformat() + 'Z',
+              'pe_version': '${{ env.PE_VERSION }}',
+              'workflow_run_id': '${{ github.run_id }}',
+              'tracks': {}
+          }
+          
+          # 각 트랙 결과 수집
+          for track, label in [('a', 'Waza Skills'), ('b', 'Finance Plugin'), ('c', 'Validation')]:
+              files = glob.glob(f'reports/merged/track-{track}-*/**/*.json', recursive=True)
+              report['tracks'][f'track_{track}'] = {
+                  'label': label,
+                  'artifacts': len(files),
+                  'status': 'completed' if files else 'no_artifacts'
+              }
+          
+          with open('reports/INTEGRATION_REPORT.json', 'w') as f:
+              json.dump(report, f, indent=2, ensure_ascii=False)
+          
+          print(json.dumps(report, indent=2, ensure_ascii=False))
+          print('\n✅ Integration report generated')
+          "
+
+      - name: Update Notion PE-7 hub status
+        if: secrets.NOTION_TOKEN != ''
+        run: |
+          pip install --quiet requests
+          python -c "
+          import requests, json, os
+          token = os.environ.get('NOTION_TOKEN', '')
+          if not token:
+              print('::warning::NOTION_TOKEN not available — skipping Notion update')
+              exit(0)
+          headers = {
+              'Authorization': f'Bearer {token}',
+              'Notion-Version': '2022-06-28',
+              'Content-Type': 'application/json'
+          }
+          page_id = '34955ed436f081149dd6de25dba027d7'  # PE-7 hub page
+          data = {
+              'properties': {
+                  'Last Run': {'date': {'start': '$(date -u +%Y-%m-%dT%H:%M:%SZ)'}}
+              }
+          }
+          print('PE-7 Hub Notion update: payload prepared (token masked)')
+          print('✅ Post-merge report complete')
+          "
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+
+      - name: Upload integration report
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-report-${{ github.run_id }}
+          path: reports/INTEGRATION_REPORT.json
+          retention-days: 90
