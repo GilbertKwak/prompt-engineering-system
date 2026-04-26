@@ -1,8 +1,8 @@
 {
   "meta": {
-    "generated_at": "2026-04-26T01:08:14.762544+00:00",
+    "generated_at": "2026-04-26T01:17:37.441460+00:00",
     "version": "1.0",
-    "total_nodes": 33,
+    "total_nodes": 36,
     "total_edges": 60,
     "scan_dirs": [
       "docs",
@@ -62,6 +62,48 @@
       ],
       "notion_url": "https://www.notion.so/34d55ed436f0816fb1a4d12f53ba7069",
       "file_size": 2218,
+      "sha": null
+    },
+    {
+      "id": "docs/PE-7-NextSteps-SecretsGuide.md",
+      "type": "doc",
+      "title": "PE-7 v2.0 — GitHub Secrets 등록 완전 가이드",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-26",
+      "tags": [
+        "v2.0"
+      ],
+      "notion_url": "https://www.notion.so/profile",
+      "file_size": 4104,
+      "sha": null
+    },
+    {
+      "id": "docs/PE-7-RunbookManual.md",
+      "type": "doc",
+      "title": "PE-7 v2.0 — 수동 실행 런북 + 스케줄 컨필보드",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-26",
+      "tags": [
+        "v2.0"
+      ],
+      "notion_url": null,
+      "file_size": 5708,
+      "sha": null
+    },
+    {
+      "id": "docs/PE-7-v2.0-MasterIndex.md",
+      "type": "doc",
+      "title": "PE-7 v2.0 — 마스터 인덱스 (SSOT 기준)",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-26",
+      "tags": [
+        "v2.0"
+      ],
+      "notion_url": "https://www.notion.so/34955ed436f081149dd6de25dba027d7",
+      "file_size": 3156,
       "sha": null
     },
     {
