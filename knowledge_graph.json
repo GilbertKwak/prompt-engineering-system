@@ -1,8 +1,8 @@
 {
   "meta": {
-    "generated_at": "2026-04-26T03:33:22.339584+00:00",
+    "generated_at": "2026-04-26T07:57:57.804630+00:00",
     "version": "1.0",
-    "total_nodes": 38,
+    "total_nodes": 39,
     "total_edges": 60,
     "scan_dirs": [
       "docs",
@@ -62,6 +62,21 @@
       ],
       "notion_url": "https://www.notion.so/34d55ed436f0816fb1a4d12f53ba7069",
       "file_size": 2218,
+      "sha": null
+    },
+    {
+      "id": "docs/P4_SMR_Pipeline.md",
+      "type": "doc",
+      "title": "PE-7 P4: SMR Power Pipeline — GitHub Actions",
+      "status": "unknown",
+      "version": "v1.2",
+      "date": "2026-04-26",
+      "tags": [
+        "v1.2",
+        "v1.0"
+      ],
+      "notion_url": null,
+      "file_size": 3660,
       "sha": null
     },
     {
