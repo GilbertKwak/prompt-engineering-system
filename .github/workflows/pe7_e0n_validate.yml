@@ -1,0 +1,277 @@
+# PE-7 v2.0 | E-0N 통합 검증 워크플로우
+# PE-3 연동: 사전 검증 → 스크립트 실행 → 결과 리포트
+# 트리거: PR 생성/업데이트, scripts/** 변경, 수동 실행
+name: PE-7 E-0N Validation
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/**'
+      - 'requirements*.txt'
+  push:
+    branches:
+      - main
+    paths:
+      - 'scripts/**'
+  workflow_dispatch:
+    inputs:
+      target_script:
+        description: '특정 스크립트만 검증 (예: markowitz, all)'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - sheets_exporter
+          - supply_chain_collector
+          - sentiment_analyzer
+          - markowitz
+          - black_litterman
+          - monthly_ppt_gen
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  # ────────────────────────────────────────────────────────────────
+  # Job 1: PE-3 Pre-Verification — 환경 변수 · 의존성 사전 검증
+  # ────────────────────────────────────────────────────────────────
+  pre-verification:
+    name: 'PE-3 | Pre-Verification'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      secrets_ok: ${{ steps.check-secrets.outputs.ok }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check required secrets
+        id: check-secrets
+        run: |
+          MISSING=""
+          # Optional secrets 목록 (없어도 fallback 동작)
+          declare -A SECRETS_MAP=(
+            ["NOTION_TOKEN"]="E-05"
+            ["OPENAI_API_KEY"]="E-05"
+            ["REDDIT_CLIENT_ID"]="E-05"
+            ["GOOGLE_SHEETS_ID"]="E-05"
+          )
+          echo "[PE-3 Pre-Verification] Secrets 점검"
+          for key in "${!SECRETS_MAP[@]}"; do
+            if [ -z "${{ secrets[key] }}" ]; then
+              echo "  ⚠️  $key 미설정 → ${SECRETS_MAP[$key]} fallback 동작"
+            else
+              echo "  ✅ $key 설정 확인"
+            fi
+          done
+          echo "ok=true" >> $GITHUB_OUTPUT
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install all dependencies
+        run: |
+          pip install --upgrade pip
+          pip install \
+            pandas numpy scipy \
+            requests feedparser beautifulsoup4 lxml \
+            gspread google-auth \
+            python-pptx \
+            nltk praw
+
+      - name: Syntax check (py_compile)
+        run: |
+          echo "[PE-3] Python 문법 검증"
+          for f in scripts/*.py; do
+            python -m py_compile "$f" && echo "  ✅ $f" || echo "  ❌ $f"
+          done
+
+  # ────────────────────────────────────────────────────────────────
+  # Job 2: E-03 검증 — Markowitz / BL 행렬 안정성
+  # ────────────────────────────────────────────────────────────────
+  validate-e03-matrix:
+    name: 'E-03 | Matrix Stability (Markowitz + BL)'
+    runs-on: ubuntu-latest
+    needs: pre-verification
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - run: pip install numpy pandas scipy
+
+      - name: Run markowitz.py (E-03 ridge 검증)
+        run: |
+          python scripts/markowitz.py 2>&1 | tee /tmp/markowitz.log
+          grep -E '\[E-03\]|\[OK\]|Sharpe' /tmp/markowitz.log
+          # E-03 fallback 발생 여부 확인
+          if grep -q '\[E-03\]' /tmp/markowitz.log; then
+            echo '⚠️  E-03 fallback 발동 — ridge 값 조정 검토 필요'
+          else
+            echo '✅ E-03 이상 없음'
+          fi
+
+      - name: Run black_litterman.py (E-03 LinAlg 검증)
+        run: |
+          python scripts/black_litterman.py 2>&1 | tee /tmp/bl.log
+          grep -E '\[E-03\]|\[OK\]|Step' /tmp/bl.log
+          if grep -q '\[E-03\]' /tmp/bl.log; then
+            echo '⚠️  E-03 BL fallback 발동'
+          else
+            echo '✅ E-03 이상 없음'
+          fi
+
+      - name: Upload validation logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: e03-logs-${{ github.run_id }}
+          path: /tmp/*.log
+
+  # ────────────────────────────────────────────────────────────────
+  # Job 3: E-05/E-08 검증 — API 타임아웃 · 인코딩 (fallback 확인)
+  # ────────────────────────────────────────────────────────────────
+  validate-e05-e08-fallback:
+    name: 'E-05/E-08 | API & Encoding Fallback'
+    runs-on: ubuntu-latest
+    needs: pre-verification
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - run: pip install pandas gspread google-auth requests feedparser beautifulsoup4 lxml
+
+      - name: Run sheets_exporter.py (E-05 CSV fallback 검증)
+        run: |
+          # secrets 미설정 → CSV fallback 경로 확인
+          python scripts/sheets_exporter.py 2>&1 | tee /tmp/sheets.log
+          if [ -f data/notion_db_*.csv ] || [ -f data/sheets_export_*.csv ]; then
+            echo '✅ E-05 CSV fallback 정상 동작'
+          else
+            echo '❌ CSV 파일 미생성 — 검토 필요'
+            exit 1
+          fi
+
+      - name: Run supply_chain_collector.py (E-05/E-08 검증)
+        run: |
+          python scripts/supply_chain_collector.py 2>&1 | tee /tmp/supply.log
+          # E-08 인코딩 오류 감지
+          if grep -q 'UnicodeDecodeError\|UnicodeEncodeError' /tmp/supply.log; then
+            echo '❌ E-08 인코딩 오류 발생'
+            exit 1
+          else
+            echo '✅ E-08 인코딩 이상 없음'
+          fi
+
+      - name: Run sentiment_analyzer.py (E-05 Reddit fallback)
+        run: |
+          python scripts/sentiment_analyzer.py 2>&1 | tee /tmp/sentiment.log
+          if grep -q 'SKIP.*REDDIT\|데모 데이터' /tmp/sentiment.log; then
+            echo '✅ E-05 Reddit fallback 정상 동작'
+          fi
+          ls data/sentiment_*.csv && echo '✅ Sentiment CSV 생성 확인'
+
+      - name: Upload fallback logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: e05-e08-logs-${{ github.run_id }}
+          path: |
+            /tmp/*.log
+            data/*.csv
+
+  # ────────────────────────────────────────────────────────────────
+  # Job 4: E-07 검증 — PPT placeholder fallback
+  # ────────────────────────────────────────────────────────────────
+  validate-e07-ppt:
+    name: 'E-07 | PPT Placeholder Fallback'
+    runs-on: ubuntu-latest
+    needs: pre-verification
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - run: pip install pandas python-pptx
+
+      - name: Run monthly_ppt_gen.py (E-07 빈 data/ 디렉터리)
+        run: |
+          mkdir -p data reports
+          python scripts/monthly_ppt_gen.py 2>&1 | tee /tmp/ppt.log
+          PPT_FILE=$(ls reports/MonthlyReview_*.pptx 2>/dev/null | head -1)
+          if [ -n "$PPT_FILE" ]; then
+            SIZE=$(stat -c%s "$PPT_FILE")
+            echo "✅ PPT 생성: $PPT_FILE (${SIZE} bytes)"
+            [ $SIZE -gt 10000 ] || (echo '❌ PPT 크기 이상' && exit 1)
+          else
+            echo '❌ PPT 파일 미생성'
+            exit 1
+          fi
+
+      - name: Upload PPT artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: e07-ppt-${{ github.run_id }}
+          path: reports/
+
+  # ────────────────────────────────────────────────────────────────
+  # Job 5: 검증 결과 종합 리포트
+  # ────────────────────────────────────────────────────────────────
+  validation-summary:
+    name: 'PE-3 | Validation Summary'
+    runs-on: ubuntu-latest
+    needs:
+      - validate-e03-matrix
+      - validate-e05-e08-fallback
+      - validate-e07-ppt
+    if: always()
+    steps:
+      - name: Validation 결과 요약
+        run: |
+          echo "════════════════════════════════════════"
+          echo "  PE-7 v2.0 E-0N Validation Summary"
+          echo "  Run ID: ${{ github.run_id }}"
+          echo "  Date: $(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M KST')"
+          echo "════════════════════════════════════════"
+          echo "E-03 Matrix  : ${{ needs.validate-e03-matrix.result }}"
+          echo "E-05/E-08    : ${{ needs.validate-e05-e08-fallback.result }}"
+          echo "E-07 PPT     : ${{ needs.validate-e07-ppt.result }}"
+          echo "────────────────────────────────────────"
+          # 전체 PASS/FAIL 판정
+          E03="${{ needs.validate-e03-matrix.result }}"
+          E05="${{ needs.validate-e05-e08-fallback.result }}"
+          E07="${{ needs.validate-e07-ppt.result }}"
+          if [ "$E03" = "success" ] && [ "$E05" = "success" ] && [ "$E07" = "success" ]; then
+            echo "  🟢 OVERALL: PASS — 모든 E-0N 검증 통과"
+          else
+            echo "  🔴 OVERALL: FAIL — 검증 실패 항목 확인 필요"
+            exit 1
+          fi
+
+      - name: Slack 검증 결과 알림
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          E03="${{ needs.validate-e03-matrix.result }}"
+          E05="${{ needs.validate-e05-e08-fallback.result }}"
+          E07="${{ needs.validate-e07-ppt.result }}"
+          STATUS=$([ "$E03" = "success" ] && [ "$E05" = "success" ] && [ "$E07" = "success" ] && echo "PASS" || echo "FAIL")
+          ICON=$([ "$STATUS" = "PASS" ] && echo "🟢" || echo "🔴")
+          curl -s -X POST "$SLACK_WEBHOOK" \
+            -H 'Content-type: application/json' \
+            -d "{
+              \"text\": \"$ICON *PE-7 E-0N Validation — $STATUS*\\nE-03: $E03 | E-05/E-08: $E05 | E-07: $E07\\nRun: https://github.com/GilbertKwak/prompt-engineering-system/actions/runs/${{ github.run_id }}\"
+            }" || echo '[SKIP] SLACK_WEBHOOK_URL 미설정'

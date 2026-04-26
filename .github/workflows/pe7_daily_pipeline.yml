@@ -1,0 +1,223 @@
+# PE-7 v2.0 | Track A-1 → B-1 → B-3 → C-2 → C-3 Daily Pipeline
+# 스케줄: 매일 KST 08:00 (UTC 23:00) | 수동 트리거 지원
+# E-0N: E-03, E-05, E-07, E-08 방어 로직 내장
+name: PE-7 Daily Pipeline
+
+on:
+  schedule:
+    - cron: '0 23 * * *'   # 매일 UTC 23:00 = KST 08:00
+  workflow_dispatch:
+    inputs:
+      skip_sentiment:
+        description: 'B-3 감성분석 건너뜀 (Reddit API 불안정 시)'
+        required: false
+        default: 'false'
+        type: boolean
+      dry_run:
+        description: 'Dry-run (파일 저장만, Sheets/Notion 업데이트 없음)'
+        required: false
+        default: 'false'
+        type: boolean
+
+env:
+  PYTHON_VERSION: '3.11'
+  TZ: 'Asia/Seoul'
+
+jobs:
+  # ────────────────────────────────────────────────────────────────
+  # Job 1: Track A-1 — Notion DB → Google Sheets Export
+  # ────────────────────────────────────────────────────────────────
+  track-a1-sheets-export:
+    name: 'Track A-1 | Sheets Export'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install pandas gspread google-auth requests
+
+      - name: Run sheets_exporter.py
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DB_ID: ${{ secrets.NOTION_KPI_DB_ID }}
+          GOOGLE_SHEETS_ID: ${{ secrets.GOOGLE_SHEETS_ID }}
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          DRY_RUN: ${{ inputs.dry_run || 'false' }}
+        run: python scripts/sheets_exporter.py
+
+      - name: Upload data artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: a1-sheets-data-${{ github.run_id }}
+          path: data/
+          retention-days: 7
+
+  # ────────────────────────────────────────────────────────────────
+  # Job 2: Track B-1 — RSS/Web 수집 + LLM 요약  (A-1 완료 후)
+  # ────────────────────────────────────────────────────────────────
+  track-b1-supply-chain:
+    name: 'Track B-1 | Supply Chain Collector'
+    runs-on: ubuntu-latest
+    needs: track-a1-sheets-export
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install pandas feedparser beautifulsoup4 requests lxml
+
+      - name: Run supply_chain_collector.py
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: python scripts/supply_chain_collector.py
+
+      - name: Upload supply chain data
+        uses: actions/upload-artifact@v4
+        with:
+          name: b1-supply-chain-${{ github.run_id }}
+          path: data/supply_chain_*.{csv,json}
+          retention-days: 14
+
+  # ────────────────────────────────────────────────────────────────
+  # Job 3: Track B-3 — Reddit 감성분석  (병렬: B-1과 동시)
+  # ────────────────────────────────────────────────────────────────
+  track-b3-sentiment:
+    name: 'Track B-3 | Sentiment Analyzer'
+    runs-on: ubuntu-latest
+    needs: track-a1-sheets-export
+    timeout-minutes: 20
+    if: ${{ inputs.skip_sentiment != 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install pandas nltk
+          # FinBERT 설치 시도 (E-05: 실패 시 VADER fallback)
+          pip install transformers torch --index-url https://download.pytorch.org/whl/cpu || \
+            echo '[E-05] FinBERT 설치 실패 → VADER fallback 사용'
+
+      - name: Run sentiment_analyzer.py
+        env:
+          REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
+          REDDIT_SECRET: ${{ secrets.REDDIT_SECRET }}
+        run: python scripts/sentiment_analyzer.py
+        continue-on-error: true   # E-05: Reddit 429 시에도 파이프라인 계속
+
+      - name: Upload sentiment data
+        uses: actions/upload-artifact@v4
+        with:
+          name: b3-sentiment-${{ github.run_id }}
+          path: data/sentiment_*.csv
+          retention-days: 14
+
+  # ────────────────────────────────────────────────────────────────
+  # Job 4: Track C-2 — Markowitz  (B-1, B-3 완료 후)
+  # ────────────────────────────────────────────────────────────────
+  track-c2-markowitz:
+    name: 'Track C-2 | Markowitz Optimizer'
+    runs-on: ubuntu-latest
+    needs: [track-b1-supply-chain, track-b3-sentiment]
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install numpy pandas scipy
+
+      - name: Run markowitz.py
+        run: python scripts/markowitz.py
+
+      - name: Upload Markowitz results
+        uses: actions/upload-artifact@v4
+        with:
+          name: c2-markowitz-${{ github.run_id }}
+          path: |
+            data/efficient_frontier_*.csv
+            data/markowitz_result_*.json
+          retention-days: 30
+
+  # ────────────────────────────────────────────────────────────────
+  # Job 5: Track C-3 — Black-Litterman  (C-2 완료 후)
+  # ────────────────────────────────────────────────────────────────
+  track-c3-black-litterman:
+    name: 'Track C-3 | Black-Litterman'
+    runs-on: ubuntu-latest
+    needs: track-c2-markowitz
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install numpy pandas
+
+      - name: Run black_litterman.py
+        run: python scripts/black_litterman.py
+
+      - name: Upload BL results
+        uses: actions/upload-artifact@v4
+        with:
+          name: c3-black-litterman-${{ github.run_id }}
+          path: data/black_litterman_*.json
+          retention-days: 30
+
+  # ────────────────────────────────────────────────────────────────
+  # Job 6: 파이프라인 요약 알림 (Slack)
+  # ────────────────────────────────────────────────────────────────
+  notify-completion:
+    name: 'Notify | Slack Alert'
+    runs-on: ubuntu-latest
+    needs: [track-c3-black-litterman]
+    if: always()
+    steps:
+      - name: Slack 알림 전송
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          STATUS="${{ needs.track-c3-black-litterman.result }}"
+          COLOR=$([ "$STATUS" = "success" ] && echo "#36a64f" || echo "#e01e5a")
+          ICON=$([ "$STATUS" = "success" ] && echo "✅" || echo "❌")
+          DATE=$(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M KST')
+          curl -s -X POST "$SLACK_WEBHOOK" \
+            -H 'Content-type: application/json' \
+            -d "{
+              \"attachments\": [{
+                \"color\": \"$COLOR\",
+                \"title\": \"$ICON PE-7 Daily Pipeline — $STATUS\",
+                \"text\": \"실행 시각: $DATE\\n실행 ID: ${{ github.run_id }}\\nCommit: ${{ github.sha }}\",
+                \"footer\": \"PE-7 v2.0 | GilbertKwak\"
+              }]
+            }" || echo '[SKIP] SLACK_WEBHOOK_URL 미설정'

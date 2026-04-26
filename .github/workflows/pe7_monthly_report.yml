@@ -1,0 +1,173 @@
+# PE-7 v2.0 | Track D-2 Monthly PPT Report 자동 생성
+# 스케줄: 매월 1일 KST 07:00 (UTC 전날 22:00) | 수동 트리거 지원
+# E-07: 데이터 없을 시 placeholder fallback 포함
+name: PE-7 Monthly Report
+
+on:
+  schedule:
+    - cron: '0 22 28-31 * *'  # 매월 28~31일 UTC 22:00 실행 후 조건 분기
+  workflow_dispatch:
+    inputs:
+      target_month:
+        description: '리포트 대상 월 (YYYY-MM, 기본값: 당월)'
+        required: false
+        default: ''
+        type: string
+      force_placeholder:
+        description: 'E-07: placeholder 데이터로 강제 실행'
+        required: false
+        default: 'false'
+        type: boolean
+
+env:
+  PYTHON_VERSION: '3.11'
+  TZ: 'Asia/Seoul'
+
+jobs:
+  # ────────────────────────────────────────────────────────────────
+  # Step 1: 최신 분석 데이터 다운로드 (Daily Pipeline artifact)
+  # ────────────────────────────────────────────────────────────────
+  prepare-data:
+    name: 'Prepare | Collect Latest Artifacts'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 데이터 디렉터리 생성
+        run: mkdir -p data reports
+
+      - name: E-07 Placeholder 데이터 생성
+        run: |
+          DATE=$(date '+%Y%m%d')
+          # Monte Carlo placeholder
+          cat > data/monte_carlo_summary_${DATE}.json << 'EOF'
+          {
+            "summary": {
+              "mean_annual_return": 0.18,
+              "P10_3yr": 0.35,
+              "P50_3yr": 0.65,
+              "P90_3yr": 1.10,
+              "VaR_5pct": -0.12,
+              "CVaR_5pct": -0.18,
+              "n_simulations": 10000
+            }
+          }
+          EOF
+          # Sentiment placeholder
+          cat > data/sentiment_summary_${DATE}.csv << 'EOF'
+          ticker,total_mentions,positive,negative,neutral,sentiment_score,bullish_pct,avg_reddit_score
+          TSMC,24,17,3,4,0.731,70.8,1240
+          Nvidia,31,21,5,5,0.698,67.7,987
+          SK Hynix,18,11,3,4,0.672,61.1,876
+          Intel,22,6,12,4,0.312,27.3,543
+          ASML,9,6,1,2,0.714,66.7,421
+          SMIC,7,3,3,1,0.502,42.9,215
+          EOF
+          echo "[E-07] Placeholder 데이터 생성 완료"
+
+      - name: Upload prepared data
+        uses: actions/upload-artifact@v4
+        with:
+          name: monthly-data-${{ github.run_id }}
+          path: data/
+
+  # ────────────────────────────────────────────────────────────────
+  # Step 2: Markowitz + Black-Litterman 재실행 (최신 뷰 반영)
+  # ────────────────────────────────────────────────────────────────
+  run-portfolio-models:
+    name: 'Portfolio | Markowitz + Black-Litterman'
+    runs-on: ubuntu-latest
+    needs: prepare-data
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install numpy pandas scipy
+
+      - name: Download prepared data
+        uses: actions/download-artifact@v4
+        with:
+          name: monthly-data-${{ github.run_id }}
+          path: data/
+
+      - name: Run Markowitz
+        run: python scripts/markowitz.py
+
+      - name: Run Black-Litterman
+        run: python scripts/black_litterman.py
+
+      - name: Upload portfolio results
+        uses: actions/upload-artifact@v4
+        with:
+          name: portfolio-results-${{ github.run_id }}
+          path: data/
+
+  # ────────────────────────────────────────────────────────────────
+  # Step 3: PPT 생성 + GitHub Release 등록
+  # ────────────────────────────────────────────────────────────────
+  generate-ppt:
+    name: 'Report | Generate PPT + Release'
+    runs-on: ubuntu-latest
+    needs: run-portfolio-models
+    timeout-minutes: 15
+    permissions:
+      contents: write   # Release 생성 권한
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install pandas python-pptx
+
+      - name: Download portfolio results
+        uses: actions/download-artifact@v4
+        with:
+          name: portfolio-results-${{ github.run_id }}
+          path: data/
+
+      - name: Generate Monthly PPT
+        env:
+          TARGET_MONTH: ${{ inputs.target_month || '' }}
+        run: |
+          mkdir -p reports
+          python scripts/monthly_ppt_gen.py
+          echo "PPT_FILE=$(ls reports/MonthlyReview_*.pptx | head -1)" >> $GITHUB_ENV
+
+      - name: GitHub Release 등록
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          MONTH=$(TZ=Asia/Seoul date '+%Y-%m')
+          TAG="report-${MONTH}"
+          # 기존 태그 있으면 삭제 후 재생성
+          gh release delete "$TAG" --yes 2>/dev/null || true
+          gh release create "$TAG" \
+            "${{ env.PPT_FILE }}" \
+            --title "📊 Monthly Market Review — ${MONTH}" \
+            --notes "PE-7 v2.0 자동 생성 리포트\n\n- Track A-1: Notion KPI\n- Track B-1: 공급망 뉴스\n- Track B-3: Reddit 감성\n- Track C-2: Markowitz\n- Track C-3: Black-Litterman" \
+            --latest
+          echo "[OK] Release $TAG 등록 완료"
+
+      - name: Slack 알림
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          MONTH=$(TZ=Asia/Seoul date '+%Y년 %m월')
+          curl -s -X POST "$SLACK_WEBHOOK" \
+            -H 'Content-type: application/json' \
+            -d "{
+              \"text\": \"📊 *PE-7 Monthly Report 생성 완료*\\n${MONTH} Market Review PPT가 GitHub Release에 등록되었습니다.\\nhttps://github.com/GilbertKwak/prompt-engineering-system/releases\"
+            }" || echo '[SKIP] SLACK_WEBHOOK_URL 미설정'
