@@ -1,42 +1,60 @@
-# CHANGELOG — Global JV Fund Prompt
+# 📋 JV Fund Prompt — 변경 이력
 
-All notable changes to the JV Fund prompt library are documented here.
+> **관리:** GitHub SSOT | **Notion 연동:** [PE-JV · Global JV Fund Prompt Library v3.0](https://www.notion.so/34f55ed436f08150b07dc7f5f800311b)
 
 ---
 
 ## [v3.0] — 2026-04-27
 
-### Added
-- PE-1 / PE-3 검증 규칙 통합
-- 파라미터화: `{DOMAIN}`, `{STAGE}`, `{LP_TYPE}`, `{GEOGRAPHY}`, `{LANG}`, `{DEPTH}`
-- KR + EN 병기 출력 포맷
-- Domain Variants 3종: `fu_series_adapter.md`, `bstar_eco2_prompt.md`, `ai_infra_prompt.md`
-- JSON 출력 스키마 (`executive_summary`, `risk_matrix`, `next_actions`, `github_commands`)
-- Notion 연동 링크
-- GitHub Actions 워크플로우: `jv_prompt_validate.yml`
-- 월간 자동 리뷰 이슈 스케줄 (매월 1일)
-- `validation_checklist.md` 추가
+### 🆕 신규 추가
+- `master_prompt_v3.md`: 원본 v2 완전 개선판 생성
+  - Role/Parameters/TaskChain/Validation 구조 분리
+  - {domain}/{stage}/{depth}/{lang} 파라미터 주입 지원
+  - PE-1 (6개) / PE-3 (5개) 검증 룰 명시
+  - KR + EN 병기 출력 포맷 추가
+  - Notion DB Entry / GitHub Issue 출력 형식 추가
+- `fu_series_adapter.md`: FU-Series 보고서 연동 파생 프롬프트 신규
+- `bstar_eco2_prompt.md`: B-Star sCO2 JV 전략 특화 프롬프트 신규
+- `ai_infra_prompt.md`: AI 데이터센터 열관리 JV 분석 프롬프트 신규
+- `validation_checklist.md`: PE-1/PE-3/SQ 통합 검증 체크리스트 신규
+- `CHANGELOG.md`: 이 파일
 
-### Changed
-- 원본 8개 모듈 → Chain-of-Thought 8단계 재구조화
-- 출력 언어: EN 단일 → KR + EN 병기
-- `output_verbosity_spec` → 의사결정 프레임워크 우선으로 개선
-- `high_risk_self_check` → PE-3 시나리오 균형 규칙으로 강화
+### 🔧 개선
+- v2 단일 XML → v3 모듈화 구조로 전환
+- 영문 단일 → KR+EN 병기 출력 지원
+- 고정 콘텐츠 → 파라미터화 (재사용성 향상)
 
-### Fixed
-- 보장 수익률 언어 표현 제거
-- 가정 사항 미선언 문제 해결
+### 📁 파일 구조
+```
+applied-cases/jv-fund/
+├── master_prompt_v3.md       # 핵심 마스터 프롬프트
+├── fu_series_adapter.md      # FU-Series 연동 어댑터
+├── bstar_eco2_prompt.md      # B-Star eCO2 전용
+├── ai_infra_prompt.md        # AI 인프라 전용
+├── validation_checklist.md   # PE-1/PE-3 검증 체크리스트
+└── CHANGELOG.md              # 이 파일
+```
 
 ---
 
-## [v2.0] — 2026-04 이전
+## [v2.0] — 2026-04 이전 (원본 보관)
 
-### Initial
-- 8개 핵심 모듈 포함 기관급 JV 펀드 마스터 프롬프트
-- GP/LP 구조, 펀드 규모 설계, IC 프레임워크, Exit 최적화
+### 원본 특성
+- 단일 XML 블록 구조
+- 8개 core_modules (GP/LP/Structuring/Sizing/IC/Value/Exit/Risk)
 - 영문 단일 출력
-- XML 구조 기반
+- 검증 기준 없음
+- 파라미터화 없음
+
+### 원본 파일
+- `Global_Joint_Venture_Fund_Master_Prompt_v2.txt` (보관용)
 
 ---
 
-*Maintained by Gilbert Kwak | Prompt Engineering System*
+## 향후 로드맵
+
+| 버전 | 예정 날짜 | 내용 |
+|---|---|---|
+| v3.1 | 2026-05 | `auto_validate.py` JV 전용 룰셋 추가 |
+| v3.2 | 2026-06 | GitHub Actions 워크플로우 고도화 |
+| v4.0 | 2026-Q3 | Multi-Agent 연동 (PE-11 시스템 통합) |
