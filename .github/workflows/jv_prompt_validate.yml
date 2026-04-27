@@ -1,37 +1,25 @@
-# JV Fund Prompt Validation & Notion Sync
-# 트리거: applied-cases/jv-fund/** 변경 시 자동 실행
-# 기능: PE-1/PE-3 구조 검증 + 월간 리뷰 이슈 자동 생성
-
-name: JV Prompt Validate & Sync
+name: JV Fund Prompt — PE-1/PE-3 Auto Validation
 
 on:
   push:
     paths:
       - 'applied-cases/jv-fund/**'
+      - 'automation/auto_validate.py'
   pull_request:
     paths:
       - 'applied-cases/jv-fund/**'
+
+  # 매월 1일 00:00 UTC 월간 리뷰 이슈 자동 생성
   schedule:
-    # 매월 1일 00:00 UTC — 월간 프롬프트 리뷰 이슈 자동 생성
     - cron: '0 0 1 * *'
-  workflow_dispatch:
-    inputs:
-      run_mode:
-        description: 'Run mode (validate | sync | full)'
-        required: false
-        default: 'full'
 
 jobs:
-
-  # ─────────────────────────────────────────
-  # JOB 1: PE-1 / PE-3 구조 검증
-  # ─────────────────────────────────────────
-  validate_prompts:
-    name: PE-1/PE-3 Prompt Validation
+  validate:
+    name: PE-1/PE-3 Validation
     runs-on: ubuntu-latest
     if: github.event_name != 'schedule'
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set up Python
@@ -39,40 +27,46 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
-        run: |
-          pip install pyyaml requests python-dotenv
-
       - name: Run PE-1/PE-3 Validation
+        id: validate
         run: |
-          python automation/auto_validate_jv.py \
+          python automation/auto_validate.py \
             --file applied-cases/jv-fund/master_prompt_v3.md \
             --rules PE-1,PE-3 \
             --output validation_report.json
+          cat validation_report.json
 
-      - name: Upload validation report
+      - name: Upload Validation Report
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: validation-report
           path: validation_report.json
 
-      - name: Comment on PR (if PR)
+      - name: Comment PR with Validation Results
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
-            let report = '{}';
-            try { report = fs.readFileSync('validation_report.json', 'utf8'); } catch(e) {}
-            const data = JSON.parse(report);
-            const passed = data.passed ?? '?';
-            const failed = data.failed ?? '?';
-            const body = `## 🔍 JV Prompt Validation Report\n\n` +
-              `| 항목 | 결과 |\n|---|---|\n` +
-              `| PE-1 규칙 통과 | ${data.pe1_passed ?? '?'} / ${data.pe1_total ?? '?'} |\n` +
-              `| PE-3 규칙 통과 | ${data.pe3_passed ?? '?'} / ${data.pe3_total ?? '?'} |\n` +
-              `| 전체 결과 | ${passed > 0 ? '✅ PASS' : '❌ FAIL'} |\n\n` +
-              `> 자동 검증 실행: \`automation/auto_validate_jv.py\``;
+            const report = JSON.parse(fs.readFileSync('validation_report.json', 'utf8'));
+            const s = report.summary;
+            const body = [
+              '## 🔍 JV Fund Prompt 자동 검증 결과',
+              '',
+              `**상태:** ${s.status}`,
+              `**점수:** ${s.score} 항목 통과`,
+              `**검증 시각:** ${report.timestamp}`,
+              '',
+              '### 상세 결과',
+              '| 규칙 | 항목 | 결과 |',
+              '|------|------|------|',
+              ...Object.entries(report.results).flatMap(([group, rules]) =>
+                Object.entries(rules).map(([id, r]) =>
+                  `| ${group} | ${id}: ${r.name} | ${r.passed ? '✅' : '❌'} ${r.detail !== 'OK' ? r.detail : ''} |`
+                )
+              )
+            ].join('\n');
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
@@ -80,25 +74,50 @@ jobs:
               body
             });
 
-  # ─────────────────────────────────────────
-  # JOB 2: 월간 리뷰 이슈 자동 생성 (스케줄)
-  # ─────────────────────────────────────────
-  monthly_review_issue:
-    name: Monthly JV Prompt Review Issue
+  monthly-review:
+    name: Monthly Review Issue
     runs-on: ubuntu-latest
     if: github.event_name == 'schedule'
     steps:
-      - name: Create monthly review issue
+      - name: Create Monthly Review Issue
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const now = new Date();
-            const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+            const date = new Date();
+            const ym = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`;
             await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
               title: `[Monthly Review] JV Fund Prompt — ${ym}`,
-              labels: ['jv-analysis', 'monthly-review', 'prompt-review'],
-              body: `## 📋 JV Fund Prompt 월간 성능 리뷰\n\n**대상 기간:** ${ym}\n\n### 검토 항목\n\n- [ ] PE-1 준수율 점검 (출처 명시, 수치 정확성)\n- [ ] PE-3 준수율 점검 (시나리오 균형, 리스크 명시)\n- [ ] Master Prompt v3.1 구조 업데이트 필요 여부\n- [ ] Domain Variants (FU/sCO2/AI) 업데이트 필요 여부\n- [ ] Notion 허브 페이지와 GitHub 동기화 상태 확인\n- [ ] 신규 도메인 추가 검토 (Thermal / Multi 등)\n\n### 액션 아이템\n\n| 항목 | 담당 | 기한 |\n|---|---|---|\n| | Gilbert | |\n\n### 참조 링크\n- [Notion JV Fund Hub](https://www.notion.so/34f55ed436f08150b07dc7f5f800311b)\n- [master_prompt_v3.md](https://github.com/GilbertKwak/prompt-engineering-system/blob/main/applied-cases/jv-fund/master_prompt_v3.md)\n- [CHANGELOG](https://github.com/GilbertKwak/prompt-engineering-system/blob/main/applied-cases/jv-fund/CHANGELOG.md)\n`
+              labels: ['prompt-review', 'monthly'],
+              body: [
+                '## 📋 월간 JV Fund 프롬프트 리뷰',
+                '',
+                `**대상 월:** ${ym}`,
+                `**생성:** GitHub Actions 자동 생성`,
+                '',
+                '## 검토 항목',
+                '',
+                '### PE-1 준수율',
+                '- [ ] 수치 데이터 출처 명시 비율 점검',
+                '- [ ] 추정값 (est.) 태깅 일관성',
+                '- [ ] 보장 수익 표현 누락 여부',
+                '',
+                '### PE-3 시나리오 균형',
+                '- [ ] 베어리시 시나리오 포함 여부',
+                '- [ ] 리스크 매트릭스 최신화',
+                '',
+                '### 프롬프트 성능',
+                '- [ ] 출력 품질 점수 (주관적 평가 1-10)',
+                '- [ ] Domain Variant 3종 동작 확인',
+                '- [ ] Notion ↔ GitHub SSOT 동기화 상태',
+                '',
+                '### 업데이트 필요 여부',
+                '- [ ] 신규 도메인 추가 검토 (예: MRAM, Photonics)',
+                '- [ ] 규제 환경 변화 반영 필요',
+                '- [ ] v3.3 계획 여부',
+                '',
+                '---',
+                '**Notion 링크:** https://www.notion.so/34f55ed436f08150b07dc7f5f800311b',
+              ].join('\n')
             });
