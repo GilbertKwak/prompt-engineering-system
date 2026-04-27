@@ -1,5 +1,50 @@
 # CHANGELOG — 프롬프트 엔진니어링 시스템
 
+## [PE-10 v2.0 Batch Upgrade] — 2026-04-27
+
+> 커밋 기준: `ea99c34` · 담당자: GilbertKwak
+
+### Changed — P-02 ~ P-09 일괄 v1.0 → v2.0 업그레이드
+
+| 프롬프트 | 역할 | PE-3 v1.0 | PE-3 v2.0 | 핵심 추가 필드 |
+|---|---|---|---|---|
+| P-02 | Recovery Inject | 76 | **91** | `SOURCE_ERROR_TYPE` · `EVIDENCE` |
+| P-03 | 요구사항 정제 | 78 | **92** | `ambiguities` 서브필드 |
+| P-04 | 실행 계획 생성 | 75 | **90** | `risk_flags` · `confidence_score` |
+| P-05 | Ralph Stage 1 Spec | 81 | **93** | `checks.evidence` 서브필드 |
+| P-06 | Ralph Stage 2 Quality | 82 | **94** | `iteration_count` · `dimension.evidence` |
+| P-07 | Recursive 분해 | 77 | **91** | `DECOMP_REASON` 필드 |
+| P-08 | Leaf 실행 | 76 | **91** | `leaf_id` · `LEAF_TRACE` |
+| P-09 | 결과 통합 | 79 | **93** | `LEAF_TRACE` · `synthesis_confidence` |
+
+### Added — P-01 신규 (Inception Error Detector)
+
+- `applied-cases/PE-10-multi-agent-patterns/prompts/p01_inception_error_detector.md` (신규 생성)
+  - 역할: 요청 수신 즉시 `ERROR_TYPE` 및 `EVIDENCE` 판정
+  - 연결 스크립트: `scripts/inception_module.py`
+  - PE-3 초기 점수: **89/100**
+
+### Changed — 공통 개선 사항 (전 프롬프트 적용)
+
+- 모든 출력 포맷에 **증거(EVIDENCE) 서브필드** 의무화 → 환각(hallucination) 억제
+- `confidence_score` / `synthesis_confidence` 수치 출력 표준화
+- Error 처리 분기: `EDGE_CASE` 핸들러 공통 추가
+- 3-Engine (PE-1 자동개선 · PE-2 자동증식 · PE-3 자동검증) 루프와의 연계 강화
+
+### PE-10 v2.0 평균 PE-3 점수
+
+| 구분 | 평균 점수 | 변화 |
+|---|---|---|
+| v1.0 (P-02~P-09) | 78.0 / 100 | — |
+| v2.0 (P-01~P-09) | **91.6 / 100** | **+13.6점 (+17.4%)** |
+
+### Linked Notion Pages
+
+- [PE-11 v11.0 마스터 통합](https://www.notion.so/34e55ed436f081c5a148d8200bc2896b)
+- [T-09 PE 시스템 Mother Page](https://www.notion.so/34a55ed436f0814d9cffe6a2f0816e29)
+
+---
+
 ## [PE-8 v2.3 Patch 12] — 2026-04-25
 
 ### Added
