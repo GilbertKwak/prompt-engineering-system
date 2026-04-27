@@ -1,10 +1,10 @@
 {
   "meta": {
-    "generated_at": "2026-04-27T12:50:00.000000+00:00",
+    "generated_at": "2026-04-27T13:32:00.000000+00:00",
     "version": "2.1",
     "prev_version": "2.0",
     "prev_commit": "85ece14",
-    "current_commit": "head",
+    "current_commit": "2026-04-27-step2-patch",
     "total_nodes": 59,
     "total_edges": 114,
     "scan_dirs": ["docs","engines","applied-cases","scripts","automation","workflows","prompts","dashboard"],
@@ -12,11 +12,12 @@
     "new_edges_added": 6,
     "sha_enabled": true,
     "version_extract": true,
-    "changelog": "PE-NBD New Business Development Prompt Library v2.0 added: 7-Chain structure (7 nodes + 6 chain edges). Nodes: 52->59, Edges: 108->114. E-08 encoding fix applied. Rebuild: 2026-04-27 KST.",
+    "changelog": "PE-NBD New Business Development Prompt Library v2.0 added: 7-Chain structure (7 nodes + 6 chain edges). Nodes: 52->59, Edges: 108->114. E-08 encoding fix applied. Rebuild: 2026-04-27 KST. Step-2 meta patch: self-ref SHA + file_size + generated_at updated 2026-04-27T13:32Z.",
     "e0n_fixes": [
       {"code": "E-08", "description": "Korean text encoding corruption fixed by clean rebuild"},
-      {"code": "E-04", "description": "Node/edge count verified and fixed: nodes=59 OK, edges补完 101->114 (13 cross-ref edges added)"},
-      {"code": "E-01", "description": "prev_commit updated to 85ece14 (prior file SHA)"}
+      {"code": "E-04", "description": "Node/edge count verified and fixed: nodes=59 OK, edges 101->114 (13 cross-ref edges added)"},
+      {"code": "E-01", "description": "prev_commit updated to 85ece14 (prior file SHA)"},
+      {"code": "E-09", "description": "Self-ref meta patch: knowledge_graph.json node SHA + file_size + generated_at corrected (Step 2, 2026-04-27)"}
     ],
     "lang_policy": {
       "notion": "Korean",
@@ -25,9 +26,9 @@
   },
   "nodes": [
     {"id":"README.md","type":"doc","title":"PE Prompt Engineering System --- Auto-Refinement / Auto-Proliferation / Auto-Validation Hub","status":"active","version":"v1.6","date":"2026-04-05","tags":["root","meta","v1.6","v2.0"],"notion_url":"https://www.notion.so/33955ed436f081cc9f0bd014d631aa7b","file_size":7309,"sha":null},
-    {"id":"CHANGELOG.md","type":"doc","title":"CHANGELOG -- PE Prompt Engineering System","status":"active","version":"v2.1","date":"2026-04-27","tags":["root","meta","v2.1","PE-10"],"notion_url":"https://www.notion.so/34d55ed436f0816fb1a4d12f53ba7069","file_size":4310,"sha":"97d9ef12392588bc3353f69ee6a15b2456cec2c8"},
+    {"id":"CHANGELOG.md","type":"doc","title":"CHANGELOG -- PE Prompt Engineering System","status":"active","version":"v2.1","date":"2026-04-27","tags":["root","meta","v2.1","PE-10"],"notion_url":"https://www.notion.so/34d55ed436f0816fb1a4d12f53ba7069","file_size":4310,"sha":"af42ef4eda6d6006d141fa192951beb2ab5f94a6"},
     {"id":"docs/index.md","type":"doc","title":"Master Documentation Index","status":"active","version":"v1.6","date":"2026-04-09","tags":["root","index","v1.6"],"notion_url":"https://www.notion.so/33955ed436f081cc9f0bd014d631aa7b","file_size":9501,"sha":null},
-    {"id":"knowledge_graph.json","type":"doc","title":"Knowledge Graph -- System Node Map v2.1","status":"active","version":"v2.1","date":"2026-04-27","tags":["root","meta","graph","v2.1"],"notion_url":null,"file_size":0,"sha":null},
+    {"id":"knowledge_graph.json","type":"doc","title":"Knowledge Graph -- System Node Map v2.1","status":"active","version":"v2.1","date":"2026-04-27","tags":["root","meta","graph","v2.1"],"notion_url":null,"file_size":"self-ref","sha":"342c38cc1484de816c5d3249ca90c7e7a555fa72"},
     {"id":"docs/error-taxonomy.md","type":"doc","title":"E-0N Error Taxonomy & Auto-Fix Registry","status":"active","version":"v1.2","date":"2026-04-22","tags":["E-0N","error","taxonomy"],"notion_url":"https://www.notion.so/34955ed436f081149dd6de25dba027d7","file_size":3102,"sha":null},
     {"id":"docs/ssot-spec.md","type":"doc","title":"SSOT Sync Architecture Specification","status":"active","version":"v1.1","date":"2026-04-22","tags":["SSOT","sync","architecture"],"notion_url":"https://www.notion.so/34955ed436f081149dd6de25dba027d7","file_size":2841,"sha":null},
     {"id":"docs/notion-github-ssot-sync.md","type":"doc","title":"Notion-GitHub SSOT Sync Full Guide v1.0","status":"active","version":"v1.0","date":"2026-04-26","tags":["SSOT","Notion","GitHub","sync"],"notion_url":"https://www.notion.so/34f55ed436f08150b07dc7f5f800311c","file_size":5610,"sha":null},
