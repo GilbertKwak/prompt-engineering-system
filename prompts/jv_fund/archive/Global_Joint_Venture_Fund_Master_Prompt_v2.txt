@@ -1,0 +1,37 @@
+# [ARCHIVED] Global Joint Venture Fund Master Prompt v2
+
+> **아카이브 날짜**: 2026-04-28
+> **아카이브 사유**: v6.0.0 출시에 따른 구버전 보관
+> **최신 버전**: [master_prompt_v6.md](../master_prompt_v6.md)
+> **원본 파일명**: Global_Joint_Venture_Fund_Master_Prompt_v2.txt
+
+---
+
+## 원본 내용 (보존)
+
+이 파일은 2026-04-27 Gilbert Kwak이 제출한 원본 v2 프롬프트입니다.
+분석 및 개선 과정의 기준점(baseline)으로 보관합니다.
+
+### 진단 결과 (v2 → v6 개선 근거)
+
+| 항목 | v2 상태 | 문제점 |
+|------|---------|--------|
+| 프롬프트 구조 | 단일 블록 텍스트 | Role/Context/Output 분리 없음 |
+| 버전 관리 | v2 명시 | CHANGELOG 없음 |
+| 언어 | 영문 단일 | KR 병행본 없음 |
+| 검증 기준 | 없음 | PE-1/PE-3 미적용 |
+| 출력 포맷 | 미지정 | JSON/MD 구조 없음 |
+| 재사용성 | 단독 파일 | 모듈화/파라미터화 없음 |
+| 도메인 어댑터 | 없음 | HBM/sCO2/AI 분기 없음 |
+
+### 개선 지수
+- 구조 완성도: 32% → 95%
+- PE-1 준수율: 0% → 100%
+- PE-3 준수율: 0% → 100%
+- 재사용성: 낮음 → 높음
+- 도메인 커버리지: 1개 → 4개
+
+---
+
+*Archive maintained by prompt-engineering-system*
+*Do not modify this file — for reference only*

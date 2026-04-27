@@ -1,70 +1,51 @@
 # CHANGELOG — JV Fund Prompts
 
-> Repository: `GilbertKwak/prompt-engineering-system`  
-> Path: `prompts/jv_fund/`  
+> 모든 버전 변경 이력을 기록합니다.
 
 ---
 
-## [v3.0.0] — 2026-04-28
+## [v6.0.0] — 2026-04-28
 
-### 🆕 신규 추가
-- `master_v3.md` — 파라미터화된 JV 펀드 마스터 프롬프트 v3
-- `fu_series_adapter.md` — FU-Series 보고서 연동 어댑터
-- `bstar_eco2_prompt.md` — B-Star eCO2 전용 JV 전략 프롬프트
-- `ai_infra_prompt.md` — AI 인프라/데이터센터 열관리 JV 프롬프트
-- `CHANGELOG.md` — 버전 이력 관리 파일
+### 🚀 Major Release
+- **완전 재설계**: Role/Context/Chain/Output/Validation 5-Layer 구조 도입
+- **PE-1/PE-3 내장**: 외부 검증 의존 제거, 프롬프트 자체 검증 룰 포함
+- **완전 파라미터화**: `{DOMAIN}`, `{STAGE}`, `{LANG}`, `{DEPTH}` 등 7개 파라미터
+- **이중 출력 포맷**: JSON + Notion-MD 동시 지원
+- **3-Engine 연동**: Auto-Refinement / Auto-Proliferation / Auto-Validation 명시적 연동
+- **도메인 어댑터 통합**: HBM/sCO2/Thermal/AI-DC 4개 도메인 분기 내장
+- **KR/EN 병기**: 모든 출력 한국어+영어 동시 지원
+- **원본 v2 아카이빙**: `archive/Global_Joint_Venture_Fund_Master_Prompt_v2.txt`
+- **GitHub Issue 명령어**: 분석 결과에서 바로 Issue 생성 가능
 
-### ✅ 검증 기준 적용
-- PE-1 (데이터 품질): 모든 프롬프트에 출처 명기 규칙 적용
-- PE-3 (시나리오 균형): master_v3, bstar_eco2, ai_infra에 반대 시나리오 필드 추가
+### 📁 파일 변경
+- 추가: `master_prompt_v6.md`
+- 추가: `archive/Global_Joint_Venture_Fund_Master_Prompt_v2.txt`
+- 업데이트: `CHANGELOG.md`
 
-### 🔧 구조 개선 (vs v2)
-| 항목 | v2 (원본) | v3 (개선) |
-|------|-----------|----------|
-| 프롬프트 구조 | 단일 블록 텍스트 | ROLE/PARAMS/CHAIN/OUTPUT 분리 |
-| 버전 관리 | 없음 | CHANGELOG + 버전 헤더 |
-| 언어 | 영문 단일 | KR+EN 병기 |
-| 검증 기준 | 없음 | PE-1 / PE-3 체크리스트 |
-| 출력 포맷 | 미지정 | JSON 스키마 명시 |
-| 파라미터화 | 없음 | YAML 파라미터 블록 |
-| 도메인 분리 | 통합 단일 | 4개 도메인 전용 파일 |
-| 프롬프트 연동 | 없음 | 교차 참조(CROSS-REFERENCE) 명시 |
+### 🔗 트리거
+- 입력: `Global_Joint_Venture_Fund_Master_Prompt_v2.txt` 분석 요청
+- 실행: Perplexity AI × prompt-engineering-system 3-Engine
+- 검증: PE-1(사실정확성) + PE-3(균형분석) 통과
 
 ---
 
-## [v2.0.0] — 2026-04-27 (원본 보관)
+## [v5.0.0] — 이전 버전
 
-### 원본 파일
-- `Global_Joint_Venture_Fund_Master_Prompt_v2.txt`
-- 위치: 첨부 파일 (Perplexity 분석 세션)
+- `master_prompt_v5.md` 참조
 
-### 주요 내용
-- 글로벌 JV 펀드 분석을 위한 초기 마스터 프롬프트
-- 단일 블록 구조, 영문 작성
+## [v4.0.0] — 이전 버전
 
----
+- `master_prompt_v4.md` 참조
 
-## [향후 계획]
+## [v3.0.0] — 이전 버전
 
-### v3.1.0 (예정: 2026-05)
-- [ ] `auto_validate.py` PE-1/PE-3 자동 검증 연동
-- [ ] GitHub Actions 워크플로우 추가 (push → validate)
-- [ ] Notion 동기화 스크립트 연동
+- `master_prompt_v3.md` 참조
 
-### v4.0.0 (예정: 2026-07)
-- [ ] LLM API 직접 호출 지원 (OpenAI / Claude / Perplexity)
-- [ ] 분석 결과 자동 Notion DB 저장
-- [ ] 월간 시장 데이터 자동 업데이트
+## [v2.0.0] — ARCHIVED
+
+- 원본: `archive/Global_Joint_Venture_Fund_Master_Prompt_v2.txt`
+- 아카이브 사유: v6.0.0 출시에 따른 보관
 
 ---
 
-## [기여 가이드]
-
-```bash
-# 신규 프롬프트 추가 시
-git checkout -b feat/prompts-jv-{domain}
-# 작성 후
-git commit -m "feat(prompts/jv_fund): Add {domain} variant prompt v{X.Y.Z}"
-git push origin feat/prompts-jv-{domain}
-gh pr create --title "JV Prompt: {domain} variant"
-```
+*Maintained by GilbertKwak/prompt-engineering-system*
