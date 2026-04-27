@@ -1,0 +1,116 @@
+# .github/workflows/validate_prompts.yml
+# PE-1 / PE-3 Prompt Validation + Notion Sync Trigger
+# Repository: GilbertKwak/prompt-engineering-system
+# Version: v1.0 | 2026-04-27
+
+name: "🔍 Prompt Validation (PE-1/PE-3)"
+
+on:
+  push:
+    paths:
+      - "prompts/**/*.md"
+      - "automation/auto_validate.py"
+  pull_request:
+    paths:
+      - "prompts/**/*.md"
+  schedule:
+    # Monthly review trigger — 매월 1일 09:00 KST (00:00 UTC)
+    - cron: "0 0 1 * *"
+  workflow_dispatch:
+    inputs:
+      target_dir:
+        description: "Validate specific directory (default: prompts/jv_fund)"
+        required: false
+        default: "prompts/jv_fund"
+      rules:
+        description: "Validation rules (PE-1,PE-3)"
+        required: false
+        default: "PE-1,PE-3"
+
+jobs:
+  validate:
+    name: "PE Validation"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "📥 Checkout repository"
+        uses: actions/checkout@v4
+
+      - name: "🐍 Set up Python"
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: "📦 Install dependencies"
+        run: |
+          pip install --quiet --upgrade pip
+
+      - name: "🔍 Run PE-1/PE-3 Validation — JV Fund Prompts"
+        id: validate_jv
+        run: |
+          python automation/auto_validate.py \
+            --dir prompts/jv_fund \
+            --rules PE-1,PE-3 \
+            --output validation_report_jv.json
+        continue-on-error: true
+
+      - name: "🔍 Run PE-1/PE-3 Validation — All Prompts"
+        id: validate_all
+        run: |
+          python automation/auto_validate.py \
+            --dir prompts \
+            --rules PE-1,PE-3 \
+            --output validation_report_all.json
+        continue-on-error: true
+
+      - name: "📊 Upload Validation Reports"
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-reports-${{ github.run_number }}
+          path: |
+            validation_report_jv.json
+            validation_report_all.json
+          retention-days: 30
+
+      - name: "📋 Post Summary to Job Summary"
+        run: |
+          echo "## 🔍 PE Validation Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| File | Status | Score |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|---|" >> $GITHUB_STEP_SUMMARY
+          python3 -c "
+import json, sys
+try:
+    with open('validation_report_jv.json') as f:
+        data = json.load(f)
+    if isinstance(data, dict): data = [data]
+    for r in data:
+        icon = '✅' if r['status'] == 'PASS' else '❌'
+        print(f\"| {r['file']} | {icon} {r['status']} | {r.get('score', 'N/A')} |\")
+except Exception as e:
+    print(f'| Error reading report | ❌ | N/A |')
+" >> $GITHUB_STEP_SUMMARY
+
+  monthly_review_issue:
+    name: "📅 Monthly Review Issue"
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    needs: validate
+
+    steps:
+      - name: "📥 Checkout repository"
+        uses: actions/checkout@v4
+
+      - name: "🗓️ Create Monthly Review Issue"
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const date = new Date().toISOString().slice(0, 7); // YYYY-MM
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `[Monthly Review] JV Fund Prompt Performance — ${date}`,
+              labels: ['prompt-review', 'monthly', 'jv-fund'],
+              body: `## 📋 월간 프롬프트 성능 리뷰\n\n> **기간**: ${date}\n> **자동 생성**: GitHub Actions Schedule\n\n### 검토 항목\n\n- [ ] PE-1 준수율 확인 (validation_report 참조)\n- [ ] PE-3 시나리오 완성도 확인\n- [ ] 출력 품질 주관적 평가 (1-5점)\n- [ ] 신규 도메인 파라미터 추가 필요 여부\n- [ ] FU-Series 연동 어댑터 업데이트 필요 여부\n- [ ] B-Star eCO2 / AI Infra 프롬프트 업데이트\n- [ ] Notion 페이지 동기화 상태 확인\n\n### 참조 링크\n\n- [Notion PE-JV 페이지](https://www.notion.so/34f55ed436f081c08fececa8dd7577f9)\n- [prompts/jv_fund/](https://github.com/${context.repo.owner}/${context.repo.repo}/tree/main/prompts/jv_fund)\n- [Validation Reports (Artifacts)](https://github.com/${context.repo.owner}/${context.repo.repo}/actions)\n\n### 다음 액션\n\n| 우선순위 | 액션 | 담당 | 기한 |\n|---|---|---|---|\n| 🔴 High | | Gilbert | |\n| 🟡 Med | | Gilbert | |\n| 🟢 Low | | Gilbert | |\n`
+            });
+            core.info('Monthly review issue created successfully.');
