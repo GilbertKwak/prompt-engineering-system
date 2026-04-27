@@ -1,29 +1,41 @@
-# 💼 Global Joint Venture Fund Master Prompt v3.0
+# 💼 Global Joint Venture Fund Master Prompt v3.1
 
 > **원본:** `Global_Joint_Venture_Fund_Master_Prompt_v2.txt`  
-> **업그레이드:** v2.0 → v3.0 | **날짜:** 2026-04-27  
+> **업그레이드:** v2.0 → v3.0 → v3.1 | **날짜:** 2026-04-27  
 > **검증 기준:** PE-1 / PE-3  
-> **Notion 연동:** [PE-JV · Global JV Fund Prompt Library v3.0](https://www.notion.so/34f55ed436f08150b07dc7f5f800311b)
+> **Notion 연동:** [PE-JV · Global JV Fund Prompt Library v3.1](https://www.notion.so/34f55ed436f08150b07dc7f5f800311b)
 
 ---
 
-## 📋 변경 요약 (v2 → v3)
+## 📊 변경 요약
 
-| 항목 | v2 (원본) | v3 (개선) |
-|---|---|---|
-| 구조 | 단일 XML 블록 | Role/Parameters/TaskChain/Validation 분리 |
-| 언어 | 영문 단일 | KR + EN 병기 |
-| 검증 기준 | 없음 | PE-1 / PE-3 명시 |
-| 출력 포맷 | 서술형 | JSON + Notion MD + GitHub Issue 형식 |
-| 파라미터화 | 없음 | {domain}/{stage}/{depth}/{lang} 주입 가능 |
-| 도메인 특화 | 없음 | HBM / sCO2 / AI-DC / Thermal 4종 |
+### v3.1 신규 (2026-04-27)
+
+| 항목 | 내용 |
+|---|---|
+| 자동검증 사이클 | PE-1 / PE-3 기반 자동 검증·개선·증식 적용 완료 |
+| 전후 비교 | v2 vs v3 Before/After 비교 테이블 추가 |
+| 저장소 이원화 | Notion Hub + GitHub Engine 운영 원칙 확정 |
+| alias 명령어 | jv-validate / jv-sync / jv-new / jv-review 4종 추가 |
+| Notion 연동 | v3.1 상태 동기화 완료 |
+
+### v3.0 vs v3.1 전후 비교
+
+| 항목 | v2.0 (원본) | v3.0 | v3.1 (현재) |
+|---|---|---|---|
+| 구조 | 단일 XML 블록 | Role/Params/TaskChain/Validation 분리 | 동일 + 좌우 비교 섹션 추가 |
+| 언어 | 영문 단일 | KR + EN 병기 | 동일 |
+| 검증 | 없음 | PE-1 / PE-3 명시 | 자동 검증 사이클 로그 추가 |
+| 자동화 | 없음 | GitHub Actions 연동 | alias 4종 + 이원화 전략 내장 |
+| 저장소 | 단일 | 단일 | **Notion(Hub) + GitHub(Engine) 이원화** |
+| 파생 프롬프트 | 없음 | 3종 (FU/sCO2/AI) | 동일 |
 
 ---
 
-## 🔷 Master Prompt v3.0 (Full)
+## 🔷 Master Prompt v3.1 (Full)
 
 ```xml
-<Global_Joint_Venture_Fund_Master_Prompt_v3>
+<Global_Joint_Venture_Fund_Master_Prompt_v3_1>
 
   <role>
     You are a top-tier global fund architect and institutional fundraising expert
@@ -43,11 +55,12 @@
   </mission>
 
   <parameters>
-    DOMAIN: {domain}        <!-- HBM | sCO2 | Thermal | AI-DC | Multi -->
-    STAGE:  {stage}         <!-- Screening | Due_Diligence | Structuring | Post-Close -->
-    DEPTH:  {depth}         <!-- Executive | Technical | Full -->
-    LANG:   {lang}          <!-- KR | EN | Bilingual -->
-    VERSION: v3.0
+    DOMAIN:  {domain}        <!-- HBM | sCO2 | Thermal | AI-DC | Multi -->
+    STAGE:   {stage}         <!-- Screening | Due_Diligence | Structuring | Post-Close -->
+    DEPTH:   {depth}         <!-- Executive | Technical | Full -->
+    LANG:    {lang}          <!-- KR | EN | Bilingual -->
+    VERSION: v3.1
+    DATE:    {date}          <!-- YYYY-MM-DD -->
   </parameters>
 
   <assumptions>
@@ -163,12 +176,27 @@
     - Apply PE-1 and PE-3 validation before finalizing output
   </high_risk_self_check>
 
-</Global_Joint_Venture_Fund_Master_Prompt_v3>
+</Global_Joint_Venture_Fund_Master_Prompt_v3_1>
 ```
 
 ---
 
-## 🛠 사용법
+## 🗂 저장소 이원화 전략
+
+> **운영 원칙: Notion = Hub(운영·공유) / GitHub = Engine(버전관리·자동화)**
+
+| 콘텐츠 유형 | 권장 저장소 | 이유 |
+|---|---|---|
+| Master Prompt 최신본 | **Notion** (Primary) | 팀 공유, 빠른 수정, 링크 참조 |
+| 버전 이력 / CHANGELOG | **GitHub** (Primary) | diff 관리, 롤백, 감사 추적 |
+| JV 분석 결과물 | Notion | DB 뷰, 필터링, 시각화 |
+| 자동화 스크립트 | GitHub | Actions 연동, CI/CD |
+| 파트너사 데이터 | Notion | 관계형 DB, 검색 |
+| 프롬프트 파생본 | GitHub + Notion 동기화 | 양방향 참조 |
+
+---
+
+## 🛠 사용법 및 빠른 활용 명령어
 
 ```bash
 # 파라미터 치환 후 실행
@@ -179,6 +207,18 @@ DOMAIN=HBM STAGE=Screening DEPTH=Executive LANG=Bilingual
 python automation/auto_validate.py \
   --file applied-cases/jv-fund/master_prompt_v3.md \
   --rules PE-1,PE-3
+
+# 최신 프롬프트 가져오기
+curl -sL https://raw.githubusercontent.com/GilbertKwak/prompt-engineering-system/main/applied-cases/jv-fund/master_prompt_v3.md
+
+# JV 분석 이슈 생성
+gh issue create --title "[JV Analysis] {DOMAIN} - $(date +%Y-%m-%d)" --label "jv-analysis"
+
+# ── alias 등록 (권장: ~/.bashrc 또는 ~/.zshrc) ──
+alias jv-validate='python ~/workspace/automation/auto_validate.py --rules PE-1,PE-3'
+alias jv-sync='python ~/workspace/automation/notion_sync.py'
+alias jv-new='gh issue create --label "jv-analysis" --template jv_analysis.md'
+alias jv-review='gh issue create --title "[Review] JV Prompt $(date +%Y-%m)" --label "monthly-review"'
 ```
 
 ---
