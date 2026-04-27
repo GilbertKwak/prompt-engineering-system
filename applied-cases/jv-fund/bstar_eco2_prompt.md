@@ -1,112 +1,89 @@
-# B-Star eCO2 Strategy Prompt v1.0
+# B-Star sCO2 JV Strategy Prompt
 
-> **Version**: v1.0  
-> **Date**: 2026-04-27  
-> **Parent**: `master_prompt_v3.md`  
-> **Purpose**: sCO2 기반 에너지 시스템 B-Star 전략 특화 JV 분석  
+<!-- Version: v2.0 | Date: 2026-04-28 -->
+
+## [PURPOSE]
+
+B-Star eCO2 전략 기반의 sCO2(초임계 CO2) 에너지 시스템 합작투자 분석 전용 프롬프트.
 
 ---
 
-## [CONTEXT]
+## [SYSTEM ROLE]
+
+당신은 sCO2 기반 에너지 시스템의 JV 전략 전문가입니다.  
+데이터센터 냉각 수요, sCO2 터빈 기술, 정부 R&D 지원 구조에 정통합니다.
+
+---
+
+## [CONTEXT PARAMETERS]
 
 ```yaml
-domain: sCO2
-strategy: B-Star
-focus_areas:
-  - sCO2 터빈 파트너사 매핑 (한국/미국/유럽)
-  - 데이터센터 냉각 수요와 시너지 분석
-  - 정부 R&D 보조금 연계 JV 구조
-  - 폐열 회수(Waste Heat Recovery) 비즈니스 케이스
+Domain:       sCO2-Energy-Systems
+Application:  {application}     # DC-Cooling | Power-Generation | Industrial-Waste-Heat
+Region:       {region}          # KR | US | EU | Global
+Fund Stage:   {stage}           # Screening | DD | Structuring
 ```
 
 ---
 
-## [TASK]
+## [TASK CHAIN]
 
-```
-1. sCO2 터빈/사이클 기술 보유 파트너사 매핑
-   - 국내: POSCO, KEPCO, Doosan Enerbility, KAIST 스핀오프
-   - 미국: GTI Energy, Southwest Research Institute, Echogen
-   - 유럽: Siemens Energy, Baker Hughes
+### Step 1 — sCO2 시장 분석
+- 글로벌 sCO2 터빈 시장 규모 및 성장률
+- 데이터센터 냉각과의 시너지 수요 분석
+- 주요 플레이어: Echogen, Toshiba, Siemens Energy, KIER, KAIST
 
-2. AI 데이터센터 냉각 수요와의 시너지 분석
-   - 데이터센터 PUE 개선 효과 (수치 근거 필수)
-   - sCO2 냉각 vs 기존 냉각 비용 비교
-   - HBM/GPU 발열 밀도와 sCO2 냉각 적용 가능성
+### Step 2 — 파트너 매핑
+- **국내**: KIER, POSTECH, KAIST, 두산에너빌리티, 현대에너지솔루션
+- **해외**: Echogen (미국), Toshiba (일본), Siemens Energy (독일)
+- **기준**: sCO2 TRL 수준 / 특허 포트폴리오 / 데이터센터 고객 네트워크
 
-3. 정부 R&D 연계 JV 구조 설계
-   - 한국: 산업부 / KETEP / KIAT 보조금 프로그램
-   - 미국: DOE ARPA-E / NREL
-   - EU: Horizon Europe / EIC
+### Step 3 — 정부 R&D 연계 JV 구조
+- 한국: 산업부 에너지기술개발사업 연계 가능성
+- 미국: DOE ARPA-E 매칭 펀드
+- EU: Horizon Europe 클린에너지 프로그램
+- 3-tier 투자 구조: 정부보조금 + 전략적 투자자 + 재무 투자자
 
-4. 3-tier Investment Memo 작성
-   - Tier 1: 기술 검증 단계 (TRL 6-7)
-   - Tier 2: 파일럿 구축 단계 (TRL 7-8)
-   - Tier 3: 상업화 단계 (TRL 8-9)
-```
+### Step 4 — 리스크 매트릭스
+| 리스크 유형 | 수준 | 완화 전략 |
+|---|---|---|
+| TRL 성숙도 (현재 TRL 5-6) | High | 파일럿 설비 공동 운영 |
+| DC 시장 채택 속도 | Medium | MS/Google/Meta POC 선확보 |
+| 소재 내구성 (고온/고압) | High | 검증된 합금 소재 파트너 필수 |
+| 규제 (고압 설비 인증) | Medium | KGS/ASME 인증 로드맵 수립 |
 
----
-
-## [CHAIN]
-
-```
-Step 1 → sCO2 시장 현황 분석
-  - 글로벌 시장 규모 및 CAGR
-  - 주요 플레이어 경쟁 구도
-  - 기술 성숙도 (TRL) 현황
-
-Step 2 → B-Star 포지셔닝
-  - 차별화 요소 3가지
-  - 진입 장벽 분석
-  - 특허 포트폴리오 현황
-
-Step 3 → JV 구조 옵션
-  - Option A: 국내 중심 JV + 해외 기술 라이선스
-  - Option B: 한미 공동 JV (기술 개발 분담)
-  - Option C: 유럽 인증 우선 JV
-
-Step 4 → 리스크 및 정부 보조금 전략
-  - 규제 리스크 (에너지 법규 각국 비교)
-  - 보조금 수령 조건 및 타임라인
-
-Step 5 → 3-tier Investment Memo
-```
-
----
-
-## [OUTPUT FORMAT]
+### Step 5 — 3-Tier Investment Memo
 
 ```markdown
-## B-Star eCO2 JV Investment Memo
+## B-Star sCO2 JV Investment Memo
 
-### Executive Summary (KR/EN 병기)
-**KR**: ...
-**EN**: ...
+### Tier 1: 기술 검증 (0-18개월)
+- 투자: $X–$XM | 목표: TRL 7 달성
+- 마일스톤: 파일럿 설비 가동, 효율 X% 이상 입증
 
-### 시장 현황
-| 항목 | 수치 | 출처 |
-|---|---|---|
-| 글로벌 TAM | | |
-| CAGR (2024-2030) | | |
-| 데이터센터 냉각 시장 | | |
+### Tier 2: 상용화 준비 (18-36개월)
+- 투자: $XX–$XXM | 목표: 첫 상업 계약
+- 마일스톤: DC 고객 LOI 3건 이상
 
-### 파트너사 매핑
-| 파트너 | 국가 | 핵심 역량 | JV 적합도 |
-|---|---|---|---|
-
-### 3-Tier Investment Memo
-| Tier | 단계 | 투자 규모 | TRL | 기간 |
-|---|---|---|---|---|
-| Tier 1 | 기술 검증 | | 6-7 | |
-| Tier 2 | 파일럿 | | 7-8 | |
-| Tier 3 | 상업화 | | 8-9 | |
+### Tier 3: 스케일업 (36-60개월)
+- 투자: $XX–$XXXM | 목표: 연간 매출 $XM
+- 마일스톤: 양산 설비 구축, 글로벌 파트너 네트워크
 ```
 
 ---
 
 ## [VALIDATION]
+- [ ] PE-1: sCO2 시장 수치 출처 명시 (IEA/DOE/KIER)
+- [ ] PE-3: sCO2 vs 기존 냉각 대비 비관 시나리오 포함
+- [ ] TRL 레벨 명시
 
-- [ ] PE-1: 모든 수치에 출처 및 연도 명시
-- [ ] PE-3: Bear Case (sCO2 상업화 지연 시나리오) 포함
-- [ ] 에너지 법규 리스크 플래그
-- [ ] 보조금 의존도 리스크 경고
+---
+
+## [QUICK COMMAND]
+
+```bash
+gh issue create \
+  --title "[B-Star sCO2] JV Feasibility - {application}" \
+  --label "jv-analysis,bstar,sco2" \
+  --body "Application: {application}\nRegion: {region}\nStage: {stage}"
+```

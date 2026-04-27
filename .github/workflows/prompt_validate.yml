@@ -1,0 +1,100 @@
+# .github/workflows/prompt_validate.yml
+# JV Fund Prompt Validation + Notion Sync Trigger
+# Version: 1.0 | Date: 2026-04-28
+
+name: 🔍 Prompt Validation — JV Fund
+
+on:
+  push:
+    paths:
+      - 'applied-cases/jv-fund/**'
+  pull_request:
+    paths:
+      - 'applied-cases/jv-fund/**'
+  workflow_dispatch:
+    inputs:
+      rules:
+        description: 'Validation rules (comma-separated)'
+        required: false
+        default: 'PE-1,PE-3,PE-5'
+
+jobs:
+  validate:
+    name: PE Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run PE Validation
+        id: validate
+        run: |
+          RULES="${{ github.event.inputs.rules || 'PE-1,PE-3,PE-5' }}"
+          echo "Running validation with rules: $RULES"
+          python automation/auto_validate.py \
+            --dir applied-cases/jv-fund/ \
+            --rules "$RULES" \
+            --output validation_report.json
+
+      - name: Upload Validation Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-report-${{ github.run_number }}
+          path: validation_report.json
+          retention-days: 30
+
+      - name: Comment PR (on PR only)
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let report = {};
+            try { report = JSON.parse(fs.readFileSync('validation_report.json', 'utf8')); } catch(e) {}
+            const scores = Array.isArray(report)
+              ? report.map(r => `| ${r.file.split('/').pop()} | ${r.overall_score}% | ${r.status} |`).join('\n')
+              : `| ${report.file} | ${report.overall_score}% | ${report.status} |`;
+            const body = `## 🔍 JV Fund Prompt Validation Results\n\n| File | Score | Status |\n|---|---|---|\n${scores}\n\n> Validated with rules: PE-1, PE-3, PE-5`;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body
+            });
+
+  notion-sync-trigger:
+    name: Notion Sync Trigger
+    runs-on: ubuntu-latest
+    needs: validate
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: pip install requests
+
+      - name: Sync to Notion
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_PAGE_ID: ${{ secrets.NOTION_JV_PAGE_ID }}
+        run: |
+          if [ -f "automation/notion_sync.py" ]; then
+            python automation/notion_sync.py \
+              --page-id "$NOTION_PAGE_ID" \
+              --file "applied-cases/jv-fund/master_prompt_v3.md"
+          else
+            echo "notion_sync.py not found — skipping Notion sync"
+            echo "Add NOTION_TOKEN and NOTION_JV_PAGE_ID to repository secrets to enable sync"
+          fi

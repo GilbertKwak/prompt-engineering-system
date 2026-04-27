@@ -1,176 +1,248 @@
 #!/usr/bin/env python3
 """
-auto_validate.py — JV Fund Prompt PE-1/PE-3 자동 검증기
-Usage: python automation/auto_validate.py --file <path> --rules PE-1,PE-3
-Version: 1.0 | Updated: 2026-04-27
+auto_validate.py — JV Fund Prompt PE-1/PE-3/PE-5 Validation Script
+Version: 1.0 | Date: 2026-04-28
+Author: Gilbert
+
+Usage:
+  python auto_validate.py --file <path> --rules PE-1,PE-3,PE-5
+  python auto_validate.py --dir <directory> --rules PE-1,PE-3
+  python auto_validate.py --file <path> --rules PE-1 --output report.json
 """
 
 import argparse
-import re
 import json
+import os
+import re
 import sys
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
-# ── PE-1 검증 규칙 ──────────────────────────────────────────────────
-PE1_RULES = {
-    "PE-1-01": {
-        "name": "수치 데이터 출처+연도 명시",
-        "pattern": r"\$[\d,.]+[BMK]?.*\d{4}",
-        "forbidden": [],
-        "description": "금액/수치 뒤 출처 또는 연도 필요"
+
+# ── Validation Rule Definitions ────────────────────────────────────────────
+
+PE1_CHECKS = {
+    "numeric_source": {
+        "pattern": r"\$[\d\.]+[BMT].*?(?:Source|출처|\(est\.\)|IDC|Gartner|McKinsey|IEA|DOE|KIER)",
+        "description": "수치에 출처 명시",
+        "weight": 0.35,
     },
-    "PE-1-02": {
-        "name": "추정값 태깅",
-        "pattern": r"\(est\.\)",
-        "forbidden": [],
-        "description": "추정값에 (est.) 태깅"
+    "year_tag": {
+        "pattern": r"20(2[3-9]|3[0-9])",
+        "description": "연도 기재",
+        "weight": 0.25,
     },
-    "PE-1-03": {
-        "name": "보장 수익률 표현 금지",
-        "pattern": None,
-        "forbidden": ["guaranteed return", "확정 수익", "guaranteed profit", "보장 수익"],
-        "description": "보장/확정 수익 표현 금지"
+    "est_tag": {
+        "pattern": r"\(est\.\)|추정|estimated",
+        "description": "추정값 표기",
+        "weight": 0.20,
     },
-    "PE-1-04": {
-        "name": "인용 데이터 최신성",
-        "pattern": r"202[4-6]",
-        "forbidden": [],
-        "description": "최근 2년 이내 데이터 포함 권장"
+    "source_count": {
+        "description": "3개 이상 독립 출처",
+        "weight": 0.20,
     },
 }
 
-# ── PE-3 검증 규칙 ──────────────────────────────────────────────────
-PE3_RULES = {
-    "PE-3-01": {
-        "name": "베어리시 시나리오 포함",
-        "keywords": ["bearish", "downside", "비관", "리스크 시나리오", "worst case", "하락 시나리오"],
-        "description": "비관 시나리오 최소 1개 포함"
+PE3_CHECKS = {
+    "bull_case": {
+        "pattern": r"낙관|Bull Case|Upside|optimistic",
+        "description": "낙관 시나리오",
+        "weight": 0.30,
     },
-    "PE-3-02": {
-        "name": "기술 리스크 명시",
-        "keywords": ["TRL", "기술 리스크", "technical risk", "기술 성숙도"],
-        "description": "기술 리스크 항목 포함"
+    "base_case": {
+        "pattern": r"기준|Base Case|Baseline|base scenario",
+        "description": "기준 시나리오",
+        "weight": 0.30,
     },
-    "PE-3-03": {
-        "name": "수탁자 의무 플래깅",
-        "keywords": ["fiduciary", "수탁자", "신탁", "LP 보호"],
-        "description": "수탁자 의무 관련 위험 언급"
+    "bear_case": {
+        "pattern": r"비관|Bear Case|Downside|pessimistic|리스크",
+        "description": "비관 시나리오",
+        "weight": 0.25,
     },
-    "PE-3-04": {
-        "name": "규제·지정학 리스크",
-        "keywords": ["regulatory", "규제", "geopolitical", "지정학", "수출 규제", "ITAR"],
-        "description": "규제 또는 지정학 리스크 항목"
-    },
-    "PE-3-05": {
-        "name": "LP 이해충돌 명시",
-        "keywords": ["이해충돌", "conflict of interest", "LP alignment", "LP 이해"],
-        "description": "LP 이해충돌 가능성 기술"
+    "counter_argument": {
+        "pattern": r"반론|반대|그러나|However|On the other hand|단점|한계",
+        "description": "반대 의견/반론",
+        "weight": 0.15,
     },
 }
 
+PE5_CHECKS = {
+    "task_chain": {
+        "pattern": r"Step [1-5]|TASK CHAIN",
+        "description": "Task Chain 5단계",
+        "weight": 0.20,
+    },
+    "json_output": {
+        "pattern": r"```json|\{\s*\"summary\"",
+        "description": "JSON 출력 포맷",
+        "weight": 0.20,
+    },
+    "md_table": {
+        "pattern": r"\|.*\|.*\|\n\|[-:]+\|",
+        "description": "MD 테이블",
+        "weight": 0.15,
+    },
+    "github_command": {
+        "pattern": r"gh issue create",
+        "description": "GitHub Issue 명령어",
+        "weight": 0.20,
+    },
+    "roadmap": {
+        "pattern": r"90일|90.days|6개월|6.months|1년|1.year",
+        "description": "실행 로드맵",
+        "weight": 0.25,
+    },
+}
 
-def validate_pe1(content: str) -> dict:
-    results = {}
-    for rule_id, rule in PE1_RULES.items():
-        passed = True
-        detail = ""
-        # 금지 표현 검사
-        for forbidden in rule.get("forbidden", []):
-            if forbidden.lower() in content.lower():
-                passed = False
-                detail = f"금지 표현 발견: '{forbidden}'"
-                break
-        # 패턴 존재 여부 (informational — 없어도 경고만)
-        if passed and rule.get("pattern"):
-            if not re.search(rule["pattern"], content):
-                detail = f"권장 패턴 미발견 (참고용)"
-        results[rule_id] = {"name": rule["name"], "passed": passed, "detail": detail or "OK"}
-    return results
+RULE_MAP = {"PE-1": PE1_CHECKS, "PE-3": PE3_CHECKS, "PE-5": PE5_CHECKS}
 
 
-def validate_pe3(content: str) -> dict:
-    results = {}
-    for rule_id, rule in PE3_RULES.items():
-        found = any(kw.lower() in content.lower() for kw in rule["keywords"])
-        results[rule_id] = {
-            "name": rule["name"],
-            "passed": found,
-            "detail": "OK" if found else f"키워드 미발견: {rule['keywords'][:3]}"
-        }
-    return results
+# ── Core Validation Logic ──────────────────────────────────────────────────
 
-
-def run_validation(filepath: str, rules: list) -> dict:
+def validate_file(filepath: str, rules: list[str]) -> dict:
     path = Path(filepath)
     if not path.exists():
-        print(f"[ERROR] 파일 없음: {filepath}")
-        sys.exit(1)
+        return {"error": f"File not found: {filepath}"}
 
     content = path.read_text(encoding="utf-8")
-    report = {
-        "file": filepath,
-        "version": "auto_validate v1.0",
+    results = {
+        "file": str(path),
         "timestamp": datetime.now().isoformat(),
-        "results": {}
+        "rules": {},
+        "overall_score": 0.0,
+        "status": "",
     }
 
-    if "PE-1" in rules:
-        report["results"]["PE-1"] = validate_pe1(content)
-    if "PE-3" in rules:
-        report["results"]["PE-3"] = validate_pe3(content)
+    total_weighted = 0.0
+    total_weight = 0.0
 
-    # 집계
-    total = sum(len(v) for v in report["results"].values())
-    passed = sum(
-        1 for group in report["results"].values()
-        for item in group.values() if item["passed"]
-    )
-    report["summary"] = {
-        "total": total,
-        "passed": passed,
-        "failed": total - passed,
-        "score": f"{passed}/{total}",
-        "status": "✅ PASS" if passed == total else f"⚠️  WARNING ({total - passed} issues)"
-    }
-    return report
+    for rule_name in rules:
+        rule_name = rule_name.strip()
+        if rule_name not in RULE_MAP:
+            print(f"  ⚠️  Unknown rule: {rule_name}")
+            continue
+
+        checks = RULE_MAP[rule_name]
+        rule_result = {"checks": {}, "score": 0.0, "pass": False}
+        rule_score = 0.0
+        rule_weight_sum = 0.0
+
+        # Special: source_count for PE-1
+        if rule_name == "PE-1":
+            sources = re.findall(
+                r"(?:IDC|Gartner|McKinsey|IEA|DOE|KIER|Bloomberg|SEMI|Yole|TrendForce)",
+                content, re.IGNORECASE
+            )
+            unique_sources = len(set(s.lower() for s in sources))
+            checks["source_count"]["found"] = unique_sources >= 3
+
+        for check_name, check in checks.items():
+            w = check["weight"]
+            if check_name == "source_count":
+                passed = check.get("found", False)
+            else:
+                pattern = check.get("pattern", "")
+                passed = bool(re.search(pattern, content, re.IGNORECASE | re.MULTILINE))
+
+            rule_result["checks"][check_name] = {
+                "description": check["description"],
+                "passed": passed,
+                "weight": w,
+            }
+            if passed:
+                rule_score += w
+            rule_weight_sum += w
+
+        normalized = (rule_score / rule_weight_sum * 100) if rule_weight_sum > 0 else 0
+        rule_result["score"] = round(normalized, 1)
+        rule_result["pass"] = normalized >= 70
+        results["rules"][rule_name] = rule_result
+        total_weighted += normalized
+        total_weight += 1
+
+    overall = (total_weighted / total_weight) if total_weight > 0 else 0
+    results["overall_score"] = round(overall, 1)
+
+    if overall >= 90:
+        results["status"] = "✅ PASS"
+    elif overall >= 70:
+        results["status"] = "⚠️  REVIEW"
+    elif overall >= 50:
+        results["status"] = "🔄 REWORK"
+    else:
+        results["status"] = "❌ FAIL"
+
+    return results
 
 
-def print_report(report: dict):
-    print("\n" + "═" * 60)
-    print(f"  JV Fund Prompt 자동 검증 리포트")
-    print(f"  파일: {report['file']}")
-    print(f"  시각: {report['timestamp']}")
-    print("═" * 60)
-    for group_name, rules in report["results"].items():
-        print(f"\n[{group_name}]")
-        for rule_id, result in rules.items():
-            icon = "✅" if result["passed"] else "❌"
-            print(f"  {icon} {rule_id}: {result['name']}")
-            if result["detail"] != "OK":
-                print(f"       → {result['detail']}")
-    s = report["summary"]
-    print(f"\n{'═' * 60}")
-    print(f"  결과: {s['status']}  ({s['score']} 항목 통과)")
-    print("═" * 60 + "\n")
+def print_report(results: dict) -> None:
+    if "error" in results:
+        print(f"ERROR: {results['error']}")
+        return
 
+    print(f"\n{'='*60}")
+    print(f"  Validation Report — {Path(results['file']).name}")
+    print(f"  {results['timestamp']}")
+    print(f"{'='*60}")
+
+    for rule_name, rule_data in results["rules"].items():
+        status = "✅" if rule_data["pass"] else "❌"
+        print(f"\n  {status} {rule_name} — Score: {rule_data['score']}%")
+        for check_name, check in rule_data["checks"].items():
+            icon = "  ✓" if check["passed"] else "  ✗"
+            print(f"    {icon} [{check['weight']:.2f}] {check['description']}")
+
+    print(f"\n{'─'*60}")
+    print(f"  Overall Score : {results['overall_score']}%")
+    print(f"  Status        : {results['status']}")
+    print(f"{'='*60}\n")
+
+
+# ── CLI Entry Point ────────────────────────────────────────────────────────
 
 def main():
-    parser = argparse.ArgumentParser(description="JV Fund Prompt PE-1/PE-3 자동 검증")
-    parser.add_argument("--file", required=True, help="검증할 프롬프트 파일 경로")
-    parser.add_argument("--rules", default="PE-1,PE-3", help="적용 규칙 (예: PE-1,PE-3)")
-    parser.add_argument("--output", default=None, help="JSON 리포트 출력 경로 (선택)")
+    parser = argparse.ArgumentParser(
+        description="JV Fund Prompt Validator (PE-1/PE-3/PE-5)"
+    )
+    parser.add_argument("--file", help="단일 파일 경로")
+    parser.add_argument("--dir", help="디렉터리 (*.md 전체 검증)")
+    parser.add_argument(
+        "--rules", default="PE-1,PE-3,PE-5",
+        help="검증 룰 (쉼표 구분, 기본: PE-1,PE-3,PE-5)"
+    )
+    parser.add_argument("--output", help="JSON 출력 파일 경로")
     args = parser.parse_args()
 
     rules = [r.strip() for r in args.rules.split(",")]
-    report = run_validation(args.file, rules)
-    print_report(report)
+    all_results = []
+
+    if args.file:
+        res = validate_file(args.file, rules)
+        print_report(res)
+        all_results.append(res)
+
+    elif args.dir:
+        md_files = list(Path(args.dir).glob("*.md"))
+        if not md_files:
+            print(f"No .md files found in {args.dir}")
+            sys.exit(1)
+        for f in md_files:
+            res = validate_file(str(f), rules)
+            print_report(res)
+            all_results.append(res)
+    else:
+        parser.print_help()
+        sys.exit(1)
 
     if args.output:
-        Path(args.output).write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
-        print(f"  JSON 리포트 저장: {args.output}")
+        with open(args.output, "w", encoding="utf-8") as f:
+            json.dump(all_results if len(all_results) > 1 else all_results[0],
+                      f, ensure_ascii=False, indent=2)
+        print(f"📄 Report saved: {args.output}")
 
-    sys.exit(0 if report["summary"]["failed"] == 0 else 1)
+    # Exit code: 1 if any file fails
+    failed = [r for r in all_results if "❌" in r.get("status", "") or "🔄" in r.get("status", "")]
+    sys.exit(1 if failed else 0)
 
 
 if __name__ == "__main__":

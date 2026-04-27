@@ -1,66 +1,89 @@
-# JV Fund Prompt Library
+# PE-JV · Global Joint Venture Fund Prompt Library
 
-> **Version**: v3.0  
-> **Date**: 2026-04-27  
-> **Status**: Active  
-
----
-
-## 개요
-
-Global Joint Venture Fund 분석을 위한 프롬프트 라이브러리.
-원본 `Global_Joint_Venture_Fund_Master_Prompt_v2.txt` → v3.0 완전 재구조화.
+> **Version**: v3.0 | **Updated**: 2026-04-28 | **Author**: Gilbert  
+> **Notion Sync**: [PE-JV Notion Page](https://notion.so/34f55ed436f08150b07dc7f5f800311b)  
+> **Status**: ✅ Active
 
 ---
 
-## 파일 구조
+## 📂 Directory Structure
 
 ```
 applied-cases/jv-fund/
-├── README.md                  ← 이 파일
-├── master_prompt_v3.md        ← 핵심 마스터 프롬프트 (v2 → v3 업그레이드)
-├── fu_series_adapter.md       ← FU-Series 보고서 연동 서브프롬프트
-├── bstar_eco2_prompt.md       ← B-Star sCO2 전략 특화
-├── ai_infra_prompt.md         ← AI 인프라 데이터센터 특화
-└── validation_checklist.md   ← PE-1/PE-3 공통 검증 체크리스트
+├── master_prompt_v3.md          ← 메인 마스터 프롬프트 (현행)
+├── fu_series_adapter.md         ← FU-Series 보고서 연동 프롬프트
+├── bstar_eco2_prompt.md         ← B-Star sCO2 전용 JV 프롬프트
+├── ai_infra_prompt.md           ← AI 인프라 데이터센터 JV 프롬프트
+├── validation_checklist.md      ← PE-1/PE-3/PE-5 체크리스트
+├── CHANGELOG.md                 ← 버전 이력
+├── archive/
+│   └── v2/                      ← v2 원본 보관
+└── variants/                    ← 추가 도메인 파생본 (확장용)
 ```
 
 ---
 
-## 빠른 사용법
+## 🚀 Quick Start
 
 ```bash
-# 1. 기본 JV 분석 (HBM 도메인, 스크리닝 단계)
-# master_prompt_v3.md 파라미터 치환:
-# domain=HBM / stage=Screening / lang=KR / depth=Full
+# 1. 검증 실행
+python automation/auto_validate.py \
+  --file applied-cases/jv-fund/master_prompt_v3.md \
+  --rules PE-1,PE-3,PE-5
 
-# 2. FU-Series 연동 분석
-# fu_series_adapter.md: FU_NUMBER=019, FU_SECTION=Market-Analysis
+# 2. 전체 JV 파일 일괄 검증
+python automation/auto_validate.py \
+  --dir applied-cases/jv-fund/ \
+  --rules PE-1,PE-3,PE-5 \
+  --output validation_report.json
 
-# 3. sCO2 전략 분석
-# bstar_eco2_prompt.md: 별도 파라미터 없음, 그대로 사용
-
-# 4. AI 인프라 분석
-# ai_infra_prompt.md: fund_size 및 lp_types 파라미터 설정
-
-# 5. 검증 실행
-python ../../automation/auto_validate.py --file master_prompt_v3.md --rules PE-1,PE-3
+# 3. GitHub Issue 생성 (JV 분석 시작)
+gh issue create \
+  --title "[JV Analysis] {domain} - {stage}" \
+  --label "jv-analysis,{domain}"
 ```
 
 ---
 
-## Notion 연동
+## 📋 Prompt Files
 
-| 파일 | Notion 페이지 |
-|---|---|
-| master_prompt_v3.md | [💼 PE-JV · Global JV Fund Prompt Library v3.0](https://www.notion.so/34f55ed436f081c08fececa8dd7577f9) |
-| 전체 라이브러리 | [💼 PE-JV · Global Joint Venture Fund Prompt Library v3.0](https://www.notion.so/34f55ed436f08150b07dc7f5f800311b) |
+| 파일 | 버전 | 용도 | 검증 규칙 |
+|---|---|---|---|
+| `master_prompt_v3.md` | v3.0 | 범용 JV 분석 마스터 | PE-1, PE-3, PE-5 |
+| `fu_series_adapter.md` | v2.0 | FU-Series 보고서 연동 | PE-1, PE-3 |
+| `bstar_eco2_prompt.md` | v2.0 | sCO2 에너지 JV | PE-1, PE-3 |
+| `ai_infra_prompt.md` | v2.0 | AI DC 열관리 JV | PE-1, PE-3 |
 
 ---
 
-## CHANGELOG
+## 🔄 Workflow
 
-| 버전 | 날짜 | 변경 내용 |
-|---|---|---|
-| v3.0 | 2026-04-27 | v2 완전 재구조화, 도메인 파생 3종 추가, PE-1/PE-3 검증 내장 |
-| v2.0 | (원본) | 최초 작성 (단일 XML 블록) |
+```
+프롬프트 수정
+    ↓
+git push → GitHub Actions 자동 실행
+    ↓
+PE-1/PE-3/PE-5 검증 (auto_validate.py)
+    ↓
+검증 통과 → Notion 자동 동기화
+    ↓
+validation_report.json 아티팩트 저장
+```
+
+---
+
+## ⚙️ GitHub Secrets 설정 (Notion Sync 활성화)
+
+```
+Settings → Secrets → Actions 에서 추가:
+  NOTION_TOKEN        ← Notion Integration Token
+  NOTION_JV_PAGE_ID   ← 34f55ed436f08150b07dc7f5f800311b
+```
+
+---
+
+## 📌 Related
+
+- [PE-11 Master Multi-Agent Prompt](../PE-11-master-multi-agent/)
+- [HBM Salvage Prompts](../hbm-salvage/)
+- [B-Star eCO2 Strategy](../global-semi-ai-energy/)

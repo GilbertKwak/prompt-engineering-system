@@ -1,102 +1,76 @@
-# AI Infrastructure JV Prompt v1.0
+# AI Infrastructure JV Analysis Prompt
 
-> **Version**: v1.0  
-> **Date**: 2026-04-27  
-> **Parent**: `master_prompt_v3.md`  
-> **Purpose**: AI 데이터센터 열관리 인프라 특화 JV 분석  
+<!-- Version: v2.0 | Date: 2026-04-28 -->
+
+## [PURPOSE]
+
+AI 데이터센터 열관리 솔루션 합작투자 분석 전용 프롬프트.  
+HBM 기반 AI 가속기의 발열 문제와 차세대 냉각 솔루션 JV 기회를 분석합니다.
 
 ---
 
-## [CONTEXT]
+## [SYSTEM ROLE]
+
+당신은 AI 인프라 및 데이터센터 열관리 JV 전략 전문가입니다.  
+HBM 온도 특성, 액체 냉각, 침지 냉각(Immersion Cooling), sCO2 냉각에 정통합니다.
+
+---
+
+## [CONTEXT PARAMETERS]
 
 ```yaml
-domain: AI-DC
-focus_areas:
-  - GPU/HBM 발열 밀도 분석
-  - 액침냉각(Immersion) / 직접액냉(DLC) JV 구조
-  - 데이터센터 PUE 최적화 비즈니스 케이스
-  - NVIDIA H100/B200 클러스터 열관리 요구사항
+Cooling Technology: {cooling_tech}  # Liquid | Immersion | sCO2 | Vapor-Chamber | Hybrid
+Target Customer:    {customer}       # Hyperscaler | Colocation | Edge-DC | HPC
+Region:             {region}         # KR | US | EU | APAC
+Fund Stage:         {stage}
 ```
 
 ---
 
-## [TASK]
+## [TASK CHAIN]
 
-```
-1. AI 데이터센터 열관리 시장 분석
-   - GPU 발열 밀도 트렌드 (W/cm² 기준)
-   - 글로벌 데이터센터 냉각 시장 규모 및 CAGR
-   - 액침냉각 vs 직접액냉 vs 공냉 비용 비교
+### Step 1 — AI 인프라 냉각 시장 분석
+- 글로벌 DC 냉각 시장: $XXB → $XXB (2024→2030, CAGR X%)
+- HBM 탑재 GPU 서버 발열 특성 (H100: 700W, B200: 1000W+)
+- 냉각 방식별 PUE 비교 (공냉 1.4→액냉 1.1→침지 1.03)
 
-2. 핵심 파트너 매핑
-   - 냉각 솔루션: Vertiv, Asetek, Iceotope, CoolIT
-   - 데이터센터 오퍼레이터: Equinix, Digital Realty, KT, LG CNS
-   - HBM/반도체: SK Hynix, Samsung, Micron
-   - AI 클라우드: Hyperscalers (AWS, Azure, Google, Naver)
+### Step 2 — 파트너 매핑
+- **냉각 기술 보유사**: 다이나믹써멀, 엔비디아, 버티브, Liquidstack
+- **DC 오퍼레이터**: KT IDC, LG U+ IDC, Equinix, Digital Realty
+- **HBM 연계**: SK하이닉스, 삼성전자 메모리 패키징팀
 
-3. JV 구조 설계
-   - 냉각 기술 라이선스 JV
-   - 데이터센터 공동 개발 JV
-   - HBM 패키징 + 냉각 통합 JV
+### Step 3 — JV 구조 설계
+- 기술 공급 JV: 냉각 솔루션 개발 + DC 운영사 공동 납품
+- R&D JV: HBM-특화 열관리 솔루션 공동 개발
+- 서비스 JV: DC 열관리 as-a-Service (TMaaS)
 
-4. 재무 모델링
-   - CAPEX/OPEX 비교 (공냉 대비 액침냉각)
-   - PUE 개선에 따른 운영비 절감액
-   - IRR/NPV 추정 (fund_size 기준)
-```
+### Step 4 — 리스크 매트릭스
+| 리스크 | 수준 | 완화 |
+|---|---|---|
+| AI 투자 사이클 변동 | High | 복수 고객 분산 |
+| HBM 공급망 집중도 | High | SK/Samsung 이중화 |
+| 냉각제 환경 규제 | Medium | PFAS-free 솔루션 선개발 |
+| 기술 표준화 속도 | Low | OCP/ASHRAE 참여 |
 
----
-
-## [CHAIN]
-
-```
-Step 1 → AI DC 열관리 시장 현황
-  - GPU 발열 밀도: H100 → B200 → Rubin 트렌드
-  - 냉각 방식별 시장 점유율 변화
-
-Step 2 → 파트너 역량 매트릭스
-  - 기술 × 시장 접근성 × 재무 안정성
-
-Step 3 → JV 구조 3가지 옵션 비교
-
-Step 4 → 재무 모델 (간이)
-  - 투자 수익 시뮬레이션 (Base / Bull / Bear)
-
-Step 5 → 실행 로드맵 + GitHub Issue 명령어
-```
-
----
-
-## [OUTPUT FORMAT]
-
-```markdown
-## AI Infrastructure JV 분석
-
-### 시장 규모
-| 세그먼트 | 2024 | 2028 | CAGR | 출처 |
-|---|---|---|---|---|
-
-### 파트너 매트릭스
-| 파트너 | 역량 | 시장접근 | 재무 | JV 유형 |
-|---|---|---|---|---|
-
-### JV 구조 비교
-| 옵션 | 구조 | 장점 | 단점 | 권장 |
-|---|---|---|---|---|
-
-### 재무 시뮬레이션
-| 시나리오 | IRR | NPV | 회수기간 |
-|---|---|---|---|
-| Base Case | | | |
-| Bull Case | | | |
-| Bear Case | | | |
-```
+### Step 5 — 실행 로드맵
+- **90일**: Hyperscaler 1곳 PoC 제안서 제출
+- **6개월**: PoC 완료 + 파트너 LOI 체결
+- **1년**: 상업 계약 1건 + JV 법인 설립
 
 ---
 
 ## [VALIDATION]
+- [ ] PE-1: IDC/Gartner/McKinsey 등 시장 데이터 출처 명시
+- [ ] PE-3: AI 투자 버블 붕괴 비관 시나리오 포함
+- [ ] HBM TDP 수치 최신 스펙 확인
 
-- [ ] PE-1: GPU 발열 수치 출처 명시 (NVIDIA 공식 자료)
-- [ ] PE-1: 시장 규모 수치 출처 명시
-- [ ] PE-3: Bear Case (AI 투자 버블 붕괴 시나리오) 포함
-- [ ] 에너지 규제 리스크 (각국 데이터센터 PUE 규제) 플래그
+---
+
+## [QUICK COMMAND]
+
+```bash
+gh issue create \
+  --title "[AI-Infra JV] {cooling_tech} - {customer}" \
+  --label "jv-analysis,ai-infra,thermal" \
+  --body "Cooling: {cooling_tech}\nCustomer: {customer}\nRegion: {region}\nStage: {stage}"
+```
