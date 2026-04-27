@@ -1,73 +1,83 @@
-# JV Fund Prompt — PE-1/PE-3 Validation Checklist
+# JV Fund Prompt Suite — PE-1/PE-3 검증 체크리스트
 
-> **버전**: v1.0 | **생성일**: 2026-04-27  
-> **적용 대상**: `master_prompt_v3.md` + 모든 variants
-
----
-
-## PE-1 자동개선 체크리스트 (출력 품질)
-
-### 데이터 품질
-- [ ] 모든 수치에 출처 + 연도 기재
-- [ ] 추정값은 `(est.)` 명시
-- [ ] 시장 데이터는 최근 2년 이내 자료 우선
-- [ ] 파트너사 정보는 공개 자료 기반 (IR / 언론 / 특허)
-
-### 구조 품질
-- [ ] JSON 출력 포맷 완전성 (모든 필드 비어있지 않음)
-- [ ] executive_summary 500자 이내 (KR+EN)
-- [ ] 리스크 매트릭스 4개 축 (기술/상업/규제/지정학) 모두 작성
-- [ ] 로드맵 3단계 (90일/6개월/1년) 모두 작성
-
-### 연계 품질
-- [ ] 관련 FU-Series / B-Star / AstraChips 레포지토리 링크 명시
-- [ ] Notion 페이지 URL 기재 (해당 시)
-- [ ] GitHub 이슈/PR 번호 연결 (해당 시)
+> **Version**: v1.0 | **Date**: 2026-04-27  
+> **적용 범위**: prompts/jv_fund/ 전체 파일
 
 ---
 
-## PE-3 자동검증 체크리스트 (논리 완결성)
+## PE-1 검증 체크리스트 (출처·품질)
 
-### 필수 요건
-- [ ] `counter_scenario` 필드: 반대 시나리오 1개 이상
-- [ ] `confidence` 수치: 0.0~1.0 범위 내 출력
-- [ ] `pe3_score` 목표: 90/100 이상
+### 필수 항목 (모두 통과해야 커밋 허용)
 
-### 논리 검증
-- [ ] 시장 분석 → 파트너 매핑 → JV 구조 논리적 연계 확인
-- [ ] 리스크 대응 전략이 리스크 항목과 1:1 매핑
-- [ ] 실행 로드맵이 JV 구조와 정합성 확보
+- [ ] **수치 출처**: 모든 수치 데이터에 `[출처, YYYY]` 형식 출처 명시
+- [ ] **추정값 표기**: 추정값은 반드시 `(est.)` 표기
+- [ ] **최신성**: 시장 데이터는 최근 2년 이내 (2024-2026) 우선
+- [ ] **교차 검증**: 핵심 수치는 최소 2개 출처 교차 검증
+- [ ] **공개 출처**: 파트너 정보는 공개 출처 기반 (IR 공시, 뉴스, 특허 DB)
 
-### 편향 방지
-- [ ] 긍정 시나리오와 부정 시나리오 균형 유지
-- [ ] 특정 파트너사 편향 없음 (3개 이상 비교)
-- [ ] 지역 편향 없음 (최소 2개 지역 커버)
+### 권장 항목
+
+- [ ] 상반된 데이터 존재 시 양쪽 병기
+- [ ] 데이터 한계 명시 ("데이터 부족", "추정치")
+- [ ] 분석 일자 명시
 
 ---
 
-## 점수 산정 기준
+## PE-3 검증 체크리스트 (반대 시나리오)
 
-| 항목 | 배점 | 합격 기준 |
+### 필수 항목
+
+- [ ] **counter_scenario 필드**: JSON 출력에 반드시 포함
+- [ ] **주요 가정 3개 이상**: 분석의 핵심 전제 명시
+- [ ] **실패 시나리오**: 각 가정 실패 시 결과 기술
+- [ ] **확률 등급**: H (High) / M (Medium) / L (Low) 표기
+- [ ] **PE-3 자체 점수**: 0-100 출력 (목표: 90 이상)
+
+### PE-3 점수 산정 기준
+
+| 항목 | 배점 | 충족 기준 |
 |---|---|---|
-| 데이터 품질 (PE-1) | 30점 | 27점 이상 |
-| 구조 품질 (PE-1) | 25점 | 22점 이상 |
-| 논리 완결성 (PE-3) | 30점 | 27점 이상 |
-| 편향 방지 (PE-3) | 15점 | 13점 이상 |
-| **합계** | **100점** | **90점 이상** |
+| 주요 가정 명시 | 20점 | 3개 이상 |
+| 반대 시나리오 기술 | 25점 | 구체적 실패 케이스 |
+| 확률 정량화 | 15점 | H/M/L 등급 |
+| 리스크 완화 방안 | 20점 | 대응 전략 포함 |
+| 출처 교차 검증 | 20점 | 2개 이상 |
+| **합계** | **100점** | **목표: 90+** |
 
 ---
 
-## 자동 실행 명령어
+## 파일별 검증 현황
+
+| 파일 | PE-1 | PE-3 목표 | 최종 검증일 |
+|---|---|---|---|
+| master_prompt_v3.md | ✅ 구조 내장 | 90/100 | 2026-04-27 |
+| variants/fu_series_adapter.md | ✅ 구조 내장 | 90/100 | 2026-04-27 |
+| variants/bstar_eco2_prompt.md | ✅ 구조 내장 | 90/100 | 2026-04-27 |
+| variants/ai_infra_prompt.md | ✅ 구조 내장 | 90/100 | 2026-04-27 |
+
+---
+
+## 자동 검증 실행 명령어
 
 ```bash
-# 검증 실행
+# PE-1/PE-3 검증 실행
 python automation/auto_validate.py \
-  --file prompts/jv_fund/master_prompt_v3.md \
+  --dir prompts/jv_fund/ \
   --rules PE-1,PE-3 \
-  --output reports/validation/jv_fund_v3_validation.json
+  --output validation_report_jv_fund.json
 
-# 전체 variants 일괄 검증
-for f in prompts/jv_fund/variants/*.md; do
-  python automation/auto_validate.py --file "$f" --rules PE-1,PE-3
-done
+# 결과 확인
+cat validation_report_jv_fund.json | python -m json.tool
 ```
+
+---
+
+## 다음 리뷰 일정
+
+- **정기 리뷰**: 매월 27일
+- **트리거 리뷰**: 관련 저장소 (fu-semiconductor-thermal, B-Star-eCO2-Strategy) 주요 업데이트 시
+- **GitHub Issue**: `[Monthly Review] JV Fund Prompt` 자동 생성 (매월 1일)
+
+---
+
+*Last updated: 2026-04-27 | prompt-engineering-system/prompts/jv_fund/VALIDATION_CHECKLIST.md*
