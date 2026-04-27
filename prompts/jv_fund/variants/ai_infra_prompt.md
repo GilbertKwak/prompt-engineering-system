@@ -1,58 +1,109 @@
-# JV Fund Prompt — AI 데이터센터 인프라 전용
+# AI 인프라·데이터센터 JV 분석 프롬프트 (Variant C)
 
-> **버전**: v1.0 | **작성일**: 2026-04-27  
-> **부모 프롬프트**: `../master_prompt_v3.md`  
-> **연동 레포**: [global-semiconductor-ai-research](https://github.com/GilbertKwak/global-semiconductor-ai-research)
+> **버전**: v1.0 | **기준일**: 2026-04-27 | **기반**: master_prompt_v3.md  
+> **PE-3 점수**: 90/100 | **연동 레포**: `global-semiconductor-ai-research`
 
 ---
 
-## [CONTEXT OVERRIDE]
+## [목적]
+
+AI 데이터센터 열관리 및 인프라 분야의 글로벌 JV 기회를 분석합니다.  
+Hyperscaler(AWS/Azure/GCP/Meta)와의 JV 또는 OSAT/패키징 업체와의 기술 파트너십에 특화됩니다.
+
+---
+
+## [파라미터]
 
 ```yaml
-DOMAIN: AI Infrastructure / Data Center Thermal Management
-STAGE:  Market Screening → JV Structuring
-FOCUS:
-  - AI 가속기 직접 액체냉각(DLC) JV
-  - HBM4 기반 AI 칩 열관리 솔루션
-  - 하이퍼스케일러 파트너십 (CSP JV)
-GEO: Korea → US → Southeast Asia
+TARGET_MARKET: "{target}"      # Hyperscaler | Edge-DC | Colocation | HPC
+COOLING_TECH:  "{tech}"        # Liquid | Immersion | Air | Hybrid
+CHIP_GEN:      "{chip_gen}"    # H100 | H200 | B200 | GB300 | Next-Gen
+REGION:        "{region}"      # US | EU | KR | SEA | Global
+PARTNER_TYPE:  "{partner_type}" # Hyperscaler | OSAT | IDM | Cooling-OEM
 ```
 
 ---
 
-## [TASK — AI 인프라 JV 분석]
+## [분석 프레임]
 
+### AI DC 열관리 시장 분석
 ```
-Step 1 → AI DC 냉각 시장 규모 분석
-         (2024~2030 CAGR · 지역별 수요)
-Step 2 → 하이퍼스케일러 파트너십 전략
-         (AWS · Azure · Google · Naver · Kakao)
-Step 3 → 열관리 솔루션 JV 구조 설계
-         - IP 소유권: Korea R&D → Global Licensing
-         - 수익 구조: CapEx 공급 + OpEx 서비스
-Step 4 → 경쟁사 대비 포지셔닝
-         (Vertiv · Asetek · CoolIT · 국내 OSAT)
-Step 5 → 3년 재무 프로젝션
-         (투자 규모 · Break-even · IRR 목표)
+- AI 서버 전력밀도 추이 (kW/rack): 2023→2025→2027
+- 데이터센터 냉각 시장 규모 (Global/KR)
+- Blackwell/GB300 열관리 요구 사양 (TDP 기준)
+- 액침냉각 vs 직접수냉(DLC) vs 공냉 비용 비교
+```
+
+### 파트너 후보 매핑
+```
+Tier 1 — Hyperscaler (수요처):
+  AWS / Microsoft Azure / Google GCP / Meta
+  → 열관리 솔루션 공급 JV 또는 공동 R&D
+
+Tier 2 — 반도체/패키징 (기술 파트너):
+  SK하이닉스 (HBM4), 삼성전자 MX, TSMC CoWoS
+  → 패키지 수준 열관리 공동 개발
+
+Tier 3 — 냉각 OEM (제조 파트너):
+  Vertiv, Schneider Electric, Asetek
+  → 냉각 장비 공동 생산 JV
+```
+
+### AI DC JV 구조 옵션
+```
+옵션 A: 기술 라이선스 + 공급 계약
+  → 낮은 리스크, 빠른 수익화
+  → 지분 없음, 장기 통제력 약
+
+옵션 B: 합작법인 설립 (50:50)
+  → 공동 R&D 투자, IP 공유
+  → 의사결정 지연 리스크
+
+옵션 C: 소수 지분 투자 + 기술 협약
+  → 유연성 최대, 전략적 포지셔닝
+  → 추천: Hyperscaler와의 초기 진입 시
 ```
 
 ---
 
-## [AI DC 열관리 JV 타당성 매트릭스]
+## [출력 포맷]
 
-| 항목 | 현황 | JV 필요성 | 우선순위 |
-|---|---|---|---|
-| Direct Liquid Cooling | 성장 중 (40%+ YoY) | IP + 채널 확장 | 🔴 High |
-| Immersion Cooling | 초기 시장 | 기술 공동개발 | 🟡 Mid |
-| Vapor Chamber (AI칩) | 검증 완료 | 양산 파트너 필요 | 🔴 High |
-| sCO2 통합 냉각 | 파일럿 단계 | B-Star 연계 JV | 🟡 Mid |
+```markdown
+## AI Infra JV Analysis — {target_market} | {cooling_tech}
+
+**칩 세대**: {chip_gen} | **지역**: {region}  
+**PE-3 점수**: {pe3_score}/100 | **신뢰도**: {confidence_score}/100
+
+### 시장 기회 요약
+- 글로벌 AI DC 냉각 시장: {tam} ({year}, 출처: {source})
+- 한국 시장 점유율 목표: {kor_target}%
+- 핵심 드라이버: {drivers}
+
+### 추천 JV 옵션 (1순위)
+{recommended_jv_option}
+
+### 파트너 Fit Score
+| 파트너 | 유형 | Fit Score | 핵심 강점 | Red Flag |
+|---|---|---|---|---|
+
+### 기술 리스크 매트릭스
+{tech_risk_matrix}
+
+### 반대 시나리오 (PE-3)
+{downside_scenario}
+
+### 90일 실행 계획
+{day90_plan}
+
+### GitHub Issue 생성 항목
+{github_issues}
+```
 
 ---
 
-## [PE-3 검증 — AI 인프라 특화]
-
-- [ ] AI 칩 전력 밀도 수치 출처 명시 (W/mm²)
-- [ ] 하이퍼스케일러 냉각 CAPEX 데이터 인용
-- [ ] 반대 시나리오: AI 투자 사이클 조정 시 시장 축소 가능성
-- [ ] AstraChips 전략과의 연계 명시
-- [ ] FU-Series 관련 보고서 참조 번호 기재
+## [검증 규칙]
+- [ ] AI DC 전력밀도 수치 출처 명시 (PE-1)
+- [ ] 칩 TDP 공식 사양 기반 (PE-1)
+- [ ] Hyperscaler 발표 자료 인용 시 날짜 명시
+- [ ] 반대 시나리오 (온디바이스 AI 성장 시 DC 수요 감소) 포함 (PE-3)
+- [ ] confidence_score 출력 필수

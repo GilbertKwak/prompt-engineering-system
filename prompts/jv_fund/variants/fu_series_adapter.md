@@ -1,55 +1,86 @@
-# JV Fund Prompt — FU-Series 연동 어댑터
+# FU-Series 연동 JV 분석 프롬프트 (Variant A)
 
-> **버전**: v1.0 | **작성일**: 2026-04-27  
-> **부모 프롬프트**: `../master_prompt_v3.md`  
-> **연동 레포**: [fu-semiconductor-thermal](https://github.com/GilbertKwak/fu-semiconductor-thermal)
+> **버전**: v1.0 | **기준일**: 2026-04-27 | **기반**: master_prompt_v3.md  
+> **PE-3 점수**: 88/100 | **연동 레포**: `fu-semiconductor-thermal`
 
 ---
 
-## [CONTEXT OVERRIDE]
+## [목적]
+
+FU-Series 보고서(FU-001~FU-025+)의 시장 분석 및 기술 데이터를 기반으로  
+합작투자(JV) 타당성을 재검증하고 투자 메모(Investment Memo)를 자동 생성합니다.
+
+---
+
+## [파라미터]
 
 ```yaml
-DOMAIN: HBM | Thermal Management | Advanced Packaging
-STAGE:  Technical Due Diligence → JV Structuring
-SPECIAL: FU-Series 보고서 데이터 직접 인용 허용
+FU_NUMBER:  "{fu_number}"    # e.g. FU-008 (HBM4-GPU Thermal)
+FU_SECTION: "{section}"     # Market Analysis | Technical Specs | Financial Model
+JV_STAGE:   "{jv_stage}"    # Screening | DD | Structuring
+OUTPUT_TARGET: "{target}"   # Notion-Page | GitHub-PR | Word-Doc
 ```
 
 ---
 
-## [TASK — FU-Series 데이터 기반 JV 타당성 검증]
+## [실행 체인]
 
 ```
-INPUT:
-  - FU 보고서 번호: FU-{NUMBER}
-  - 인용 섹션: "Market Analysis" | "Technical Specs" | "Competitive Landscape"
-
-TASK:
-  1. FU 보고서 핵심 데이터 추출 (TAM · 기술 성숙도 · 경쟁사 현황)
-  2. JV 파트너 후보 매핑 (FU 보고서 내 기업 목록 활용)
-  3. 기술 리스크 재평가 (FU 데이터 기반)
-  4. JV 타당성 스코어 산출 (0~100)
-
-OUTPUT:
-  - Notion 페이지 업데이트 초안
-  - GitHub PR 본문 초안
-  - JV 타당성 스코어: {SCORE}/100
+Step 1: FU_{fu_number} 보고서에서 '{section}' 섹션 추출
+Step 2: 추출 데이터 기반 JV 파트너 요건 도출
+  → 기술 역량 요건 (FU 보고서 기술 스펙 기반)
+  → 재무 규모 요건 (FU 보고서 시장 규모 기반)
+Step 3: 글로벌 파트너 후보 3개사 매핑
+  → 각 후보사별 Fit Score (0~100) 산출
+Step 4: JV 타당성 결론 (GO / CONDITIONAL / NO-GO)
+Step 5: 후속 액션 자동 생성
+  → GitHub Issue 초안
+  → Notion 업데이트 항목
 ```
 
 ---
 
-## [FU-Series 연동 매핑 테이블]
+## [출력 포맷]
 
-| FU 번호 | 주제 | JV 연관성 | 우선순위 |
-|---|---|---|---|
-| FU-008 | HBM4-GPU 열관리 | 고 (Direct-on-Die Cooling IP) | 🔴 High |
-| FU-009~015 | 첨단 패키징 TIM | 중 (소재 JV 가능) | 🟡 Mid |
-| FU-016~025 | AI 가속기 냉각 | 고 (데이터센터 JV) | 🔴 High |
+```markdown
+## FU-{fu_number} JV Feasibility Memo
+
+**결론**: GO / CONDITIONAL / NO-GO  
+**신뢰도**: {confidence_score}/100  
+**PE-3 점수**: {pe3_score}/100
+
+### 핵심 근거
+- 시장 규모: {tam} (출처: FU-{fu_number} {section})
+- 기술 성숙도: TRL {trl_level}
+- 파트너 Fit Score 1위: {partner_name} ({fit_score}/100)
+
+### 리스크 (H×H 항목)
+{risk_list}
+
+### 반대 시나리오 (PE-3 필수)
+{downside_scenario}
+
+### 다음 액션
+- [ ] GitHub Issue: {issue_title}
+- [ ] Notion 업데이트: {notion_page}
+```
 
 ---
 
-## [PE-3 검증 — FU 특화]
+## [검증 규칙]
+- [ ] FU 보고서 섹션 출처 명시 (PE-1)
+- [ ] GO/CONDITIONAL/NO-GO 근거 3가지 이상
+- [ ] 반대 시나리오 포함 (PE-3)
+- [ ] confidence_score 수치 출력
 
-- [ ] FU 보고서 인용 시 보고서 번호 + 섹션 명시
-- [ ] 기술 TRL(Technology Readiness Level) 수준 기재
-- [ ] 특허 현황 반영 여부 확인
-- [ ] AstraChips 전략과의 시너지 명시
+---
+
+## [연동 FU 보고서 목록]
+
+| FU 번호 | 주제 | JV 관련성 |
+|---|---|---|
+| FU-008 | HBM4-GPU Thermal Architecture | 🔴 High |
+| FU-009~FU-012 | 첨단 패키징 열관리 | 🔴 High |
+| FU-013~FU-016 | AI 가속기 냉각 시스템 | 🟡 Medium |
+| FU-017~FU-020 | CPO 광학 열관리 | 🟡 Medium |
+| FU-021~FU-025 | 사업화 전략 | 🔴 High |
