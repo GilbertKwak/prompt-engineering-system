@@ -1,112 +1,73 @@
-# B-Star eCO2 JV 전략 특화 프롬프트 (Variant B)
+# B-Star eCO2 JV Fund Prompt
 
-> **버전**: v1.0 | **기준일**: 2026-04-27 | **기반**: master_prompt_v3.md  
-> **PE-3 점수**: 89/100 | **연동 레포**: `B-Star-eCO2-Strategy`
-
----
-
-## [목적]
-
-sCO2(초임계 CO₂) 기반 소형 분산형 발전·냉각 시스템의 한국 사업화를 위한  
-JV 펀드 구조 설계 및 파트너 매핑에 특화된 프롬프트입니다.
+> **버전**: v1.0 | **생성일**: 2026-04-27  
+> **부모 프롬프트**: `../master_prompt_v3.md`  
+> **연동 저장소**: [`B-Star-eCO2-Strategy`](https://github.com/GilbertKwak/B-Star-eCO2-Strategy)
 
 ---
 
-## [파라미터]
+## [ROLE]
+
+당신은 sCO2(초임계 이산화탄소) 기반 에너지 시스템의 JV 투자 전략가입니다.  
+B-Star 사업화 전략과 연계하여 한국·미국·유럽 파트너십 기회를 분석합니다.
+
+---
+
+## [DOMAIN CONTEXT]
 
 ```yaml
-SUBDOMAIN:    "{subdomain}"     # Power-Gen | Cooling | Both
-APPLICATION:  "{application}"   # Data-Center | Industrial | Building | Grid
-KOREA_STAGE:  "{korea_stage}"   # R&D | Pilot | Commercial | Scale-up
-GOV_SUBSIDY:  "{gov_subsidy}"   # true | false  (정부 R&D 보조금 연계 여부)
-SINGAPORE_HOLDCO: "{holdco}"   # true | false  (싱가포르 HoldCo 구조 적용 여부)
+SYSTEM:        "sCO2 Brayton Cycle 기반 소형 분산 발전·냉각"
+APPLICATION:   "{application}"    # DataCenter | Industrial | District_Cooling | ORC_Hybrid
+GEO_FOCUS:     "{geo}"            # Korea | USA | Europe | APAC
+FUNDING_TYPE:  "{funding}"        # Government_RnD | VC | Strategic_Partner | IPO_Prep
 ```
 
 ---
 
-## [분석 프레임]
+## [TASK CHAIN]
 
-### sCO2 특화 시장 분석
-```
-- 글로벌 sCO2 터빈/열교환기 시장 규모 (2024~2030)
-- 한국 데이터센터 냉각 수요 성장률
-- 정부 탄소중립 정책과의 연계성
-- 경쟁 기술 (칠러/히트펌프/액침냉각) 대비 우위
-```
+1. **sCO2 시장 포지셔닝**: 글로벌 sCO2 발전 시장 현황 + B-Star 차별화 포인트
+2. **정부 R&D 보조금 연계**: 한국(산업부·에너지부) · 미국(DOE) · EU(Horizon) 연계 JV 구조
+3. **파트너 유형별 매핑**:
+   - 기술 파트너 (터빈 · 열교환기 · 소재)
+   - 재무 파트너 (VC · PE · 전략적 투자자)
+   - 채널 파트너 (데이터센터 운영사 · 유틸리티)
+4. **Singapore HoldCo 구조 연계**: AstraChips 모델 참조하여 지주회사 구조 최적화
+5. **3-Tier Investment Memo 생성** (Executive / Technical / Financial)
 
-### 파트너 매핑 (sCO2 전문)
-```
-국내 파트너 후보:
-  - 한국에너지기술연구원 (KIER) — R&D 파트너
-  - 두산에너빌리티 — 터빈 제조 파트너
-  - KT/SKT 데이터센터 사업부 — 수요처 파트너
+---
 
-해외 파트너 후보:
-  - Echogen Power Systems (US) — sCO2 ORC 전문
-  - Siemens Energy (EU) — 터빈 기술
-  - Toshiba Energy (JP) — 아시아 공동 진출
-```
+## [OUTPUT]
 
-### JV 구조 (B-Star 특화)
-```
-싱가포르 HoldCo:
-  └── Korea R&D OpCo (KIER/두산 합작)
-      ├── 기술 라이선스 → HoldCo
-      └── 파일럿 플랜트 운영
-  └── Korea/APAC Sales Co
-      └── 데이터센터 고객사 계약
-```
-
-### 정부 보조금 연계 전략
-```
-- 과학기술정보통신부 sCO2 국책과제 연계
-- 산업통상자원부 에너지 신산업 R&D 지원
-- 기후테크 펀드 (한국벤처투자) 연계
-- KETEP (에너지기술평가원) 연구비 활용
+```json
+{
+  "bstar_positioning": "",
+  "government_grants": [
+    {"country": "", "program": "", "amount_est": "", "eligibility": ""}
+  ],
+  "partner_map": {
+    "technology": [],
+    "financial": [],
+    "channel": []
+  },
+  "holdco_structure": {
+    "singapore_holdco": "",
+    "korea_opco": "",
+    "us_sales": ""
+  },
+  "investment_memo": {
+    "executive": "",
+    "technical": "",
+    "financial": ""
+  },
+  "counter_scenario": ""
+}
 ```
 
 ---
 
-## [출력 포맷]
-
-```markdown
-## B-Star eCO2 JV Investment Memo v{version}
-
-**도메인**: sCO2 {subdomain} | **응용처**: {application}  
-**한국 사업화 단계**: {korea_stage}  
-**PE-3 점수**: {pe3_score}/100 | **신뢰도**: {confidence_score}/100
-
-### Executive Summary (KR)
-{executive_summary}
-
-### 시장 기회 (TAM/SAM/SOM)
-| 구분 | 규모 | 출처 | 연도 |
-|---|---|---|---|
-| TAM | | | |
-| SAM | | | |
-| SOM | | | |
-
-### 추천 JV 구조
-{jv_structure_diagram}
-
-### 리스크 매트릭스
-{risk_matrix_table}
-
-### 반대 시나리오 (PE-3)
-{downside_scenario}
-
-### 정부 보조금 로드맵
-{subsidy_roadmap}
-
-### 90일 실행 계획
-{day90_plan}
-```
-
----
-
-## [검증 규칙]
-- [ ] sCO2 시장 수치 출처 명시 (PE-1)
-- [ ] 정부 보조금 프로그램 실제 공시 기반 (PE-1)
-- [ ] 기술 성숙도 TRL 명시
-- [ ] 경쟁 기술 대비 우위 근거 3가지 이상
-- [ ] 반대 시나리오 (규제 변화 / 기술 실패) 포함 (PE-3)
+## [VALIDATION]
+- [ ] sCO2 시장 데이터 출처 명시 (최근 3년 이내)
+- [ ] 정부 보조금 프로그램 공식 명칭 사용
+- [ ] PE-3: 기술 상용화 지연 리스크 시나리오 포함
+- [ ] Singapore HoldCo 세제 혜택 근거 기재

@@ -1,5 +1,37 @@
 # CHANGELOG — 프롬프트 엔진니어링 시스템
 
+## [JV Fund Prompt v3.0] — 2026-04-27
+
+> 커밋 기준: `prompts/jv_fund/ 신규 생성` · 담당자: GilbertKwak
+
+### Added — JV Fund Prompt Suite (신규)
+
+| 파일 | 역할 | PE-3 목표 |
+|---|---|---|
+| `prompts/jv_fund/master_prompt_v3.md` | 글로벌 JV 펀드 마스터 프롬프트 v3 | 90/100 |
+| `prompts/jv_fund/variants/fu_series_adapter.md` | FU-Series 연동 파생 | 90/100 |
+| `prompts/jv_fund/variants/bstar_eco2_prompt.md` | B-Star eCO2 전용 파생 | 90/100 |
+| `prompts/jv_fund/variants/ai_infra_prompt.md` | AI 인프라 DC 전용 파생 | 90/100 |
+| `prompts/jv_fund/VALIDATION_CHECKLIST.md` | PE-1/PE-3 검증 체크리스트 | — |
+
+### Changed — v2 → v3 주요 개선 사항
+
+- **구조화**: 단일 블록 텍스트 → ROLE / CONTEXT / TASK CHAIN / OUTPUT / VALIDATION 5구조 분리
+- **파라미터화**: DOMAIN · STAGE · DEPTH · LANG 입력 파라미터 표준화
+- **출력 포맷**: JSON + MD 병기 출력 구조 신설
+- **PE-1 통합**: 출처 명시 · 추정값 표기 · 최신성 요건 내장
+- **PE-3 통합**: counter_scenario 필드 · confidence 수치 · pe3_score 목표 내장
+- **도메인 변형**: FU-Series / B-Star eCO2 / AI Infra 3종 파생 프롬프트 생성
+- **언어**: KR+EN 병기 구조 표준화
+
+### Linked Repositories
+
+- [`fu-semiconductor-thermal`](https://github.com/GilbertKwak/fu-semiconductor-thermal)
+- [`B-Star-eCO2-Strategy`](https://github.com/GilbertKwak/B-Star-eCO2-Strategy)
+- [`AstraChips-Strategy`](https://github.com/GilbertKwak/AstraChips-Strategy)
+
+---
+
 ## [PE-10 v2.0 Batch Upgrade] — 2026-04-27
 
 > 커밋 기준: `ea99c34` · 담당자: GilbertKwak
