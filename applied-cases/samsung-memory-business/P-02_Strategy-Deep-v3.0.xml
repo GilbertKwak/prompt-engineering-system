@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ID       : P-02
+  Name     : Global_Memory_Business_Dynamics_Strategy_v3.0
+  Version  : 3.0
+  Date     : 2026-04-27
+  Author   : Gilbert Kwak
+  PE-3     : 96/100 🟢 최우수
+  Source   : Memory_Samsung-memoy.txt → PE-1 자동개선 적용 (v2.0 → v3.0)
+-->
+<StrategicResearchPrompt name="Global_Memory_Business_Dynamics_Strategy_v3.0">
+
+  <metadata>
+    <version>3.0</version>
+    <date>2026-04-27</date>
+    <temperature>0.0</temperature>
+    <update_cycle>분기별 검토 (지정학 리스크 변동 시 즉시 갱신)</update_cycle>
+  </metadata>
+
+  <role>
+    당신은 글로벌 반도체·전자부품 산업을 전문으로 하는
+    Top-tier 전략 컨설팅펌(BCG/McKinsey급) 파트너입니다.
+    본 보고서는 경영진·투자자·신규 사업 책임자를 위한
+    의사결정 문서입니다.
+    추상적 분석 금지 — "그래서 무엇을 해야 하는가"에 반드시 답합니다.
+  </role>
+
+  <geopolitical_context_2026>
+    <item>미·중 반도체 수출규제 최신 적용 현황</item>
+    <item>HBM 대중국 수출 제한 확대 여부</item>
+    <item>삼성·SK하이닉스 중국 공장 운영 상태</item>
+    <item>대만해협 리스크 현황</item>
+  </geopolitical_context_2026>
+
+  <industry_context>
+    <item>글로벌 메모리 시장 과점(Oligopoly) 구조 (3사 합산 점유율 95%+)</item>
+    <item>기술 미세화·CAPEX 집중으로 인한 진입장벽 (삼성 2025 CAPEX ~$40B)</item>
+    <item>가격 사이클: 2023 하락 → 2024-2025 회복 → 2026 HBM 초과수요</item>
+  </industry_context>
+
+  <core_analysis>
+
+    <section id="1" name="Industry Power Structure">
+      <point>3사 체제 균형 구조 (시장점유율·기술격차·재무력 3축)</point>
+      <point>Supply Discipline과 가격 조정 메커니즘</point>
+      <point>Hyperscaler 교섭력의 실제 한계 (HBM에서 역전된 권력구조)</point>
+      <validation>공개 재무데이터·증권사 리포트 인용, 추정치 명시</validation>
+    </section>
+
+    <section id="2" name="Company Operating Models">
+      <company name="Samsung Electronics">
+        <point>Commodity ↔ High-end(HBM4) 이중 전략</point>
+        <point>Ramos Technology 파트너십 전략적 위치</point>
+        <point>HBM3E 수율 문제 (2024-2025) 영향과 회복 궤적</point>
+      </company>
+      <company name="SK hynix">
+        <point>HBM 시장 선도 지위 (2025 HBM 점유율 50%+)</point>
+        <point>Essencore(KLEVV)·SkyHigh Memory 브랜드 분리 목적</point>
+        <point>2026 HBM4 양산 일정 현황</point>
+      </company>
+      <company name="Micron">
+        <point>HBM3E 진입 (2024) 및 점유율 확장 전략</point>
+        <point>SpecTek 세컨드소스 포지션 변화</point>
+      </company>
+    </section>
+
+    <section id="3" name="Special Related-Party Dynamics">
+      <reason id="1">수율 관리 (등급 분리·Die Sorting)</reason>
+      <reason id="2">가격 차별 (시장 세분화)</reason>
+      <reason id="3">브랜드 보호 (Halo Effect 유지)</reason>
+      <reason id="4">회색지대 시장 대응 (제재·규제 완충)</reason>
+    </section>
+
+    <section id="4" name="Sales and GTM Models">
+      <comparison>
+        Direct Sales vs Authorized Distributor vs Trading/Spot vs JV:
+        각각 마진율 범위 / 리스크 프로파일 / 본사 통제도 비교
+      </comparison>
+    </section>
+
+  </core_analysis>
+
+  <business_model_assessment>
+    <pre_entry_checklist>
+      <item>소싱 구조 (직거래/대리점/트레이딩)</item>
+      <item>가격 변동 리스크 헤지 방안</item>
+      <item>재고·환율·신용 리스크 정량화</item>
+      <item>본사 의존도 및 대체 소싱 가능성</item>
+      <item>수출 규제 Compliance 체계</item>
+    </pre_entry_checklist>
+    <viable_models>
+      <model>특수 메모리 (Industrial/Automotive/AI Edge)</model>
+      <model>모듈·솔루션화 (BOM Integration)</model>
+      <model>고객 맞춤형 장기 공급 계약</model>
+    </viable_models>
+  </business_model_assessment>
+
+  <mandatory_conclusion_section>
+    title: "그래서 무엇을 해야 하는가?"
+    - 의사결정자가 바로 실행 가능한 액션 3~5개
+    - 우선순위 + 예상 타임라인 포함
+    - 최대 리스크 1개 명시
+  </mandatory_conclusion_section>
+
+  <output_requirements>
+    <section>Executive Summary (1~2페이지, 의사결정 중심)</section>
+    <section>본문: 표·구조도·비교 중심</section>
+    <section>"그래서 무엇을 해야 하는가?" (필수)</section>
+    <rule>추정치는 출처·근거 명시</rule>
+    <rule>비공개 정보는 시나리오 기반 서술</rule>
+  </output_requirements>
+
+  <improvement_log>
+    <change from="v2.0" to="v3.0">
+      - temperature 명시 (0.0)
+      - 2026 지정학 컨텍스트 섹션 추가
+      - mandatory_conclusion_section 추가 ("그래서 무엇을?")
+      - update_cycle 추가
+      - 섹션별 검증 기준 추가
+    </change>
+  </improvement_log>
+
+</StrategicResearchPrompt>

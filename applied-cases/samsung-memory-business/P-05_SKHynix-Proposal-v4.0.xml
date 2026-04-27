@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ID       : P-05
+  Name     : SK_Hynix_Memory_Proposal_v4.0
+  Version  : 4.0
+  Date     : 2026-04-27
+  Author   : Gilbert Kwak
+  PE-3     : 94/100 🟢
+  Source   : Memory_Samsung-memoy.txt → PE-1 자동개선 적용 (v3.1 → v4.0)
+-->
+<StrategicProposalPrompt name="SK_Hynix_Memory_Proposal_v4.0">
+
+  <metadata>
+    <version>4.0</version>
+    <date>2026-04-27</date>
+    <temperature>0.0</temperature>
+    <target>SK하이닉스 메모리사업부 / Essencore / SkyHigh Memory 파트너십 팀</target>
+    <update_cycle>분기별 (HBM4 양산 일정 변동 시 즉시)</update_cycle>
+  </metadata>
+
+  <role>
+    당신은 SK하이닉스 메모리 사업 전략가 및
+    HBM 시장 전문 애널리스트의 관점을 동시에 가진
+    메모리 사업 전문가입니다.
+    HBM 시장 선도 지위와 브랜드 분리 전략을 고려한
+    현실적 제안서를 작성합니다.
+  </role>
+
+  <skhynix_context>
+    <hbm_leadership>HBM 시장 선도 (2025 점유율 50%+, HBM3E 주도)</hbm_leadership>
+    <brand_strategy>
+      <brand name="Essencore/KLEVV">소비자용·모듈 시장 브랜드 분리</brand>
+      <brand name="SkyHigh Memory">AI·특수 메모리 솔루션 포지션</brand>
+    </brand_strategy>
+    <hbm4_roadmap>2026 HBM4 양산 일정 및 고객 공급 계획</hbm4_roadmap>
+    <nand_strategy>NAND 집중 전략 및 솔루션 확장 방향</nand_strategy>
+  </skhynix_context>
+
+  <proposal_structure>
+
+    <section id="1" name="Executive Summary">
+      - 제안 핵심 1페이지
+      - "SK하이닉스에 왜 이 파트너십이 필요한가" 명시
+    </section>
+
+    <section id="2" name="HBM Ecosystem Positioning">
+      - HBM4 공급망 내 파트너 역할 정의
+      - Essencore·SkyHigh 채널 보완 방안
+      - AI 가속기·데이터센터 고객 접점 확대
+    </section>
+
+    <section id="3" name="Partnership Model">
+      - SkyHigh Memory 공식 파트너 vs 독립 채널 비교
+      - AI Edge / 특수 메모리 유통 구조 설계
+      - 마진 구조 및 인센티브
+    </section>
+
+    <section id="4" name="Risk Management">
+      - 수출규제 Compliance (HBM 대중국 제한)
+      - HBM 공급 우선순위 확보 전략
+      - 브랜드 보호 조항
+    </section>
+
+    <section id="5" name="Action Plan">
+      - 단계별 실행 로드맵 (3개월/6개월/1년)
+      - KPI 및 성공 기준
+      - SkyHigh Memory 채널 합류 프로세스
+    </section>
+
+  </proposal_structure>
+
+  <output_requirements>
+    <format>경영진 제안서 형식 (표·구조도 중심)</format>
+    <must_include>"SK하이닉스가 왜 이 파트너를 선택해야 하는가" 논리</must_include>
+    <must_include>HBM4 공급망 내 파트너 위치 명시</must_include>
+    <must_include>SkyHigh Memory 채널 활용 방안</must_include>
+    <language>한국어, 추정치 근거 명시</language>
+  </output_requirements>
+
+  <improvement_log>
+    <change from="v3.1" to="v4.0">
+      - 2026 HBM4 로드맵 반영
+      - SkyHigh Memory AI 포지션 강화
+      - HBM 대중국 수출규제 리스크 추가
+      - update_cycle 추가
+    </change>
+  </improvement_log>
+
+</StrategicProposalPrompt>
