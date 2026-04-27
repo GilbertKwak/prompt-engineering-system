@@ -1,81 +1,112 @@
-# ⚡ B-Star eCO2 × JV Fund 전용 프롬프트
+# B-Star eCO2 Strategy Prompt v1.0
 
-> **버전:** v1.0 | **날짜:** 2026-04-27  
-> **부모 프롬프트:** [`master_prompt_v3.md`](./master_prompt_v3.md)  
-> **프로젝트:** B-Star-eCO2-Strategy
-
----
-
-## 목적
-
-sCO2(초임계 이산화탄소) 기반 에너지 시스템의 글로벌 JV 구조를 분석합니다.  
-sCO2 터빈 파트너사 매핑 + 데이터센터 냉각 수요 시너지 + 정부 R&D 보조금 연계에 특화됩니다.
+> **Version**: v1.0  
+> **Date**: 2026-04-27  
+> **Parent**: `master_prompt_v3.md`  
+> **Purpose**: sCO2 기반 에너지 시스템 B-Star 전략 특화 JV 분석  
 
 ---
 
-## 프롬프트
+## [CONTEXT]
 
-```
-ROLE: sCO2 Energy Systems JV Architect
-SPECIALIZATION: Supercritical CO2 Power Cycles + Thermal-Energy Convergence
-
-DOMAIN: sCO2 Based Energy Systems
-SUB_DOMAIN: {sub_domain}  <!-- Power_Generation | Waste_Heat_Recovery | DC_Cooling -->
-GEO_FOCUS: {geo}          <!-- KR | US | EU | Global -->
-STAGE: {stage}            <!-- Partner_Screening | JV_Structuring | Gov_Grant_Mapping -->
-
-TASK CHAIN:
-  Step 1: sCO2 기술 성숙도 평가 (TRL 기준)
-  Step 2: 글로벌 sCO2 터빈 파트너사 매핑
-           - 한국: KEPCO/KIER/두산에너빌리티 계열
-           - 미국: Echogen/Southwest Research Institute
-           - 유럽: Baker Hughes/Siemens Energy
-  Step 3: 데이터센터 냉각 수요와의 시너지 분석
-           - sCO2 폐열 회수 → DC 냉각 활용 모델
-           - 에너지 효율 개선 수치 (kW/ton 기준)
-  Step 4: 정부 R&D 보조금 연계 JV 구조
-           - 한국: KEIT / 산업부 에너지 R&D
-           - 미국: DOE ARPA-E 프로그램
-           - EU: Horizon Europe Energy
-  Step 5: 3-tier Investment Memo 작성
-           - Tier 1: Executive Summary (1페이지)
-           - Tier 2: Technical Due Diligence
-           - Tier 3: Financial Model + Gov Grant Map
-
-VALIDATION:
-  PE-1: sCO2 효율 수치는 동료검토 논문 또는 공식 기관 자료 인용
-  PE-1: 시장 규모 추정치는 출처 + 연도 명시
-  PE-3: sCO2 기술 상용화 리스크 (TRL 격차) 명시
-  PE-3: 규제 불확실성 시나리오 포함 (탄소규제 강화/완화)
-
-OUTPUT:
-  1. Partner Shortlist (국가별 TOP 3)
-  2. JV 구조 옵션 비교표
-  3. Gov Grant 매핑 테이블
-  4. 3-tier Investment Memo (KR+EN 병기)
-  5. B-Star Strategy 연동 다음 액션
-
-OUTPUT LANGUAGE: KR + EN 병기
+```yaml
+domain: sCO2
+strategy: B-Star
+focus_areas:
+  - sCO2 터빈 파트너사 매핑 (한국/미국/유럽)
+  - 데이터센터 냉각 수요와 시너지 분석
+  - 정부 R&D 보조금 연계 JV 구조
+  - 폐열 회수(Waste Heat Recovery) 비즈니스 케이스
 ```
 
 ---
 
-## 빠른 실행 예시
+## [TASK]
 
-```bash
-# B-Star eCO2 KR 파트너 스크리닝
-SUB_DOMAIN=Waste_Heat_Recovery GEO=KR STAGE=Partner_Screening
+```
+1. sCO2 터빈/사이클 기술 보유 파트너사 매핑
+   - 국내: POSCO, KEPCO, Doosan Enerbility, KAIST 스핀오프
+   - 미국: GTI Energy, Southwest Research Institute, Echogen
+   - 유럽: Siemens Energy, Baker Hughes
 
-# 이슈 생성
-gh issue create \
-  --title "[JV-eCO2] B-Star sCO2 파트너 스크리닝 $(date +%Y-%m)" \
-  --label "jv-analysis,bstar,eco2" \
-  --body "B-Star eCO2 프롬프트 기반 JV 파트너 스크리닝 실행"
+2. AI 데이터센터 냉각 수요와의 시너지 분석
+   - 데이터센터 PUE 개선 효과 (수치 근거 필수)
+   - sCO2 냉각 vs 기존 냉각 비용 비교
+   - HBM/GPU 발열 밀도와 sCO2 냉각 적용 가능성
+
+3. 정부 R&D 연계 JV 구조 설계
+   - 한국: 산업부 / KETEP / KIAT 보조금 프로그램
+   - 미국: DOE ARPA-E / NREL
+   - EU: Horizon Europe / EIC
+
+4. 3-tier Investment Memo 작성
+   - Tier 1: 기술 검증 단계 (TRL 6-7)
+   - Tier 2: 파일럿 구축 단계 (TRL 7-8)
+   - Tier 3: 상업화 단계 (TRL 8-9)
 ```
 
 ---
 
-## 연관 파일
-- [`master_prompt_v3.md`](./master_prompt_v3.md)
-- [`validation_checklist.md`](./validation_checklist.md)
-- B-Star 전략 문서: `../../reports/B-Star-eCO2/`
+## [CHAIN]
+
+```
+Step 1 → sCO2 시장 현황 분석
+  - 글로벌 시장 규모 및 CAGR
+  - 주요 플레이어 경쟁 구도
+  - 기술 성숙도 (TRL) 현황
+
+Step 2 → B-Star 포지셔닝
+  - 차별화 요소 3가지
+  - 진입 장벽 분석
+  - 특허 포트폴리오 현황
+
+Step 3 → JV 구조 옵션
+  - Option A: 국내 중심 JV + 해외 기술 라이선스
+  - Option B: 한미 공동 JV (기술 개발 분담)
+  - Option C: 유럽 인증 우선 JV
+
+Step 4 → 리스크 및 정부 보조금 전략
+  - 규제 리스크 (에너지 법규 각국 비교)
+  - 보조금 수령 조건 및 타임라인
+
+Step 5 → 3-tier Investment Memo
+```
+
+---
+
+## [OUTPUT FORMAT]
+
+```markdown
+## B-Star eCO2 JV Investment Memo
+
+### Executive Summary (KR/EN 병기)
+**KR**: ...
+**EN**: ...
+
+### 시장 현황
+| 항목 | 수치 | 출처 |
+|---|---|---|
+| 글로벌 TAM | | |
+| CAGR (2024-2030) | | |
+| 데이터센터 냉각 시장 | | |
+
+### 파트너사 매핑
+| 파트너 | 국가 | 핵심 역량 | JV 적합도 |
+|---|---|---|---|
+
+### 3-Tier Investment Memo
+| Tier | 단계 | 투자 규모 | TRL | 기간 |
+|---|---|---|---|---|
+| Tier 1 | 기술 검증 | | 6-7 | |
+| Tier 2 | 파일럿 | | 7-8 | |
+| Tier 3 | 상업화 | | 8-9 | |
+```
+
+---
+
+## [VALIDATION]
+
+- [ ] PE-1: 모든 수치에 출처 및 연도 명시
+- [ ] PE-3: Bear Case (sCO2 상업화 지연 시나리오) 포함
+- [ ] 에너지 법규 리스크 플래그
+- [ ] 보조금 의존도 리스크 경고

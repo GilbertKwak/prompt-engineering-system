@@ -1,75 +1,92 @@
-# 🔬 FU-Series × JV Fund 연동 프롬프트
+# FU-Series Report Adapter Prompt v1.0
 
-> **버전:** v1.0 | **날짜:** 2026-04-27  
-> **부모 프롬프트:** [`master_prompt_v3.md`](./master_prompt_v3.md)  
-> **대상 보고서:** FU-001 ~ FU-025+
-
----
-
-## 목적
-
-FU-Series 기술 보고서의 시장분석/기술사양 섹션을 JV 타당성 분석에 자동 연결합니다.  
-기술 데이터 → 투자 의사결정 브리지 역할을 수행합니다.
+> **Version**: v1.0  
+> **Date**: 2026-04-27  
+> **Parent**: `master_prompt_v3.md`  
+> **Purpose**: FU-Series 보고서(FU-001~FU-025+) 데이터를 JV 펀드 분석에 직접 연동  
 
 ---
 
-## 프롬프트
+## [CONTEXT]
+
+```yaml
+parent_prompt: master_prompt_v3.md
+fu_report_number: "{FU_NUMBER}"   # e.g. FU-019, FU-022
+fu_section: "{FU_SECTION}"        # Market-Analysis | Technical-Specs | Thermal-Data
+domain: "{domain}"                # HBM | Thermal | sCO2 | AI-DC
+```
+
+---
+
+## [TASK]
 
 ```
-ROLE: JV Fund Analyst with FU-Series Technical Data Integration
-
-CONTEXT:
-  - Source Report: FU-Series #{FU_NUMBER} — {REPORT_TITLE}
-  - Target Section: {SECTION}  <!-- Market_Analysis | Technical_Specs | Cost_Model -->
-  - JV Stage: {JV_STAGE}       <!-- Screening | Due_Diligence -->
-
 INPUT:
-  아래 FU 보고서 섹션 내용을 그대로 붙여넣기:
-  [FU 보고서 내용 삽입]
+  FU-Series 보고서 #{FU_NUMBER}의 [{FU_SECTION}] 섹션 데이터
 
-TASK CHAIN:
-  Step 1: FU 보고서에서 시장 규모/성장률 수치 추출
-  Step 2: 핵심 기술 사양을 JV 파트너 필요 역량으로 변환
-  Step 3: JV 타당성 스코어 산출 (0-100)
-           - 시장 매력도 (0-30)
-           - 기술 시너지 (0-30)
-           - 파트너 가용성 (0-20)
-           - 규제 환경 (0-20)
-  Step 4: 파트너사 후보 TOP 3 도출
-  Step 5: 권장 JV 구조 초안 (지분/거버넌스)
+TASK:
+  1. FU 보고서 데이터를 기반으로 JV 타당성 재검증
+  2. 시장 규모/성장률 데이터를 Master Prompt Step 1에 자동 연결
+  3. 기술 스펙 데이터를 리스크 매트릭스(Step 4)에 반영
+  4. 불일치 데이터 플래그 (⚠️ Conflict: ...)
 
-VALIDATION:
-  - PE-1: FU 보고서 수치 그대로 인용 (수정 금지)
-  - PE-3: FU 기술 리스크를 JV 리스크 매트릭스에 반영
-
-OUTPUT FORMAT:
-  1. JV Screening Score Card (테이블)
-  2. Partner Shortlist TOP 3
-  3. Notion 업데이트 블록 (MD 형식)
-  4. GitHub PR 본문 초안
-  5. 다음 단계 권장 액션
-
-OUTPUT LANGUAGE: KR + EN 병기
+OUTPUT:
+  - Notion 페이지 업데이트 초안 (MD 포맷)
+  - GitHub PR 본문 초안
+  - 충돌 데이터 리스트 (있을 경우)
 ```
 
 ---
 
-## 빠른 실행 예시
+## [CHAIN]
+
+```
+Step 1 → FU 보고서에서 핵심 수치 추출
+  (TAM, CAGR, 기술 TRL, 예상 시장 진입 시점)
+
+Step 2 → JV Master Prompt Step 1~4에 데이터 매핑
+  - 수치 충돌 시 ⚠️ 플래그 + 양쪽 출처 병기
+
+Step 3 → JV 타당성 스코어 산출 (1~10점)
+  - 기술 성숙도 × 시장 규모 × 파트너 역량
+
+Step 4 → 권장 액션 생성
+  - Notion 업데이트 항목
+  - GitHub Issue 생성 명령어
+```
+
+---
+
+## [OUTPUT FORMAT]
+
+```markdown
+## FU-{FU_NUMBER} × JV Fund 연동 분석
+
+### 추출 데이터
+| 항목 | FU 보고서 값 | JV 분석 반영값 | 충돌 여부 |
+|---|---|---|---|
+| TAM | | | |
+| CAGR | | | |
+| TRL | | | |
+
+### JV 타당성 스코어: {SCORE}/10
+- 기술 성숙도: {x}/10
+- 시장 규모: {x}/10  
+- 파트너 역량: {x}/10
+
+### 권장 액션
+1. ...
+2. ...
+3. ...
+```
+
+---
+
+## [GITHUB ISSUE TEMPLATE]
 
 ```bash
-# FU-015 Thermal 보고서 연동 JV 분석
-FU_NUMBER=015 SECTION=Market_Analysis JV_STAGE=Screening
-
-# 이슈 생성
 gh issue create \
-  --title "[JV-FU] FU-${FU_NUMBER} 연동 JV Screening" \
-  --label "jv-analysis,fu-series" \
-  --body "FU-$(FU_NUMBER) 보고서 기반 JV 타당성 분석 요청"
+  --title "[FU-{FU_NUMBER} × JV] 연동 분석 결과 검토" \
+  --label "jv-analysis,fu-series,review" \
+  --body "FU-{FU_NUMBER} 데이터 기반 JV 타당성 분석 완료. 검토 요망."
 ```
-
----
-
-## 연관 파일
-- [`master_prompt_v3.md`](./master_prompt_v3.md)
-- [`validation_checklist.md`](./validation_checklist.md)
-- FU-Series 보고서: `../../reports/FU-Series/`
