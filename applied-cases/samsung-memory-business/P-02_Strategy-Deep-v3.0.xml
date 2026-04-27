@@ -1,15 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ID       : P-02
-  Name     : Global_Memory_Business_Dynamics_Strategy_v3.0
-  Version  : 3.0
-  Date     : 2026-04-27
-  Author   : Gilbert Kwak
-  PE-3     : 96/100 🟢 최우수
-  Source   : Memory_Samsung-memoy.txt → PE-1 자동개선 적용 (v2.0 → v3.0)
+  ID      : P-02
+  Name    : Global Memory Business Strategy Deep Analysis v3.0
+  Type    : 전략 심층 분석 ⭐ 최우수
+  PE-3    : 96점 (Before 88 → After 96, +8)
+  Date    : 2026-04-27
+  Author  : Gilbert Kwak (PE-1 자동개선 적용)
 -->
 <StrategicResearchPrompt name="Global_Memory_Business_Dynamics_Strategy_v3.0">
-
   <metadata>
     <version>3.0</version>
     <date>2026-04-27</date>
@@ -18,10 +16,9 @@
   </metadata>
 
   <role>
-    당신은 글로벌 반도체·전자부품 산업을 전문으로 하는
+    당신은 글로벌 반도체·전자부품 산업 전문
     Top-tier 전략 컨설팅펌(BCG/McKinsey급) 파트너입니다.
-    본 보고서는 경영진·투자자·신규 사업 책임자를 위한
-    의사결정 문서입니다.
+    경영진·투자자·신규 사업 책임자를 위한 의사결정 문서를 작성합니다.
     추상적 분석 금지 — "그래서 무엇을 해야 하는가"에 반드시 답합니다.
   </role>
 
@@ -32,52 +29,27 @@
     <item>대만해협 리스크 현황</item>
   </geopolitical_context_2026>
 
-  <industry_context>
-    <item>글로벌 메모리 시장 과점(Oligopoly) 구조 (3사 합산 점유율 95%+)</item>
-    <item>기술 미세화·CAPEX 집중으로 인한 진입장벽 (삼성 2025 CAPEX ~$40B)</item>
-    <item>가격 사이클: 2023 하락 → 2024-2025 회복 → 2026 HBM 초과수요</item>
-  </industry_context>
-
   <core_analysis>
-
     <section id="1" name="Industry Power Structure">
-      <point>3사 체제 균형 구조 (시장점유율·기술격차·재무력 3축)</point>
+      <point>3사 체제 균형 (시장점유율·기술격차·재무력 3축)</point>
       <point>Supply Discipline과 가격 조정 메커니즘</point>
       <point>Hyperscaler 교섭력의 실제 한계 (HBM에서 역전된 권력구조)</point>
-      <validation>공개 재무데이터·증권사 리포트 인용, 추정치 명시</validation>
     </section>
-
     <section id="2" name="Company Operating Models">
-      <company name="Samsung Electronics">
-        <point>Commodity ↔ High-end(HBM4) 이중 전략</point>
-        <point>Ramos Technology 파트너십 전략적 위치</point>
-        <point>HBM3E 수율 문제 (2024-2025) 영향과 회복 궤적</point>
-      </company>
-      <company name="SK hynix">
-        <point>HBM 시장 선도 지위 (2025 HBM 점유율 50%+)</point>
-        <point>Essencore(KLEVV)·SkyHigh Memory 브랜드 분리 목적</point>
-        <point>2026 HBM4 양산 일정 현황</point>
-      </company>
-      <company name="Micron">
-        <point>HBM3E 진입 (2024) 및 점유율 확장 전략</point>
-        <point>SpecTek 세컨드소스 포지션 변화</point>
-      </company>
+      <item>Samsung / SK hynix / Micron 각사별:
+        핵심 제품 전략 + 특수관계사 역할 +
+        수율·기술 현황 (2026 기준) + HBM4 경쟁 구도
+      </item>
     </section>
-
     <section id="3" name="Special Related-Party Dynamics">
-      <reason id="1">수율 관리 (등급 분리·Die Sorting)</reason>
-      <reason id="2">가격 차별 (시장 세분화)</reason>
-      <reason id="3">브랜드 보호 (Halo Effect 유지)</reason>
-      <reason id="4">회색지대 시장 대응 (제재·규제 완충)</reason>
+      <reason>존재 이유 4가지: 수율관리/가격차별/브랜드보호/회색지대 대응</reason>
+      <mechanism>본사↔특수관계사 통제·거리두기 메커니즘</mechanism>
     </section>
-
     <section id="4" name="Sales and GTM Models">
-      <comparison>
-        Direct Sales vs Authorized Distributor vs Trading/Spot vs JV:
-        각각 마진율 범위 / 리스크 프로파일 / 본사 통제도 비교
+      <comparison>Direct / Distributor / Trading / JV:
+        마진율 범위 / 리스크 프로파일 / 본사 통제도
       </comparison>
     </section>
-
   </core_analysis>
 
   <business_model_assessment>
@@ -95,29 +67,17 @@
     </viable_models>
   </business_model_assessment>
 
-  <mandatory_conclusion_section>
-    title: "그래서 무엇을 해야 하는가?"
-    - 의사결정자가 바로 실행 가능한 액션 3~5개
-    - 우선순위 + 예상 타임라인 포함
-    - 최대 리스크 1개 명시
-  </mandatory_conclusion_section>
+  <mandatory_section name="So What — 그래서 무엇을 해야 하는가">
+    <!-- 이 섹션은 반드시 포함. 구체적 액션 3~5개 도출 -->
+    <format>우선순위 + 실행 주체 + 타임라인 + 예상 효과</format>
+  </mandatory_section>
 
   <output_requirements>
-    <section>Executive Summary (1~2페이지, 의사결정 중심)</section>
-    <section>본문: 표·구조도·비교 중심</section>
-    <section>"그래서 무엇을 해야 하는가?" (필수)</section>
-    <rule>추정치는 출처·근거 명시</rule>
-    <rule>비공개 정보는 시나리오 기반 서술</rule>
+    <item>Executive Summary (1~2페이지, 의사결정 중심)</item>
+    <item>본문: 표·구조도·비교 중심</item>
+    <item>"그래서 무엇을 해야 하는가?" 섹션 필수 포함</item>
+    <item>추정치는 출처·근거 명시</item>
+    <item>비공개 정보는 시나리오 기반 서술</item>
+    <item>작성 언어: 한국어</item>
   </output_requirements>
-
-  <improvement_log>
-    <change from="v2.0" to="v3.0">
-      - temperature 명시 (0.0)
-      - 2026 지정학 컨텍스트 섹션 추가
-      - mandatory_conclusion_section 추가 ("그래서 무엇을?")
-      - update_cycle 추가
-      - 섹션별 검증 기준 추가
-    </change>
-  </improvement_log>
-
 </StrategicResearchPrompt>

@@ -1,15 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ID       : P-01
-  Name     : Global_Memory_Business_Dynamics_v2.0
-  Version  : 2.0
-  Date     : 2026-04-27
-  Author   : Gilbert Kwak
-  PE-3     : 91/100 🟢
-  Source   : Memory_Samsung-memoy.txt → PE-1 자동개선 적용 (v1.0 → v2.0)
+  ID      : P-01
+  Name    : Global Memory Industry Analysis v2.0
+  Type    : 산업 구조 분석
+  PE-3    : 91점 (Before 83 → After 91, +8)
+  Date    : 2026-04-27
+  Author  : Gilbert Kwak (PE-1 자동개선 적용)
 -->
 <ResearchReportPrompt name="Global_Memory_Business_Dynamics_v2.0">
-
   <metadata>
     <version>2.0</version>
     <date>2026-04-27</date>
@@ -31,95 +29,56 @@
   </objective>
 
   <scope>
-    <products>DRAM, NAND Flash, SSD, eMMC, UFS</products>
-    <segments>AI/Server/Automotive/Industrial Memory</segments>
-    <channels>글로벌 직거래, 공식 대리점, 트레이딩 구조</channels>
-    <related_parties>서브 브랜드, 리마킹, 2nd Tier</related_parties>
-    <geopolitics_2026>
-      - 미·중 반도체 수출규제 최신 적용 현황
-      - HBM 대중국 수출 제한 확대 여부
-      - 삼성·SK하이닉스 중국 공장 운영 상태
-    </geopolitics_2026>
+    <product>DRAM, NAND Flash, SSD, eMMC, UFS</product>
+    <product>AI/Server/Automotive/Industrial Memory</product>
+    <channel>글로벌 직거래, 공식 대리점, 트레이딩 구조</channel>
+    <party>특수관계회사 (서브 브랜드, 리마킹, 2nd Tier)</party>
+    <geopolitics>2026년 기준 수출규제·지정학 리스크 반영</geopolitics>
   </scope>
 
   <analysis_framework>
-
-    <industry_structure>
-      - 글로벌 메모리 과점 구조 (Top 3 합산 점유율 95%+)
-      - 수요/공급 사이클 (2023 하락 → 2025 회복 → 2026 HBM 초과수요)
-      - 기술 미세공정 진입장벽 (CAPEX 규모 포함)
-    </industry_structure>
-
-    <company_analysis>
+    <section id="A" name="Industry Structure">
+      <point>글로벌 메모리 과점 구조 (Top 3 합산 점유율 95%+)</point>
+      <point>수요/공급 사이클과 가격 변동성 (2023 하락→2025 회복→2026 HBM 초과수요)</point>
+      <point>기술 미세공정 진입장벽 (CAPEX 규모 포함)</point>
+    </section>
+    <section id="B" name="Company Analysis">
       <company name="Samsung Electronics">
-        <products>Commodity ↔ High-end(HBM4) 이중 전략</products>
-        <channels>글로벌 직거래 고객군, 지역별 공식 대리점</channels>
-        <related_party>Ramos Technology 파트너십 전략적 위치</related_party>
-        <current_issues>HBM3E 수율 이슈 현황 및 회복 궤적</current_issues>
+        <item>메모리 제품군 (Commodity↔High-end 이중전략)</item>
+        <item>글로벌 직거래 고객군 (Hyperscaler, Tier-1 OEM)</item>
+        <item>Ramos Technology 파트너 전략적 위치</item>
+        <item>HBM3E 수율 이슈 현황 및 회복 궤적</item>
       </company>
       <company name="SK hynix">
-        <position>HBM 시장 선도 (2025 점유율 50%+)</position>
-        <brands>Essencore(KLEVV) · SkyHigh Memory 브랜드 분리 목적</brands>
-        <roadmap>2026 HBM4 양산 일정</roadmap>
+        <item>HBM 시장 선도 지위 (2025 HBM 점유율 50%+)</item>
+        <item>Essencore(KLEVV)·SkyHigh Memory 브랜드 분리 목적</item>
+        <item>2026 HBM4 양산 일정</item>
       </company>
       <company name="Micron">
-        <entry>HBM3E 진입(2024) 및 점유율 확장 전략</entry>
-        <related_party>SpecTek 세컨드소스 포지션 변화</related_party>
+        <item>HBM3E 진입(2024) 및 점유율 확장 전략</item>
+        <item>SpecTek 세컨드소스 포지션 변화</item>
       </company>
-    </company_analysis>
-
-    <related_party_dynamics>
-      <reason id="1">수율 관리 (등급 분리·Die Sorting)</reason>
+    </section>
+    <section id="C" name="Related Party Dynamics">
+      <reason id="1">수율 관리 (등급 분리)</reason>
       <reason id="2">가격 차별 (시장 세분화)</reason>
-      <reason id="3">브랜드 보호 (Halo Effect 유지)</reason>
-      <reason id="4">회색지대 시장 대응 (제재·규제 완충)</reason>
-      <mechanism>본사 ↔ 특수관계사 간 통제·거리두기 메커니즘</mechanism>
-    </related_party_dynamics>
-
-    <sales_models>
-      <model type="Direct Sales">Hyperscaler, Tier-1 OEM — 마진율·리스크·통제도 비교</model>
-      <model type="Authorized Distributor">지역별 공식 대리점 구조</model>
-      <model type="Trading/Spot">스팟 시장 — 가격 변동성 리스크</model>
-      <model type="JV">고객 맞춤형 특수 제품 개발</model>
-    </sales_models>
-
+      <reason id="3">브랜드 보호 (Halo Effect)</reason>
+      <reason id="4">회색지대 시장 대응 (제재 완충)</reason>
+      <mechanism>본사↔특수관계사 통제·거리두기 메커니즘</mechanism>
+    </section>
+    <section id="D" name="Sales Models">
+      <model name="Direct Sales">Hyperscaler, Tier-1 OEM — 마진율·리스크·본사통제도 비교</model>
+      <model name="Authorized Distributor">공식 대리점 구조</model>
+      <model name="Trading / Spot Market">트레이딩·스팟 시장</model>
+      <model name="JV·Custom">JV 및 고객 맞춤형 특수 제품 개발</model>
+    </section>
   </analysis_framework>
 
-  <business_model_evaluation>
-    <checklist>
-      <item>소싱 구조 (직거래/대리점/트레이딩)</item>
-      <item>가격 변동 리스크 헤지 방안</item>
-      <item>재고·환율·신용 리스크 정량화</item>
-      <item>본사 의존도 및 대체 소싱 가능성</item>
-      <item>수출 규제 Compliance 체계</item>
-    </checklist>
-  </business_model_evaluation>
-
-  <sustainability_analysis>
-    <viable_models>
-      <model>특수 메모리 (Industrial/Automotive/AI Edge)</model>
-      <model>모듈·솔루션화 (BOM Integration)</model>
-      <model>고객 맞춤형 장기 공급 계약</model>
-    </viable_models>
-  </sustainability_analysis>
-
   <output_format>
-    <section>Executive Summary (1페이지, 의사결정 중심)</section>
-    <section>본문: 표 + 구조도 중심</section>
-    <section>전략적 시사점 및 사업 제안</section>
-    <rule>추정치: 출처·근거 명시</rule>
-    <rule>비공개 정보: 시나리오 기반 서술</rule>
-    <language>한국어 작성</language>
+    <item>Executive Summary (1페이지, 의사결정 중심)</item>
+    <item>본문: 표 + 구조도 중심</item>
+    <item>전략적 시사점 및 사업 제안</item>
+    <item>추정치: 출처·근거 명시, 비공개 정보는 시나리오 기반 서술</item>
+    <item>작성 언어: 한국어</item>
   </output_format>
-
-  <improvement_log>
-    <change from="v1.0" to="v2.0">
-      - temperature 명시 (0.0)
-      - 2026 지정학 컨텍스트 섹션 추가
-      - HBM 경쟁구도 현행화
-      - 추정치 처리 규칙 명시
-      - update_cycle 추가
-    </change>
-  </improvement_log>
-
 </ResearchReportPrompt>

@@ -1,15 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ID       : P-06
-  Name     : Memory_JV_Structure_and_Contract_Framework_v2.0
-  Version  : 2.0
-  Date     : 2026-04-27
-  Author   : Gilbert Kwak
-  PE-3     : 96/100 🟢 최우수
-  Source   : Memory_Samsung-memoy.txt → PE-1 자동개선 적용 (v1.0 → v2.0)
+  ID      : P-06
+  Name    : Memory JV Structure & Contract Framework v2.0
+  Type    : JV 구조·계약 설계 ⭐ 최우수
+  PE-3    : 96점 (Before 89 → After 96, +7)
+  Date    : 2026-04-27
+  Author  : Gilbert Kwak (PE-1 자동개선 적용)
 -->
 <StrategicJVDesignPrompt name="Memory_JV_Structure_and_Contract_Framework_v2.0">
-
   <metadata>
     <version>2.0</version>
     <date>2026-04-27</date>
@@ -20,8 +18,15 @@
   <core_philosophy>
     JV는 "성장용 조직"이 아닌 "리스크 격리 장치"로 설계.
     독립 운영, 통제는 계약으로 본사 유지.
-    Kill-switch는 No-fault 조건 포함.
+    Kill-switch는 No-fault 조건 포함 필수.
   </core_philosophy>
+
+  <role>
+    당신은 글로벌 반도체·전자부품 JV 설계 전문 전략가입니다.
+    본사 리스크 격리, 지정학 방화벽, 가격·기술 통제권 유지를
+    핵심 설계 원칙으로 JV 구조와 계약 프레임워크를 작성합니다.
+    법무팀 검토 가능 수준의 조항 언어로 작성합니다.
+  </role>
 
   <design_principles>
     <principle id="1">본사 채널·브랜드 보호</principle>
@@ -30,86 +35,54 @@
     <principle id="4">즉시 절연 가능 구조 (Exit 조건 명시)</principle>
   </design_principles>
 
-  <jv_structure_design>
-
-    <section id="1" name="JV Entity Setup">
-      <item>설립 국가·법인 형태 (싱가포르 Pte./UAE ADGM 등 권고)</item>
-      <item>지분 구조 (본사 51%+ 또는 황금주 보유 권고)</item>
-      <item>이사회 구성 및 의결권 설계</item>
-      <item>독립 운영 원칙 vs 본사 통제 조항 균형</item>
+  <jv_structure>
+    <section name="지분 구조">
+      <item>권장 지분 비율 및 근거 (51:49 vs 50:50 vs 소수지분)</item>
+      <item>의결권 구조 (Veto right 항목 열거)</item>
     </section>
-
-    <section id="2" name="Supply Agreement">
-      <item>공급 물량 및 가격 결정 메커니즘</item>
-      <item>Margin ceiling 조항 (초과 시 재협상 트리거)</item>
-      <item>독점/비독점 조항 및 지역 범위</item>
-      <item>최소 구매 의무 및 페널티 조항</item>
+    <section name="운영 거버넌스">
+      <item>이사회 구성 및 의결 기준</item>
+      <item>CEO·CFO 임명 권한</item>
+      <item>본사 파견 Compliance Officer 역할</item>
     </section>
-
-    <section id="3" name="Brand and IP Protection">
-      <item>본사 브랜드 사용 허가 범위 명시</item>
-      <item>리마킹·재포장 금지 조항</item>
-      <item>기술 정보 접근 제한 (Need-to-know 원칙)</item>
-      <item>경쟁사 공급 금지 조항 (Non-compete)</item>
+    <section name="공급·가격 조항">
+      <item>독점 공급 vs 비독점 공급 선택 기준</item>
+      <item>Transfer Price 설정 방법론 (시장가 연동 or 원가+마진)</item>
+      <item>Margin ceiling 초과 시 재협상 조항</item>
     </section>
+  </jv_structure>
 
-    <section id="4" name="Compliance and Export Control">
-      <item>미국 EAR (Export Administration Regulations) 준수</item>
-      <item>최종 사용자 확인 절차 (End-User Certificate)</item>
-      <item>금지 국가·기업 리스트 관리 (OFAC/BIS)</item>
-      <item>위반 시 즉시 공급 중단 조항</item>
-    </section>
+  <compliance_monitoring>
+    <audit_cycle>
+      <item>정기 감사: 반기 1회 (본사 파견 감사팀)</item>
+      <item>수출규제 갱신 시: 30일 이내 Compliance Review</item>
+      <item>이상 거래 감지 시: 즉시 조사 권한</item>
+    </audit_cycle>
+    <reporting_obligations>
+      <item>월별: 고객별 판매 내역 + 수출 목적지</item>
+      <item>분기별: 재고 현황 + 가격 준수 확인</item>
+      <item>연간: 외부 법무 감사 보고서 제출</item>
+    </reporting_obligations>
+    <kill_switch_triggers>
+      <trigger>중국 최종 고객 판매 확인 시 → 즉시 공급 중단</trigger>
+      <trigger>제재 대상 기업 거래 시 → 즉시 계약 해지</trigger>
+      <trigger>Margin ceiling 초과 시 → 가격 재협상 또는 계약 종료</trigger>
+      <trigger>Compliance 위반 3회 누적 시 → No-fault 계약 해지 가능</trigger>
+    </kill_switch_triggers>
+  </compliance_monitoring>
 
-    <section id="5" name="Financial Controls">
-      <item>이익 배분 구조 및 배당 정책</item>
-      <item>회계 기준 (IFRS/K-GAAP 선택)</item>
-      <item>관련 당사자 거래 (Related Party Transaction) 공시 의무</item>
-      <item>환율 헤지 정책</item>
-    </section>
-
-    <section id="6" name="Exit and Kill-Switch">
-      <item>Drag-along / Tag-along 권리</item>
-      <item>Put Option (본사 측 매수 청구권)</item>
-      <item>No-fault Exit 조건 (일방적 해지 가능 조항)</item>
-      <item>지식재산·고객 리스트 귀속 조항</item>
-    </section>
-
-    <section id="7" name="Audit and Compliance Monitoring">
-      <audit_cycle>
-        <item>정기 감사: 반기 1회 (본사 파견 감사팀)</item>
-        <item>수출규제 갱신 시: 30일 이내 Compliance Review</item>
-        <item>이상 거래 감지 시: 즉시 조사 권한</item>
-      </audit_cycle>
-      <reporting_obligations>
-        <item>월별: 고객별 판매 내역 + 수출 목적지</item>
-        <item>분기별: 재고 현황 + 가격 준수 확인</item>
-        <item>연간: 외부 법무 감사 보고서 제출</item>
-      </reporting_obligations>
-      <kill_switch_triggers>
-        <trigger>중국 최종 고객 판매 확인 시 → 즉시 공급 중단</trigger>
-        <trigger>제재 대상 기업 거래 시 → 즉시 계약 해지</trigger>
-        <trigger>Margin ceiling 초과 시 → 가격 재협상 또는 계약 종료</trigger>
-      </kill_switch_triggers>
-    </section>
-
-  </jv_structure_design>
+  <exit_provisions>
+    <item>No-fault Exit: 6개월 사전 통보 후 일방 해지 가능</item>
+    <item>지분 매각 우선매수권 (본사 보유)</item>
+    <item>IP·브랜드 즉시 회수 조항</item>
+    <item>고객 데이터 반환·삭제 의무</item>
+  </exit_provisions>
 
   <output_requirements>
-    <must_include>"왜 본사가 이 모델을 허용해야 하는가" 논리</must_include>
-    <must_include>경영진 설득용 논리 구조</must_include>
-    <must_include>법무팀 검토 가능 수준의 조항 언어</must_include>
-    <executor>본사 외부 파트너 (실행 주체)</executor>
-    <language>한국어 + 핵심 법률 용어 영문 병기</language>
+    <item>"왜 본사가 이 모델을 허용해야 하는가?" 논리 필수</item>
+    <item>경영진 설득용 논리 구조</item>
+    <item>법무팀 검토 가능 수준의 조항 언어</item>
+    <item>실행 주체: 본사 외부 파트너</item>
+    <item>작성 언어: 한국어 (계약 조항은 영문 병기)</item>
   </output_requirements>
-
-  <improvement_log>
-    <change from="v1.0" to="v2.0">
-      - Section 7 Audit and Compliance Monitoring 신규 추가
-      - Kill-switch 트리거 조건 3종 명시
-      - 보고 의무 (월별/분기별/연간) 구조화
-      - No-fault Exit 조건 명시
-      - 수출규제 감사 주기 정의
-    </change>
-  </improvement_log>
-
 </StrategicJVDesignPrompt>
