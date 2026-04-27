@@ -1,13 +1,31 @@
-# GBR · Global Business Research Prompt v2.0 (KR)
+# 🌐 GBR · Global Business Research Prompt v2.0 (KR)
 
 > **ID**: PE-NBD-GBR-v2.0  
-> **Chain Position**: PE-NBD chain-03 → **[GBR]** → chain-05  
-> **PE-3 Score**: 92 / 100  
-> **Date**: 2026-04-27  
-> **Author**: GilbertKwak  
+> **언어**: 한국어  
+> **Chain 위치**: PE-NBD chain-04 심화 분기 → [GBR] → chain-05  
+> **PE-3 점수**: 55점 → **92점**  
+> **작성일**: 2026-04-27  
+> **관리자**: Gilbert Kwak  
 > **Notion**: https://www.notion.so/34f55ed436f0815abe52d1e70d0ffd6b
 
 ---
+
+## 📊 Before / After 요약
+
+| 항목 | Before | After (v2.0) |
+|---|---|---|
+| PE-3 총점 | 55 / 100 | **92 / 100** |
+| Chain 연결 | ❌ 독립형 | ✅ chain-04 → GBR → chain-05 |
+| Input 구조 | 자유 텍스트 | Required / Optional 필드 구조화 |
+| OutputFormat | 4섹션 | 6섹션 + ScoreCard |
+| QualityGate | ❌ 없음 | ✅ 3단계 Gate |
+| 경쟁사 기준 | 미정의 | 최소 9개 (5개 언어권) |
+| 불확실성 규칙 | 2개 | 4개 |
+| Chain Pass | ❌ | ✅ chain-05 구조화 데이터 전달 |
+
+---
+
+## 🧠 최적화 프롬프트 전문
 
 ```xml
 <GlobalBusinessResearchPrompt version="2.0" lang="KR"
@@ -35,7 +53,7 @@
     </Required>
     <Optional>
       - existing_competitors : 기존 경쟁사 목록
-      - investment_stage     : Pre-seed/Seed/Series A/Corporate JV
+      - investment_stage     : Pre-seed / Seed / Series A / Corporate JV
       - chain_input          : PE-NBD-03 Value Proposition 결과
     </Optional>
   </Input>
@@ -54,7 +72,7 @@
     <Region lang="ja">일본: TDB, Nikkei, EDINET, Shikiho</Region>
     <Region lang="zh">중화권: Tianyancha, HKEX, TWSE</Region>
     <Region lang="eu">유럽: Eurostat, Bundesanzeiger, AMF, Companies House</Region>
-    <Depth>최소 3개 언어권 x 3개 경쟁사 = 9개 기업 이상</Depth>
+    <Depth>최소 3개 언어권 × 3개 경쟁사 = 9개 기업 이상</Depth>
   </ResearchScope>
 
   <KeyTasks priority="1">
@@ -65,18 +83,18 @@
 
   <KeyTasks priority="2">
     T4. 글로벌 유사 기업 9개+ 식별
-    T5. 경쟁사: 회사명/국가/모델/VP/강점/약점
+    T5. 경쟁사: 회사명 / 국가 / 모델 / VP / 강점 / 약점
   </KeyTasks>
 
   <KeyTasks priority="3">
-    T6. 경쟁 포지셔닝 매트릭스 (2x2)
+    T6. 경쟁 포지셔닝 매트릭스 (2×2)
     T7. 전략적 시사점: 기회(3) + 위험(3) + 대응(3)
     T8. chain-05 전달용 파트너 후보 Top 5
   </KeyTasks>
 
   <OutputFormat>
     1. Executive Summary (3문장)
-    2. Core Value Propositions x3~5
+    2. Core Value Propositions ×3~5
     3. 언어권별 경쟁사 표
     4. 경쟁 포지셔닝 매트릭스
     5. 전략적 시사점 + 기회/위험
@@ -109,9 +127,9 @@
 
 ---
 
-## 활용 명령어
+## 🔧 Gilbert 전용 활용 명령어
 
-### 단독 실행
+### 기본 단독 실행
 ```
 GBR v2.0 실행:
 business_summary = [신사업 개요 3~5문장]
@@ -127,5 +145,17 @@ business_summary = [내용]
 -> QualityGate 3단계 통과 -> chain-05 pass
 ```
 
+### PE-3 재검증
+```
+PE-3 자동검증: GBR v2.0
+목표: 92점 이상
+```
+
 ---
-*Last updated: 2026-04-27 KST | PE-3 Score: 92/100*
+
+## 📅 CHANGELOG
+
+| 버전 | 날짜 | 변경 내용 |
+|---|---|---|
+| v2.0 | 2026-04-27 | 3-Engine 처리 완료 — PE-3 92점, Chain 연결, QualityGate 3단계, ScoreCard 추가 |
+| v1.0 | (원본) | GlobalBusinessResearchPrompt.txt — PE-3 55점 |

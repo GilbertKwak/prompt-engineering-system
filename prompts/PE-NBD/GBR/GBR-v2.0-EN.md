@@ -1,13 +1,16 @@
-# GBR · Global Business Research Prompt v2.0 (EN)
+# 🌐 GBR · Global Business Research Prompt v2.0 (EN)
 
 > **ID**: PE-NBD-GBR-v2.0-EN  
-> **Chain Position**: PE-NBD chain-03 → **[GBR]** → chain-05  
-> **PE-3 Score**: 92 / 100  
+> **Language**: English  
+> **Chain Position**: PE-NBD chain-04 deep-dive branch → [GBR] → chain-05  
+> **PE-3 Score**: 55 → **92**  
 > **Date**: 2026-04-27  
-> **Author**: GilbertKwak  
+> **Author**: Gilbert Kwak  
 > **Notion**: https://www.notion.so/34f55ed436f0815abe52d1e70d0ffd6b
 
 ---
+
+## 🧠 Optimized Prompt (Full Text)
 
 ```xml
 <GlobalBusinessResearchPrompt version="2.0" lang="EN"
@@ -16,9 +19,6 @@
   <Meta>
     <ID>PE-NBD-GBR-v2.0-EN</ID>
     <LinkedChain>chain-03 -> [THIS] -> chain-05</LinkedChain>
-    <Prev>chain-03_value-proposition.md</Prev>
-    <Next>chain-05_partnership-model.md</Next>
-    <Tags>GlobalBusiness, Competitive-Analysis, Multi-Language, McKinsey-Framework</Tags>
   </Meta>
 
   <Role>
@@ -35,7 +35,7 @@
     </Required>
     <Optional>
       - existing_competitors : Known competitor list
-      - investment_stage     : Pre-seed/Seed/Series A/Corporate JV
+      - investment_stage     : Pre-seed / Seed / Series A / Corporate JV
       - chain_input          : Value Proposition output from chain-03
     </Optional>
   </Input>
@@ -65,12 +65,12 @@
 
   <KeyTasks priority="2">
     T4. Identify 9+ comparable global companies
-    T5. Competitor profiling: Name/Country/Model/VP/Strengths/Weaknesses
+    T5. Competitor profiling: Name / Country / Model / VP / Strengths / Weaknesses
   </KeyTasks>
 
   <KeyTasks priority="3">
-    T6. Competitive positioning matrix (2x2)
-    T7. Strategic implications: Opportunities(3)+Risks(3)+Responses(3)
+    T6. Competitive positioning matrix (2×2)
+    T7. Strategic implications: Opportunities(3) + Risks(3) + Responses(3)
     T8. Top 5 partnership candidates for chain-05
   </KeyTasks>
 
@@ -109,23 +109,9 @@
 
 ---
 
-## Usage Commands
+## 📅 CHANGELOG
 
-### Standalone Execution
-```
-Run GBR v2.0:
-business_summary = [3-5 sentence overview]
-industry_sector  = [sector classification]
-target_geography = [target market]
-```
-
-### NBD Chain Deep Mode
-```
-PE-NBD chain-04 deep (GBR v2.0):
-chain_input = {{PE-NBD-03.output}}
-business_summary = [content]
--> Pass QualityGate (3 stages) -> chain-05 pass
-```
-
----
-*Last updated: 2026-04-27 KST | PE-3 Score: 92/100*
+| Version | Date | Changes |
+|---|---|---|
+| v2.0 | 2026-04-27 | 3-Engine processing complete — PE-3 92pts, Chain linkage, 3-stage QualityGate, ScoreCard |
+| v1.0 | (original) | GlobalBusinessResearchPrompt.txt — PE-3 55pts |

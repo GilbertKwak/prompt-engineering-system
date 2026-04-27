@@ -1,79 +1,109 @@
-# PE-NBD GBR · Global Business Research Prompt v2.0
+# 🌐 PE-NBD · GBR (Global Business Research) v2.0
 
-> **Library**: PE-NBD New Business Development Prompt Library v2.0  
-> **Position**: chain-03 → **[GBR: chain-04 deep branch]** → chain-05  
-> **PE-3 Score**: Before 55 → After **92 / 100**  
-> **Notion**: https://www.notion.so/34f55ed436f0815abe52d1e70d0ffd6b
+> PE-NBD 프롬프트 라이브러리의 **글로벌 비즈니스 리서치 특화 모듈**
 
 ---
 
-## Overview
+## 📌 개요
 
-The **Global Business Research Prompt (GBR) v2.0** is a specialized deep-branch prompt within the PE-NBD 7-Chain system. It activates when chain-04 (Go-To-Market) requires multi-language competitive analysis across 5 regional markets.
-
-### When to Use
-
-| Scenario | Use GBR? |
+| 항목 | 내용 |
 |---|---|
-| Standard GTM strategy (single market) | ❌ Use chain-04 directly |
-| Multi-language competitive mapping required | ✅ GBR v2.0 |
-| 5 language regions (KO/EN/JA/ZH/EU) | ✅ GBR v2.0 |
-| PE-3 Score target ≥ 90 | ✅ GBR v2.0 |
+| **ID** | PE-NBD-GBR-v2.0 |
+| **포지션** | PE-NBD chain-04 글로벌 경쟁분석 심화 확장판 |
+| **특화** | 5개 언어권 (한/영/일/중/유럽) 동시 분석 |
+| **PE-3 점수** | Before 55점 → After **92점** |
+| **언어 버전** | KR + EN |
+| **Notion 페이지** | [🌐 GBR v2.0](https://www.notion.so/34f55ed436f0815abe52d1e70d0ffd6b) |
 
 ---
 
-## Chain Position
+## 🔗 Chain 연결도
 
 ```
-PE-NBD-01 (IR Report)
+PE-NBD-01 (IR 보고서)
     ↓
-PE-NBD-02 (Core Value Extraction)
+PE-NBD-02 (핵심가치 추출)
     ↓
-PE-NBD-03 (Gap Diagnosis)
+PE-NBD-03 (누락요소 진단)
     ↓
-PE-NBD-04 (Global Competitive Analysis)
-    ↓ [Deep branch: multi-language required]
-[GBR v2.0] ← THIS FILE (5-language region specialist)
+PE-NBD-04 (글로벌 경쟁분석 일반)
+    ↓ [심화 분기]
+[GBR v2.0] ← 이 디렉토리 (5개 언어권 특화)
     ↓
-PE-NBD-05 (3-Expert Risk)
+PE-NBD-05 (3-Expert 리스크)
     ↓
-PE-NBD-06 (Execution Roadmap)
+PE-NBD-06 (실행 로드맵)
 ```
 
 ---
 
-## Files
+## 📁 파일 구성
 
-| File | Description | Language |
-|---|---|---|
-| `GBR-v2.0-KR.md` | Optimized Korean prompt | 🇰🇷 KR |
-| `GBR-v2.0-EN.md` | Optimized English prompt | 🇺🇸 EN |
-| `README.md` | This guide + chain diagram | — |
-
----
-
-## Quality Standards
-
-| Gate | Criterion | Action if Fail |
-|---|---|---|
-| Gate 1 | ≥ 9 competitors identified | Supplement research |
-| Gate 2 | ≥ 1 company per language region | Re-research region |
-| Gate 3 | ScoreCard ≥ 8/10 | Deepen analysis |
+| 파일 | 내용 |
+|---|---|
+| `GBR-v2.0-KR.md` | 한국어 최적화 프롬프트 전문 (v2.0) |
+| `GBR-v2.0-EN.md` | 영어 최적화 프롬프트 전문 (v2.0) |
+| `README.md` | 사용 가이드 + Chain 연결도 (이 파일) |
 
 ---
 
-## Before / After (PE-3 Validation)
+## 🚀 빠른 시작
 
-| Dimension | Before (v1.0) | After (v2.0) |
-|---|---|---|
-| PE-3 Total Score | 55 / 100 | **92 / 100** |
-| Chain Integration | ❌ Standalone | ✅ chain-04 linked |
-| Output Sections | 4 sections | 6 sections + ScoreCard |
-| Quality Gate | ❌ None | ✅ 3-stage Gate |
-| Competitors Required | Undefined | Min 9 (5 regions) |
-| Uncertainty Rules | 2 rules | 4 rules |
-| Version Control | ❌ | ✅ CHANGELOG included |
+### 1. 단독 실행 (기본)
+```
+GBR v2.0 실행:
+business_summary = [신사업 개요 3~5문장]
+industry_sector  = [산업 분류]
+target_geography = [목표 시장]
+```
+
+### 2. NBD 체인 연동 (심화)
+```
+PE-NBD chain-04 심화 (GBR v2.0):
+chain_input      = {{PE-NBD-03.output}}
+business_summary = [내용]
+→ QualityGate 3단계 통과 → chain-05 pass
+```
+
+### 3. JV 특화 실행
+```
+GBR v2.2-JV 실행:
+모드 = 합작투자 파트너 탐색
+business_summary = [JV 대상 사업 내용]
+```
 
 ---
 
-*Last updated: 2026-04-27 KST | Manager: GilbertKwak*
+## ✅ QualityGate 3단계
+
+| Gate | 기준 | 미달 시 |
+|---|---|---|
+| Gate 1 | 경쟁사 9개 이상 식별 | 보완 후 재실행 |
+| Gate 2 | 5개 언어권 각 1개 이상 포함 | 해당 언어권 재조사 |
+| Gate 3 | ScoreCard 합계 ≥ 8점 | Depth 섹션 보완 |
+
+---
+
+## 📊 ScoreCard 기준
+
+| 항목 | 배점 | 기준 |
+|---|---|---|
+| Coverage | 2점 | 5개 언어권 모두 포함 여부 |
+| Depth | 3점 | 경쟁사당 6개 항목 완비 여부 |
+| Action | 5점 | 시사점이 구체적 액션과 연결 여부 |
+| **합계** | **/10** | **8점 미만 시 재분석 권고** |
+
+---
+
+## 🗂️ 관련 링크
+
+| 링크 | 내용 |
+|---|---|
+| [Notion GBR v2.0](https://www.notion.so/34f55ed436f0815abe52d1e70d0ffd6b) | Notion SSOT 페이지 |
+| [PE-NBD 라이브러리](https://www.notion.so/34f55ed436f08162b162e53607cf8bc0) | 부모 페이지 |
+| [T-09 Mother Page](https://www.notion.so/34a55ed436f0814d9cffe6a2f0816e29) | 프롬프트 엔지니어링 시스템 |
+| [prompt-engineering-system](https://github.com/GilbertKwak/prompt-engineering-system) | GitHub 레포 |
+
+---
+
+*최초 작성: 2026-04-27 | 버전: v2.0 | 관리자: Gilbert Kwak*
