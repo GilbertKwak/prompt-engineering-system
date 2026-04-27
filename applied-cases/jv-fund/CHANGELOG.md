@@ -1,5 +1,29 @@
 # CHANGELOG — JV Fund Prompt Library
 
+## [v3.3] 2026-04-27
+### Added
+- 원본 v2 전체 내용 완전 재검증 완료 (8개 core_module 원문 100% 보존 확인)
+- 각 core_module에 원본 v2 내용 + v3 확장 내용 명시적 분리 표기
+- `<assumptions>` 블록 원본 보존 (Multi-jurisdictional LP base 등)
+- `<output_verbosity_spec>` 원본 보존
+- `<high_risk_self_check>` 원본 보존
+- v3.3 재검증 완료 테이블 (19개 항목) 추가
+- Next Recommended Actions 5단계 체계 수립
+- 도메인별 확장 내용 추가 (Korea-specific, sCO2/HBM, US-China decoupling)
+
+### Changed
+- parameters VERSION: v3.2 → v3.3
+- VALIDATED_BY: v2-full-reverification 추가
+- 업데이트 타임스탬프: 2026-04-27 22:19 KST
+
+### Validated
+- PE-1: ✅ 6/6 항목
+- PE-3: ✅ 5/5 항목
+- SSOT: ✅ GitHub ↔ Notion 동기화 확인
+- v2 원본 재검증: ✅ 8/8 core_module 보존 확인
+
+---
+
 ## [v3.2] 2026-04-27
 ### Added
 - auto_validate.py (PE-1/PE-3 자동검증 스크립트) 연동
@@ -47,3 +71,4 @@
 ## [v2.0] 2026-04 이전
 - 원본 파일: Global_Joint_Venture_Fund_Master_Prompt_v2.txt
 - 8개 core_module 구조 (EN 단일, 검증 규칙 없음)
+- role / mission / assumptions / output_verbosity_spec / high_risk_self_check 포함
