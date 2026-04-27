@@ -1,37 +1,42 @@
-# JV Fund Prompt — CHANGELOG
+# CHANGELOG — Global JV Fund Prompt
+
+All notable changes to the JV Fund prompt library are documented here.
+
+---
 
 ## [v3.0] — 2026-04-27
 
 ### Added
-- `master_prompt_v3.md`: v2 대비 전면 구조화 (CONTEXT PARAMETERS 파라미터화)
-- `variants/fu_series_adapter.md`: FU-Series 보고서 연동 어댑터
-- `variants/bstar_eco2_prompt.md`: B-Star sCO2 전용 JV 프롬프트
-- `variants/ai_infra_prompt.md`: AI 인프라 열관리 JV 프롬프트
-- PE-1 / PE-3 검증 룰 전 파일 적용
-- JSON 구조화 출력 포맷 추가
-- GitHub CLI 퀵 커맨드 섹션 추가
-- Notion 양방향 링크 추가
+- PE-1 / PE-3 검증 규칙 통합
+- 파라미터화: `{DOMAIN}`, `{STAGE}`, `{LP_TYPE}`, `{GEOGRAPHY}`, `{LANG}`, `{DEPTH}`
+- KR + EN 병기 출력 포맷
+- Domain Variants 3종: `fu_series_adapter.md`, `bstar_eco2_prompt.md`, `ai_infra_prompt.md`
+- JSON 출력 스키마 (`executive_summary`, `risk_matrix`, `next_actions`, `github_commands`)
+- Notion 연동 링크
+- GitHub Actions 워크플로우: `jv_prompt_validate.yml`
+- 월간 자동 리뷰 이슈 스케줄 (매월 1일)
+- `validation_checklist.md` 추가
 
 ### Changed
-- v2: 단일 XML 블록 → v3: 모듈화 마크다운 + 파라미터화
-- 출력 언어: 영문 단일 → KR/EN 병기 (Bilingual 기본)
-- 리스크 섹션: 단순 나열 → 3-시나리오 매트릭스 (Base/Bull/Bear)
+- 원본 8개 모듈 → Chain-of-Thought 8단계 재구조화
+- 출력 언어: EN 단일 → KR + EN 병기
+- `output_verbosity_spec` → 의사결정 프레임워크 우선으로 개선
+- `high_risk_self_check` → PE-3 시나리오 균형 규칙으로 강화
 
 ### Fixed
-- v2에서 누락된 출처 표기 (PE-1 준수)
-- v2에서 누락된 반대 시나리오 (PE-3 준수)
-- 버전 이력 없음 → CHANGELOG 신설
-
-## [v2.0] — 2026-04-27 (보관)
-
-- 원본 파일: `Global_Joint_Venture_Fund_Master_Prompt_v2.txt`
-- XML 구조, 8개 Core Module, 영문 단일 출력
-- PE 검증 룰 미적용 상태
+- 보장 수익률 언어 표현 제거
+- 가정 사항 미선언 문제 해결
 
 ---
 
-## [향후 계획]
+## [v2.0] — 2026-04 이전
 
-- v3.1: AstraChips LP Fund 피치덱 연동 자동화
-- v3.2: auto_validate.py PE-1/PE-3 자동 검증 통합
-- v4.0: Multi-Agent 연동 (PE-11 Master Agent 활용)
+### Initial
+- 8개 핵심 모듈 포함 기관급 JV 펀드 마스터 프롬프트
+- GP/LP 구조, 펀드 규모 설계, IC 프레임워크, Exit 최적화
+- 영문 단일 출력
+- XML 구조 기반
+
+---
+
+*Maintained by Gilbert Kwak | Prompt Engineering System*

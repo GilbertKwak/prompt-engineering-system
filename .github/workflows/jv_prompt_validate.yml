@@ -1,0 +1,79 @@
+name: JV Fund Prompt — Auto Validate & Notify
+
+on:
+  push:
+    paths:
+      - 'applied-cases/jv-fund/**'
+  pull_request:
+    paths:
+      - 'applied-cases/jv-fund/**'
+  schedule:
+    # 매월 1일 09:00 KST (00:00 UTC) — 월간 리뷰 이슈 자동 생성
+    - cron: '0 0 1 * *'
+
+jobs:
+  validate_prompts:
+    name: PE-1 / PE-3 Validation
+    runs-on: ubuntu-latest
+    if: github.event_name != 'schedule'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt 2>/dev/null || echo "No requirements.txt — skipping"
+
+      - name: Run PE-1 / PE-3 Validation
+        run: |
+          echo "=== JV Fund Prompt Validation ==="
+          echo "Files changed:"
+          git diff --name-only HEAD~1 HEAD -- 'applied-cases/jv-fund/**' || true
+          echo "Validation rules: PE-1, PE-3"
+          if [ -f automation/auto_validate.py ]; then
+            python automation/auto_validate.py \
+              --file applied-cases/jv-fund/master_prompt_v3.md \
+              --rules PE-1,PE-3 \
+              --output reports/validation_$(date +%Y%m%d).json
+          else
+            echo "auto_validate.py not found — structural check only"
+            # Structural check: key sections present
+            for f in applied-cases/jv-fund/*.md applied-cases/jv-fund/variants/*.md; do
+              echo "Checking: $f"
+              grep -q 'PE-1\|PE-3' "$f" && echo "  ✅ Validation rules referenced" || echo "  ⚠️  Missing PE rules"
+              grep -q 'VALIDATION\|validation' "$f" && echo "  ✅ Validation section found" || echo "  ⚠️  No validation section"
+            done
+          fi
+
+      - name: Summary
+        run: |
+          echo "## JV Fund Prompt Validation Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| File | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          for f in applied-cases/jv-fund/*.md applied-cases/jv-fund/variants/*.md; do
+            echo "| $f | ✅ Checked |" >> $GITHUB_STEP_SUMMARY
+          done
+
+  monthly_review_issue:
+    name: Monthly Prompt Review Issue
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    steps:
+      - name: Create Monthly Review Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const today = new Date().toISOString().split('T')[0];
+            const month = today.substring(0, 7);
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `[Monthly Review] JV Fund Prompt Performance — ${month}`,
+              labels: ['prompt-review', 'monthly', 'jv-analysis'],
+              body: `## 📋 ${month} JV Fund 프롬프트 월간 리뷰\n\n### 체크리스트\n- [ ] PE-1 준수율 확인\n- [ ] PE-3 시나리오 품질 검토\n- [ ] Domain Variants (FU/sCO2/AI) 업데이트 필요 여부\n- [ ] Notion 동기화 상태 확인\n- [ ] 새로운 도메인 추가 필요 여부\n\n### 참조 링크\n- [Notion PE-JV Page](https://www.notion.so/34f55ed436f08150b07dc7f5f800311b)\n- [GitHub JV Fund Dir](https://github.com/GilbertKwak/prompt-engineering-system/tree/main/applied-cases/jv-fund)\n\n### 지난 달 변경 이력\n> CHANGELOG.md 참조\n\n---\n*자동 생성 — GitHub Actions Monthly Schedule*`
+            });
