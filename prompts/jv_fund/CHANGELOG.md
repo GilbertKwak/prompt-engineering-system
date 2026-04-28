@@ -1,51 +1,54 @@
-# CHANGELOG — JV Fund Prompts
+# CHANGELOG — JV Fund Prompt Series
 
-> 모든 버전 변경 이력을 기록합니다.
-
----
-
-## [v6.0.0] — 2026-04-28
-
-### 🚀 Major Release
-- **완전 재설계**: Role/Context/Chain/Output/Validation 5-Layer 구조 도입
-- **PE-1/PE-3 내장**: 외부 검증 의존 제거, 프롬프트 자체 검증 룰 포함
-- **완전 파라미터화**: `{DOMAIN}`, `{STAGE}`, `{LANG}`, `{DEPTH}` 등 7개 파라미터
-- **이중 출력 포맷**: JSON + Notion-MD 동시 지원
-- **3-Engine 연동**: Auto-Refinement / Auto-Proliferation / Auto-Validation 명시적 연동
-- **도메인 어댑터 통합**: HBM/sCO2/Thermal/AI-DC 4개 도메인 분기 내장
-- **KR/EN 병기**: 모든 출력 한국어+영어 동시 지원
-- **원본 v2 아카이빙**: `archive/Global_Joint_Venture_Fund_Master_Prompt_v2.txt`
-- **GitHub Issue 명령어**: 분석 결과에서 바로 Issue 생성 가능
-
-### 📁 파일 변경
-- 추가: `master_prompt_v6.md`
-- 추가: `archive/Global_Joint_Venture_Fund_Master_Prompt_v2.txt`
-- 업데이트: `CHANGELOG.md`
-
-### 🔗 트리거
-- 입력: `Global_Joint_Venture_Fund_Master_Prompt_v2.txt` 분석 요청
-- 실행: Perplexity AI × prompt-engineering-system 3-Engine
-- 검증: PE-1(사실정확성) + PE-3(균형분석) 통과
+모든 버전 변경 이력을 기록합니다.
 
 ---
 
-## [v5.0.0] — 이전 버전
+## [v3.0] — 2026-04-28
 
-- `master_prompt_v5.md` 참조
+### Added
+- Master Prompt v3.0 (PE-1/PE-3 검증 내장)
+- Variant A: FU-Series 연동 특화 프롬프트
+- Variant B: B-Star sCO2 전용 프롬프트
+- Variant C: AI Infrastructure 특화 프롬프트
+- validation_checklist.md — 통합 검증 체크리스트
+- 5단계 Task Chain 프레임워크
+- YAML Context Parameters 구조화
+- Notion MD 호환 출력 포맷
+- GitHub Issue 자동 생성 명령 통합
 
-## [v4.0.0] — 이전 버전
+### Changed
+- v2 단일 블록 텍스트 → v3 구조화된 모듈 형식
+- 역할/맥락/출력 섹션 분리
+- KR+EN 병기 옵션 추가
 
-- `master_prompt_v4.md` 참조
-
-## [v3.0.0] — 이전 버전
-
-- `master_prompt_v3.md` 참조
-
-## [v2.0.0] — ARCHIVED
-
-- 원본: `archive/Global_Joint_Venture_Fund_Master_Prompt_v2.txt`
-- 아카이브 사유: v6.0.0 출시에 따른 보관
+### Fixed
+- 버전 관리 체계 신설 (이전 v2에 없음)
+- PE-1/PE-3 검증 룰 적용 (이전 없음)
+- 도메인별 특화 로직 분리 (이전 단일 프롬프트)
 
 ---
 
-*Maintained by GilbertKwak/prompt-engineering-system*
+## [v2.0] — 2026-04-27 (원본)
+
+### Notes
+- 원본 파일: `Global_Joint_Venture_Fund_Master_Prompt_v2.txt`
+- 단일 블록 텍스트 구조
+- PE 검증 미적용
+- Domain Variants 없음
+- 버전 이력 없음
+
+---
+
+## [예정] v3.1 — 자동화 연동 업그레이드
+
+### Planned
+- [ ] `auto_validate.py` PE-1/PE-3 자동 검증 스크립트 연동
+- [ ] GitHub Actions 워크플로우 (push → validate → Notion sync)
+- [ ] Notion API 자동 동기화 구현
+- [ ] 월간 성능 리뷰 Issue 자동 생성
+- [ ] Variant D: HBM Salvage 전용 (AstraChips 직결)
+
+---
+
+*CHANGELOG v1.0 — GilbertKwak/prompt-engineering-system*
