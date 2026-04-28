@@ -1,0 +1,299 @@
+# =============================================================================
+# register_variant.yml — Variant 자동 등록 워크플로우 v2.1
+# Repository : GilbertKwak/prompt-engineering-system
+# Trigger    : prompts/**/variants/*.md push OR workflow_dispatch (수동)
+# Purpose    : Variant 파일 감지 → PE-1/PE-3 검증 → VARIANT_INDEX.json 자동 갱신
+#              → 요약 Issue 자동 생성 → CHANGELOG.md 자동 업데이트
+# =============================================================================
+name: 🧬 Variant Auto-Registration v2.1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'prompts/**/variants/*.md'
+      - 'prompts/**/variants/*.yaml'
+  workflow_dispatch:
+    inputs:
+      variant_path:
+        description: '등록할 Variant 파일 경로 (예: prompts/jv_fund/variants/variant_new.md)'
+        required: false
+        default: 'all'
+      dry_run:
+        description: 'Dry-run 모드 (인덱스 미커밋, 검증만 수행)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+      create_issue:
+        description: '등록 완료 Issue 자동 생성 여부'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+concurrency:
+  group: variant-registration-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PYTHON_VERSION: '3.11'
+  INDEX_PATH: 'prompts/jv_fund/VARIANT_INDEX.json'
+  CHANGELOG_PATH: 'CHANGELOG.md'
+  VARIANT_GLOB: 'prompts/**/variants/*.md'
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # JOB 1: Variant 파일 감지 및 목록 수집
+  # ---------------------------------------------------------------------------
+  detect-variants:
+    name: 🔍 Detect Changed Variants
+    runs-on: ubuntu-latest
+    outputs:
+      variant_files: ${{ steps.detect.outputs.files }}
+      variant_count: ${{ steps.detect.outputs.count }}
+      has_variants: ${{ steps.detect.outputs.has_variants }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect changed/new variant files
+        id: detect
+        run: |
+          set -e
+
+          INPUT_PATH="${{ github.event.inputs.variant_path }}"
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "$INPUT_PATH" != "all" ] && [ -n "$INPUT_PATH" ]; then
+            # 수동 지정 파일
+            FILES="$INPUT_PATH"
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            # push 이벤트: 변경된 Variant 파일만
+            FILES=$(git diff --name-only HEAD~1 HEAD -- 'prompts/**/variants/*.md' 2>/dev/null || find prompts -path '*/variants/*.md' -type f)
+          else
+            # workflow_dispatch all: 전체 스캔
+            FILES=$(find prompts -path '*/variants/*.md' -type f | sort)
+          fi
+
+          COUNT=$(echo "$FILES" | grep -c '.md' || echo 0)
+          echo "files=$FILES" >> $GITHUB_OUTPUT
+          echo "count=$COUNT" >> $GITHUB_OUTPUT
+          echo "has_variants=$([ $COUNT -gt 0 ] && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+
+          echo "📋 감지된 Variant 파일 수: $COUNT"
+          echo "$FILES"
+
+  # ---------------------------------------------------------------------------
+  # JOB 2: PE-1 / PE-3 검증 (병렬 실행)
+  # ---------------------------------------------------------------------------
+  validate-variants:
+    name: ✅ PE-1/PE-3 Validation
+    runs-on: ubuntu-latest
+    needs: detect-variants
+    if: needs.detect-variants.outputs.has_variants == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        rule: [PE-1, PE-3]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install --quiet pyyaml jsonschema rich
+
+      - name: Run ${{ matrix.rule }} validation
+        id: validate
+        run: |
+          python .github/scripts/register_variant.py \
+            --mode validate \
+            --rule ${{ matrix.rule }} \
+            --files "${{ needs.detect-variants.outputs.variant_files }}" \
+            --output validation_${{ matrix.rule }}.json
+
+      - name: Upload validation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-report-${{ matrix.rule }}
+          path: validation_${{ matrix.rule }}.json
+          retention-days: 30
+
+  # ---------------------------------------------------------------------------
+  # JOB 3: VARIANT_INDEX.json 자동 갱신 및 커밋
+  # ---------------------------------------------------------------------------
+  update-index:
+    name: 📋 Update VARIANT_INDEX.json
+    runs-on: ubuntu-latest
+    needs: [detect-variants, validate-variants]
+    if: |
+      needs.detect-variants.outputs.has_variants == 'true' &&
+      github.event.inputs.dry_run != 'true'
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install --quiet pyyaml jsonschema
+
+      - name: Update VARIANT_INDEX.json
+        id: update_index
+        run: |
+          python .github/scripts/register_variant.py \
+            --mode register \
+            --files "${{ needs.detect-variants.outputs.variant_files }}" \
+            --index ${{ env.INDEX_PATH }} \
+            --output registration_result.json
+
+          echo "registered_count=$(python -c "import json; d=json.load(open('registration_result.json')); print(d.get('registered', 0))" 2>/dev/null || echo 0)" >> $GITHUB_OUTPUT
+
+      - name: Update CHANGELOG.md
+        run: |
+          python .github/scripts/register_variant.py \
+            --mode changelog \
+            --result registration_result.json \
+            --changelog ${{ env.CHANGELOG_PATH }}
+
+      - name: Commit updated index and changelog
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add ${{ env.INDEX_PATH }} ${{ env.CHANGELOG_PATH }}
+          git diff --cached --quiet || git commit -m "chore(auto): Variant 인덱스 자동 갱신 [skip ci]
+
+          등록 Variant 수: ${{ steps.update_index.outputs.registered_count }}
+          트리거: ${{ github.event_name }} / ${{ github.actor }}
+          실행 시각: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+          git push
+
+      - name: Upload registration result
+        uses: actions/upload-artifact@v4
+        with:
+          name: registration-result
+          path: registration_result.json
+          retention-days: 90
+
+  # ---------------------------------------------------------------------------
+  # JOB 4: 등록 완료 Issue 자동 생성
+  # ---------------------------------------------------------------------------
+  create-summary-issue:
+    name: 📣 Create Registration Summary Issue
+    runs-on: ubuntu-latest
+    needs: [detect-variants, validate-variants, update-index]
+    if: |
+      always() &&
+      needs.detect-variants.outputs.has_variants == 'true' &&
+      github.event.inputs.create_issue != 'false'
+    permissions:
+      issues: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download registration result
+        uses: actions/download-artifact@v4
+        with:
+          name: registration-result
+        continue-on-error: true
+
+      - name: Create registration summary issue
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            let result = {};
+            try {
+              result = JSON.parse(fs.readFileSync('registration_result.json', 'utf8'));
+            } catch(e) {}
+
+            const registered = result.registered || 0;
+            const variants   = result.variants   || [];
+            const dryRun     = '${{ github.event.inputs.dry_run }}' === 'true';
+            const runUrl     = `https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}`;
+            const today      = new Date().toISOString().slice(0,10);
+
+            const variantTable = variants.length > 0
+              ? '| Variant ID | 도메인 | 버전 | 상태 |\n|---|---|---|---|\n' +
+                variants.map(v => `| ${v.id||'-'} | ${v.domain||'-'} | ${v.version||'-'} | ${v.status||'등록완료'} |`).join('\n')
+              : '변경된 Variant 없음';
+
+            const body = [
+              `## 🧬 Variant 자동 등록 완료 — ${today}`,
+              '',
+              `> **워크플로우**: \`register_variant.yml\` v2.1`,
+              `> **트리거**: \`${{ github.event_name }}\` by \`${{ github.actor }}\``,
+              `> **Dry-run**: ${dryRun ? '✅ 활성화 (인덱스 미갱신)' : '❌ 비활성화 (실제 등록)'}`,
+              '',
+              `### 📊 등록 결과`,
+              `- **등록 Variant 수**: ${registered}개`,
+              `- **검증 규칙**: PE-1, PE-3`,
+              `- **VARIANT_INDEX.json**: ${dryRun ? '미갱신 (dry-run)' : '✅ 자동 갱신 완료'}`,
+              '',
+              `### 📋 등록된 Variants`,
+              '',
+              variantTable,
+              '',
+              `### 🔗 참조`,
+              `- [Actions 실행 로그](${runUrl})`,
+              `- [VARIANT_INDEX.json](https://github.com/${{ github.repository }}/blob/main/prompts/jv_fund/VARIANT_INDEX.json)`,
+              `- [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md)`,
+              '',
+              `### ✅ 다음 단계`,
+              `- [ ] Notion Prompt Library 페이지 동기화 확인`,
+              `- [ ] 신규 Variant 실전 적용 테스트`,
+              `- [ ] 30일 후 성능 리뷰 스케줄 등록`,
+            ].join('\n');
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo:  context.repo.repo,
+              title: `[Auto] Variant 등록 완료 — ${registered}개 (${today})`,
+              body,
+              labels: ['variant-registration', 'automated', 'v2.1'],
+            });
+
+  # ---------------------------------------------------------------------------
+  # JOB 5: Dry-run 결과 출력 (dry_run=true 일 때만)
+  # ---------------------------------------------------------------------------
+  dry-run-summary:
+    name: 🧪 Dry-run Summary
+    runs-on: ubuntu-latest
+    needs: [detect-variants, validate-variants]
+    if: |
+      github.event.inputs.dry_run == 'true' &&
+      needs.detect-variants.outputs.has_variants == 'true'
+    steps:
+      - name: Print dry-run summary
+        run: |
+          echo "=================================================================="
+          echo "  🧪 DRY-RUN MODE — 인덱스 미갱신, 검증만 수행"
+          echo "=================================================================="
+          echo "  감지 Variant 수 : ${{ needs.detect-variants.outputs.variant_count }}"
+          echo "  검증 규칙       : PE-1, PE-3"
+          echo "  커밋 여부       : 없음 (dry-run)"
+          echo "  Issue 생성      : 없음 (dry-run)"
+          echo "=================================================================="

@@ -1,0 +1,62 @@
+{
+  "schema_version": "2.1",
+  "description": "Global JV Fund Prompt Variant Registry — auto-managed by register_variant.yml",
+  "repository": "GilbertKwak/prompt-engineering-system",
+  "workflow": ".github/workflows/register_variant.yml",
+  "updated_at": "2026-04-28T01:39:00Z",
+  "total": 4,
+  "variants": [
+    {
+      "id": "JV_FUND_MASTER",
+      "file": "prompts/jv_fund/master_v3.md",
+      "domain": "JV-Fund",
+      "version": "3.0",
+      "title": "Global Joint Venture Fund Master Prompt v3",
+      "description": "글로벌 합작투자(JV) 펀드 분석 마스터 프롬프트. PE-1/PE-3 검증 기준 적용.",
+      "tags": ["jv", "fund", "semiconductor", "thermal", "sco2", "ai-infra", "pe1", "pe3"],
+      "registered_at": "2026-04-28T01:39:00Z",
+      "status": "active",
+      "pe1_passed": true,
+      "pe3_passed": true
+    },
+    {
+      "id": "VARIANT_FU_SERIES",
+      "file": "prompts/jv_fund/variants/variant_fu_series.md",
+      "domain": "FU-Thermal",
+      "version": "1.0",
+      "title": "FU-Series 연동 JV 분석 Variant",
+      "description": "FU-Series 보고서 데이터 기반 JV 타당성 재검증 Variant",
+      "tags": ["fu-series", "thermal", "hbm", "semiconductor", "jv"],
+      "registered_at": "2026-04-28T01:39:00Z",
+      "status": "active",
+      "pe1_passed": true,
+      "pe3_passed": true
+    },
+    {
+      "id": "VARIANT_BSTAR_ECO2",
+      "file": "prompts/jv_fund/variants/variant_bstar_eco2.md",
+      "domain": "B-Star-eCO2",
+      "version": "1.0",
+      "title": "B-Star eCO2 전용 JV Variant",
+      "description": "sCO2 기반 소형 분산형 발전·냉각 시스템의 글로벌 JV 전략 특화 Variant",
+      "tags": ["bstar", "eco2", "sco2", "energy", "jv", "korea", "data-center"],
+      "registered_at": "2026-04-28T01:39:00Z",
+      "status": "active",
+      "pe1_passed": true,
+      "pe3_passed": true
+    },
+    {
+      "id": "VARIANT_AI_INFRA",
+      "file": "prompts/jv_fund/variants/variant_ai_infra.md",
+      "domain": "AI-Infra",
+      "version": "1.0",
+      "title": "AI Infrastructure 데이터센터 JV Variant",
+      "description": "AI 가속기·GPU 서버 열관리 기반 데이터센터 JV 전략 분석 Variant",
+      "tags": ["ai", "data-center", "thermal", "cooling", "jv", "hbm", "gpu"],
+      "registered_at": "2026-04-28T01:39:00Z",
+      "status": "active",
+      "pe1_passed": true,
+      "pe3_passed": true
+    }
+  ]
+}
