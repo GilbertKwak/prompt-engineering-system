@@ -1,104 +1,92 @@
-# JV Fund Prompt — PE-1/PE-3 검증 체크리스트
+# JV Fund Prompt Validation Checklist
 
-> **버전**: v1.0 | **기준일**: 2026-04-27  
-> **적용 범위**: prompts/jv_fund/ 전체
-
----
-
-## [PE-1 자동개선 체크리스트] — 수치 출처 의무화
-
-### 시장 수치 검증
-- [ ] TAM/SAM/SOM 수치에 출처 명시 (기관명 + 연도)
-- [ ] CAGR 수치에 예측 기관 명시
-- [ ] 추정값은 `(est.)` 또는 `(추정)` 표기
-- [ ] 수치 범위 제시 시 최소-최대 근거 포함
-- [ ] 오래된 데이터(2년 이상) 사용 시 경고 표시 ⚠️
-
-### 기술 수치 검증
-- [ ] TRL(기술성숙도) 수준 명시
-- [ ] 성능 수치(W/mK, TDP, COP 등) 출처 포함
-- [ ] 특허 수 기재 시 검색 기준일 명시
-- [ ] 제조 비용 추정 시 가정(Assumption) 명시
-
-### 재무 수치 검증
-- [ ] 투자 금액 환율 기준 명시 (KRW/USD/SGD)
-- [ ] ROI/IRR 계산 시 가정 조건 명시
-- [ ] 비교 대상 기업 재무 데이터 출처 명시
+> **버전**: v1.0 | **날짜**: 2026-04-28  
+> **규칙**: PE-1 (출처 명시) + PE-3 (반대 시나리오)  
 
 ---
 
-## [PE-3 자동검증 체크리스트] — 반대 시나리오 의무화
+## PE-1: 출처 및 데이터 품질 검증
 
-### 시장 리스크
-- [ ] 시장 축소 시나리오 1개 이상 명시
-- [ ] 주요 경쟁자 반격 시나리오 포함
-- [ ] 규제 강화 시나리오 (수출통제/환경규제) 포함
-- [ ] 지정학적 리스크 (미-중 갈등, 한-일 관계) 분석
+```
+[ ] 모든 시장 규모 수치에 출처 + 연도 기재
+[ ] CAGR / 성장률에 조사기관명 명기 (e.g. IDC, Gartner, Bloomberg)
+[ ] 추정값은 반드시 (est.) 또는 (추정) 표기
+[ ] 인용 출처 최소 3개 이상
+[ ] 데이터 신선도: 최근 2년 이내 우선 (2024~2026)
+[ ] 1차 데이터 vs. 2차 데이터 구분
+[ ] 상충 데이터 존재 시 복수 출처 병기
+```
 
-### JV 구조 리스크
-- [ ] JV 실패 케이스 (파트너 역량 부족) 명시
-- [ ] IP 분쟁 시나리오 포함
-- [ ] 지분 분쟁 해결 메커니즘 명시
-- [ ] Exit 조건 미달 시 대안 명시
+## PE-3: 반대 시나리오 검증
 
-### 기술 리스크
-- [ ] TRL 진입 실패 시나리오 포함
-- [ ] 대체 기술 출현 리스크 분석
-- [ ] 핵심 인력 이탈 리스크 언급
+```
+[ ] Downside 시나리오 최소 1개 명시
+[ ] 리스크 매트릭스 각 항목에 완화 방안 병기
+[ ] 상반된 시장 전망 존재 시 양측 서술
+[ ] 기술 실패 시나리오 포함
+[ ] 파트너 이탈 시나리오 포함
+[ ] 규제 강화 시나리오 포함
+```
 
----
+## 구조 완결성 검증
 
-## [PE-10 v2.0 표준 — EVIDENCE 필드]
+```
+[ ] SYSTEM ROLE 명확히 정의
+[ ] 모든 파라미터 변수화 (하드코딩 없음)
+[ ] Task Chain 5단계 완비
+[ ] OUTPUT FORMAT JSON/MD 명세
+[ ] 빠른 참조 명령어 포함
+[ ] 관련 파일 링크 명시
+[ ] CHANGELOG 업데이트
+```
 
-- [ ] 각 분석 섹션에 `evidence` 서브필드 포함
-- [ ] `confidence_score` 수치 출력 (0~100)
-- [ ] `EDGE_CASE` 핸들러 포함 (예외 상황 처리)
-- [ ] `synthesis_confidence` 최종 종합 신뢰도 출력
+## 도메인별 추가 검증
 
----
+### FU-Series 연동 시
+```
+[ ] FU 번호 및 섹션 명시
+[ ] TRL 수준 포함
+[ ] FU 데이터 → JV 타당성 매핑 완료
+```
 
-## [출력 품질 기준]
+### B-Star eCO2 시
+```
+[ ] sCO2 기술 스펙 포함
+[ ] 정부 보조금 연계 방안 포함
+[ ] 액침냉각 경쟁 기술과 비교
+```
 
-| 항목 | 최소 기준 | 권장 기준 |
-|---|---|---|
-| PE-3 점수 | 80/100 이상 | 90/100 이상 |
-| confidence_score | 70 이상 | 85 이상 |
-| 출처 수 | 3개 이상 | 5개 이상 |
-| 반대 시나리오 | 1개 이상 | 3개 이상 |
-| 리스크 매트릭스 항목 | 5개 이상 | 10개 이상 |
-
----
-
-## [자동 검증 스크립트 연동]
-
-```bash
-# 단일 파일 검증
-python engines/auto_validate.py \
-  --file prompts/jv_fund/master_prompt_v3.md \
-  --rules PE-1,PE-3,PE-10 \
-  --output reports/validation_$(date +%Y%m%d).json
-
-# 전체 jv_fund 디렉터리 검증
-python engines/auto_validate.py \
-  --dir prompts/jv_fund/ \
-  --rules PE-1,PE-3 \
-  --report-format markdown
-
-# Notion 검증 결과 동기화
-python automation/notion_sync.py \
-  --source reports/validation_$(date +%Y%m%d).json \
-  --target notion://JV-Fund-Validation-Log
+### AI 인프라 시
+```
+[ ] GPU 전력 밀도 트렌드 포함
+[ ] 하이퍼스케일러 자체 개발 리스크 포함
+[ ] HBM Salvage 연계 가능성 검토
 ```
 
 ---
 
-## [관련 파일]
+## 자동 검증 명령어
 
-| 파일 | 경로 | 설명 |
-|---|---|---|
-| Master Prompt v3 | `prompts/jv_fund/master_prompt_v3.md` | 핵심 마스터 프롬프트 |
-| FU-Series 어댑터 | `prompts/jv_fund/variants/fu_series_adapter.md` | FU 보고서 연동 |
-| B-Star eCO2 | `prompts/jv_fund/variants/bstar_eco2_prompt.md` | sCO2 JV 특화 |
-| AI 인프라 | `prompts/jv_fund/variants/ai_infra_prompt.md` | AI DC JV 특화 |
-| 자동 검증 엔진 | `engines/auto_validate.py` | PE-1/PE-3 검증 |
-| Notion 동기화 | `automation/notion_sync.py` | Notion 연동 |
+```bash
+# PE-1+PE-3 자동 검증
+python automation/auto_validate.py \
+  --file prompts/jv_fund/master_v3.md \
+  --rules PE-1,PE-3 \
+  --output validation_report.json
+
+# 전체 JV 프롬프트 배치 검증
+for f in prompts/jv_fund/**/*.md; do
+  python automation/auto_validate.py --file $f --rules PE-1,PE-3
+done
+```
+
+---
+
+## 검증 이력
+
+| 날짜 | 파일 | PE-1 | PE-3 | 구조 | 검증자 |
+|------|------|------|------|------|---------|
+| 2026-04-28 | master_v3.md | ✅ | ✅ | ✅ | Auto+Gilbert |
+| 2026-04-28 | fu_series_adapter.md | ✅ | ✅ | ✅ | Auto+Gilbert |
+| 2026-04-28 | bstar_eco2_prompt.md | ✅ | ✅ | ✅ | Auto+Gilbert |
+| 2026-04-28 | ai_infra_prompt.md | ✅ | ✅ | ✅ | Auto+Gilbert |

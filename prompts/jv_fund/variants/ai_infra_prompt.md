@@ -1,112 +1,131 @@
-# AI Infrastructure DC JV Prompt v1.0
+# AI Infrastructure & Data Center JV Analysis Prompt
 
-> **Parent**: [master_prompt_v3.md](../master_prompt_v3.md)  
-> **Domain**: AI Data Center Thermal & Infrastructure  
-> **Date**: 2026-04-27 | **PE-3 목표**: 90/100  
-> **연동**: [global-semiconductor-ai-research](https://github.com/GilbertKwak/global-semiconductor-ai-research)
-
----
-
-## 목적
-
-AI 데이터센터 냉각 및 인프라 분야의 JV 펀드 기회를 분석하는 특화 프롬프트.  
-H100/B200/GB200 수준 GPU 클러스터의 열관리 수요를 JV 투자 기회로 전환한다.
+> **버전**: v1.0 | **날짜**: 2026-04-28  
+> **연동**: FU-Series (AI 가속기 열관리) + HBM-Salvage-Reports  
+> **목적**: AI 데이터센터 열관리 기술 기반 JV 분석 특화
 
 ---
 
-## [CONTEXT INJECTION]
+## [ROLE]
+
+AI 인프라(GPU 서버, HBM, AI 가속기) 열관리 기술 기반 글로벌 JV 투자 분석가.  
+데이터센터 냉각 시장의 폭발적 성장을 활용한 전략적 파트너십 설계에 집중.
+
+---
+
+## [DOMAIN CONTEXT]
 
 ```yaml
-BASE_PROMPT: master_prompt_v3.md
-DOMAIN: AI-DC
-COOLING_TYPE: "{type}"       # Liquid | Immersion | Air | Hybrid
-GPU_GENERATION: "{gen}"      # H100 | B200 | GB200 | Next-Gen
-DC_SCALE: "{scale}"          # Edge | Regional | Hyperscale
-GEO_FOCUS: "{geo}"           # Korea | Japan | SEA | US
+Technology_Focus:
+  - 액침냉각 (Immersion Cooling)
+  - 직수냉각 (Direct Liquid Cooling, DLC)
+  - 2-Phase Cooling
+  - Vapor Chamber + HBM 통합 패키지
+Key_Customers: Hyperscaler (AWS, Google, MS, Meta) / HPC 센터 / AI 스타트업
+Market_Driver: Nvidia H100/B200 GPU 전력 밀도 700W+ → 기존 공랭 한계 초과
 ```
 
 ---
 
-## [TASK — AI DC 특화]
+## [TASK CHAIN]
 
-### Step 1 — AI DC 냉각 수요 정량화
+### Step 1 | AI 데이터센터 열관리 시장 분석
 ```
-- 글로벌 AI DC 투자 규모 (2025-2030, 출처 명시)
-- GPU당 열밀도 증가 트렌드 (W/chip 기준)
-- 냉각 인프라 CAPEX 비중 분석
-- 한국 주요 하이퍼스케일러 투자 계획 (삼성, SK, KT, 카카오)
-```
-
-### Step 2 — 냉각 기술 파트너 매핑
-```
-국내:
-- 삼성전자 (내부 냉각 솔루션)
-- SK하이닉스 (HBM 패키지 열관리)
-- 한화시스템 (DC 인프라)
-
-글로벌:
-- Vertiv Holdings (랙 레벨 쿨링)
-- Schneider Electric (전력·냉각 통합)
-- Asetek, LiquidStack (액침 냉각)
-- nVent, CoolIT (직접 액체냉각)
+필수 포함 데이터 (PE-1: 출처 명기):
+  - 글로벌 데이터센터 냉각 시장 규모 ($bn) 및 CAGR
+  - 액침냉각 시장 점유율 성장 추이
+  - GPU 전력 밀도 트렌드 (W/chip: 2020→2026→2030)
+  - 한국 AI 데이터센터 투자 현황
 ```
 
-### Step 3 — AI DC JV 구조 옵션
+### Step 2 | 파트너 매핑 (AI Infra 특화)
 ```
-Option A: 냉각 기술 JV (한국 R&D + 글로벌 유통)
-Option B: DC 운영 JV (하이퍼스케일러 + 기술 공급사)
-Option C: 통합 솔루션 JV (반도체 + 냉각 + 전력)
-→ 각 옵션의 IRR, 회수 기간, IP 구조 비교
+열관리 기술 보유사:
+  국내: 스테코 / 솔브레인 / 티씨케이 / 한국기계연구원
+  해외: Vertiv / Modine / Asetek / Alfa Laval
+
+AI 인프라 운영사 (잠재 고객 겸 파트너):
+  국내: KT클라우드 / NHN클라우드 / 카카오엔터프라이즈
+  해외: Equinix / Digital Bridge / Iron Mountain
+
+HBM/반도체 연계:
+  SK하이닉스 HBM 열관리 협력 가능성
+  삼성전자 파운드리 패키징 연계
 ```
 
-### Step 4 — AstraChips 연계 분석
+### Step 3 | JV 구조 (AI Infra 특화)
 ```
-- AstraChips HBM Salvage → AI DC 냉각 모듈 재활용 가능성
-- Salvage HBM을 AI Edge DC 메모리로 재포지셔닝
-- JV 파트너에 대한 AstraChips 공급 계약 구조
+권고 구조:
+  기술 JV: 열관리 기술사 + AI 인프라 운영사
+  지분: 기술 기여 55% : 시장 기여 45% (협상 기준)
+  
+수익 모델:
+  - 장비 판매 (CAPEX)
+  - 운영 서비스 (OPEX, 월정액)
+  - 데이터센터 에너지 절감 성과 공유 (Gain-sharing)
+
+IP:
+  - 열관리 특허: JV 공동 소유
+  - 운영 데이터/알고리즘: 운영사 소유
 ```
 
----
+### Step 4 | 리스크 (AI Infra 특화)
+```
+기술 리스크: GPU 설계 변경 시 냉각 솔루션 재설계 필요
+상업 리스크: 하이퍼스케일러 자체 개발(In-house) 가속화
+규제 리스크: 데이터 주권 / 보안 인증 요구
+지정학 리스크: 미-중 AI 칩 수출 제한 → 공급망 불안
+반대 시나리오 (PE-3): AI 붐 과열 → 데이터센터 투자 급감 시 수요 급격 위축
+```
 
-## [OUTPUT]
-
-```json
-{
-  "domain": "AI-DC",
-  "demand_quantification": {
-    "global_ai_dc_investment": {"value": "", "period": "2025-2030", "source": ""},
-    "thermal_density_trend": {"current_W_per_chip": "", "2027_projection": ""},
-    "cooling_capex_share": {"percentage": "", "note": "est."}
-  },
-  "technology_readiness": {
-    "liquid_cooling_TRL": "",
-    "immersion_TRL": "",
-    "jv_timing_recommendation": ""
-  },
-  "jv_options": [
-    {
-      "option": "A",
-      "structure": "",
-      "IRR_target": "",
-      "payback_years": 0,
-      "pros": [],
-      "cons": []
-    }
-  ],
-  "astrachips_linkage": {
-    "salvage_hbm_use_case": "",
-    "supply_contract_structure": "",
-    "revenue_potential": {"value": "", "note": "est."}
-  },
-  "counter_scenario": {
-    "assumption": "AI DC 투자가 2025-2030 지속 성장 가정",
-    "failure_case": "AI 버블 붕괴 또는 에너지 규제 강화 시 수요 급감",
-    "probability": "L-M"
-  },
-  "next_actions": []
-}
+### Step 5 | 실행 로드맵
+```
+2026 Q2: GPU 서버 열관리 PoC 착수 / 파트너 1곳 NDA
+2026 Q3: 파일럿 데이터센터 랙 1개 구축
+2026 Q4: 성능 검증 완료 / JV Term Sheet
+2027 Q1: JV 법인 설립 / 1st 상용 계약
+2027 Q2~: 시리즈A / 해외 하이퍼스케일러 공략
 ```
 
 ---
 
-*Last updated: 2026-04-27 | prompt-engineering-system/prompts/jv_fund/variants/ai_infra_prompt.md*
+## [OUTPUT FORMAT]
+
+```markdown
+## AI 인프라 JV 분석 — {date}
+
+### 핵심 기회
+- GPU 전력 밀도: {현재}W → {2026}W → {2030}W (출처: ...)
+- 냉각 시장 TAM: ${X}bn (CAGR {X}%, {출처})
+
+### 파트너 스코어카드
+| 파트너 | 기술 | 시장 | 재무 | 종합 | 비고 |
+|--------|------|------|------|------|------|
+| ... |
+
+### 권고 JV 구조
+...
+
+### 리스크 + 반대 시나리오
+...
+
+### 90일 실행 계획
+1. ...
+```
+
+---
+
+## [GITHUB COMMANDS]
+
+```bash
+# AI Infra JV Issue 생성
+gh issue create \
+  --repo GilbertKwak/fu-semiconductor-thermal \
+  --title "[JV] AI Infra Thermal Management Partner Screening" \
+  --label "jv-analysis,ai-infra"
+
+# HBM Salvage 연동 분석
+gh issue create \
+  --repo GilbertKwak/HBM-Salvage-Value-Program \
+  --title "[JV-Link] AI DC Thermal + HBM Salvage Synergy Analysis"
+```

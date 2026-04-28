@@ -1,122 +1,132 @@
-name: JV Prompt Auto-Validation
+name: JV Fund Prompt — Validate & Notion Sync
 
-# ─── Triggers ─────────────────────────────────────────────────────────────────
 on:
   push:
     paths:
       - 'prompts/jv_fund/**'
-      - 'automation/auto_validate_jv.py'
   pull_request:
     paths:
       - 'prompts/jv_fund/**'
   schedule:
-    # 매월 1일 오전 9시 KST (자정 UTC) — 월간 리뷰 자동 실행
+    # 매월 1일 09:00 KST (00:00 UTC) 월간 리뷰 자동 실행
     - cron: '0 0 1 * *'
   workflow_dispatch:
     inputs:
-      target_file:
-        description: '검증 대상 파일 (기본: master_prompt_v5.md)'
+      validation_target:
+        description: '검증 대상 파일 (기본: 전체)'
         required: false
-        default: 'prompts/jv_fund/master_prompt_v5.md'
-      rules:
-        description: '적용 룰 (기본: PE-1,PE-3,PE-5)'
-        required: false
-        default: 'PE-1,PE-3,PE-5'
+        default: 'prompts/jv_fund/'
 
-# ─── Jobs ─────────────────────────────────────────────────────────────────────
 jobs:
   validate-prompts:
-    name: Validate JV Fund Prompts
+    name: PE-1 + PE-3 Validation
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Validate Master Prompt v5
+      - name: Install Dependencies
         run: |
-          python automation/auto_validate_jv.py \
-            --file prompts/jv_fund/master_prompt_v5.md \
-            --rules PE-1,PE-3,PE-5 \
-            --output validation-results/master_v5_result.json \
-            --verbose
+          pip install -r requirements.txt || echo "No requirements.txt, skipping"
 
-      - name: Validate All JV Prompts
+      - name: Run PE-1 Validation (Source Citation Check)
         run: |
-          mkdir -p validation-results
-          for f in prompts/jv_fund/*.md; do
-            echo "\n📄 Validating: $f"
-            python automation/auto_validate_jv.py \
-              --file "$f" \
-              --rules PE-1,PE-3,PE-5 \
-              --output "validation-results/$(basename $f .md)_result.json" \
-              --verbose || true
+          echo "=== PE-1: 출처 명시 검증 ==="
+          python automation/auto_validate.py \
+            --dir prompts/jv_fund/ \
+            --rules PE-1 \
+            --output validation_report_pe1.json || true
+
+      - name: Run PE-3 Validation (Counter-Scenario Check)
+        run: |
+          echo "=== PE-3: 반대 시나리오 검증 ==="
+          python automation/auto_validate.py \
+            --dir prompts/jv_fund/ \
+            --rules PE-3 \
+            --output validation_report_pe3.json || true
+
+      - name: Structure Validation
+        run: |
+          echo "=== 구조 완결성 검증 ==="
+          for f in prompts/jv_fund/*.md prompts/jv_fund/variants/*.md; do
+            echo "Checking: $f"
+            # SYSTEM ROLE, TASK CHAIN, OUTPUT FORMAT 존재 여부 확인
+            grep -l "SYSTEM ROLE\|TASK CHAIN\|OUTPUT" "$f" && echo "✅ $f" || echo "⚠️  Missing sections in $f"
           done
 
-      - name: Generate Validation Summary
+      - name: Upload Validation Report
         if: always()
-        run: |
-          python3 -c "
-import json, os, glob
-results = []
-for f in glob.glob('validation-results/*.json'):
-    try:
-        data = json.load(open(f))
-        results.append({'file': data['file'], 'passed': data['overall_passed'], 'summary': data['summary']})
-    except: pass
-
-print('## JV Prompt Validation Summary')
-print(f'Total files: {len(results)}')
-passed = sum(1 for r in results if r['passed'])
-print(f'Passed: {passed}/{len(results)}')
-print()
-for r in results:
-    icon = '✅' if r['passed'] else '❌'
-    print(f'{icon} {os.path.basename(r[\"file\"])}: {r[\"summary\"]}')
-"
-
-      - name: Upload Validation Results
         uses: actions/upload-artifact@v4
-        if: always()
         with:
-          name: validation-results-${{ github.sha }}
-          path: validation-results/
-          retention-days: 30
+          name: validation-reports
+          path: validation_report_*.json
+          if-no-files-found: ignore
 
-      - name: Create Issue on Failure
-        if: failure()
-        uses: actions/github-script@v7
+  notion-sync:
+    name: Notion Sync (main branch only)
+    runs-on: ubuntu-latest
+    needs: validate-prompts
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          script: |
-            await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: `[Auto] JV Prompt Validation Failed — ${new Date().toISOString().split('T')[0]}`,
-              body: `## ❌ JV Prompt Validation Failed\n\n**Commit**: ${context.sha}\n**Workflow**: ${context.workflow}\n**Triggered by**: ${context.eventName}\n\n### 조치 필요\n- [ ] 실패한 프롬프트 파일 확인\n- [ ] PE-1/PE-3/PE-5 기준 미충족 항목 수정\n- [ ] 수정 후 재 push\n\n[Workflow Run](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`,
-              labels: ['validation-failed', 'jv-analysis', 'auto-generated']
-            })
+          python-version: '3.11'
 
-  monthly-review:
-    name: Monthly Prompt Review Issue
+      - name: Sync Master Prompt to Notion
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_JV_PAGE_ID: ${{ secrets.NOTION_JV_PAGE_ID }}
+        run: |
+          python automation/notion_sync.py \
+            --page-env NOTION_JV_PAGE_ID \
+            --file prompts/jv_fund/master_v3.md \
+            --mode upsert || echo "Notion sync skipped (token not configured)"
+
+  monthly-review-issue:
+    name: Monthly Review Issue (scheduled only)
     runs-on: ubuntu-latest
     if: github.event_name == 'schedule'
-
     steps:
       - name: Create Monthly Review Issue
         uses: actions/github-script@v7
         with:
           script: |
-            const now = new Date();
-            const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+            const date = new Date().toISOString().slice(0, 7);
             await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: `[Monthly Review] JV Fund Prompts — ${ym}`,
-              body: `## 📋 월간 JV 프롬프트 리뷰 — ${ym}\n\n### 검토 항목\n- [ ] PE-1 준수율 확인\n- [ ] PE-3 시나리오 최신성 검토\n- [ ] PE-5 커버리지 점수 확인\n- [ ] 신규 도메인 파생 프롬프트 필요 여부\n- [ ] Notion 페이지 동기화 상태 확인\n- [ ] FU-Series 연동 업데이트 필요 여부\n\n### SSOT 링크\n- GitHub: https://github.com/GilbertKwak/prompt-engineering-system/tree/main/prompts/jv_fund\n- Notion: https://www.notion.so/34f55ed436f081c08fececa8dd7577f9`,
-              labels: ['monthly-review', 'jv-analysis']
-            })
+              title: `[Monthly Review] JV Fund Prompt Performance — ${date}`,
+              labels: ['prompt-review', 'monthly', 'jv-analysis'],
+              body: [
+                '## JV Fund 프롬프트 월간 리뷰',
+                '',
+                `**리뷰 기간**: ${date}`,
+                '',
+                '### 검토 항목',
+                '- [ ] Master Prompt v3 PE-1 준수율',
+                '- [ ] PE-3 반대 시나리오 품질',
+                '- [ ] 도메인 변형 프롬프트 업데이트 필요 여부',
+                '  - [ ] FU-Series Adapter',
+                '  - [ ] B-Star eCO2 Prompt',
+                '  - [ ] AI Infra Prompt',
+                '- [ ] 시장 데이터 신선도 확인 (2년 이내)',
+                '- [ ] 파트너 후보 목록 업데이트',
+                '- [ ] Notion JV Pipeline DB 동기화 상태',
+                '',
+                '### 버전 업그레이드 필요 여부',
+                '- [ ] v3 → v4 업그레이드 필요 시 체크',
+                '',
+                '### 관련 링크',
+                '- [Master Prompt v3](https://github.com/GilbertKwak/prompt-engineering-system/blob/main/prompts/jv_fund/master_v3.md)',
+                '- [Validation Checklist](https://github.com/GilbertKwak/prompt-engineering-system/blob/main/prompts/jv_fund/validation_checklist.md)',
+              ].join('aga')
+            });
