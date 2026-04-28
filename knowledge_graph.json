@@ -1,15 +1,21 @@
 {
   "meta": {
-    "generated_at": "2026-04-28T01:44:07.401428+00:00",
-    "version": "1.0",
-    "total_nodes": 42,
-    "total_edges": 60,
+    "generated_at": "2026-04-28T09:30:00.000000+00:00",
+    "version": "2.5",
+    "total_nodes": 52,
+    "total_edges": 72,
     "scan_dirs": [
       "docs",
-      "engines"
+      "engines",
+      "prompts/consulting",
+      "PE-LR",
+      "applied-cases/jv-fund"
     ],
     "sha_enabled": false,
-    "version_extract": false
+    "version_extract": false,
+    "changelog": [
+      "v2.5 (2026-04-28): Phase A~D 신규 노드 10개 + 엣지 12개 추가. PE-CON / PE-LR / PE-IP / PE-JV / PE-NBD / PE-NBD-C06 통합."
+    ]
   },
   "nodes": [
     {
@@ -50,7 +56,7 @@
       "title": "CHANGELOG — 프롬프트 엔진니어링 시스템",
       "status": "unknown",
       "version": "",
-      "date": "2026-04-27",
+      "date": "2026-04-28",
       "tags": [
         "root",
         "meta",
@@ -77,10 +83,7 @@
       "status": "unknown",
       "version": "v1.2",
       "date": "2026-04-26",
-      "tags": [
-        "v1.2",
-        "v1.0"
-      ],
+      "tags": ["v1.2", "v1.0"],
       "notion_url": null,
       "file_size": 3660,
       "sha": null
@@ -104,10 +107,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-26",
-      "tags": [
-        "v1.0",
-        "v1.1"
-      ],
+      "tags": ["v1.0", "v1.1"],
       "notion_url": null,
       "file_size": 3179,
       "sha": null
@@ -119,9 +119,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-26",
-      "tags": [
-        "v2.0"
-      ],
+      "tags": ["v2.0"],
       "notion_url": "https://www.notion.so/profile",
       "file_size": 4104,
       "sha": null
@@ -133,9 +131,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-26",
-      "tags": [
-        "v2.0"
-      ],
+      "tags": ["v2.0"],
       "notion_url": null,
       "file_size": 5708,
       "sha": null
@@ -147,9 +143,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-26",
-      "tags": [
-        "v2.0"
-      ],
+      "tags": ["v2.0"],
       "notion_url": "https://www.notion.so/34955ed436f081149dd6de25dba027d7",
       "file_size": 3156,
       "sha": null
@@ -161,9 +155,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-26",
-      "tags": [
-        "v2.0"
-      ],
+      "tags": ["v2.0"],
       "notion_url": null,
       "file_size": 4035,
       "sha": null
@@ -175,9 +167,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-28",
-      "tags": [
-        "v2.1"
-      ],
+      "tags": ["v2.1"],
       "notion_url": null,
       "file_size": 5896,
       "sha": null
@@ -189,12 +179,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-09",
-      "tags": [
-        "agent1",
-        "RCA-001",
-        "v3.1",
-        "v3.0"
-      ],
+      "tags": ["agent1", "RCA-001", "v3.1", "v3.0"],
       "notion_url": null,
       "file_size": 1465,
       "sha": null
@@ -206,11 +191,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-09",
-      "tags": [
-        "agent2",
-        "v3.1",
-        "v3.0"
-      ],
+      "tags": ["agent2", "v3.1", "v3.0"],
       "notion_url": null,
       "file_size": 1430,
       "sha": null
@@ -222,12 +203,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-09",
-      "tags": [
-        "agent3",
-        "RCA-002",
-        "v3.1",
-        "v3.0"
-      ],
+      "tags": ["agent3", "RCA-002", "v3.1", "v3.0"],
       "notion_url": null,
       "file_size": 1780,
       "sha": null
@@ -239,11 +215,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-09",
-      "tags": [
-        "agent4",
-        "v0.2",
-        "v0.1"
-      ],
+      "tags": ["agent4", "v0.2", "v0.1"],
       "notion_url": null,
       "file_size": 1617,
       "sha": null
@@ -255,13 +227,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-09",
-      "tags": [
-        "agent5",
-        "RCA-004",
-        "v0.3",
-        "v0.2",
-        "v0.1"
-      ],
+      "tags": ["agent5", "RCA-004", "v0.3", "v0.2", "v0.1"],
       "notion_url": null,
       "file_size": 1869,
       "sha": null
@@ -274,19 +240,8 @@
       "version": "",
       "date": "2026-04-09",
       "tags": [
-        "RCA-001",
-        "RCA-002",
-        "RCA-003",
-        "RCA-004",
-        "RCA-005",
-        "v1.5",
-        "v3.1",
-        "v3.0",
-        "v1.4",
-        "v1.3",
-        "v1.2",
-        "v1.1",
-        "v1.0"
+        "RCA-001", "RCA-002", "RCA-003", "RCA-004", "RCA-005",
+        "v1.5", "v3.1", "v3.0", "v1.4", "v1.3", "v1.2", "v1.1", "v1.0"
       ],
       "notion_url": "https://www.notion.so/33955ed436f081cc9f0bd014d631aa7b",
       "file_size": 9501,
@@ -299,10 +254,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-26",
-      "tags": [
-        "v1.0",
-        "v2.0"
-      ],
+      "tags": ["v1.0", "v2.0"],
       "notion_url": "https://www.notion.so/my-integrations",
       "file_size": 6957,
       "sha": null
@@ -314,10 +266,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-26",
-      "tags": [
-        "v1.0",
-        "v2.7"
-      ],
+      "tags": ["v1.0", "v2.7"],
       "notion_url": "https://www.notion.so/my-integrations",
       "file_size": 5027,
       "sha": null
@@ -329,10 +278,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-09",
-      "tags": [
-        "new",
-        "v3.1"
-      ],
+      "tags": ["new", "v3.1"],
       "notion_url": null,
       "file_size": 1425,
       "sha": null
@@ -344,17 +290,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-15",
-      "tags": [
-        "rca-capa",
-        "RCA-001",
-        "RCA-002",
-        "RCA-003",
-        "RCA-004",
-        "v1.2",
-        "v2.0",
-        "v1.1",
-        "v1.0"
-      ],
+      "tags": ["rca-capa", "RCA-001", "RCA-002", "RCA-003", "RCA-004", "v1.2", "v2.0", "v1.1", "v1.0"],
       "notion_url": "https://www.notion.so/33d55ed436f081bfa2aeccc26f344de5",
       "file_size": 5096,
       "sha": null
@@ -366,14 +302,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-18",
-      "tags": [
-        "rca-capa",
-        "RCA-001",
-        "RCA-002",
-        "RCA-003",
-        "RCA-004",
-        "v1.3"
-      ],
+      "tags": ["rca-capa", "RCA-001", "RCA-002", "RCA-003", "RCA-004", "v1.3"],
       "notion_url": "https://www.notion.so/33d55ed436f081bfa2aeccc26f344de5",
       "file_size": 2137,
       "sha": null
@@ -385,12 +314,7 @@
       "status": "resolved",
       "version": "",
       "date": "2026-04-06",
-      "tags": [
-        "rca-capa",
-        "RCA-001",
-        "RCA-002",
-        "v3.0"
-      ],
+      "tags": ["rca-capa", "RCA-001", "RCA-002", "v3.0"],
       "notion_url": "https://www.notion.so/33d55ed436f081c593ede0347d2b581a",
       "file_size": 1636,
       "sha": null
@@ -402,13 +326,7 @@
       "status": "resolved",
       "version": "",
       "date": "2026-04-06",
-      "tags": [
-        "rca-capa",
-        "RCA-002",
-        "RCA-001",
-        "RCA-003",
-        "v3.1"
-      ],
+      "tags": ["rca-capa", "RCA-002", "RCA-001", "RCA-003", "v3.1"],
       "notion_url": "https://www.notion.so/33d55ed436f081d0a7a1d4a2a8de4a8f",
       "file_size": 1498,
       "sha": null
@@ -420,13 +338,7 @@
       "status": "resolved",
       "version": "",
       "date": "2026-04-06",
-      "tags": [
-        "rca-capa",
-        "RCA-003",
-        "RCA-002",
-        "RCA-004",
-        "v3.1"
-      ],
+      "tags": ["rca-capa", "RCA-003", "RCA-002", "RCA-004", "v3.1"],
       "notion_url": "https://www.notion.so/33d55ed436f0817e83e0f3bc0f168316",
       "file_size": 1742,
       "sha": null
@@ -438,12 +350,7 @@
       "status": "resolved",
       "version": "",
       "date": "2026-04-06",
-      "tags": [
-        "rca-capa",
-        "RCA-004",
-        "RCA-003",
-        "v3.1"
-      ],
+      "tags": ["rca-capa", "RCA-004", "RCA-003", "v3.1"],
       "notion_url": "https://www.notion.so/33d55ed436f08195bd49cdd19f062644",
       "file_size": 1516,
       "sha": null
@@ -455,18 +362,7 @@
       "status": "resolved",
       "version": "",
       "date": "2026-04-09",
-      "tags": [
-        "rca-capa",
-        "RCA-001",
-        "RCA-002",
-        "RCA-003",
-        "RCA-004",
-        "v2.1",
-        "v3.0",
-        "v3.1",
-        "v2.0",
-        "v1.0"
-      ],
+      "tags": ["rca-capa", "RCA-001", "RCA-002", "RCA-003", "RCA-004", "v2.1", "v3.0", "v3.1", "v2.0", "v1.0"],
       "notion_url": "https://www.notion.so/33d55ed436f081bfa2aeccc26f344de5",
       "file_size": 6445,
       "sha": null
@@ -478,16 +374,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-15",
-      "tags": [
-        "rca-capa",
-        "RCA-001",
-        "RCA-002",
-        "RCA-003",
-        "RCA-004",
-        "v1.0",
-        "v1.1",
-        "v2.0"
-      ],
+      "tags": ["rca-capa", "RCA-001", "RCA-002", "RCA-003", "RCA-004", "v1.0", "v1.1", "v2.0"],
       "notion_url": null,
       "file_size": 4254,
       "sha": null
@@ -499,14 +386,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-10",
-      "tags": [
-        "report",
-        "v1.6",
-        "v1.0",
-        "v1.1",
-        "v1.5",
-        "v1.7"
-      ],
+      "tags": ["report", "v1.6", "v1.0", "v1.1", "v1.5", "v1.7"],
       "notion_url": "https://www.notion.so/33955ed436f081cc9f0bd014d631aa7b",
       "file_size": 7740,
       "sha": null
@@ -518,9 +398,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-09",
-      "tags": [
-        "support"
-      ],
+      "tags": ["support"],
       "notion_url": null,
       "file_size": 1271,
       "sha": null
@@ -532,10 +410,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-05",
-      "tags": [
-        "PE-1_auto-refinement",
-        "v1.1"
-      ],
+      "tags": ["PE-1_auto-refinement", "v1.1"],
       "notion_url": "https://www.notion.so/33955ed436f081cc9f0bd014d631aa7b",
       "file_size": 1747,
       "sha": null
@@ -547,10 +422,7 @@
       "status": "unknown",
       "version": "",
       "date": "",
-      "tags": [
-        "PE-1_auto-refinement",
-        "v1.1"
-      ],
+      "tags": ["PE-1_auto-refinement", "v1.1"],
       "notion_url": null,
       "file_size": 1403,
       "sha": null
@@ -562,11 +434,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-10",
-      "tags": [
-        "PE-1_auto-refinement",
-        "v1.4",
-        "v1.3"
-      ],
+      "tags": ["PE-1_auto-refinement", "v1.4", "v1.3"],
       "notion_url": null,
       "file_size": 2031,
       "sha": null
@@ -578,10 +446,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-05",
-      "tags": [
-        "PE-2_auto-proliferation",
-        "v1.1"
-      ],
+      "tags": ["PE-2_auto-proliferation", "v1.1"],
       "notion_url": "https://www.notion.so/33955ed436f081cc9f0bd014d631aa7b",
       "file_size": 1468,
       "sha": null
@@ -593,10 +458,7 @@
       "status": "unknown",
       "version": "",
       "date": "",
-      "tags": [
-        "PE-2_auto-proliferation",
-        "v1.1"
-      ],
+      "tags": ["PE-2_auto-proliferation", "v1.1"],
       "notion_url": null,
       "file_size": 1314,
       "sha": null
@@ -608,11 +470,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-10",
-      "tags": [
-        "PE-2_auto-proliferation",
-        "v1.4",
-        "v1.3"
-      ],
+      "tags": ["PE-2_auto-proliferation", "v1.4", "v1.3"],
       "notion_url": null,
       "file_size": 2583,
       "sha": null
@@ -624,10 +482,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-05",
-      "tags": [
-        "PE-3_auto-validation",
-        "v1.1"
-      ],
+      "tags": ["PE-3_auto-validation", "v1.1"],
       "notion_url": "https://www.notion.so/33955ed436f081cc9f0bd014d631aa7b",
       "file_size": 1414,
       "sha": null
@@ -639,10 +494,7 @@
       "status": "unknown",
       "version": "",
       "date": "",
-      "tags": [
-        "PE-3_auto-validation",
-        "v1.1"
-      ],
+      "tags": ["PE-3_auto-validation", "v1.1"],
       "notion_url": null,
       "file_size": 1161,
       "sha": null
@@ -654,9 +506,7 @@
       "status": "unknown",
       "version": "",
       "date": "",
-      "tags": [
-        "PE-3_auto-validation"
-      ],
+      "tags": ["PE-3_auto-validation"],
       "notion_url": null,
       "file_size": 1874,
       "sha": null
@@ -668,11 +518,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-10",
-      "tags": [
-        "PE-3_auto-validation",
-        "v1.4",
-        "v1.3"
-      ],
+      "tags": ["PE-3_auto-validation", "v1.4", "v1.3"],
       "notion_url": null,
       "file_size": 2843,
       "sha": null
@@ -684,9 +530,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-26",
-      "tags": [
-        "PE-7_ai-automation-design"
-      ],
+      "tags": ["PE-7_ai-automation-design"],
       "notion_url": null,
       "file_size": 1349,
       "sha": null
@@ -698,10 +542,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-21",
-      "tags": [
-        "PE-7_ai-automation-design",
-        "v1.0"
-      ],
+      "tags": ["PE-7_ai-automation-design", "v1.0"],
       "notion_url": "https://www.notion.so/34955ed436f081149dd6de25dba027d7",
       "file_size": 2401,
       "sha": null
@@ -713,315 +554,221 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-21",
-      "tags": [
-        "PE-7_ai-automation-design",
-        "v1.0"
-      ],
+      "tags": ["PE-7_ai-automation-design", "v1.0"],
       "notion_url": "https://www.notion.so/34955ed436f081149dd6de25dba027d7",
       "file_size": 3237,
+      "sha": null
+    },
+    {
+      "id": "prompts/consulting/README.md",
+      "type": "prompt_library",
+      "title": "🏢 PE-CON · 컨설팅 전략 프롬프트 라이브러리 v1.0",
+      "status": "active",
+      "version": "v1.0",
+      "date": "2026-04-28",
+      "tags": ["PE-CON", "consulting", "C-001", "C-002", "C-003", "C-004", "C-005", "Bain", "v1.0", "Phase-D"],
+      "notion_url": "https://www.notion.so/34f55ed436f08161a3b7e6fcca834ea6",
+      "file_size": 8321,
+      "sha": "8321dc23df17fbe32ccd4684f46b35814c037ec9",
+      "pe3_score": 90,
+      "domain": ["중국시장리스크", "경쟁전략", "미국시장진입", "컨설팅방법론"],
+      "workspace_ssot": "T-04",
+      "e0n_resolved": ["E-07"]
+    },
+    {
+      "id": "PE-LR/README.md",
+      "type": "prompt_library",
+      "title": "⚖️ PE-LR · 법적 리스크 분석 프롬프트 라이브러리 v1.0",
+      "status": "active",
+      "version": "v1.0",
+      "date": "2026-04-28",
+      "tags": ["PE-LR", "legal-risk", "LR-01", "LR-02", "LR-03", "LR-04", "LR-05", "LR-06", "LR-07", "LR-08", "LR-09", "LR-10", "v1.0"],
+      "notion_url": "https://www.notion.so/35055ed436f081a4a0daf6810200670a",
+      "file_size": 0,
+      "sha": null,
+      "pe3_score_target": 92,
+      "domain": ["초국경법적리스크", "한국×대만비교법", "국내법쟁점", "국제규제"],
+      "workspace_ssot": "T-09-C14"
+    },
+    {
+      "id": "prompts/pe_ip/README.md",
+      "type": "prompt_library",
+      "title": "🧬 PE-IP · Integrated Prompt Library v1.3",
+      "status": "active",
+      "version": "v1.3",
+      "date": "2026-04-28",
+      "tags": ["PE-IP", "integrated", "pe-ip-index", "pe-ip-add", "pe-ip-validate", "v1.3", "Phase-C"],
+      "notion_url": "https://www.notion.so/35055ed436f08159aaa8d0817e76ba18",
+      "file_size": 0,
+      "sha": null,
+      "commands": ["pe-ip-index", "pe-ip-add", "pe-ip-validate"],
+      "workspace_ssot": "T-04"
+    },
+    {
+      "id": "applied-cases/jv-fund/master_v3.md",
+      "type": "prompt_library",
+      "title": "💼 PE-JV · Global JV Fund Master Prompt v4.1",
+      "status": "active",
+      "version": "v4.1",
+      "date": "2026-04-28",
+      "tags": ["PE-JV", "jv-fund", "master", "v4.1", "v3.0", "Phase-B"],
+      "notion_url": "https://www.notion.so/34f55ed436f08150b07dc7f5f800311b",
+      "file_size": 0,
+      "sha": null,
+      "pe3_verified": true,
+      "workspace_ssot": "T-12"
+    },
+    {
+      "id": "applied-cases/jv-fund/PE-NBD/README.md",
+      "type": "prompt_library",
+      "title": "🚀 PE-NBD · 신사업 개발 마스터 프롬프트",
+      "status": "active",
+      "version": "v1.0",
+      "date": "2026-04-28",
+      "tags": ["PE-NBD", "new-business", "v1.0"],
+      "notion_url": "https://www.notion.so/35055ed436f08164a92fc6e42d0accb6",
+      "file_size": 0,
+      "sha": null,
+      "pe3_verified": true,
+      "workspace_ssot": "T-12"
+    },
+    {
+      "id": "applied-cases/jv-fund/legal-risk/PE-NBD-C06_v1.0.md",
+      "type": "prompt_library",
+      "title": "⚖️ PE-NBD-C06 · 법적 리스크 프롬프트 라이브러리 v1.0",
+      "status": "active",
+      "version": "v1.0",
+      "date": "2026-04-28",
+      "tags": ["PE-NBD-C06", "legal-risk", "LR-01", "LR-08", "HBM", "sCO2", "AI-Infra", "v1.0"],
+      "notion_url": "https://www.notion.so/35055ed436f08164a92fc6e42d0accb6",
+      "file_size": 0,
+      "sha": null,
+      "domain": ["HBM반도체", "sCO2-B★", "AI-Infra"],
+      "workspace_ssot": "T-12"
+    },
+    {
+      "id": "applied-cases/jv-fund/validation_checklist.md",
+      "type": "doc",
+      "title": "PE-JV PE-1/PE-3 검증 체크리스트",
+      "status": "active",
+      "version": "v1.0",
+      "date": "2026-04-28",
+      "tags": ["PE-JV", "PE-1", "PE-3", "validation", "v1.0"],
+      "notion_url": null,
+      "file_size": 0,
+      "sha": null
+    },
+    {
+      "id": "applied-cases/jv-fund/variants/variant_A_fu_series.md",
+      "type": "prompt_variant",
+      "title": "JV Fund Variant A — FU Series 연동 특화",
+      "status": "active",
+      "version": "v1.0",
+      "date": "2026-04-28",
+      "tags": ["PE-JV", "variant", "FU-Series", "v1.0"],
+      "notion_url": null,
+      "file_size": 0,
+      "sha": null
+    },
+    {
+      "id": "applied-cases/jv-fund/variants/variant_B_bstar_eco2.md",
+      "type": "prompt_variant",
+      "title": "JV Fund Variant B — B-Star sCO2 전용",
+      "status": "active",
+      "version": "v1.0",
+      "date": "2026-04-28",
+      "tags": ["PE-JV", "variant", "B-Star", "sCO2", "v1.0"],
+      "notion_url": null,
+      "file_size": 0,
+      "sha": null
+    },
+    {
+      "id": "applied-cases/jv-fund/variants/variant_C_ai_infra.md",
+      "type": "prompt_variant",
+      "title": "JV Fund Variant C — AI Infrastructure 전용",
+      "status": "active",
+      "version": "v1.0",
+      "date": "2026-04-28",
+      "tags": ["PE-JV", "variant", "AI-Infra", "v1.0"],
+      "notion_url": null,
+      "file_size": 0,
       "sha": null
     }
   ],
   "edges": [
-    {
-      "source": "docs/agent1/README.md",
-      "target": "docs/index.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/agent1/README.md",
-      "target": "docs/agent3/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/agent1/README.md",
-      "target": "docs/agent5/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/agent1/README.md",
-      "target": "docs/rca-capa/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/agent2/README.md",
-      "target": "docs/index.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/agent2/README.md",
-      "target": "docs/agent1/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/agent2/README.md",
-      "target": "docs/agent3/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/agent2/README.md",
-      "target": "docs/rca-capa/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/agent3/README.md",
-      "target": "docs/index.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/agent3/README.md",
-      "target": "docs/agent1/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/agent3/README.md",
-      "target": "docs/rca-capa/RCA-002.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/agent4/README.md",
-      "target": "applied-cases/2026-04-05_upgrade-execution.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/agent4/README.md",
-      "target": "docs/index.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/agent4/README.md",
-      "target": "docs/agent3/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/agent4/README.md",
-      "target": "docs/agent5/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/agent5/README.md",
-      "target": "docs/index.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/agent5/README.md",
-      "target": "docs/rca-capa/RCA-004.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/agent5/README.md",
-      "target": "workflows/3engine_pipeline.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/index.md",
-      "target": "README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/index.md",
-      "target": "CHANGELOG.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/index.md",
-      "target": "docs/new/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/index.md",
-      "target": "docs/support/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/index.md",
-      "target": "dashboard/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/index.md",
-      "target": "docs/agent1/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/index.md",
-      "target": "docs/agent2/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/index.md",
-      "target": "docs/agent3/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/index.md",
-      "target": "docs/agent4/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/index.md",
-      "target": "docs/agent5/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/index.md",
-      "target": "docs/rca-capa/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/index.md",
-      "target": "docs/rca-capa/RCA-001.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/index.md",
-      "target": "docs/rca-capa/RCA-002.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/index.md",
-      "target": "docs/rca-capa/RCA-003.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/index.md",
-      "target": "docs/rca-capa/RCA-004.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/index.md",
-      "target": "dashboard/metrics.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/new/README.md",
-      "target": "docs/index.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/new/README.md",
-      "target": "CHANGELOG.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/new/README.md",
-      "target": "dashboard/metrics.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/new/README.md",
-      "target": "docs/rca-capa/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/rca-capa/RCA-001.md",
-      "target": "docs/rca-capa/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/rca-capa/RCA-001.md",
-      "target": "docs/rca-capa/RCA-002.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/rca-capa/RCA-002.md",
-      "target": "docs/rca-capa/RCA-001.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/rca-capa/RCA-002.md",
-      "target": "docs/rca-capa/RCA-003.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/rca-capa/RCA-003.md",
-      "target": "docs/rca-capa/RCA-002.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/rca-capa/RCA-003.md",
-      "target": "docs/rca-capa/RCA-004.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/rca-capa/RCA-004.md",
-      "target": "docs/rca-capa/RCA-003.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/rca-capa/RCA-004.md",
-      "target": "docs/rca-capa/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/rca-capa/README.md",
-      "target": "docs/index.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/rca-capa/README.md",
-      "target": "docs/rca-capa/RCA-001.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/rca-capa/README.md",
-      "target": "docs/rca-capa/RCA-002.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/rca-capa/README.md",
-      "target": "docs/rca-capa/RCA-003.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/rca-capa/README.md",
-      "target": "docs/rca-capa/RCA-004.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/rca-capa/README.md",
-      "target": "CHANGELOG.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/support/README.md",
-      "target": "docs/index.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/support/README.md",
-      "target": "docs/agent3/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "engines/PE-1_auto-refinement/upgrade_v1.4.md",
-      "target": "engines/PE-2_auto-proliferation/upgrade_v1.4.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "engines/PE-1_auto-refinement/upgrade_v1.4.md",
-      "target": "engines/PE-3_auto-validation/upgrade_v1.4.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "engines/PE-2_auto-proliferation/upgrade_v1.4.md",
-      "target": "engines/PE-1_auto-refinement/upgrade_v1.4.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "engines/PE-2_auto-proliferation/upgrade_v1.4.md",
-      "target": "engines/PE-3_auto-validation/upgrade_v1.4.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "engines/PE-3_auto-validation/upgrade_v1.4.md",
-      "target": "engines/PE-1_auto-refinement/upgrade_v1.4.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "engines/PE-3_auto-validation/upgrade_v1.4.md",
-      "target": "engines/PE-2_auto-proliferation/upgrade_v1.4.md",
-      "relation": "links_to"
-    }
+    { "source": "docs/agent1/README.md", "target": "docs/index.md", "relation": "links_to" },
+    { "source": "docs/agent1/README.md", "target": "docs/agent3/README.md", "relation": "links_to" },
+    { "source": "docs/agent1/README.md", "target": "docs/agent5/README.md", "relation": "links_to" },
+    { "source": "docs/agent1/README.md", "target": "docs/rca-capa/README.md", "relation": "links_to" },
+    { "source": "docs/agent2/README.md", "target": "docs/index.md", "relation": "links_to" },
+    { "source": "docs/agent2/README.md", "target": "docs/agent1/README.md", "relation": "links_to" },
+    { "source": "docs/agent2/README.md", "target": "docs/agent3/README.md", "relation": "links_to" },
+    { "source": "docs/agent2/README.md", "target": "docs/rca-capa/README.md", "relation": "links_to" },
+    { "source": "docs/agent3/README.md", "target": "docs/index.md", "relation": "links_to" },
+    { "source": "docs/agent3/README.md", "target": "docs/agent1/README.md", "relation": "links_to" },
+    { "source": "docs/agent3/README.md", "target": "docs/rca-capa/RCA-002.md", "relation": "links_to" },
+    { "source": "docs/agent4/README.md", "target": "applied-cases/2026-04-05_upgrade-execution.md", "relation": "links_to" },
+    { "source": "docs/agent4/README.md", "target": "docs/index.md", "relation": "links_to" },
+    { "source": "docs/agent4/README.md", "target": "docs/agent3/README.md", "relation": "links_to" },
+    { "source": "docs/agent4/README.md", "target": "docs/agent5/README.md", "relation": "links_to" },
+    { "source": "docs/agent5/README.md", "target": "docs/index.md", "relation": "links_to" },
+    { "source": "docs/agent5/README.md", "target": "docs/rca-capa/RCA-004.md", "relation": "links_to" },
+    { "source": "docs/agent5/README.md", "target": "workflows/3engine_pipeline.md", "relation": "links_to" },
+    { "source": "docs/index.md", "target": "README.md", "relation": "links_to" },
+    { "source": "docs/index.md", "target": "CHANGELOG.md", "relation": "links_to" },
+    { "source": "docs/index.md", "target": "docs/new/README.md", "relation": "links_to" },
+    { "source": "docs/index.md", "target": "docs/support/README.md", "relation": "links_to" },
+    { "source": "docs/index.md", "target": "dashboard/README.md", "relation": "links_to" },
+    { "source": "docs/index.md", "target": "docs/agent1/README.md", "relation": "links_to" },
+    { "source": "docs/index.md", "target": "docs/agent2/README.md", "relation": "links_to" },
+    { "source": "docs/index.md", "target": "docs/agent3/README.md", "relation": "links_to" },
+    { "source": "docs/index.md", "target": "docs/agent4/README.md", "relation": "links_to" },
+    { "source": "docs/index.md", "target": "docs/agent5/README.md", "relation": "links_to" },
+    { "source": "docs/index.md", "target": "docs/rca-capa/README.md", "relation": "links_to" },
+    { "source": "docs/index.md", "target": "docs/rca-capa/RCA-001.md", "relation": "links_to" },
+    { "source": "docs/index.md", "target": "docs/rca-capa/RCA-002.md", "relation": "links_to" },
+    { "source": "docs/index.md", "target": "docs/rca-capa/RCA-003.md", "relation": "links_to" },
+    { "source": "docs/index.md", "target": "docs/rca-capa/RCA-004.md", "relation": "links_to" },
+    { "source": "docs/index.md", "target": "dashboard/metrics.md", "relation": "links_to" },
+    { "source": "docs/new/README.md", "target": "docs/index.md", "relation": "links_to" },
+    { "source": "docs/new/README.md", "target": "CHANGELOG.md", "relation": "links_to" },
+    { "source": "docs/new/README.md", "target": "dashboard/metrics.md", "relation": "links_to" },
+    { "source": "docs/new/README.md", "target": "docs/rca-capa/README.md", "relation": "links_to" },
+    { "source": "docs/rca-capa/RCA-001.md", "target": "docs/rca-capa/README.md", "relation": "links_to" },
+    { "source": "docs/rca-capa/RCA-001.md", "target": "docs/rca-capa/RCA-002.md", "relation": "links_to" },
+    { "source": "docs/rca-capa/RCA-002.md", "target": "docs/rca-capa/RCA-001.md", "relation": "links_to" },
+    { "source": "docs/rca-capa/RCA-002.md", "target": "docs/rca-capa/RCA-003.md", "relation": "links_to" },
+    { "source": "docs/rca-capa/RCA-003.md", "target": "docs/rca-capa/RCA-002.md", "relation": "links_to" },
+    { "source": "docs/rca-capa/RCA-003.md", "target": "docs/rca-capa/RCA-004.md", "relation": "links_to" },
+    { "source": "docs/rca-capa/RCA-004.md", "target": "docs/rca-capa/RCA-003.md", "relation": "links_to" },
+    { "source": "docs/rca-capa/RCA-004.md", "target": "docs/rca-capa/README.md", "relation": "links_to" },
+    { "source": "docs/rca-capa/README.md", "target": "docs/index.md", "relation": "links_to" },
+    { "source": "docs/rca-capa/README.md", "target": "docs/rca-capa/RCA-001.md", "relation": "links_to" },
+    { "source": "docs/rca-capa/README.md", "target": "docs/rca-capa/RCA-002.md", "relation": "links_to" },
+    { "source": "docs/rca-capa/README.md", "target": "docs/rca-capa/RCA-003.md", "relation": "links_to" },
+    { "source": "docs/rca-capa/README.md", "target": "docs/rca-capa/RCA-004.md", "relation": "links_to" },
+    { "source": "docs/rca-capa/README.md", "target": "CHANGELOG.md", "relation": "links_to" },
+    { "source": "docs/support/README.md", "target": "docs/index.md", "relation": "links_to" },
+    { "source": "docs/support/README.md", "target": "docs/agent3/README.md", "relation": "links_to" },
+    { "source": "engines/PE-1_auto-refinement/upgrade_v1.4.md", "target": "engines/PE-2_auto-proliferation/upgrade_v1.4.md", "relation": "links_to" },
+    { "source": "engines/PE-1_auto-refinement/upgrade_v1.4.md", "target": "engines/PE-3_auto-validation/upgrade_v1.4.md", "relation": "links_to" },
+    { "source": "engines/PE-2_auto-proliferation/upgrade_v1.4.md", "target": "engines/PE-1_auto-refinement/upgrade_v1.4.md", "relation": "links_to" },
+    { "source": "engines/PE-2_auto-proliferation/upgrade_v1.4.md", "target": "engines/PE-3_auto-validation/upgrade_v1.4.md", "relation": "links_to" },
+    { "source": "engines/PE-3_auto-validation/upgrade_v1.4.md", "target": "engines/PE-1_auto-refinement/upgrade_v1.4.md", "relation": "links_to" },
+    { "source": "engines/PE-3_auto-validation/upgrade_v1.4.md", "target": "engines/PE-2_auto-proliferation/upgrade_v1.4.md", "relation": "links_to" },
+    { "source": "prompts/consulting/README.md", "target": "engines/PE-7_ai-automation-design/README.md", "relation": "validated_by", "note": "PE-7 자동화 파이프라인 연계" },
+    { "source": "prompts/consulting/README.md", "target": "engines/PE-3_auto-validation/README.md", "relation": "validated_by", "note": "PE-3 5차원 검증 기준 적용 (score≥90)" },
+    { "source": "prompts/consulting/README.md", "target": "prompts/pe_ip/README.md", "relation": "indexed_by", "note": "PE-IP 마스터 라이브러리에 C-시리즈 등록" },
+    { "source": "prompts/consulting/README.md", "target": "README.md", "relation": "registered_in", "note": "Workspace SSOT T-04 등록" },
+    { "source": "PE-LR/README.md", "target": "applied-cases/jv-fund/master_v3.md", "relation": "extends", "note": "PE-JV 법적 리스크 분석 연계" },
+    { "source": "PE-LR/README.md", "target": "applied-cases/jv-fund/PE-NBD/README.md", "relation": "extends", "note": "PE-NBD 신사업 리스크 연계" },
+    { "source": "prompts/pe_ip/README.md", "target": "engines/PE-7_ai-automation-design/README.md", "relation": "automated_by", "note": "PE-IP 자동화 파이프라인 연계" },
+    { "source": "applied-cases/jv-fund/master_v3.md", "target": "applied-cases/jv-fund/PE-NBD/README.md", "relation": "parent_of", "note": "PE-JV → PE-NBD 파생 관계" },
+    { "source": "applied-cases/jv-fund/legal-risk/PE-NBD-C06_v1.0.md", "target": "applied-cases/jv-fund/master_v3.md", "relation": "sub_module_of" },
+    { "source": "applied-cases/jv-fund/legal-risk/PE-NBD-C06_v1.0.md", "target": "PE-LR/README.md", "relation": "derived_from", "note": "PE-LR 법적 리스크 체계 기반 도메인 특화" },
+    { "source": "applied-cases/jv-fund/validation_checklist.md", "target": "applied-cases/jv-fund/master_v3.md", "relation": "validates" },
+    { "source": "applied-cases/jv-fund/variants/variant_A_fu_series.md", "target": "applied-cases/jv-fund/master_v3.md", "relation": "variant_of" },
+    { "source": "applied-cases/jv-fund/variants/variant_B_bstar_eco2.md", "target": "applied-cases/jv-fund/master_v3.md", "relation": "variant_of" },
+    { "source": "applied-cases/jv-fund/variants/variant_C_ai_infra.md", "target": "applied-cases/jv-fund/master_v3.md", "relation": "variant_of" }
   ]
 }
