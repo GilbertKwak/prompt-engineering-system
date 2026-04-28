@@ -1,7 +1,7 @@
-# 🧠 MASTER COMMANDS v1.0 — Gilbert Prompt Engineering System
+# 🧠 MASTER COMMANDS v1.1 — Gilbert Prompt Engineering System
 
-> **Version**: 1.0 | **Created**: 2026-04-28 | **Author**: Gilbert Kwak  
-> **Scope**: T-09 전 도메인 통합 명령어 허브 (PE-11, PE-MEM, PE-EDU, PE-ICD, PE-NBD, PE-MFG, PE-JV, PE-FIN, PE-MKT, PE-7)
+> **Version**: 1.1 | **Updated**: 2026-04-28 | **Author**: Gilbert Kwak  
+> **Scope**: T-09 전 도메인 통합 명령어 허브 (PE-11, PE-MEM, PE-EDU, PE-ICD, PE-NBD, PE-MFG, PE-JV, PE-FIN, PE-MKT, PE-7, **PE-IP**)
 
 ---
 
@@ -62,6 +62,7 @@ T-09 하위 [도메인코드] 라이브러리에서
 | PE-FIN | 투자전략 | [링크](https://www.notion.so/34f55ed436f081c2ad05df1dc11e0ae7) |
 | PE-MKT | 마케팅전략 | [링크](https://www.notion.so/34f55ed436f081b1bb25ed8c47bcb595) |
 | PE-7 | AI 자동화 설계 | [링크](https://www.notion.so/34955ed436f081149dd6de25dba027d7) |
+| **PE-IP** | **통합 마스터 프롬프트 라이브러리** | [링크](https://www.notion.so/35055ed436f08159aaa8d0817e76ba18) |
 
 ---
 
@@ -137,6 +138,102 @@ python dashboard/update_metrics.py --input results/ --output dashboard/metrics.m
 
 ---
 
+## 🧬 CMD-09 · PE-IP 라이브러리 관리
+
+> **대상**: PE-IP Integrated Prompt Library (통합 마스터 프롬프트 라이브러리)  
+> **Notion**: https://www.notion.so/35055ed436f08159aaa8d0817e76ba18  
+> **GitHub 경로**: `PE-IP/`
+
+```
+[pe-ip-index] PE-IP 라이브러리에 등록된 전체 프롬프트 목록을 조회해줘.
+  — 코드 / 라이브러리명 / 도메인 / PE-3 점수 / GitHub 경로 / 상태 테이블 형식으로 출력.
+
+[pe-ip-add] PE-IP 라이브러리에 [프롬프트명 or 코드] 를 신규 추가해줘.
+  — PE-3 자동검증(88+) 완료 후 PE-IP 마스터 인덱스 테이블에 행 추가,
+    GitHub PE-IP/ 폴더에 .md 파일 생성, knowledge_graph.json 노드/엣지 갱신까지 완료해줘.
+
+[pe-ip-validate] PE-IP 라이브러리 전체를 PE-1(자동개선) + PE-3(자동검증) 기준으로 일괄 검증해줘.
+  — 점수 미달(88 미만) 항목은 E-09 태깅 후 PE-1 자동개선 루프 즉시 트리거.
+    결과를 Before/After 비교표와 E-0N 오류 코드 목록으로 출력해줘.
+```
+
+### Shell Alias — PE-IP 전용 3종
+
+```bash
+PE_HOME="~/workspace/prompt-engineering-system"
+
+# pe-ip-index: PE-IP 전체 목록 조회
+alias pe-ip-index='python $PE_HOME/automation/pe_ip_indexer.py --list-all'
+
+# pe-ip-add: PE-IP 신규 항목 추가 (사용법: pe-ip-add --code PE-XX --name "라이브러리명")
+alias pe-ip-add='python $PE_HOME/automation/pe_ip_indexer.py --add'
+
+# pe-ip-validate: PE-IP 전체 PE-1 + PE-3 일괄 검증
+alias pe-ip-validate='python $PE_HOME/automation/auto_validate.py --target PE-IP --rules PE-1,PE-3 --threshold 88 --e09-trigger'
+```
+
+### 실행 예시
+
+```bash
+# 1) 전체 목록 조회
+pe-ip-index
+# 출력: PE-IP 마스터 인덱스 테이블 (코드·도메인·PE-3 점수·상태)
+
+# 2) 신규 항목 추가
+pe-ip-add --code PE-RISK --name "Risk Management Prompt Library v1.0" \
+          --domain "리스크관리" --path "PE-IP/pe_risk_v1.0.md"
+# 출력: 추가 완료 + knowledge_graph 노드 수 갱신 확인
+
+# 3) 전체 검증 실행
+pe-ip-validate --verbose
+# 출력: Before/After PE-3 점수 비교표 + E-09 트리거 목록
+
+# 4) 검증 후 동기화
+pe-ip-validate && pe-sync-up
+```
+
+### pe_ip_indexer.py 핵심 구조
+
+```python
+# automation/pe_ip_indexer.py
+import json, argparse
+from pathlib import Path
+
+PE_IP_INDEX = Path("PE-IP/index.json")
+
+def list_all():
+    """PE-IP 전체 목록 조회"""
+    index = json.loads(PE_IP_INDEX.read_text())
+    print(f"{'코드':<10} {'라이브러리명':<40} {'PE-3':>6} {'상태':<10}")
+    print("-" * 75)
+    for item in index["libraries"]:
+        print(f"{item['code']:<10} {item['name']:<40} {item['pe3_score']:>6} {item['status']:<10}")
+
+def add_library(code: str, name: str, domain: str, path: str):
+    """PE-IP 신규 항목 추가"""
+    index = json.loads(PE_IP_INDEX.read_text())
+    new_entry = {
+        "code": code, "name": name, "domain": domain,
+        "path": path, "pe3_score": None, "status": "Draft",
+        "added": "2026-04-28"
+    }
+    index["libraries"].append(new_entry)
+    PE_IP_INDEX.write_text(json.dumps(index, ensure_ascii=False, indent=2))
+    print(f"[OK] {code} 추가 완료 — 총 {len(index['libraries'])}개")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--list-all", action="store_true")
+    parser.add_argument("--add", action="store_true")
+    parser.add_argument("--code"); parser.add_argument("--name")
+    parser.add_argument("--domain"); parser.add_argument("--path")
+    args = parser.parse_args()
+    if args.list_all: list_all()
+    elif args.add: add_library(args.code, args.name, args.domain, args.path)
+```
+
+---
+
 ## 🏃 Shell Alias 등록 (전체 시스템)
 
 ```bash
@@ -163,6 +260,12 @@ alias pe-graph='python $PE_HOME/scripts/update_knowledge_graph.py'
 alias pe-metrics='cat $PE_HOME/dashboard/metrics.md'
 alias pe-metrics-update='python $PE_HOME/dashboard/update_metrics.py'
 
+# ── PE-IP 전용 (v1.1 신규) ──────────────────────────────────────────────
+alias pe-ip-index='python $PE_HOME/automation/pe_ip_indexer.py --list-all'
+alias pe-ip-add='python $PE_HOME/automation/pe_ip_indexer.py --add'
+alias pe-ip-validate='python $PE_HOME/automation/auto_validate.py --target PE-IP --rules PE-1,PE-3 --threshold 88 --e09-trigger'
+# ────────────────────────────────────────────────────────────────────────
+
 # 적용
 source ~/.bashrc
 ```
@@ -181,6 +284,9 @@ source ~/.bashrc
 | 파이프라인 상태 | 최근 5회 실행 결과 | `pe-status` |
 | 지식 그래프 업데이트 | knowledge_graph 재생성 | `pe-graph` |
 | 메트릭스 확인 | PE-3 점수 대시보드 | `pe-metrics` |
+| **PE-IP 전체 목록** | 통합 라이브러리 인덱스 조회 | `pe-ip-index` |
+| **PE-IP 항목 추가** | 신규 프롬프트 라이브러리 등록 | `pe-ip-add --code ... --name ...` |
+| **PE-IP 일괄 검증** | PE-1+PE-3 기준 전체 검증 + E-09 자동 트리거 | `pe-ip-validate` |
 
 ---
 
@@ -190,6 +296,7 @@ source ~/.bashrc
 |------|-----|
 | **T-09 Mother Page** | https://www.notion.so/34a55ed436f0814d9cffe6a2f0816e29 |
 | **Master Hub (PE Lab)** | https://www.notion.so/33955ed436f081cc9f0bd014d631aa7b |
+| **PE-IP 라이브러리** | https://www.notion.so/35055ed436f08159aaa8d0817e76ba18 |
 | **GitHub 저장소** | https://github.com/GilbertKwak/prompt-engineering-system |
 | **knowledge_graph.json** | https://github.com/GilbertKwak/prompt-engineering-system/blob/main/knowledge_graph.json |
 | **PE-7 AI 자동화** | https://www.notion.so/34955ed436f081149dd6de25dba027d7 |
@@ -197,4 +304,5 @@ source ~/.bashrc
 ---
 
 > ✅ **[v1.0 | 2026-04-28 10:46 KST]** MASTER_COMMANDS.md 전 도메인 통합 신규 생성 — CMD-01~08 + Alias 전체 + 도메인 인덱스 테이블 🟢  
+> ✅ **[v1.1 | 2026-04-28 13:31 KST]** PE-IP 명령어 3종 추가 — CMD-09 신설(pe-ip-index · pe-ip-add · pe-ip-validate) + CMD-03 테이블 PE-IP 행 추가 + 빠른 참조 테이블 3행 추가 + SSOT 링크 PE-IP 등록 🟢  
 > **다음 업데이트 기준**: 신규 도메인 추가 시 CMD-03 테이블에 행 추가 + 버전 태그 갱신
