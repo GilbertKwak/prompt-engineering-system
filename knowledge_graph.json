@@ -1,19 +1,22 @@
 {
   "meta": {
-    "generated_at": "2026-04-28T09:30:00.000000+00:00",
-    "version": "2.5",
-    "total_nodes": 52,
-    "total_edges": 72,
+    "generated_at": "2026-04-29T08:49:00.000000+09:00",
+    "version": "2.9",
+    "total_nodes": 57,
+    "total_edges": 79,
     "scan_dirs": [
       "docs",
       "engines",
       "prompts/consulting",
       "PE-LR",
-      "applied-cases/jv-fund"
+      "applied-cases/jv-fund",
+      "prompts/bio"
     ],
     "sha_enabled": false,
     "version_extract": false,
     "changelog": [
+      "v2.9 (2026-04-29): PE-BIO 바이오/해외사업 영업전략 라이브러리 신규 등록 — BIO-MASTER + BIO-01-OPT(95점) + BIO-02-OPT(97점) + BIO-03A/B/C 변형 3종. +5 nodes, +7 edges.",
+      "v2.8 (2026-04-29): PE-PM v3.0 BATCH-PM 갱신 — PM-MASTER v3.0(97점) + PM-04 MFG 전용 + PM-05 sCO2 전용 신설. +2 nodes, +4 edges.",
       "v2.5 (2026-04-28): Phase A~D 신규 노드 10개 + 엣지 12개 추가. PE-CON / PE-LR / PE-IP / PE-JV / PE-NBD / PE-NBD-C06 통합."
     ]
   },
@@ -56,7 +59,7 @@
       "title": "CHANGELOG — 프롬프트 엔진니어링 시스템",
       "status": "unknown",
       "version": "",
-      "date": "2026-04-28",
+      "date": "2026-04-29",
       "tags": [
         "root",
         "meta",
@@ -693,6 +696,91 @@
       "notion_url": null,
       "file_size": 0,
       "sha": null
+    },
+    {
+      "id": "prompts/bio/README.md",
+      "type": "prompt_library",
+      "title": "🧬 PE-BIO · 바이오/해외사업 영업전략 프롬프트 라이브러리 v1.0",
+      "status": "active",
+      "version": "v1.0",
+      "date": "2026-04-29",
+      "tags": ["PE-BIO", "bio", "overseas-sales", "BIO-01", "BIO-02", "BIO-03", "v1.0"],
+      "notion_url": "https://www.notion.so/34a55ed436f0814d9cffe6a2f0816e29",
+      "file_size": 0,
+      "sha": null,
+      "pe3_score_avg": 93,
+      "domain": ["바이오의약품", "해외사업개발", "BD영업전략", "글로벌파트너십"],
+      "workspace_ssot": "T-09-C17"
+    },
+    {
+      "id": "prompts/bio/BIO-01-OPT_v1.0.md",
+      "type": "prompt",
+      "title": "BIO-01-OPT · 해외 BD 타깃 발굴 마스터 프롬프트 v1.0",
+      "status": "active",
+      "version": "v1.0",
+      "date": "2026-04-29",
+      "tags": ["PE-BIO", "BIO-01", "BD", "overseas", "v1.0"],
+      "notion_url": null,
+      "file_size": 0,
+      "sha": null,
+      "pe3_score": 95,
+      "domain": ["해외BD타깃발굴"]
+    },
+    {
+      "id": "prompts/bio/BIO-02-OPT_v1.0.md",
+      "type": "prompt",
+      "title": "BIO-02-OPT · 글로벌 파트너십 협상 전략 프롬프트 v1.0",
+      "status": "active",
+      "version": "v1.0",
+      "date": "2026-04-29",
+      "tags": ["PE-BIO", "BIO-02", "partnership", "negotiation", "v1.0"],
+      "notion_url": null,
+      "file_size": 0,
+      "sha": null,
+      "pe3_score": 97,
+      "domain": ["글로벌파트너십협상"]
+    },
+    {
+      "id": "prompts/bio/BIO-03A_v1.0.md",
+      "type": "prompt_variant",
+      "title": "BIO-03A · 바이오 BD 영업전략 변형 A — 미국 FDA 규제 특화",
+      "status": "active",
+      "version": "v1.0",
+      "date": "2026-04-29",
+      "tags": ["PE-BIO", "BIO-03", "variant-A", "FDA", "v1.0"],
+      "notion_url": null,
+      "file_size": 0,
+      "sha": null,
+      "pe3_score": 91,
+      "domain": ["미국FDA규제"]
+    },
+    {
+      "id": "prompts/bio/BIO-03B_v1.0.md",
+      "type": "prompt_variant",
+      "title": "BIO-03B · 바이오 BD 영업전략 변형 B — 아시아 파트너 네트워크 특화",
+      "status": "active",
+      "version": "v1.0",
+      "date": "2026-04-29",
+      "tags": ["PE-BIO", "BIO-03", "variant-B", "Asia", "v1.0"],
+      "notion_url": null,
+      "file_size": 0,
+      "sha": null,
+      "pe3_score": 91,
+      "domain": ["아시아파트너네트워크"]
+    },
+    {
+      "id": "prompts/bio/BIO-03C_v1.0.md",
+      "type": "prompt_variant",
+      "title": "BIO-03C · 바이오 BD 영업전략 변형 C — 유럽 EMA 규제 및 라이선스 딜 특화",
+      "status": "active",
+      "version": "v1.0",
+      "date": "2026-04-29",
+      "tags": ["PE-BIO", "BIO-03", "variant-C", "EMA", "licensing", "v1.0"],
+      "notion_url": null,
+      "file_size": 0,
+      "sha": null,
+      "pe3_score": 91,
+      "domain": ["유럽EMA라이선스딜"]
     }
   ],
   "edges": [
@@ -769,6 +857,13 @@
     { "source": "applied-cases/jv-fund/validation_checklist.md", "target": "applied-cases/jv-fund/master_v3.md", "relation": "validates" },
     { "source": "applied-cases/jv-fund/variants/variant_A_fu_series.md", "target": "applied-cases/jv-fund/master_v3.md", "relation": "variant_of" },
     { "source": "applied-cases/jv-fund/variants/variant_B_bstar_eco2.md", "target": "applied-cases/jv-fund/master_v3.md", "relation": "variant_of" },
-    { "source": "applied-cases/jv-fund/variants/variant_C_ai_infra.md", "target": "applied-cases/jv-fund/master_v3.md", "relation": "variant_of" }
+    { "source": "applied-cases/jv-fund/variants/variant_C_ai_infra.md", "target": "applied-cases/jv-fund/master_v3.md", "relation": "variant_of" },
+    { "source": "prompts/bio/README.md", "target": "engines/PE-3_auto-validation/README.md", "relation": "validated_by", "note": "PE-3 5차원 검증 기준 적용 (avg 93점)" },
+    { "source": "prompts/bio/README.md", "target": "prompts/pe_ip/README.md", "relation": "indexed_by", "note": "PE-IP 마스터 라이브러리에 BIO-시리즈 등록" },
+    { "source": "prompts/bio/README.md", "target": "README.md", "relation": "registered_in", "note": "Workspace SSOT T-09-C17 등록" },
+    { "source": "prompts/bio/BIO-01-OPT_v1.0.md", "target": "prompts/bio/README.md", "relation": "sub_module_of", "note": "PE-BIO 라이브러리 소속 — PE-3 95점" },
+    { "source": "prompts/bio/BIO-02-OPT_v1.0.md", "target": "prompts/bio/README.md", "relation": "sub_module_of", "note": "PE-BIO 라이브러리 소속 — PE-3 97점" },
+    { "source": "prompts/bio/BIO-03A_v1.0.md", "target": "prompts/bio/README.md", "relation": "variant_of", "note": "미국 FDA 규제 특화 변형" },
+    { "source": "prompts/bio/BIO-03B_v1.0.md", "target": "prompts/bio/README.md", "relation": "variant_of", "note": "아시아 파트너 네트워크 특화 변형" }
   ]
 }
