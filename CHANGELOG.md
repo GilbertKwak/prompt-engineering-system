@@ -1,5 +1,52 @@
 # CHANGELOG — 프롬프트 엔진니어링 시스템
 
+## [PE-THERM v1.0 · knowledge_graph v3.2] — 2026-04-29 10:42 KST
+
+> 커밋 기준: `feat(PE-THERM): Add PE-THERM 반도체 열관리 라이브러리 v1.0` · 담당자: GilbertKwak
+
+### Added — PE-THERM 반도체 열관리 분석 라이브러리 (신규)
+
+| 파일 | 역할 | 버전 | PE-3 점수 |
+|---|---|---|---|
+| `prompts/thermal/README.md` | PE-THERM 라이브러리 허브 (T-09 C-20) | v1.0 | avg 93 |
+| `prompts/thermal/THERM-01_v3.0.md` | TIM 열저항 지배 메커니즘 — Kapitza·Series R·Scaling Law | v3.0 | 95 |
+| `prompts/thermal/THERM-02_v2.0.md` | Underfill 열차단 분석 — TC-NCF vs MR-MUF | v2.0 | 93 |
+| `prompts/thermal/THERM-03_v2.0.md` | Micro-Bump 열저항 정량 분석 — Fourier·R_th×N | v2.0 | 91 |
+| `prompts/thermal/THERM-04_v2.0.md` | High I/O Activity 발열 분석 — P_dynamic·PHY 전력 | v2.0 | 90 |
+| `prompts/thermal/THERM-05_v2.0.md` | Interposer/Substrate 열저항 — Organic vs Si | v2.0 | 92 |
+| `prompts/thermal/THERM-06_v3.0.md` | TSV 열전달 PDE + Scaling Law — Spreading R·Saturation | v3.0 | **97** |
+
+### Changed — knowledge_graph v3.0 → v3.2 업그레이드
+
+| 항목 | v3.0 | v3.2 | 변화 |
+|---|---|---|---|
+| total_nodes | 62 | **68** | **+6** |
+| total_edges | 87 | **95** | **+8** |
+| scan_dirs | 7개 | **8개** | `prompts/thermal` 추가 |
+| version | 3.0 | **3.2** | — |
+| generated_at | 2026-04-29T09:06 | **2026-04-29T10:42** | — |
+
+### 신규 엣지 목록 (+8)
+
+| # | source | target | relation | 비고 |
+|---|---|---|---|---|
+| 1 | `prompts/thermal/README.md` | `engines/PE-3_auto-validation/README.md` | `validated_by` | PE-3 avg 93점 |
+| 2 | `prompts/thermal/README.md` | `prompts/pe_ip/README.md` | `indexed_by` | THERM 시리즈 PE-IP 등록 |
+| 3 | `prompts/thermal/README.md` | `README.md` | `registered_in` | T-09-C20 SSOT |
+| 4 | `prompts/thermal/README.md` | `prompts/bio/README.md` | `cross_domain` | PE-MEM HBM 교차 연동 |
+| 5 | `prompts/thermal/README.md` | `engines/PE-1_auto-refinement/README.md` | `pipeline_entry` | PE-1→PE-3 파이프라인 |
+| 6 | `prompts/thermal/THERM-01_v3.0.md` | `prompts/thermal/README.md` | `sub_module_of` | TIM PE-3 95점 |
+| 7 | `prompts/thermal/THERM-02_v2.0.md` | `prompts/thermal/README.md` | `sub_module_of` | Underfill PE-3 93점 |
+| 8 | `prompts/thermal/THERM-03_v2.0.md` | `prompts/thermal/README.md` | `sub_module_of` | Micro-Bump PE-3 91점 |
+
+### Linked
+
+- Notion SSOT: [T-09 C-20 PE-THERM](https://www.notion.so/35155ed436f081ca93bcddb49af69c7d)
+- T-09 Mother Page: [v3.2 갱신](https://www.notion.so/34a55ed436f0814d9cffe6a2f0816e29)
+- 연계 도메인: PE-MEM · PE-JV · PE-ICD · PE-MFG
+
+---
+
 ## [JV Fund Prompt v3.0] — 2026-04-27
 
 > 커밋 기준: `prompts/jv_fund/ 신규 생성` · 담당자: GilbertKwak
@@ -56,13 +103,6 @@
   - 연결 스크립트: `scripts/inception_module.py`
   - PE-3 초기 점수: **89/100**
 
-### Changed — 공통 개선 사항 (전 프롬프트 적용)
-
-- 모든 출력 포맷에 **증거(EVIDENCE) 서브필드** 의무화 → 환각(hallucination) 억제
-- `confidence_score` / `synthesis_confidence` 수치 출력 표준화
-- Error 처리 분기: `EDGE_CASE` 핸들러 공통 추가
-- 3-Engine (PE-1 자동개선 · PE-2 자동증식 · PE-3 자동검증) 루프와의 연계 강화
-
 ### PE-10 v2.0 평균 PE-3 점수
 
 | 구분 | 평균 점수 | 변화 |
@@ -87,27 +127,6 @@
 - Notion PE-8 Ch.7 페이지 생성 완료 (https://www.notion.so/34d55ed436f0816fb1a4d12f53ba7069)
 - `PE8_Ch07_ProjectSummary_v1.0.docx` Word 파일 생성 완료
 
-### PE-8 완성 현황 (2026-04-25 누적)
-| 챕터 | 제목 | 상태 | PE-3 |
-|---|---|---|---|
-| Ch.7 | Project Summary | ✅ Done | 93/100 |
-| Ch.9 | 5개년 재무모델 | ✅ Done | 92/100 |
-| Ch.9.5 | 현금흐름표 (IAS 7) | ✅ Done | 96/100 |
-| Ch.16 | ROI·ROE·BEP·Payback | ✅ Done | 96/100 |
-| Ch.5.3 | 신사업 진입 전략 (로드맵) | ✅ Done | 95/100 |
-| Ch.6 | 리스크 분석·대응 전략 | ✅ Done | 93.5/100 |
-| Ch.8.5 | GTM 전략 v1.1 | ✅ Done | 91/100 |
-
----
-
-## [PE-8 v2.3 Patch 11] — 2026-04-25
-
-### Added
-- `applied-cases/PE-8-NOR-Flash/Ch09_FinancialModel_v1.0.md` — Ch.9 5개년 재무모델 (PE-3 92/100 ✅)
-
-### Changed
-- PE-8 마스터 Ch.9 상태: 🔴 Draft → 🟢 Done
-
 ---
 
 ## [v1.6] — 2026-04-18
@@ -129,29 +148,7 @@
 
 ---
 
-## [v1.5] — 2026-04-10
-### Added
-- engines/PE-1~PE-3 prompt_template_v1.5.md
-### Changed
-- README.md, CHANGELOG.md v1.5 갱신
-
----
-
-## [v1.4] — 2026-04-10
-### Added
-- engines/PE-1~PE-3 upgrade_v1.4.md
-- dashboard/metrics.md KPI 갱신
-
----
-
-## [v1.3] — 2026-04-09
-### Added
-- docs/agent1~agent5, support, new, dashboard 정의
-### Changed
-- docs/index.md Master Index 전면 개편
-
----
-
-## [v1.0~v1.2] — 2026-04-05~09
+## [v1.0~v1.5] — 2026-04-05~10
 - 최초 저장소 생성, 3-Engine 프레임워크 정립
 - `docs/index.md`, `docs/rca-capa/` 추가
+- engines/PE-1~PE-3 prompt_template_v1.5.md
