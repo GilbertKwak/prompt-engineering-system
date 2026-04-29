@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ESG-GLOBAL-v8.0-B
+  ESG-001-v8.0-MASTER의 글로벌 멀티-리전 파생 (Variant B)
+  PE-3 score: 94 | date: 2026-04-29
+-->
+<prompt id="ESG-GLOBAL-v8.0-B" version="8.0" domain="PE-SAT" parent="ESG-001-v8.0-MASTER" pe3_score="94">
+
+  <meta>
+    <title>ESG-GLOBAL v8.0-B · 글로벌 멀티-리전 ESG 파생</title>
+    <status>active</status>
+    <date>2026-04-29</date>
+    <regions>US, EU, JP, IN, SE_Asia</regions>
+    <regulatory_stack>SEC_ESG_Disclosure_2024 · EU_CSRD_2024 · CSDDD_2024_1760 · ISSB_S1_S2 · TCFD · GRI_2021 · SFDR</regulatory_stack>
+  </meta>
+
+  <!-- MASTER 공통 블록 상속 -->
+  <inherit from="ESG-001-v8.0-MASTER" blocks="A,B,C,D"/>
+
+  <!-- GLOBAL 특화 오버라이드 -->
+  <override block="A">
+    <global_supply_chain_focus>
+      3극(미·중·EU) 공급망 HHI를 지역별 분리 산출
+      ISSB S2 기후 관련 재무 공시 기준 연계
+      탄소 국경 조정 메커니즘(CBAM) 노출 지수 계산 (EU 수출 기업)
+    </global_supply_chain_focus>
+  </override>
+
+  <override block="B">
+    <global_geopolitical_focus>
+      3극 규제 스택 전체 비교: SEC / CSRD / CSRC 충돌 지점 매핑
+      인도·동남아 대체 공급망 가능성 Lock_Index 별도 산출
+      일본 GX(Green Transformation) 정책과 EU Taxonomy 정합성 평가
+    </global_geopolitical_focus>
+  </override>
+
+  <override block="C">
+    <global_state_machine>
+      CN: Party_Directive_Override 상태 별도 경로 유지
+      US: SEC Climate Rule 위반 시 Normatively_Locked 즉시 진입
+      EU: CSRD Non-compliance → Strategically_Exhausted 경보
+      JP/IN/SEA: Aligned 기본, GX/PLI 정책 활용 시 Watch 하향
+    </global_state_machine>
+  </override>
+
+  <override block="D">
+    <global_hedge_focus>
+      지역별 녹색채권 발행 시장 유동성 비교 (US·EU·JP·SG)
+      SFDR Article 8/9 펀드 투자 유치 가능성 평가
+      탄소크레딧 시장(VCM·CCM) 활용 헤지 가중치
+    </global_hedge_focus>
+  </override>
+
+  <global_specific_triggers>
+    <trigger condition="CBAM 노출지수 &gt; 0.55" action="EU 생산 내재화 또는 CBAM 크레딧 조기확보"/>
+    <trigger condition="SEC Climate Rule 위반 예측" action="PE-BOARD 이사회 기후 공시 태스크포스 구성"/>
+    <trigger condition="인도 PLI 활용 가능" action="PE-JV 인도 JV 설립 시나리오 + PE-13 OSAT 현지화 검토"/>
+    <trigger condition="SFDR Article 9 요건 미달" action="녹색채권 프레임워크 재설계 + GRI 연계 개선"/>
+  </global_specific_triggers>
+
+</prompt>
