@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ESG-KR-v8.0-A
+  ESG-001-v8.0-MASTER의 대한민국 특화 파생 (Variant A)
+  PE-3 score: 93 | date: 2026-04-29
+-->
+<prompt id="ESG-KR-v8.0-A" version="8.0" domain="PE-SAT" parent="ESG-001-v8.0-MASTER" pe3_score="93">
+
+  <meta>
+    <title>ESG-KR v8.0-A · 대한민국 ESG 특화 파생</title>
+    <status>active</status>
+    <date>2026-04-29</date>
+    <region>Korea</region>
+    <regulatory_stack>K-ESG_가이드라인_2025 · 기업지배구조원_KCGS · 자본시장법_ESG공시 · EU_CSDDD_공급망실사(KR수출기업)</regulatory_stack>
+  </meta>
+
+  <!-- MASTER 공통 블록 상속 -->
+  <inherit from="ESG-001-v8.0-MASTER" blocks="A,B,C,D"/>
+
+  <!-- KR 특화 오버라이드 -->
+  <override block="A">
+    <kr_supply_chain_focus>
+      삼성전자·SK하이닉스·LG에너지솔루션·포스코·한화솔루션 5대 수출 대기업
+      K-ESG 가이드라인 61개 항목 체크리스트 포함
+      온실가스 배출권 거래제(K-ETS) 할당량 리스크 계수 추가
+    </kr_supply_chain_focus>
+  </override>
+
+  <override block="B">
+    <kr_geopolitical_focus>
+      한국 수출기업의 미-중 디커플링 이중 노출 지수 산출
+      BIS 수출통제 → 반도체 장비 재수출 금지(한국법인 포함) 충돌 분석
+      EU CSDDD 2026 시행 대비 한국 협력사 실사 준비도 점수(0~100)
+    </kr_geopolitical_focus>
+  </override>
+
+  <override block="D">
+    <kr_hedge_focus>
+      원/달러 환헤지 + ESG 채권(녹색채권·사회채권) 활용 가중치
+      국내 기관투자자(국민연금·사학연금) ESG 의결권 압력 지수
+      수출입은행 녹색금융 활용 가능성 평가
+    </kr_hedge_focus>
+  </override>
+
+  <kr_specific_triggers>
+    <trigger condition="K-ETS 할당 초과 배출 예측" action="탄소크레딧 조기매입 + CDM 프로젝트 연계"/>
+    <trigger condition="CSDDD 실사 준비도 &lt; 60" action="PE-BOARD 협력사 ESG 온보딩 플랜 요청"/>
+    <trigger condition="미-중 이중노출지수 &gt; 0.70" action="PE-JV 동남아 생산기지 다변화 시나리오 요청"/>
+  </kr_specific_triggers>
+
+</prompt>
