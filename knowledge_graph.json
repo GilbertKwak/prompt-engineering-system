@@ -1,20 +1,22 @@
 {
   "meta": {
-    "generated_at": "2026-04-29T08:53:00.000000+09:00",
-    "version": "2.9.1",
-    "total_nodes": 57,
-    "total_edges": 80,
+    "generated_at": "2026-04-29T09:06:00.000000+09:00",
+    "version": "3.0",
+    "total_nodes": 62,
+    "total_edges": 87,
     "scan_dirs": [
       "docs",
       "engines",
       "prompts/consulting",
       "PE-LR",
       "applied-cases/jv-fund",
-      "prompts/bio"
+      "prompts/bio",
+      "prompts/water"
     ],
     "sha_enabled": false,
     "version_extract": false,
     "changelog": [
+      "v3.0 (2026-04-29): PE-WATER 산업용수 전략 붕괴 감시 라이브러리 신규 등록 — WATER-01(v8.0 통합 기본형) + WATER-A(FAB 전용) + WATER-B(정책/공공기관 전용) + WATER-C(투자자 리스크 보고서). +5 nodes, +7 edges. T-09 C-18 편입. 멀티국가 모듈(KR/TW/US/SG). PE-3 평균 목표 90점.",
       "v2.9.1 (2026-04-29): BIO-03C variant_of 엣지 누락 패치 — pe-sync-up 반영. +1 edge (total 80).",
       "v2.9 (2026-04-29): PE-BIO 바이오/해외사업 영업전략 라이브러리 신규 등록 — BIO-MASTER + BIO-01-OPT(95점) + BIO-02-OPT(97점) + BIO-03A/B/C 변형 3종. +5 nodes, +7 edges.",
       "v2.8 (2026-04-29): PE-PM v3.0 BATCH-PM 갱신 — PM-MASTER v3.0(97점) + PM-04 MFG 전용 + PM-05 sCO2 전용 신설. +2 nodes, +4 edges.",
@@ -29,27 +31,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-05",
-      "tags": [
-        "root",
-        "meta",
-        "RCA-001",
-        "RCA-004",
-        "RCA-002",
-        "RCA-003",
-        "v1.7",
-        "v2.7",
-        "v2.0",
-        "v1.0",
-        "v1.1",
-        "v1.2",
-        "v1.3",
-        "v1.4",
-        "v1.5",
-        "v1.6",
-        "v3.0",
-        "v4.0",
-        "v1.8"
-      ],
+      "tags": ["root", "meta", "RCA-001", "RCA-004", "RCA-002", "RCA-003", "v1.7", "v2.7", "v2.0", "v1.0", "v1.1", "v1.2", "v1.3", "v1.4", "v1.5", "v1.6", "v3.0", "v4.0", "v1.8"],
       "notion_url": "https://www.notion.so/33955ed436f081cc9f0bd014d631aa7b",
       "file_size": 8870,
       "sha": null
@@ -61,21 +43,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-29",
-      "tags": [
-        "root",
-        "meta",
-        "v3.0",
-        "v2.0",
-        "v1.0",
-        "v11.0",
-        "v2.3",
-        "v1.1",
-        "v1.6",
-        "v1.5",
-        "v1.4",
-        "v1.3",
-        "v1.2"
-      ],
+      "tags": ["root", "meta", "v3.0", "v2.0", "v1.0", "v11.0", "v2.3", "v1.1", "v1.6", "v1.5", "v1.4", "v1.3", "v1.2"],
       "notion_url": "https://www.notion.so/34e55ed436f081c5a148d8200bc2896b",
       "file_size": 5755,
       "sha": null
@@ -243,10 +211,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-09",
-      "tags": [
-        "RCA-001", "RCA-002", "RCA-003", "RCA-004", "RCA-005",
-        "v1.5", "v3.1", "v3.0", "v1.4", "v1.3", "v1.2", "v1.1", "v1.0"
-      ],
+      "tags": ["RCA-001", "RCA-002", "RCA-003", "RCA-004", "RCA-005", "v1.5", "v3.1", "v3.0", "v1.4", "v1.3", "v1.2", "v1.1", "v1.0"],
       "notion_url": "https://www.notion.so/33955ed436f081cc9f0bd014d631aa7b",
       "file_size": 9501,
       "sha": null
@@ -782,6 +747,65 @@
       "sha": null,
       "pe3_score": 91,
       "domain": ["유럽EMA라이선스딜"]
+    },
+    {
+      "id": "prompts/water/README.md",
+      "type": "prompt_library",
+      "title": "🌊 PE-WATER · 산업용수 전략 붕괴 감시 프롬프트 라이브러리 v1.0",
+      "status": "active",
+      "version": "v1.0",
+      "date": "2026-04-29",
+      "tags": ["PE-WATER", "water", "industrial-water", "WATER-01", "WATER-A", "WATER-B", "WATER-C", "v1.0", "v8.0"],
+      "notion_url": "https://www.notion.so/35155ed436f081979e09eb86e3c908f1",
+      "file_size": 0,
+      "sha": null,
+      "pe3_score_avg": 90,
+      "domain": ["산업용수", "반도체FAB용수", "UPW", "용수전략붕괴감시", "멀티국가모듈"],
+      "workspace_ssot": "T-09-C18",
+      "country_modules": ["KR", "TW", "US", "SG"]
+    },
+    {
+      "id": "prompts/water/WATER-01_v8.0.md",
+      "type": "prompt",
+      "title": "WATER-01 · Industrial Water Strategy Breakdown Agent v8.0",
+      "status": "active",
+      "version": "v8.0",
+      "date": "2026-04-29",
+      "tags": ["PE-WATER", "WATER-01", "industrial-water", "multi-country", "v8.0"],
+      "notion_url": null,
+      "file_size": 0,
+      "sha": null,
+      "pe3_score": 90,
+      "domain": ["산업용수전략붕괴감시"],
+      "firm_state_machine": ["Aligned", "Water_Constrained", "Strategically_Frozen", "Broken"]
+    },
+    {
+      "id": "prompts/water/WATER-A_v1.0.md",
+      "type": "prompt_variant",
+      "title": "WATER-A · FAB 전용 용수 붕괴 감시 — 한국·대만 이원 비교 v1.0",
+      "status": "active",
+      "version": "v1.0",
+      "date": "2026-04-29",
+      "tags": ["PE-WATER", "WATER-A", "FAB", "semiconductor", "KR", "TW", "v1.0"],
+      "notion_url": null,
+      "file_size": 0,
+      "sha": null,
+      "pe3_score": 91,
+      "domain": ["반도체FAB용수", "한국대만비교"]
+    },
+    {
+      "id": "prompts/water/WATER-C_v1.0.md",
+      "type": "prompt_variant",
+      "title": "WATER-C · 투자자 용수 리스크 보고서 — 1-Page Investment Memo v1.0",
+      "status": "active",
+      "version": "v1.0",
+      "date": "2026-04-29",
+      "tags": ["PE-WATER", "WATER-C", "investor", "risk-report", "1-page-memo", "v1.0"],
+      "notion_url": null,
+      "file_size": 0,
+      "sha": null,
+      "pe3_score": 92,
+      "domain": ["투자자용수리스크", "1페이지메모"]
     }
   ],
   "edges": [
@@ -866,6 +890,14 @@
     { "source": "prompts/bio/BIO-02-OPT_v1.0.md", "target": "prompts/bio/README.md", "relation": "sub_module_of", "note": "PE-BIO 라이브러리 소속 — PE-3 97점" },
     { "source": "prompts/bio/BIO-03A_v1.0.md", "target": "prompts/bio/README.md", "relation": "variant_of", "note": "미국 FDA 규제 특화 변형" },
     { "source": "prompts/bio/BIO-03B_v1.0.md", "target": "prompts/bio/README.md", "relation": "variant_of", "note": "아시아 파트너 네트워크 특화 변형" },
-    { "source": "prompts/bio/BIO-03C_v1.0.md", "target": "prompts/bio/README.md", "relation": "variant_of", "note": "유럽 EMA 규제 및 라이선스 딜 특화 변형" }
+    { "source": "prompts/bio/BIO-03C_v1.0.md", "target": "prompts/bio/README.md", "relation": "variant_of", "note": "유럽 EMA 규제 및 라이선스 딜 특화 변형" },
+    { "source": "prompts/water/README.md", "target": "engines/PE-3_auto-validation/README.md", "relation": "validated_by", "note": "PE-3 5차원 검증 기준 적용 (avg 90점 목표)" },
+    { "source": "prompts/water/README.md", "target": "prompts/pe_ip/README.md", "relation": "indexed_by", "note": "PE-IP 마스터 라이브러리에 WATER-시리즈 등록" },
+    { "source": "prompts/water/README.md", "target": "README.md", "relation": "registered_in", "note": "Workspace SSOT T-09-C18 등록" },
+    { "source": "prompts/water/WATER-01_v8.0.md", "target": "prompts/water/README.md", "relation": "sub_module_of", "note": "PE-WATER 라이브러리 소속 — WATER-01 v8.0 통합 기본형 (PE-3 90+)" },
+    { "source": "prompts/water/WATER-A_v1.0.md", "target": "prompts/water/README.md", "relation": "variant_of", "note": "FAB 전용 한국·대만 이원 비교 변형 (PE-3 91점)" },
+    { "source": "prompts/water/WATER-C_v1.0.md", "target": "prompts/water/README.md", "relation": "variant_of", "note": "투자자 1-page 리스크 메모 변형 (PE-3 92점)" },
+    { "source": "prompts/water/README.md", "target": "prompts/bio/README.md", "relation": "cross_domain", "note": "PE-BIO × PE-WATER 교차 분석 — 바이오 제조 용수 리스크 연동" },
+    { "source": "prompts/water/README.md", "target": "engines/PE-1_auto-refinement/README.md", "relation": "pipeline_entry", "note": "PE-1 자동개선 → PE-3 검증 파이프라인 진입점" }
   ]
 }
