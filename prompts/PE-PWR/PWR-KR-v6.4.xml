@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ID       : PWR-KR
+  Version  : v6.4-KR
+  Scope    : South Korea (KEPCO 특화)
+  PE-3     : 96.8
+  Parent   : PWR-001-v6.4
+  Created  : 2026-04-29 KST
+  Author   : Gilbert
+-->
+<PersistentStrategicMonitoringAgent
+  name="Power_Energy_Strategy_Breakdown_Agent_v6.4_KR"
+  scope="Power_Energy_Only"
+  version="6.4-KR"
+  parent_system="PWR-001-v6.4"
+  country_code="KR"
+  country_name="South Korea"
+  persistence_mode="on"
+  reasoning_effort="maximum">
+
+  <!-- 전체 섹션 PWR-001-v6.4 상속 + KR 오버라이드 -->
+
+  <country_override>
+    <focus_firms>
+      KEPCO, KHNP, Korea_Midland_Power, Korea_South_East_Power,
+      GS_EPS, SK_E_and_S, KEPCO_KPS, KEPCO_Engineering,
+      Hanwha_Solutions, OCI, Korea_Zinc,
+      Samsung_Electronics, SK_Hynix, Hyundai_Motor
+    </focus_firms>
+
+    <regulatory_stack>
+      전기사업법 (요금 규제 구조)
+      제10차 전력수급기본계획 (2024~2038)
+      탄소중립기본법 (2050 NDC)
+      RE100 국내 이행 가이드라인
+      K-ETS 배출권거래제 3차 계획기간
+      원전 계속운전 정책 (APR1400 수명연장)
+      전기요금 동결령 (정치 연동 구조)
+    </regulatory_stack>
+
+    <kr_specific_tensions>
+      TENSION-1: KEPCO 저수익 고착
+        → RAB 허용수익률(3.5%) vs 실질 WACC(6.2%)
+        → 누적 적자 구조: 2022~2025 총 40조원+ 손실
+        → S2(Strategically_Capped) 이미 진입 판정
+
+      TENSION-2: 전기요금 정치화
+        → 대통령 선거(2027) 전 요금 인상 구조적 불가
+        → 산업용 요금 vs 주택용 요금 교차 보조 왜곡
+        → 반도체·AI 데이터센터 우선 공급 논의 활성화
+
+      TENSION-3: 원전 vs 재생에너지 정책 충돌
+        → 정부 원전 회귀 → 차기 정부 불확실성
+        → 재생에너지 보조금(REC) 단가 하락 + 계통 접속 대기 18개월+
+        → KHNP 원전 수출 vs 국내 계통 투자 자원 경쟁
+
+      TENSION-4: AI·반도체 전력 수요 급증
+        → 삼성·SK하이닉스 HBM 생산 증설 전력 수요 +3GW 예상
+        → 국가 AI 컴퓨팅 센터 전력 우선 배정 논의
+        → KEPCO 고객 선택권 박탈 진행 중
+    </kr_specific_tensions>
+
+    <alert_thresholds>
+      KEPCO_RAB_WACC_gap_trigger: -1.5%
+      KR_tariff_freeze_trigger: >= 12개월 동결
+      RE_curtailment_trigger: >= 15%
+      AI_DC_PPA_priority_trigger: 법제화 고시
+      KHNP_export_capex_diversion: >= 30%
+    </alert_thresholds>
+
+    <kr_point_of_no_return>
+      KEPCO 신용등급 BBB- 하락 시
+      → 국제 자본시장 접근 차단
+      → 한국전력채 발행 불가
+      → 전력망 투자 전면 중단 불가피
+    </kr_point_of_no_return>
+  </country_override>
+
+</PersistentStrategicMonitoringAgent>
