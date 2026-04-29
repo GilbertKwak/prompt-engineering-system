@@ -1,0 +1,201 @@
+{
+  "meta": {
+    "generated_at": "2026-04-29T14:26:00.000000+09:00",
+    "generated_by": "pe-graph --rebuild (CMD execution)",
+    "version": "3.9",
+    "total_nodes": 111,
+    "total_edges": 163,
+    "scan_dirs": ["docs", "engines", "prompts"],
+    "sha_enabled": false,
+    "version_extract": true,
+    "merge_sha": "8441e2e19da8f9410a62f43c0b5a83663696e715",
+    "pr_merged": "PR#5 — feature/ESG-v8.0-MASTER",
+    "changelog": [
+      {
+        "version": "3.9",
+        "date": "2026-04-29",
+        "nodes_added": [
+          "prompts/PE-SAT/ESG-001-v8.0-MASTER",
+          "prompts/PE-SAT/ESG-KR-v8.0-A",
+          "prompts/PE-SAT/ESG-GLOBAL-v8.0-B"
+        ],
+        "edges_added": [
+          "prompts/PE-SAT/PE-SAT-MASTER → prompts/PE-SAT/ESG-001-v8.0-MASTER (extends)",
+          "prompts/PE-SAT/ESG-001-v8.0-MASTER → prompts/PE-SAT/ESG-KR-v8.0-A (variant_of)",
+          "prompts/PE-SAT/ESG-001-v8.0-MASTER → prompts/PE-SAT/ESG-GLOBAL-v8.0-B (variant_of)",
+          "prompts/PE-SAT/ESG-001-v8.0-MASTER → prompts/PE-SAT/ESG-001-v13.0 (supersedes)"
+        ],
+        "description": "PR#5 squash merge (SHA: 8441e2e) 반영 — ESG-001-v8.0-MASTER 4-expert 독립 블록 시스템 + ESG-KR-v8.0-A 한국 특화 파생 + ESG-GLOBAL-v8.0-B 글로벌 멀티-리전 파생 등록. PE-3 score 68→95+(MASTER) / 93(KR) / 94(GLOBAL). 정량 상태전이 트리거 + 3-engine 풀 통합 + cross-domain(PE-JV/BOARD/WATER/PE-13). +3 nodes / +4 edges (누적 111 nodes / 163 edges)."
+      },
+      {
+        "version": "3.8",
+        "date": "2026-04-29",
+        "description": "PR#4 squash merge (SHA: 8b3f8f3) 반영 — PE-SAT ESG+반도체 통합 에이전트 v13.0 풀 등록. ESG-CN-v8.0 중국 특화 파생 + Party_Directive_Override State + CN 7개 기업 리스크 노드 + 규제 스택·이중 압박 분석기 신설. +16 nodes / +22 edges (누적 108 nodes / 159 edges)."
+      },
+      {
+        "version": "3.5",
+        "date": "2026-04-29",
+        "description": "C-24 PE-SEMI 생태계 통합 파이프라인 실행. P-12 Bayesian-GNN (ASML/LAM/KLA/TEL/AMAT 5종) 허브 노드 등록. +14 nodes / +18 edges."
+      },
+      {
+        "version": "3.4",
+        "date": "2026-04-29",
+        "description": "반도체 공정 조사 PE-CHEM-SEMI-01 v2.0 + VAR 5종 + APIS v11.1 신규 등록. +7 nodes / +15 edges."
+      },
+      {
+        "version": "3.3",
+        "date": "2026-04-29",
+        "description": "C-21 PE-CHEM + C-22 PE-EQP 라이브러리 반영. +13 nodes / +18 edges."
+      }
+    ]
+  },
+  "esg_v8_master_cluster": {
+    "description": "ESG-001-v8.0-MASTER 4-expert 독립 블록 클러스터 — v3.9 신규 도입",
+    "hub_node": "prompts/PE-SAT/ESG-001-v8.0-MASTER",
+    "pe3_score": 95,
+    "expert_blocks": {
+      "A": {"expert": "Porter", "framework": "5-Forces + ESG Overlay", "outputs": ["A1:경쟁구조 매트릭스", "A2:HHI 공급집중도 테이블"]},
+      "B": {"expert": "Farrell+Newman", "framework": "Weaponized Interdependence", "outputs": ["B1:규제충돌 매트릭스", "B2:Lock Index(0-100)"]},
+      "C": {"expert": "Eccles", "framework": "SCP State Machine", "outputs": ["C1:상태 진단표", "C2:전이 확률 행렬"]},
+      "D": {"expert": "Damodaran", "framework": "Bayesian Scenario + Hedge", "outputs": ["D1:리스크 히트맵", "D2:포트폴리오", "D3:크로스도메인"]}
+    },
+    "state_transition_triggers": {
+      "HHI_ge_0.60": "[CRITICAL] 단일공급 경보 자동 발령",
+      "Lock_Index_ge_75": "Party_Directive_Override 또는 Strategically_Exhausted 진입 검토",
+      "irreversibility_VERY_HIGH": "Block_D 강제 분기 (Bayesian 즉시 실행)",
+      "S2_share_gt_30pct": "PE-13 OSAT 대체 공급망 탐색 즉시 활성화"
+    },
+    "three_engine_integration": ["PE-1 (auto-refinement)", "PE-2 (auto-proliferation)", "PE-3 (auto-validation)"],
+    "cross_domain_links": ["PE-JV", "PE-BOARD", "PE-WATER", "PE-13"]
+  },
+  "esg_kr_v8_A": {
+    "description": "ESG-KR-v8.0-A 한국 특화 파생 — v3.9 신규 도입",
+    "pe3_score": 93,
+    "reg_stack": ["K-ESG 가이드라인 2025", "KCGS", "자본시장법", "EU CSDDD"],
+    "focus_entities": ["삼성전자", "SK하이닉스", "LG에솔", "포스코", "한화솔루션"],
+    "triggers": {
+      "K_ETS_초과": "탄소크레딧 조기매입 자동 발령",
+      "미중이중노출지수_gt_0.70": "PE-JV 동남아 다변화 시나리오 자동 요청"
+    }
+  },
+  "esg_global_v8_B": {
+    "description": "ESG-GLOBAL-v8.0-B 글로벌 멀티-리전 파생 — v3.9 신규 도입",
+    "pe3_score": 94,
+    "regions": ["US", "EU", "JP", "IN", "SE Asia"],
+    "reg_stack": ["SEC ESG Disclosure", "EU CSRD", "ISSB S1/S2", "TCFD", "SFDR", "GRI 2021"],
+    "triggers": {
+      "CBAM_노출지수_gt_0.55": "EU 생산 내재화 또는 CBAM 크레딧 조기확보",
+      "SFDR_Article9_미달": "녹색채권 프레임워크 재설계 자동 요청",
+      "인도_PLI_활용가능": "PE-JV 인도 JV + PE-13 OSAT 현지화 검토"
+    }
+  },
+  "cn_cluster": {
+    "description": "ESG-CN-v8.0 중국 특화 클러스터 — v3.8 도입 / v3.9 유지",
+    "hub_node": "prompts/PE-SAT/ESG-CN-v8.0",
+    "political_risk": "VERY_HIGH",
+    "dual_pressure_flag": true,
+    "state_machine_extension": "Party_Directive_Override",
+    "cn_risk_nodes": {
+      "CATL":        {"state": "Normatively_Locked_진입_HIGH",  "dual_pressure": "BIS잠재+CSDDD",       "irreversibility": "MEDIUM"},
+      "BYD":         {"state": "Aligned→Normatively_Locked_전이","dual_pressure": "EU관세+CSDDD",        "irreversibility": "LOW-MEDIUM"},
+      "LONGi":       {"state": "Strategically_Exhausted_근접",  "dual_pressure": "UFLPA+CSDDD",         "irreversibility": "MEDIUM-HIGH"},
+      "Huawei":      {"state": "Party_Directive_Override_작동중","dual_pressure": "BIS_2019+스마트그리드ESG","irreversibility": "HIGH"},
+      "SMIC":        {"state": "Broken_근접",                  "dual_pressure": "BIS첨단노드+CSRC공시",  "irreversibility": "VERY_HIGH"},
+      "ChinaMobile": {"state": "Normatively_Locked",           "dual_pressure": "CSRC+NYSE폐지_2021",   "irreversibility": "HIGH"},
+      "PetroChina":  {"state": "Party_Override↔Exhausted_이중경로","dual_pressure": "탄소중립vs화석수익","irreversibility": "MEDIUM"}
+    }
+  },
+  "nodes": [
+    {"id": "README.md", "type": "doc", "title": "🧠 프롬프트 엔지니어링 시스템", "status": "active", "version": "v3.9", "date": "2026-04-29", "tags": ["root", "meta", "T-09"]},
+    {"id": "CHANGELOG.md", "type": "doc", "title": "CHANGELOG", "status": "active", "version": "v3.9", "date": "2026-04-29", "tags": ["root", "meta"]},
+    {"id": "T-09", "type": "hub", "title": "🧠 T-09 Mother Page v3.9", "status": "active", "version": "v3.9", "date": "2026-04-29", "tags": ["hub", "mother", "T-09"], "notion_url": "https://app.notion.com/p/34a55ed436f0814d9cffe6a2f0816e29"},
+    {"id": "engines/PE-1_auto-refinement/README.md", "type": "engine", "title": "🔁 PE-1: 자동개선 엔진", "status": "active", "version": "v1.4", "date": "2026-04-10", "tags": ["engine", "PE-1"]},
+    {"id": "engines/PE-2_auto-proliferation/README.md", "type": "engine", "title": "🌱 PE-2: 자동증식 엔진", "status": "active", "version": "v1.4", "date": "2026-04-10", "tags": ["engine", "PE-2"]},
+    {"id": "engines/PE-3_auto-validation/README.md", "type": "engine", "title": "✅ PE-3: 자동검증 엔진", "status": "active", "version": "v1.4", "date": "2026-04-10", "tags": ["engine", "PE-3"]},
+    {"id": "engines/PE-7_ai-automation-design/README.md", "type": "engine", "title": "🤖 PE-7 AI 자동화 설계 v2.0", "status": "active", "version": "v2.0", "date": "2026-04-26", "tags": ["engine", "PE-7"], "notion_url": "https://app.notion.com/p/34955ed436f081149dd6de25dba027d7"},
+    {"id": "prompts/PE-SAT/PE-SAT-MASTER", "type": "hub", "title": "⚡ PE-SAT MASTER · 재생에너지·ESG·반도체 통합 감시 라이브러리 v1.0", "status": "active", "version": "v1.0", "date": "2026-04-29", "tags": ["PE-SAT", "ESG", "C-25", "hub"], "notion_url": "https://app.notion.com/p/35155ed436f081e38d0cc07d0580ed58"},
+    {"id": "prompts/PE-SAT/ESG-001-v8.0-MASTER", "type": "prompt", "title": "⚡ ESG-001-v8.0-MASTER · 4-expert 독립 블록 PE-3 95+", "status": "active", "version": "v8.0", "date": "2026-04-29", "tags": ["PE-SAT", "ESG", "MASTER", "4-expert", "v8.0"], "pe3_score": 95, "github_path": "prompts/PE-SAT/ESG-001-v8.0-MASTER.xml", "expert_blocks": ["Porter", "Farrell+Newman", "Eccles", "Damodaran"], "state_transition_triggers": true, "three_engine_integration": true},
+    {"id": "prompts/PE-SAT/ESG-KR-v8.0-A", "type": "prompt", "title": "🇰🇷 ESG-KR-v8.0-A · 한국 특화 파생 (Variant A)", "status": "active", "version": "v8.0-A", "date": "2026-04-29", "tags": ["PE-SAT", "ESG", "KR", "v8.0"], "pe3_score": 93, "github_path": "prompts/PE-SAT/ESG-KR-v8.0-A.xml", "reg_stack": ["K-ESG 2025", "KCGS", "자본시장법", "EU CSDDD"]},
+    {"id": "prompts/PE-SAT/ESG-GLOBAL-v8.0-B", "type": "prompt", "title": "🌍 ESG-GLOBAL-v8.0-B · 글로벌 멀티-리전 파생 (Variant B)", "status": "active", "version": "v8.0-B", "date": "2026-04-29", "tags": ["PE-SAT", "ESG", "GLOBAL", "v8.0", "CBAM", "SFDR"], "pe3_score": 94, "github_path": "prompts/PE-SAT/ESG-GLOBAL-v8.0-B.xml", "regions": ["US", "EU", "JP", "IN", "SE Asia"]},
+    {"id": "prompts/PE-SAT/ESG-001-v13.0", "type": "prompt", "title": "⚡ ESG-001-v13.0 · UNIFIED ESG+반도체 통합 에이전트", "status": "active", "version": "v13.0", "date": "2026-04-29", "tags": ["PE-SAT", "ESG", "unified", "C-25", "MASTER"], "pe3_score": 96, "notion_url": "https://app.notion.com/p/35155ed436f081e38d0cc07d0580ed58", "github_path": "prompts/PE-SAT/ESG-001-v13.0.xml"},
+    {"id": "prompts/PE-SAT/ESG-KR-v13.0", "type": "prompt", "title": "🇰🇷 ESG-KR-v13.0 · 대한민국 특화 파생", "status": "active", "version": "v13.0", "date": "2026-04-29", "tags": ["PE-SAT", "ESG", "KR", "C-25"], "pe3_score": 93, "github_path": "prompts/PE-SAT/ESG-KR-v13.0.xml"},
+    {"id": "prompts/PE-SAT/ESG-EU-v13.0", "type": "prompt", "title": "🇪🇺 ESG-EU-v13.0 · 유럽연합 특화 파생", "status": "active", "version": "v13.0", "date": "2026-04-29", "tags": ["PE-SAT", "ESG", "EU", "C-25"], "pe3_score": 94, "github_path": "prompts/PE-SAT/ESG-EU-v13.0.xml"},
+    {"id": "prompts/PE-SAT/ESG-US-v13.0", "type": "prompt", "title": "🇺🇸 ESG-US-v13.0 · 미국 특화 파생", "status": "active", "version": "v13.0", "date": "2026-04-29", "tags": ["PE-SAT", "ESG", "US", "C-25"], "pe3_score": 93, "github_path": "prompts/PE-SAT/ESG-US-v13.0.xml"},
+    {"id": "prompts/PE-SAT/ESG-CN-v8.0", "type": "prompt", "title": "🇨🇳 ESG-CN-v8.0 · 중국 특화 파생 (Party_Directive_Override)", "status": "active", "version": "v8.0", "date": "2026-04-29", "tags": ["PE-SAT", "ESG", "CN", "C-25", "dual_pressure", "political_risk_VERY_HIGH"], "pe3_score": 92, "github_path": "prompts/PE-SAT/ESG-CN-v8.0.xml", "dual_pressure_flag": true, "political_risk_flag": "VERY_HIGH"},
+    {"id": "CN/Party_Directive_Override_State", "type": "state_node", "title": "⚠️ Party_Directive_Override · CN 전용 상태", "status": "active", "version": "v8.0", "date": "2026-04-29", "tags": ["CN", "state", "CCP"]},
+    {"id": "CN/CN_RegStack", "type": "reg_stack", "title": "🇨🇳 CN 규제 스택", "status": "active", "version": "v8.0", "date": "2026-04-29", "tags": ["CN", "regulation"]},
+    {"id": "CN/CN_DualPressure_Analyzer", "type": "analysis_module", "title": "⚡ CN 이중 압박 분석기", "status": "active", "version": "v8.0", "date": "2026-04-29", "tags": ["CN", "dual_pressure"]},
+    {"id": "CN/CN-F01-CATL-risk-node", "type": "risk_node", "title": "⚠️ CATL", "status": "active", "version": "v8.0", "date": "2026-04-29", "tags": ["CN", "CATL"]},
+    {"id": "CN/CN-F02-BYD-risk-node", "type": "risk_node", "title": "⚠️ BYD", "status": "active", "version": "v8.0", "date": "2026-04-29", "tags": ["CN", "BYD"]},
+    {"id": "CN/CN-F03-LONGi-risk-node", "type": "risk_node", "title": "⚠️ LONGi", "status": "active", "version": "v8.0", "date": "2026-04-29", "tags": ["CN", "LONGi"]},
+    {"id": "CN/CN-F04-Huawei-risk-node", "type": "risk_node", "title": "⚠️ Huawei", "status": "active", "version": "v8.0", "date": "2026-04-29", "tags": ["CN", "Huawei"]},
+    {"id": "CN/CN-F05-SMIC-risk-node", "type": "risk_node", "title": "⚠️ SMIC", "status": "active", "version": "v8.0", "date": "2026-04-29", "tags": ["CN", "SMIC"]},
+    {"id": "CN/CN-F06-ChinaMobile-risk-node", "type": "risk_node", "title": "⚠️ China Mobile", "status": "active", "version": "v8.0", "date": "2026-04-29", "tags": ["CN", "ChinaMobile"]},
+    {"id": "CN/CN-F07-PetroChina-risk-node", "type": "risk_node", "title": "⚠️ PetroChina", "status": "active", "version": "v8.0", "date": "2026-04-29", "tags": ["CN", "PetroChina"]},
+    {"id": "prompts/PE-11/PE-11-MASTER", "type": "prompt", "title": "🚀 PE-11 Master Multi-Agent Prompt System v11.0", "status": "active", "version": "v11.0", "date": "2026-04-26", "tags": ["PE-11", "multi-agent"]},
+    {"id": "prompts/PE-MEM/PE-MEM-MASTER", "type": "prompt", "title": "🔬 PE-MEM Memory Product Architecture v1.4", "status": "active", "version": "v1.4", "date": "2026-04-27", "tags": ["PE-MEM", "HBM"]},
+    {"id": "prompts/PE-JV/PE-JV-MASTER", "type": "prompt", "title": "💼 PE-JV Global JV Fund v3.0", "status": "active", "version": "v3.0", "date": "2026-04-28", "tags": ["PE-JV", "JV"]},
+    {"id": "prompts/PE-BOARD/PE-BOARD-MASTER", "type": "prompt", "title": "🏛️ PE-BOARD M&A 전략 v1.1", "status": "active", "version": "v1.1", "date": "2026-04-28", "tags": ["PE-BOARD", "MA"], "pe3_score": 94},
+    {"id": "prompts/water-strategy/PE-WATER-01", "type": "prompt", "title": "🌊 PE-WATER-01 산업용수 전략 붕괴 감시", "status": "active", "version": "v1.0", "date": "2026-04-29", "tags": ["PE-WATER"]},
+    {"id": "prompts/osat-strategy/PE-SAT-01", "type": "prompt", "title": "🏷️ PE-SAT-01 OSAT 전략 붕괴 감시 v7.0", "status": "active", "version": "v7.0", "date": "2026-04-29", "tags": ["PE-SAT", "OSAT"], "pe3_score": 91},
+    {"id": "prompts/PE-SEMI/P-12-MASTER", "type": "hub", "title": "🎯 P-12 Bayesian-GNN 장비 리스크 v1.0", "status": "active", "version": "v1.0", "date": "2026-04-29", "tags": ["P-12", "Bayesian-GNN"], "pe3_score": 94},
+    {"id": "prompts/PE-SEMI/PE-SEMI-MASTER", "type": "prompt", "title": "🏭 PE-SEMI-MASTER 반도체 생태계 통합 감시 v1.0", "status": "active", "version": "v1.0", "date": "2026-04-29", "tags": ["PE-SEMI", "C-24"], "pe3_score": 95},
+    {"id": "prompts/PE-SEMI/ASML-risk-node", "type": "risk_node", "title": "⚠️ ASML HIGH (12M:0.61)", "status": "active", "version": "v1.0", "date": "2026-04-29", "tags": ["ASML", "P-12"]},
+    {"id": "prompts/PE-SEMI/LAM-risk-node", "type": "risk_node", "title": "⚠️ Lam Research MEDIUM (12M:0.43)", "status": "active", "version": "v1.0", "date": "2026-04-29", "tags": ["LamResearch", "P-12"]},
+    {"id": "prompts/PE-SEMI/KLA-risk-node", "type": "risk_node", "title": "⚠️ KLA MEDIUM (12M:0.38)", "status": "active", "version": "v1.0", "date": "2026-04-29", "tags": ["KLA", "P-12"]},
+    {"id": "prompts/PE-SEMI/TEL-risk-node", "type": "risk_node", "title": "✅ TEL S0 STABLE (12M:0.29)", "status": "active", "version": "v1.0", "date": "2026-04-29", "tags": ["TEL", "P-12"]},
+    {"id": "prompts/PE-SEMI/AMAT-risk-node", "type": "risk_node", "title": "⚠️ AMAT MEDIUM (12M:0.34)", "status": "active", "version": "v1.0", "date": "2026-04-29", "tags": ["AMAT", "P-12"]},
+    {"id": "prompts/PE-SEMI/PE-13-OSAT-SCREEN", "type": "prompt", "title": "🏷️ PE-13 OSAT 연계 스크리닝 v1.0", "status": "active", "version": "v1.0", "date": "2026-04-29", "tags": ["PE-13", "OSAT"]},
+    {"id": "prompts/chem-strategy/PE-CHEM-MASTER", "type": "prompt", "title": "⛗ PE-CHEM-MASTER v10.0", "status": "active", "version": "v10.0", "date": "2026-04-29", "tags": ["PE-CHEM"], "pe3_score": 95},
+    {"id": "prompts/equipment-strategy/PE-EQP-MASTER", "type": "prompt", "title": "⚙️ PE-EQP-MASTER v7.0", "status": "active", "version": "v7.0", "date": "2026-04-29", "tags": ["PE-EQP"], "pe3_score": 95}
+  ],
+  "edges": [
+    {"source": "T-09", "target": "engines/PE-1_auto-refinement/README.md", "relation": "child_of"},
+    {"source": "T-09", "target": "engines/PE-2_auto-proliferation/README.md", "relation": "child_of"},
+    {"source": "T-09", "target": "engines/PE-3_auto-validation/README.md", "relation": "child_of"},
+    {"source": "T-09", "target": "engines/PE-7_ai-automation-design/README.md", "relation": "child_of"},
+    {"source": "T-09", "target": "prompts/PE-SAT/PE-SAT-MASTER", "relation": "child_of"},
+    {"source": "T-09", "target": "prompts/PE-11/PE-11-MASTER", "relation": "child_of"},
+    {"source": "T-09", "target": "prompts/PE-MEM/PE-MEM-MASTER", "relation": "child_of"},
+    {"source": "T-09", "target": "prompts/PE-JV/PE-JV-MASTER", "relation": "child_of"},
+    {"source": "T-09", "target": "prompts/PE-BOARD/PE-BOARD-MASTER", "relation": "child_of"},
+    {"source": "T-09", "target": "prompts/water-strategy/PE-WATER-01", "relation": "child_of"},
+    {"source": "T-09", "target": "prompts/osat-strategy/PE-SAT-01", "relation": "child_of"},
+    {"source": "T-09", "target": "prompts/PE-SEMI/PE-SEMI-MASTER", "relation": "child_of"},
+    {"source": "prompts/PE-SAT/PE-SAT-MASTER", "target": "prompts/PE-SAT/ESG-001-v13.0", "relation": "extends"},
+    {"source": "prompts/PE-SAT/PE-SAT-MASTER", "target": "prompts/PE-SAT/ESG-001-v8.0-MASTER", "relation": "extends"},
+    {"source": "prompts/PE-SAT/ESG-001-v8.0-MASTER", "target": "prompts/PE-SAT/ESG-KR-v8.0-A", "relation": "variant_of"},
+    {"source": "prompts/PE-SAT/ESG-001-v8.0-MASTER", "target": "prompts/PE-SAT/ESG-GLOBAL-v8.0-B", "relation": "variant_of"},
+    {"source": "prompts/PE-SAT/ESG-001-v8.0-MASTER", "target": "prompts/PE-SAT/ESG-001-v13.0", "relation": "supersedes"},
+    {"source": "prompts/PE-SAT/ESG-001-v13.0", "target": "prompts/PE-SAT/ESG-KR-v13.0", "relation": "variant_of"},
+    {"source": "prompts/PE-SAT/ESG-001-v13.0", "target": "prompts/PE-SAT/ESG-EU-v13.0", "relation": "variant_of"},
+    {"source": "prompts/PE-SAT/ESG-001-v13.0", "target": "prompts/PE-SAT/ESG-US-v13.0", "relation": "variant_of"},
+    {"source": "prompts/PE-SAT/ESG-001-v13.0", "target": "prompts/PE-SAT/ESG-CN-v8.0", "relation": "variant_of"},
+    {"source": "prompts/PE-SAT/ESG-CN-v8.0", "target": "CN/Party_Directive_Override_State", "relation": "defines_state"},
+    {"source": "prompts/PE-SAT/ESG-CN-v8.0", "target": "CN/CN-F01-CATL-risk-node", "relation": "analyzes"},
+    {"source": "prompts/PE-SAT/ESG-CN-v8.0", "target": "CN/CN-F02-BYD-risk-node", "relation": "analyzes"},
+    {"source": "prompts/PE-SAT/ESG-CN-v8.0", "target": "CN/CN-F03-LONGi-risk-node", "relation": "analyzes"},
+    {"source": "prompts/PE-SAT/ESG-CN-v8.0", "target": "CN/CN-F04-Huawei-risk-node", "relation": "analyzes"},
+    {"source": "prompts/PE-SAT/ESG-CN-v8.0", "target": "CN/CN-F05-SMIC-risk-node", "relation": "analyzes"},
+    {"source": "prompts/PE-SAT/ESG-CN-v8.0", "target": "CN/CN-F06-ChinaMobile-risk-node", "relation": "analyzes"},
+    {"source": "prompts/PE-SAT/ESG-CN-v8.0", "target": "CN/CN-F07-PetroChina-risk-node", "relation": "analyzes"},
+    {"source": "prompts/PE-SAT/ESG-CN-v8.0", "target": "CN/CN_RegStack", "relation": "uses"},
+    {"source": "prompts/PE-SAT/ESG-CN-v8.0", "target": "CN/CN_DualPressure_Analyzer", "relation": "uses"},
+    {"source": "prompts/PE-SAT/ESG-CN-v8.0", "target": "prompts/PE-SEMI/PE-13-OSAT-SCREEN", "relation": "cross_domain"},
+    {"source": "prompts/PE-SAT/ESG-CN-v8.0", "target": "prompts/PE-JV/PE-JV-MASTER", "relation": "cross_domain"},
+    {"source": "prompts/PE-SAT/ESG-CN-v8.0", "target": "prompts/PE-BOARD/PE-BOARD-MASTER", "relation": "cross_domain"},
+    {"source": "prompts/PE-SAT/ESG-CN-v8.0", "target": "prompts/water-strategy/PE-WATER-01", "relation": "cross_domain"},
+    {"source": "CN/Party_Directive_Override_State", "target": "CN/CN-F04-Huawei-risk-node", "relation": "overrides"},
+    {"source": "CN/Party_Directive_Override_State", "target": "CN/CN-F07-PetroChina-risk-node", "relation": "overrides"},
+    {"source": "prompts/PE-SEMI/P-12-MASTER", "target": "prompts/PE-SEMI/ASML-risk-node", "relation": "analyzes"},
+    {"source": "prompts/PE-SEMI/P-12-MASTER", "target": "prompts/PE-SEMI/LAM-risk-node", "relation": "analyzes"},
+    {"source": "prompts/PE-SEMI/P-12-MASTER", "target": "prompts/PE-SEMI/KLA-risk-node", "relation": "analyzes"},
+    {"source": "prompts/PE-SEMI/P-12-MASTER", "target": "prompts/PE-SEMI/TEL-risk-node", "relation": "analyzes"},
+    {"source": "prompts/PE-SEMI/P-12-MASTER", "target": "prompts/PE-SEMI/AMAT-risk-node", "relation": "analyzes"},
+    {"source": "prompts/PE-SEMI/PE-13-OSAT-SCREEN", "target": "prompts/PE-SEMI/TEL-risk-node", "relation": "screens_from"},
+    {"source": "prompts/osat-strategy/PE-SAT-01", "target": "prompts/PE-SEMI/PE-13-OSAT-SCREEN", "relation": "cross_domain"},
+    {"source": "prompts/chem-strategy/PE-CHEM-MASTER", "target": "prompts/osat-strategy/PE-SAT-01", "relation": "cross_domain"},
+    {"source": "prompts/equipment-strategy/PE-EQP-MASTER", "target": "prompts/osat-strategy/PE-SAT-01", "relation": "cross_domain"},
+    {"source": "prompts/PE-JV/PE-JV-MASTER", "target": "prompts/PE-MEM/PE-MEM-MASTER", "relation": "cross_domain"}
+  ]
+}
