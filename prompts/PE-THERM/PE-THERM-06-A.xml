@@ -1,0 +1,138 @@
+<!-- PE-THERM-06-A | HBM5 TSV 10k/mm² Ultra-Dense Variant
+     version    : 1.0
+     pe3_score  : 96
+     parent     : PE-THERM-06 (v3.0, score 97)
+     variant_type: HBM5-UltraDense
+     proliferated_by: PE-2 Auto-Proliferation Engine
+     date       : 2026-04-29
+     author     : Gilbert (T-09 PE System)
+     notion_url : https://www.notion.so/35155ed436f081ca93bcddb49af69c7d
+-->
+
+<prompt id="PE-THERM-06-A" version="1.0" pe3_score="96"
+        parent="PE-THERM-06" variant_type="HBM5-UltraDense"
+        proliferated_by="PE-2" date="2026-04-29">
+
+<role>
+당신은 3D IC TSV 권위자 Subramanian Iyer,
+Constructal Law 물리학자 Adrian Bejan,
+HBM5 패키징 선행기술 연구자의 복합 전문가입니다.
+HBM5 세대의 TSV pitch 2.0 μm / density 10,000/mm²라는
+전례 없는 초고밀도 조건에서 발생하는 열전달 붕괴 임계를
+물리 법칙 수준에서 규명합니다.
+</role>
+
+<context>
+[HBM5 TSV Ultra-Dense 파라미터]
+  TSV density  : 10,000 /mm²  (HBM3 대비 4× 증가)
+  TSV pitch    : ~10 μm  →  목표 2.0 μm
+  Via diameter : 0.8~1.2 μm
+  AR (종횡비)  : 15:1 ~ 20:1  (HBM3 8:1 대비 2× 이상)
+  Stack        : HBM5 16-Hi (HBM3 12-Hi 대비 +4)
+
+[재료 열전도율]
+  Cu via       : k = 385~400 W/m·K
+  Si matrix    : k = 120~130 W/m·K
+  Dielectric liner (SiO₂/low-k) : k = 0.5~1.4 W/m·K  ← 극한 병목
+  liner t      : 50~100 nm  (초박막화 추세)
+
+[관찰된 현상]
+  - TSV density 4× 증가에도 k_eff 향상 < 1.3×  → Severe Saturation
+  - pitch < 5 μm 구간에서 phonon mean free path λ ≈ pitch  → 간섭 발생
+  - 16-Hi 적층 시 누적 ΔT 예측 초과: +8~12°C 추가 발생
+</context>
+
+<task>
+HBM5 TSV 10k/mm² 조건에서 발생하는
+열전달 붕괴(Thermal Collapse) 임계를 다음 4축으로 규명하라:
+
+① PDE 극한 조건 확장 — 초고밀도 경계조건 재설정
+② Phonon Interference 정량화 — λ ≈ pitch 충돌 모델
+③ Percolation Cutoff 수식화 — density 임계값 도출
+④ HBM5 16-Hi 누적 열저항 시뮬레이션
+
+최종 목표: "HBM5 TSV 10k/mm²가 왜 물리적 한계를 초과하는지"
+           를 PE-THERM-06 기반에서 정량 확장 증명
+</task>
+
+<instructions>
+STEP 1. Governing PDE — HBM5 극한 경계조건 재설정
+  ∇·(k_eff(x,y,z,ρ_TSV)∇T) = -q'''
+  ρ_TSV = 10,000/mm²를 homogenization parameter로 편입
+  pitch 2.0 μm 기준 unit cell 재정의 (vs THERM-06 10 μm 비교)
+  경계조건: 상부 adiabatic / 하부 T_fixed / lateral periodic
+
+STEP 2. Phonon Interference 모델
+  조건: λ_phonon (Si at 350K) ≈ 40~300 nm
+  pitch 2.0 μm 시 lateral phonon path 제한 분석:
+    L_phonon_free < pitch/2  →  boundary scattering dominant
+  k_Si_effective 저감률 수식화:
+    k_eff_Si = k_bulk × (1 - β × (λ/pitch)^γ)
+  β, γ 계수 도출 (실험 데이터 범위 제시)
+  수치 예: pitch=2μm, λ=100nm → k_eff_Si 저감률 계산
+
+STEP 3. Liner Resistance 극한 모델
+  t_liner = 50 nm  →  R_liner = t/(k·A)
+  밀도 10k/mm²  →  단위면적당 총 liner 열저항 합산:
+    R_liner_total = R_single_liner × N_TSV/mm²
+  임계 조건: R_liner_total > R_Si_spreading 성립 밀도 계산
+
+STEP 4. Spreading Resistance Collapse
+  PE-THERM-06 공식: R_spread ≈ 1/(k_Si·√A)
+  pitch 2.0 μm  →  L_spread 제한  →  R_spread 상승 정량화
+  Saturation onset: p < 2×L_spread 조건 (THERM-06)  →  HBM5 조건 대입
+  결론: saturation이 아닌 collapse 영역 진입 여부 판정
+
+STEP 5. Percolation Cutoff 수식
+  k_eff = k_Si·(1-φ) + k_Cu·φ·η(ρ)  [PE-THERM-06 Scaling Law 확장]
+  η(ρ) → 0 조건:
+    dη/dρ < 0  for  ρ > ρ_critical
+  ρ_critical 수치 도출 (단위: /mm²)
+  HBM5 10k/mm² vs ρ_critical 비교 판정
+
+STEP 6. HBM5 16-Hi 누적 열저항 시뮬레이션
+  인터페이스 수: 15개 (16-Hi)
+  R_per_interface (HBM5) vs R_per_interface (HBM3 12-Hi) 비교
+  Q = 150W (HBM5 TDP 가정) 기준:
+    ΔT_total = Q × ΣR_th
+  목표: 85°C 이하 유지 가능 여부 판정
+  상한/하한 시나리오 분리 계산
+
+STEP 7. Collapse vs Saturation 분류표
+  조건       | ρ < ρ_c | ρ = ρ_c | ρ > ρ_c (HBM5)
+  k_eff 거동 | 선형↑   | 포화     | 역전(붕괴)
+  ΔT 거동    | 감소    | 안정     | 급증
+  설계 가능성| ○      | △       | ✗
+  수치 기준 포함
+
+STEP 8. HBM5 열 설계 임계 가이드라인
+  임계 pitch: p_min 수치 도출
+  임계 밀도: ρ_max 수치 도출
+  liner 재료 요구 k: k_liner_min 수치 도출
+  권고 대안 구조 3종 (Cu pillar / Hybrid bonding / Direct Si-Si)
+  각 대안의 성능·공정·비용 3축 평가
+</instructions>
+
+<constraints>
+- PE-THERM-06 결과를 baseline으로 반드시 비교 제시
+- phonon interference 항 생략 금지
+- HBM5 파라미터 (10k/mm², 16-Hi, pitch 2.0 μm) 전부 수치 대입
+- Collapse vs Saturation 명확히 구분 (정량 기준 포함)
+- 모든 수식에 단위 명시 (SI 기준)
+- 출력: 표 + PDE + 수치 + 물리 해석 완전 통합
+</constraints>
+
+<output_format>
+1. Executive Summary — HBM5 열 붕괴 임계 핵심 3문장
+2. Governing PDE (HBM5 확장판) + 경계조건
+3. Phonon Interference 분석 (수식 + k_eff 저감률 표)
+4. Liner Resistance 극한 계산 (밀도별 비교표)
+5. Spreading Resistance Collapse 판정 (THERM-06 비교)
+6. Percolation Cutoff: ρ_critical 도출 + HBM5 판정
+7. 16-Hi 누적 ΔT 시뮬레이션 (Q=150W 기준)
+8. Collapse vs Saturation 분류표
+9. HBM5 설계 임계 가이드라인 (p_min / ρ_max / k_liner_min)
+10. 대안 구조 3종 평가 (성능·공정·비용 3축)
+</output_format>
+
+</prompt>

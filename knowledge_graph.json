@@ -1,15 +1,34 @@
 {
   "meta": {
-    "generated_at": "2026-04-29T01:53:28.740821+00:00",
-    "version": "1.0",
-    "total_nodes": 43,
-    "total_edges": 60,
+    "generated_at": "2026-04-29T02:19:00.000000+00:00",
+    "version": "3.3",
+    "total_nodes": 44,
+    "total_edges": 62,
     "scan_dirs": [
       "docs",
-      "engines"
+      "engines",
+      "prompts"
     ],
     "sha_enabled": false,
-    "version_extract": false
+    "version_extract": false,
+    "changelog": [
+      {
+        "version": "3.3",
+        "date": "2026-04-29",
+        "nodes_added": ["prompts/PE-THERM/PE-THERM-06-A.xml"],
+        "edges_added": [
+          "prompts/PE-THERM/PE-THERM-06-A.xml → prompts/PE-THERM/PE-THERM-06.xml (variant_of)",
+          "prompts/PE-THERM/PE-THERM-06-A.xml → CHANGELOG.md (belongs_to)"
+        ],
+        "description": "PE-2 Auto-Proliferation: HBM5 TSV 10k/mm² Ultra-Dense Variant 신규 등록"
+      },
+      {
+        "version": "3.2",
+        "date": "2026-04-29",
+        "nodes_added": ["PE-THERM-01~06 (6종)"],
+        "description": "PE-THERM 도메인 최초 등록 (6 nodes, 8 edges)"
+      }
+    ]
   },
   "nodes": [
     {
@@ -19,27 +38,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-05",
-      "tags": [
-        "root",
-        "meta",
-        "RCA-001",
-        "RCA-004",
-        "RCA-002",
-        "RCA-003",
-        "v1.7",
-        "v2.7",
-        "v2.0",
-        "v1.0",
-        "v1.1",
-        "v1.2",
-        "v1.3",
-        "v1.4",
-        "v1.5",
-        "v1.6",
-        "v3.0",
-        "v4.0",
-        "v1.8"
-      ],
+      "tags": ["root", "meta", "RCA-001", "RCA-004", "RCA-002", "RCA-003", "v1.7", "v2.7", "v2.0", "v1.0", "v1.1", "v1.2", "v1.3", "v1.4", "v1.5", "v1.6", "v3.0", "v4.0", "v1.8"],
       "notion_url": "https://www.notion.so/33955ed436f081cc9f0bd014d631aa7b",
       "file_size": 8870,
       "sha": null
@@ -51,17 +50,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-29",
-      "tags": [
-        "root",
-        "meta",
-        "v1.0",
-        "v3.2",
-        "v3.0",
-        "v2.0",
-        "v2.3",
-        "v1.6",
-        "v1.5"
-      ],
+      "tags": ["root", "meta", "v1.0", "v3.2", "v3.3", "v3.0", "v2.0", "v2.3", "v1.6", "v1.5"],
       "notion_url": "https://www.notion.so/35155ed436f081ca93bcddb49af69c7d",
       "file_size": 5285,
       "sha": null
@@ -73,10 +62,7 @@
       "status": "unknown",
       "version": "v1.2",
       "date": "2026-04-26",
-      "tags": [
-        "v1.2",
-        "v1.0"
-      ],
+      "tags": ["v1.2", "v1.0"],
       "notion_url": null,
       "file_size": 3660,
       "sha": null
@@ -100,10 +86,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-26",
-      "tags": [
-        "v1.0",
-        "v1.1"
-      ],
+      "tags": ["v1.0", "v1.1"],
       "notion_url": null,
       "file_size": 3179,
       "sha": null
@@ -115,9 +98,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-26",
-      "tags": [
-        "v2.0"
-      ],
+      "tags": ["v2.0"],
       "notion_url": "https://www.notion.so/profile",
       "file_size": 4104,
       "sha": null
@@ -129,9 +110,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-26",
-      "tags": [
-        "v2.0"
-      ],
+      "tags": ["v2.0"],
       "notion_url": null,
       "file_size": 5708,
       "sha": null
@@ -143,9 +122,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-26",
-      "tags": [
-        "v2.0"
-      ],
+      "tags": ["v2.0"],
       "notion_url": "https://www.notion.so/34955ed436f081149dd6de25dba027d7",
       "file_size": 3156,
       "sha": null
@@ -157,9 +134,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-26",
-      "tags": [
-        "v2.0"
-      ],
+      "tags": ["v2.0"],
       "notion_url": null,
       "file_size": 4035,
       "sha": null
@@ -171,9 +146,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-28",
-      "tags": [
-        "v2.1"
-      ],
+      "tags": ["v2.1"],
       "notion_url": null,
       "file_size": 5896,
       "sha": null
@@ -185,12 +158,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-09",
-      "tags": [
-        "agent1",
-        "RCA-001",
-        "v3.1",
-        "v3.0"
-      ],
+      "tags": ["agent1", "RCA-001", "v3.1", "v3.0"],
       "notion_url": null,
       "file_size": 1465,
       "sha": null
@@ -202,11 +170,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-09",
-      "tags": [
-        "agent2",
-        "v3.1",
-        "v3.0"
-      ],
+      "tags": ["agent2", "v3.1", "v3.0"],
       "notion_url": null,
       "file_size": 1430,
       "sha": null
@@ -218,12 +182,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-09",
-      "tags": [
-        "agent3",
-        "RCA-002",
-        "v3.1",
-        "v3.0"
-      ],
+      "tags": ["agent3", "RCA-002", "v3.1", "v3.0"],
       "notion_url": null,
       "file_size": 1780,
       "sha": null
@@ -235,11 +194,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-09",
-      "tags": [
-        "agent4",
-        "v0.2",
-        "v0.1"
-      ],
+      "tags": ["agent4", "v0.2", "v0.1"],
       "notion_url": null,
       "file_size": 1617,
       "sha": null
@@ -251,13 +206,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-09",
-      "tags": [
-        "agent5",
-        "RCA-004",
-        "v0.3",
-        "v0.2",
-        "v0.1"
-      ],
+      "tags": ["agent5", "RCA-004", "v0.3", "v0.2", "v0.1"],
       "notion_url": null,
       "file_size": 1869,
       "sha": null
@@ -269,12 +218,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-29",
-      "tags": [
-        "graph_patches",
-        "v3.1",
-        "v3.2",
-        "v1.0"
-      ],
+      "tags": ["graph_patches", "v3.1", "v3.2", "v1.0"],
       "notion_url": "https://www.notion.so/35155ed436f0812295f2de6895e27c39",
       "file_size": 2448,
       "sha": null
@@ -286,21 +230,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-09",
-      "tags": [
-        "RCA-001",
-        "RCA-002",
-        "RCA-003",
-        "RCA-004",
-        "RCA-005",
-        "v1.5",
-        "v3.1",
-        "v3.0",
-        "v1.4",
-        "v1.3",
-        "v1.2",
-        "v1.1",
-        "v1.0"
-      ],
+      "tags": ["RCA-001", "RCA-002", "RCA-003", "RCA-004", "RCA-005", "v1.5", "v3.1", "v3.0", "v1.4", "v1.3", "v1.2", "v1.1", "v1.0"],
       "notion_url": "https://www.notion.so/33955ed436f081cc9f0bd014d631aa7b",
       "file_size": 9501,
       "sha": null
@@ -312,10 +242,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-26",
-      "tags": [
-        "v1.0",
-        "v2.0"
-      ],
+      "tags": ["v1.0", "v2.0"],
       "notion_url": "https://www.notion.so/my-integrations",
       "file_size": 6957,
       "sha": null
@@ -327,10 +254,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-26",
-      "tags": [
-        "v1.0",
-        "v2.7"
-      ],
+      "tags": ["v1.0", "v2.7"],
       "notion_url": "https://www.notion.so/my-integrations",
       "file_size": 5027,
       "sha": null
@@ -342,10 +266,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-09",
-      "tags": [
-        "new",
-        "v3.1"
-      ],
+      "tags": ["new", "v3.1"],
       "notion_url": null,
       "file_size": 1425,
       "sha": null
@@ -357,17 +278,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-15",
-      "tags": [
-        "rca-capa",
-        "RCA-001",
-        "RCA-002",
-        "RCA-003",
-        "RCA-004",
-        "v1.2",
-        "v2.0",
-        "v1.1",
-        "v1.0"
-      ],
+      "tags": ["rca-capa", "RCA-001", "RCA-002", "RCA-003", "RCA-004", "v1.2", "v2.0", "v1.1", "v1.0"],
       "notion_url": "https://www.notion.so/33d55ed436f081bfa2aeccc26f344de5",
       "file_size": 5096,
       "sha": null
@@ -379,14 +290,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-18",
-      "tags": [
-        "rca-capa",
-        "RCA-001",
-        "RCA-002",
-        "RCA-003",
-        "RCA-004",
-        "v1.3"
-      ],
+      "tags": ["rca-capa", "RCA-001", "RCA-002", "RCA-003", "RCA-004", "v1.3"],
       "notion_url": "https://www.notion.so/33d55ed436f081bfa2aeccc26f344de5",
       "file_size": 2137,
       "sha": null
@@ -398,12 +302,7 @@
       "status": "resolved",
       "version": "",
       "date": "2026-04-06",
-      "tags": [
-        "rca-capa",
-        "RCA-001",
-        "RCA-002",
-        "v3.0"
-      ],
+      "tags": ["rca-capa", "RCA-001", "RCA-002", "v3.0"],
       "notion_url": "https://www.notion.so/33d55ed436f081c593ede0347d2b581a",
       "file_size": 1636,
       "sha": null
@@ -415,13 +314,7 @@
       "status": "resolved",
       "version": "",
       "date": "2026-04-06",
-      "tags": [
-        "rca-capa",
-        "RCA-002",
-        "RCA-001",
-        "RCA-003",
-        "v3.1"
-      ],
+      "tags": ["rca-capa", "RCA-002", "RCA-001", "RCA-003", "v3.1"],
       "notion_url": "https://www.notion.so/33d55ed436f081d0a7a1d4a2a8de4a8f",
       "file_size": 1498,
       "sha": null
@@ -433,13 +326,7 @@
       "status": "resolved",
       "version": "",
       "date": "2026-04-06",
-      "tags": [
-        "rca-capa",
-        "RCA-003",
-        "RCA-002",
-        "RCA-004",
-        "v3.1"
-      ],
+      "tags": ["rca-capa", "RCA-003", "RCA-002", "RCA-004", "v3.1"],
       "notion_url": "https://www.notion.so/33d55ed436f0817e83e0f3bc0f168316",
       "file_size": 1742,
       "sha": null
@@ -451,12 +338,7 @@
       "status": "resolved",
       "version": "",
       "date": "2026-04-06",
-      "tags": [
-        "rca-capa",
-        "RCA-004",
-        "RCA-003",
-        "v3.1"
-      ],
+      "tags": ["rca-capa", "RCA-004", "RCA-003", "v3.1"],
       "notion_url": "https://www.notion.so/33d55ed436f08195bd49cdd19f062644",
       "file_size": 1516,
       "sha": null
@@ -468,18 +350,7 @@
       "status": "resolved",
       "version": "",
       "date": "2026-04-09",
-      "tags": [
-        "rca-capa",
-        "RCA-001",
-        "RCA-002",
-        "RCA-003",
-        "RCA-004",
-        "v2.1",
-        "v3.0",
-        "v3.1",
-        "v2.0",
-        "v1.0"
-      ],
+      "tags": ["rca-capa", "RCA-001", "RCA-002", "RCA-003", "RCA-004", "v2.1", "v3.0", "v3.1", "v2.0", "v1.0"],
       "notion_url": "https://www.notion.so/33d55ed436f081bfa2aeccc26f344de5",
       "file_size": 6445,
       "sha": null
@@ -491,16 +362,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-15",
-      "tags": [
-        "rca-capa",
-        "RCA-001",
-        "RCA-002",
-        "RCA-003",
-        "RCA-004",
-        "v1.0",
-        "v1.1",
-        "v2.0"
-      ],
+      "tags": ["rca-capa", "RCA-001", "RCA-002", "RCA-003", "RCA-004", "v1.0", "v1.1", "v2.0"],
       "notion_url": null,
       "file_size": 4254,
       "sha": null
@@ -512,14 +374,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-10",
-      "tags": [
-        "report",
-        "v1.6",
-        "v1.0",
-        "v1.1",
-        "v1.5",
-        "v1.7"
-      ],
+      "tags": ["report", "v1.6", "v1.0", "v1.1", "v1.5", "v1.7"],
       "notion_url": "https://www.notion.so/33955ed436f081cc9f0bd014d631aa7b",
       "file_size": 7740,
       "sha": null
@@ -531,9 +386,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-09",
-      "tags": [
-        "support"
-      ],
+      "tags": ["support"],
       "notion_url": null,
       "file_size": 1271,
       "sha": null
@@ -545,10 +398,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-05",
-      "tags": [
-        "PE-1_auto-refinement",
-        "v1.1"
-      ],
+      "tags": ["PE-1_auto-refinement", "v1.1"],
       "notion_url": "https://www.notion.so/33955ed436f081cc9f0bd014d631aa7b",
       "file_size": 1747,
       "sha": null
@@ -560,10 +410,7 @@
       "status": "unknown",
       "version": "",
       "date": "",
-      "tags": [
-        "PE-1_auto-refinement",
-        "v1.1"
-      ],
+      "tags": ["PE-1_auto-refinement", "v1.1"],
       "notion_url": null,
       "file_size": 1403,
       "sha": null
@@ -575,11 +422,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-10",
-      "tags": [
-        "PE-1_auto-refinement",
-        "v1.4",
-        "v1.3"
-      ],
+      "tags": ["PE-1_auto-refinement", "v1.4", "v1.3"],
       "notion_url": null,
       "file_size": 2031,
       "sha": null
@@ -591,10 +434,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-05",
-      "tags": [
-        "PE-2_auto-proliferation",
-        "v1.1"
-      ],
+      "tags": ["PE-2_auto-proliferation", "v1.1"],
       "notion_url": "https://www.notion.so/33955ed436f081cc9f0bd014d631aa7b",
       "file_size": 1468,
       "sha": null
@@ -606,10 +446,7 @@
       "status": "unknown",
       "version": "",
       "date": "",
-      "tags": [
-        "PE-2_auto-proliferation",
-        "v1.1"
-      ],
+      "tags": ["PE-2_auto-proliferation", "v1.1"],
       "notion_url": null,
       "file_size": 1314,
       "sha": null
@@ -621,11 +458,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-10",
-      "tags": [
-        "PE-2_auto-proliferation",
-        "v1.4",
-        "v1.3"
-      ],
+      "tags": ["PE-2_auto-proliferation", "v1.4", "v1.3"],
       "notion_url": null,
       "file_size": 2583,
       "sha": null
@@ -637,10 +470,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-05",
-      "tags": [
-        "PE-3_auto-validation",
-        "v1.1"
-      ],
+      "tags": ["PE-3_auto-validation", "v1.1"],
       "notion_url": "https://www.notion.so/33955ed436f081cc9f0bd014d631aa7b",
       "file_size": 1414,
       "sha": null
@@ -652,10 +482,7 @@
       "status": "unknown",
       "version": "",
       "date": "",
-      "tags": [
-        "PE-3_auto-validation",
-        "v1.1"
-      ],
+      "tags": ["PE-3_auto-validation", "v1.1"],
       "notion_url": null,
       "file_size": 1161,
       "sha": null
@@ -667,9 +494,7 @@
       "status": "unknown",
       "version": "",
       "date": "",
-      "tags": [
-        "PE-3_auto-validation"
-      ],
+      "tags": ["PE-3_auto-validation"],
       "notion_url": null,
       "file_size": 1874,
       "sha": null
@@ -681,11 +506,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-10",
-      "tags": [
-        "PE-3_auto-validation",
-        "v1.4",
-        "v1.3"
-      ],
+      "tags": ["PE-3_auto-validation", "v1.4", "v1.3"],
       "notion_url": null,
       "file_size": 2843,
       "sha": null
@@ -697,9 +518,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-26",
-      "tags": [
-        "PE-7_ai-automation-design"
-      ],
+      "tags": ["PE-7_ai-automation-design"],
       "notion_url": null,
       "file_size": 1349,
       "sha": null
@@ -711,10 +530,7 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-21",
-      "tags": [
-        "PE-7_ai-automation-design",
-        "v1.0"
-      ],
+      "tags": ["PE-7_ai-automation-design", "v1.0"],
       "notion_url": "https://www.notion.so/34955ed436f081149dd6de25dba027d7",
       "file_size": 2401,
       "sha": null
@@ -726,12 +542,24 @@
       "status": "unknown",
       "version": "",
       "date": "2026-04-21",
-      "tags": [
-        "PE-7_ai-automation-design",
-        "v1.0"
-      ],
+      "tags": ["PE-7_ai-automation-design", "v1.0"],
       "notion_url": "https://www.notion.so/34955ed436f081149dd6de25dba027d7",
       "file_size": 3237,
+      "sha": null
+    },
+    {
+      "id": "prompts/PE-THERM/PE-THERM-06-A.xml",
+      "type": "prompt",
+      "title": "🌱 PE-THERM-06-A · HBM5 TSV 10k/mm² Ultra-Dense Variant",
+      "status": "active",
+      "version": "v1.0",
+      "date": "2026-04-29",
+      "tags": ["PE-THERM", "HBM5", "TSV", "thermal", "variant", "v1.0", "pe3-96", "PE-2-proliferated"],
+      "pe3_score": 96,
+      "parent_prompt": "prompts/PE-THERM/PE-THERM-06.xml",
+      "variant_type": "HBM5-UltraDense",
+      "notion_url": "https://www.notion.so/35155ed436f081ca93bcddb49af69c7d",
+      "file_size": 4200,
       "sha": null
     }
   ],
@@ -1035,6 +863,16 @@
       "source": "engines/PE-3_auto-validation/upgrade_v1.4.md",
       "target": "engines/PE-2_auto-proliferation/upgrade_v1.4.md",
       "relation": "links_to"
+    },
+    {
+      "source": "prompts/PE-THERM/PE-THERM-06-A.xml",
+      "target": "prompts/PE-THERM/PE-THERM-06.xml",
+      "relation": "variant_of"
+    },
+    {
+      "source": "prompts/PE-THERM/PE-THERM-06-A.xml",
+      "target": "CHANGELOG.md",
+      "relation": "belongs_to"
     }
   ]
 }
