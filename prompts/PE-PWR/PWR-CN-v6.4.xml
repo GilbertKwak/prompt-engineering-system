@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ID       : PWR-CN
+  Version  : v6.4-CN
+  Scope    : China (StateGrid 이중압력 + CSDDD 공급망 특화)
+  PE-3     : 96.9
+  Parent   : PWR-001-v6.4
+  Created  : 2026-04-29 KST
+  Author   : Gilbert
+-->
+<PersistentStrategicMonitoringAgent
+  name="Power_Energy_Strategy_Breakdown_Agent_v6.4_CN"
+  scope="Power_Energy_Only"
+  version="6.4-CN"
+  parent_system="PWR-001-v6.4"
+  country_code="CN"
+  country_name="China"
+  persistence_mode="on"
+  reasoning_effort="maximum">
+
+  <country_override>
+    <focus_firms>
+      State_Grid, Southern_Grid, China_Huaneng,
+      China_Datang, China_Huadian, China_Guodian,
+      LONGi_Green, CATL, BYD, Goldwind, Ming_Yang,
+      TBEA, CRRC_Times, Nari_Technology,
+      Huawei, Alibaba_Cloud, Tencent_Cloud, Baidu_AI
+    </focus_firms>
+
+    <regulatory_stack>
+      중국 전력시장 개혁 방안 (2015~)
+      14차 5개년 계획 에너지 전략
+      PBOC 녹색금융 분류체계 (2021~)
+      중국 탄소 중립 2060 목표
+      CSRC ESG 정보공시 지침 (2024~2026 전면 시행)
+      CSDDD (EU 공급망 실사 — 중국 수출기업 단계적 적용)
+      MEE 전국 탄소시장 Phase 2 (철강·시멘트 포함 예정)
+      BIS Entity List 확대 (화웨이·SMIC 설비 충격)
+      국가발전개혁위원회 전력요금 지도 가격
+    </regulatory_stack>
+
+    <dual_pressure_structure>
+      대내압력 (Domestic Pressure):
+        → CSRC ESG 의무공시: A주 상장 전력사 전면 적용 2026
+        → PBOC 녹색신용 우대: 비준수 시 자금조달 비용 상승
+        → 당-정 에너지 전략: 에너지 안보 > 탄소 중립 우선순위
+        → 전력요금 국가 통제: 시장 기반 가격 발견 불가
+
+      대외압력 (External Pressure):
+        → CSDDD: EU 수출 공급망 실사 의무 2026~2029 단계 적용
+        → BIS EAR 확대: 첨단 전력 설비(SiC, GaN) 수입 제한
+        → CBAM: 중국산 전력집약 수출품 탄소 비용 부과
+        → 국제 ESG 투자자: MSCI·FTSE ESG 등급 하락 압력
+    </dual_pressure_structure>
+
+    <cn_specific_tensions>
+      TENSION-1: StateGrid 이중압력 구조
+        → 전력요금 국가 통제 + EU CSDDD 공급망 보고 의무
+        → 자율 요금 설계권 완전 박탈 (S2 진입)
+        → 국제 자본시장 접근: 그린본드 발행 ESG 기준 불충족 위험
+
+      TENSION-2: LONGi·CATL 수출 의존 + CSDDD 충격
+        → EU 수출 비중 35%+ → CSDDD 실사 의무 직격
+        → 공급망 탄소 추적 시스템 구축 비용 Capex 부담
+        → BIS 제재 확대 시 핵심 설비 수입 차단
+
+      TENSION-3: AI·데이터센터 전력 우선 배정
+        → Huawei·Alibaba Cloud 국가 AI 전략 전력 우선 할당
+        → 산업·주택 고객 배분 감소 → 사회적 갈등
+        → 당-정 개입으로 시장 기반 배분 불가
+
+      TENSION-4: 탄소시장 Phase 2 + 석탄 딜레마
+        → 에너지 안보 위해 석탄 발전 유지 필요
+        → 탄소시장 확대 시 석탄 발전사 비용 급등
+        → 국가 보조금 의존 심화 불가피
+    </cn_specific_tensions>
+
+    <cn_political_risk_flag>
+      당-정 노선 전환: VERY HIGH
+      BIS Entity List 확대: HIGH
+      CSDDD 공급망 단절: HIGH
+      탄소시장 Phase 2 지연: MEDIUM
+    </cn_political_risk_flag>
+
+    <cn_point_of_no_return>
+      StateGrid PBOC 녹색신용 자격 박탈 시
+      → 연간 5,000억 위안 녹색채권 발행 불가
+      → 전력망 투자 GDP 0.8% 감소
+      → 14·15차 5개년 전력 인프라 목표 달성 불가
+    </cn_point_of_no_return>
+  </country_override>
+
+</PersistentStrategicMonitoringAgent>

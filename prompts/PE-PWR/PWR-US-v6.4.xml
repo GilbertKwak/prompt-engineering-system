@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ID       : PWR-US
+  Version  : v6.4-US
+  Scope    : United States (NextEra IRA + AWS/Google PPA 특화)
+  PE-3     : 96.7
+  Parent   : PWR-001-v6.4
+  Created  : 2026-04-29 KST
+  Author   : Gilbert
+-->
+<PersistentStrategicMonitoringAgent
+  name="Power_Energy_Strategy_Breakdown_Agent_v6.4_US"
+  scope="Power_Energy_Only"
+  version="6.4-US"
+  parent_system="PWR-001-v6.4"
+  country_code="US"
+  country_name="United States"
+  persistence_mode="on"
+  reasoning_effort="maximum">
+
+  <country_override>
+    <focus_firms>
+      NextEraEnergy, Vistra, NRG_Energy, Duke_Energy,
+      Southern_Company, Dominion_Energy, Exelon,
+      ATC, PJM_Interconnection, MISO, ERCOT,
+      Pattern_Energy, Invenergy, AES_Clean_Energy,
+      GEGrid, Quanta_Services, MYR_Group,
+      Amazon_AWS, Google, Microsoft, Meta, Oracle
+    </focus_firms>
+
+    <regulatory_stack>
+      IRA §45V (청정수소 세액공제)
+      IRA §45Y (청정전력 생산 세액공제 2025~)
+      IRA §48C (첨단 에너지 제조 세액공제)
+      CHIPS Act §9902 (반도체 전력 인프라)
+      NERC Reliability Standards
+      FERC Order 1920 (장거리 송전 계획)
+      EPA Clean Power Plan 2.0
+      Anti-ESG 주정부 입법 (Texas·Florida)
+    </regulatory_stack>
+
+    <us_specific_tensions>
+      TENSION-1: NextEra IRA 의존 구조
+        → 재생에너지 Capex 중 IRA 세액공제 의존 52%
+        → Trump 2기 IRA 롤백 리스크 → S2 전이 트리거
+        → 정치 반전 리스크: VERY HIGH
+
+      TENSION-2: AWS·Google PPA 집중
+        → ERCOT·PJM 내 하이퍼스케일러 PPA 비중 38% (2025)
+        → 데이터센터 직접 전력 구매 허용 논의 (FERC)
+        → 기존 산업·주택 고객 요금 교차 보조 왜곡 심화
+
+      TENSION-3: 그리드 병목 + AI 수요 폭발
+        → 인터커넥션 대기 2,600GW+ (2024 LBNL)
+        → 변압기 리드타임 2~3년 → 설비 투자 병목
+        → ERCOT 텍사스 AI DC 집적 → 계통 포화 2026~2027
+
+      TENSION-4: 주정부 Anti-ESG vs 연방 청정에너지
+        → Texas: 블랙록 ESG 채권 배제 + 재생에너지 계통 우선순위 박탈
+        → 연방-주 규제 충돌 → 투자 불확실성 극대화
+    </us_specific_tensions>
+
+    <us_political_risk>
+      IRA_rollback_probability: HIGH (Trump 2기 예산 협상)
+      FERC_deregulation_risk: MEDIUM-HIGH
+      Anti_ESG_contagion: MEDIUM (주정부 → 연방 확산 가능성)
+    </us_political_risk>
+
+    <us_point_of_no_return>
+      IRA §45Y 소급 폐지 시
+      → NextEra·AES 재생에너지 파이프라인 400GW+ 취소
+      → US 재생에너지 Capex 60% 즉시 중단
+      → 전력망 탄소 중립 목표 2050 달성 불가 확정
+    </us_point_of_no_return>
+  </country_override>
+
+</PersistentStrategicMonitoringAgent>

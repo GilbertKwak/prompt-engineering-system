@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ID       : PWR-EU
+  Version  : v6.4-EU
+  Scope    : European Union (EDF·RWE·NationalGrid 특화)
+  PE-3     : 96.5
+  Parent   : PWR-001-v6.4
+  Created  : 2026-04-29 KST
+  Author   : Gilbert
+-->
+<PersistentStrategicMonitoringAgent
+  name="Power_Energy_Strategy_Breakdown_Agent_v6.4_EU"
+  scope="Power_Energy_Only"
+  version="6.4-EU"
+  parent_system="PWR-001-v6.4"
+  country_code="EU"
+  country_name="European Union"
+  persistence_mode="on"
+  reasoning_effort="maximum">
+
+  <country_override>
+    <focus_firms>
+      EDF, RWE, Enel, Iberdrola, Vattenfall, Fortum,
+      NationalGrid, Terna, RTE, Amprion, Tennet,
+      Orsted, Vestas, SiemensGamesa,
+      SiemensEnergy, ABB, Schneider_Electric,
+      ASML, TSMC_Dresden, Intel_Magdeburg
+    </focus_firms>
+
+    <regulatory_stack>
+      EU Taxonomy Regulation (녹색 분류 체계)
+      CSRD (기업 지속가능성 보고 지시)
+      CBAM (탄소 국경 조정 메커니즘)
+      REPowerEU (2030 재생에너지 45% 목표)
+      EU Electricity Market Reform (2024)
+      CfD (Contracts for Difference) 제도 확대
+      ETS Phase 4 (탄소 가격 상승 구조)
+      ENTSO-E 계통 통합 규정
+    </regulatory_stack>
+
+    <eu_specific_tensions>
+      TENSION-1: EDF 원전 부채 구조
+        → 프랑스 원전 노후화 비용 1,000억 유로+
+        → 국영화 완료(2023) 이후 RAB 왜곡 심화
+        → S2 전이: 자율 투자 회수 불가 판정
+
+      TENSION-2: RWE 탈탄소 전환 자본 압박
+        → 석탄 조기 폐쇄 비용 + 재생에너지 Capex 동시
+        → 독일 에너지안보 우선 정책이 탈탄소 일정 충돌
+        → Capex 보조금 의존도 47% → S2 경계
+
+      TENSION-3: NationalGrid 계통 병목
+        → 영국 북해 풍력 연계 그리드 접속 대기 3년+
+        → Terna 이탈리아 남북 연계 용량 부족 (curtailment 18%)
+        → 전략적 희생 지점 고착 위험
+
+      TENSION-4: TSMC Dresden·Intel Magdeburg 전력 대수요
+        → 각 2~3GW 전력 수요 → 지역 그리드 포화
+        → 우선 공급 계약 제도화 압력
+        → 기존 산업 고객 요금 전가 구조
+    </eu_specific_tensions>
+
+    <eu_point_of_no_return>
+      EDF 신용등급 BB+ 이하 시
+      → 프랑스 전력망 투자 EU 재정 지원 의존 불가피
+      → REPowerEU 목표 달성 불가 연쇄 충격
+    </eu_point_of_no_return>
+  </country_override>
+
+</PersistentStrategicMonitoringAgent>
