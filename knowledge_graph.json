@@ -1,15 +1,15 @@
 {
-  "graph_version": "4.0",
-  "rebuild_timestamp": "2026-04-29T17:19:00+09:00",
-  "rebuild_command": "pe-graph --rebuild v4.0",
-  "base_from": "v3.9",
-  "base_nodes": 111,
-  "base_edges": 163,
-  "total_nodes": 115,
-  "total_edges": 169,
+  "graph_version": "4.1",
+  "rebuild_timestamp": "2026-04-29T17:52:00+09:00",
+  "rebuild_command": "pe-graph --rebuild v4.1",
+  "base_from": "v4.0",
+  "base_nodes": 115,
+  "base_edges": 169,
+  "total_nodes": 120,
+  "total_edges": 177,
   "delta": {
-    "nodes": "+4",
-    "edges": "+6"
+    "nodes": "+5",
+    "edges": "+8"
   },
   "domains": [
     "AI-Platform",
@@ -26,93 +26,120 @@
   ],
   "new_nodes": [
     {
-      "id": "PE-AI-HUB",
-      "label": "PE-AI Library Hub",
-      "domain": "AI-Platform",
+      "id": "PE-SEMI-HUB",
+      "label": "PE-SEMI Library Hub — Semiconductor Strategic Collapse Monitoring",
+      "domain": "Semiconductor",
       "type": "library_hub",
-      "child_page": "C-28",
-      "notion_url": "https://app.notion.com/p/35155ed436f08102bafbe7acba401e02",
-      "github_path": "prompts/PE-AI/",
+      "child_page": "C-29",
+      "notion_url": "https://app.notion.com/p/35155ed436f081bc89aacc6035cbe4f1",
+      "github_path": "prompts/semi-strategy/",
       "status": "active",
-      "pe3_score": 95,
+      "pe3_score": 96,
       "version": "v1.0",
       "created": "2026-04-29"
     },
     {
-      "id": "AI-001-OPT",
-      "label": "AI Platform Strategy Breakdown Agent v6.8-OPT",
-      "domain": "AI-Platform",
+      "id": "SEMI-001-MASTER",
+      "label": "Semiconductor Strategic Collapse Monitoring Agent v7.0-MASTER",
+      "domain": "Semiconductor",
       "type": "prompt_base",
-      "version": "v6.8-OPT",
+      "version": "v7.0-MASTER",
+      "pe3_score": 96,
+      "parent": "PE-SEMI-HUB",
+      "experts": ["Porter", "Sheffi", "Jaffe", "Markides"],
+      "focus_firms": 14,
+      "fab_state_machine": "S0~S4",
+      "github_path": "prompts/semi-strategy/semi_001_v7.0_master.md"
+    },
+    {
+      "id": "SEMI-001-KR",
+      "label": "Semiconductor Strategic Collapse Agent v7.0-KR",
+      "domain": "Semiconductor",
+      "type": "prompt_variant",
+      "version": "v7.0-KR",
       "pe3_score": 95,
-      "parent": "PE-AI-HUB",
-      "github_path": "prompts/PE-AI/ai_001_v6.8_opt.md",
-      "experts": ["Porter", "Farrell", "Thompson", "Wu"]
-    },
-    {
-      "id": "AI-001-KR",
-      "label": "AI Platform Strategy Breakdown Agent v6.8-OPT-KR",
-      "domain": "AI-Platform",
-      "type": "prompt_variant",
-      "version": "v6.8-OPT-KR",
-      "pe3_score": 94,
-      "parent": "PE-AI-HUB",
+      "parent": "PE-SEMI-HUB",
       "country": "KR",
-      "github_path": "prompts/PE-AI/ai_001_kr_v6.8_opt.md"
+      "focus_firms": ["Samsung_Semiconductor", "SK_Hynix", "DB_Hitek"],
+      "github_path": "prompts/semi-strategy/semi_001_kr_v7.0.md"
     },
     {
-      "id": "AI-001-GLOBAL",
-      "label": "AI Platform Strategy Breakdown Agent v6.8-OPT-GLOBAL",
-      "domain": "AI-Platform",
+      "id": "SEMI-001-GLOBAL",
+      "label": "Semiconductor Strategic Collapse Agent v7.0-GLOBAL",
+      "domain": "Semiconductor",
       "type": "prompt_variant",
-      "version": "v6.8-OPT-GLOBAL",
-      "pe3_score": 93,
-      "parent": "PE-AI-HUB",
-      "scope": "US/EU/CN/JP/KR",
-      "github_path": "prompts/PE-AI/ai_001_global_v6.8.md"
+      "version": "v7.0-GLOBAL",
+      "pe3_score": 94,
+      "parent": "PE-SEMI-HUB",
+      "scope": "US/TW/KR/JP/CN",
+      "github_path": "prompts/semi-strategy/semi_001_global_v7.0.md"
+    },
+    {
+      "id": "FAB-STATE-MACHINE",
+      "label": "Fab State Machine v1.0 (S0~S4)",
+      "domain": "Semiconductor",
+      "type": "analytical_framework",
+      "version": "v1.0",
+      "states": ["S0-Aligned", "S1-Supply_Pressured", "S2-Geopolitically_Locked", "S3-Strategically_Compressed", "S4-Broken"],
+      "parent": "SEMI-001-MASTER",
+      "created": "2026-04-29"
     }
   ],
   "new_edges": [
     {
-      "source": "PE-AI-HUB",
-      "target": "PE-PWR-HUB",
+      "source": "PE-SEMI-HUB",
+      "target": "PE-AI-HUB",
       "type": "ecosystem_link",
-      "label": "AI-DC Power Demand → Cloud Energy Strategy",
-      "weight": 0.85
-    },
-    {
-      "source": "PE-AI-HUB",
-      "target": "PE-MIN-HUB",
-      "type": "ecosystem_link",
-      "label": "Gallium/GaAs → AI Accelerator Supply Risk",
-      "weight": 0.90
-    },
-    {
-      "source": "PE-AI-HUB",
-      "target": "PE-SEMI-HUB",
-      "type": "ecosystem_link",
-      "label": "HBM/CoWoS → AI Model Training Compute Bottleneck",
+      "label": "HBM/CoWoS → AI Training Compute Bottleneck",
       "weight": 0.88
     },
     {
-      "source": "PE-AI-HUB",
-      "target": "PE-JV-HUB",
+      "source": "PE-SEMI-HUB",
+      "target": "PE-MIN-HUB",
       "type": "ecosystem_link",
-      "label": "AI-DC Energy+Compute Integrated Investment",
-      "weight": 0.75
+      "label": "Ga/Ge Export Control → GaN/SiC Supply Disruption",
+      "weight": 0.87
     },
     {
-      "source": "PE-AI-HUB",
-      "target": "PE-EQP-HUB",
+      "source": "PE-SEMI-HUB",
+      "target": "PE-PWR-HUB",
       "type": "ecosystem_link",
-      "label": "ASML/NVIDIA Export Control → AI Training Bottleneck",
+      "label": "AI-DC Power Demand → FAB Energy Cost Spike",
       "weight": 0.82
     },
     {
-      "source": "PE-AI-HUB",
+      "source": "PE-SEMI-HUB",
+      "target": "PE-EQP-HUB",
+      "type": "ecosystem_link",
+      "label": "ASML/Lam Export Control → Advanced Process Equipment Crisis",
+      "weight": 0.92
+    },
+    {
+      "source": "PE-SEMI-HUB",
+      "target": "PE-CHEM-HUB",
+      "type": "ecosystem_link",
+      "label": "EUV PR/CMP Slurry Supply Disruption → Yield Collapse",
+      "weight": 0.85
+    },
+    {
+      "source": "PE-SEMI-HUB",
       "target": "PE-11-MASTER",
       "type": "parent_system",
       "label": "PE-11 Multi-Agent Orchestration",
+      "weight": 1.00
+    },
+    {
+      "source": "PE-SEMI-HUB",
+      "target": "C-24-SEMI-PROCESS",
+      "type": "domain_link",
+      "label": "C-24 Process Library → C-29 Strategy Collapse Library",
+      "weight": 0.80
+    },
+    {
+      "source": "C-29",
+      "target": "T-09",
+      "type": "parent_child",
+      "label": "C-29 PE-SEMI → T-09 Mother Page",
       "weight": 1.00
     }
   ],
