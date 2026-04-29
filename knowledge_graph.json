@@ -1,15 +1,15 @@
 {
-  "graph_version": "4.1",
-  "rebuild_timestamp": "2026-04-29T17:52:00+09:00",
-  "rebuild_command": "pe-graph --rebuild v4.1",
-  "base_from": "v4.0",
-  "base_nodes": 115,
-  "base_edges": 169,
-  "total_nodes": 120,
-  "total_edges": 177,
+  "graph_version": "4.2",
+  "rebuild_timestamp": "2026-04-29T20:59:00+09:00",
+  "rebuild_command": "pe-graph --rebuild v4.2",
+  "base_from": "v4.1",
+  "base_nodes": 120,
+  "base_edges": 177,
+  "total_nodes": 123,
+  "total_edges": 183,
   "delta": {
-    "nodes": "+5",
-    "edges": "+8"
+    "nodes": "+3",
+    "edges": "+6"
   },
   "domains": [
     "AI-Platform",
@@ -26,13 +26,116 @@
   ],
   "new_nodes": [
     {
+      "id": "SEMI-OPT-MASTER",
+      "label": "Semiconductor Strategic Collapse Agent v7.0-OPT-MASTER",
+      "domain": "Semiconductor",
+      "type": "prompt_optimized",
+      "version": "v7.0-OPT",
+      "pe3_score": 96,
+      "parent": "SEMI-001-MASTER",
+      "github_path": "prompts/PE-SEMI/semi_001_v7.0_opt_master.md",
+      "github_commit": "e32d049",
+      "created": "2026-04-29",
+      "opt_features": [
+        "4-expert-frame",
+        "Bayesian-SCP-Beta(2,9)",
+        "PE-CHEM-integration",
+        "quality_gate",
+        "14-firm-surveillance"
+      ]
+    },
+    {
+      "id": "SEMI-OPT-KR",
+      "label": "Semiconductor Strategic Collapse Agent v7.0-OPT-KR",
+      "domain": "Semiconductor",
+      "type": "prompt_optimized",
+      "version": "v7.0-OPT",
+      "pe3_score": 95,
+      "parent": "SEMI-001-KR",
+      "country": "KR",
+      "github_path": "prompts/PE-SEMI/semi_001_v7.0_opt_kr.md",
+      "github_commit": "e32d049",
+      "created": "2026-04-29",
+      "opt_features": [
+        "KR-specific-triggers-5",
+        "national-strategy-quantitative-tracking",
+        "Korean-100pct",
+        "K-CHIPS-CHIPS-Act-dual-track"
+      ]
+    },
+    {
+      "id": "SEMI-OPT-GLOBAL",
+      "label": "Semiconductor Strategic Collapse Agent v7.0-OPT-GLOBAL",
+      "domain": "Semiconductor",
+      "type": "prompt_optimized",
+      "version": "v7.0-OPT",
+      "pe3_score": 94,
+      "parent": "SEMI-001-GLOBAL",
+      "scope": "US/KR/TW/JP/CN/EU",
+      "github_path": "prompts/PE-SEMI/semi_001_v7.0_opt_global.md",
+      "github_commit": "e32d049",
+      "created": "2026-04-29",
+      "opt_features": [
+        "6-country-comparison",
+        "cross-Bayesian-matrix",
+        "EU-CHIPS-Act-coverage",
+        "English-native"
+      ]
+    }
+  ],
+  "new_edges": [
+    {
+      "source": "SEMI-OPT-MASTER",
+      "target": "SEMI-001-MASTER",
+      "type": "optimized_from",
+      "label": "OPT-MASTER derives from SEMI-001-MASTER v7.0",
+      "weight": 1.00
+    },
+    {
+      "source": "SEMI-OPT-KR",
+      "target": "SEMI-001-KR",
+      "type": "optimized_from",
+      "label": "OPT-KR derives from SEMI-001-KR v7.0",
+      "weight": 1.00
+    },
+    {
+      "source": "SEMI-OPT-GLOBAL",
+      "target": "SEMI-001-GLOBAL",
+      "type": "optimized_from",
+      "label": "OPT-GLOBAL derives from SEMI-001-GLOBAL v7.0",
+      "weight": 1.00
+    },
+    {
+      "source": "SEMI-OPT-MASTER",
+      "target": "PE-CHEM-HUB",
+      "type": "ecosystem_link",
+      "label": "OPT-MASTER integrates PE-CHEM quality_gate",
+      "weight": 0.85
+    },
+    {
+      "source": "SEMI-OPT-KR",
+      "target": "KR-TENSION-5",
+      "type": "domain_link",
+      "label": "OPT-KR adds TENSION-5 KR national strategy tracking",
+      "weight": 0.82
+    },
+    {
+      "source": "SEMI-OPT-GLOBAL",
+      "target": "EU-SEMI",
+      "type": "domain_link",
+      "label": "OPT-GLOBAL extends scope to EU CHIPS Act coverage",
+      "weight": 0.80
+    }
+  ],
+  "cumulative_nodes": [
+    {
       "id": "PE-SEMI-HUB",
       "label": "PE-SEMI Library Hub — Semiconductor Strategic Collapse Monitoring",
       "domain": "Semiconductor",
       "type": "library_hub",
       "child_page": "C-29",
       "notion_url": "https://app.notion.com/p/35155ed436f081bc89aacc6035cbe4f1",
-      "github_path": "prompts/semi-strategy/",
+      "github_path": "prompts/PE-SEMI/",
       "status": "active",
       "pe3_score": 96,
       "version": "v1.0",
@@ -83,64 +186,44 @@
       "states": ["S0-Aligned", "S1-Supply_Pressured", "S2-Geopolitically_Locked", "S3-Strategically_Compressed", "S4-Broken"],
       "parent": "SEMI-001-MASTER",
       "created": "2026-04-29"
-    }
-  ],
-  "new_edges": [
-    {
-      "source": "PE-SEMI-HUB",
-      "target": "PE-AI-HUB",
-      "type": "ecosystem_link",
-      "label": "HBM/CoWoS → AI Training Compute Bottleneck",
-      "weight": 0.88
     },
     {
-      "source": "PE-SEMI-HUB",
-      "target": "PE-MIN-HUB",
-      "type": "ecosystem_link",
-      "label": "Ga/Ge Export Control → GaN/SiC Supply Disruption",
-      "weight": 0.87
+      "id": "SEMI-OPT-MASTER",
+      "label": "Semiconductor Strategic Collapse Agent v7.0-OPT-MASTER",
+      "domain": "Semiconductor",
+      "type": "prompt_optimized",
+      "version": "v7.0-OPT",
+      "pe3_score": 96,
+      "parent": "SEMI-001-MASTER",
+      "github_path": "prompts/PE-SEMI/semi_001_v7.0_opt_master.md",
+      "github_commit": "e32d049",
+      "created": "2026-04-29"
     },
     {
-      "source": "PE-SEMI-HUB",
-      "target": "PE-PWR-HUB",
-      "type": "ecosystem_link",
-      "label": "AI-DC Power Demand → FAB Energy Cost Spike",
-      "weight": 0.82
+      "id": "SEMI-OPT-KR",
+      "label": "Semiconductor Strategic Collapse Agent v7.0-OPT-KR",
+      "domain": "Semiconductor",
+      "type": "prompt_optimized",
+      "version": "v7.0-OPT",
+      "pe3_score": 95,
+      "parent": "SEMI-001-KR",
+      "country": "KR",
+      "github_path": "prompts/PE-SEMI/semi_001_v7.0_opt_kr.md",
+      "github_commit": "e32d049",
+      "created": "2026-04-29"
     },
     {
-      "source": "PE-SEMI-HUB",
-      "target": "PE-EQP-HUB",
-      "type": "ecosystem_link",
-      "label": "ASML/Lam Export Control → Advanced Process Equipment Crisis",
-      "weight": 0.92
-    },
-    {
-      "source": "PE-SEMI-HUB",
-      "target": "PE-CHEM-HUB",
-      "type": "ecosystem_link",
-      "label": "EUV PR/CMP Slurry Supply Disruption → Yield Collapse",
-      "weight": 0.85
-    },
-    {
-      "source": "PE-SEMI-HUB",
-      "target": "PE-11-MASTER",
-      "type": "parent_system",
-      "label": "PE-11 Multi-Agent Orchestration",
-      "weight": 1.00
-    },
-    {
-      "source": "PE-SEMI-HUB",
-      "target": "C-24-SEMI-PROCESS",
-      "type": "domain_link",
-      "label": "C-24 Process Library → C-29 Strategy Collapse Library",
-      "weight": 0.80
-    },
-    {
-      "source": "C-29",
-      "target": "T-09",
-      "type": "parent_child",
-      "label": "C-29 PE-SEMI → T-09 Mother Page",
-      "weight": 1.00
+      "id": "SEMI-OPT-GLOBAL",
+      "label": "Semiconductor Strategic Collapse Agent v7.0-OPT-GLOBAL",
+      "domain": "Semiconductor",
+      "type": "prompt_optimized",
+      "version": "v7.0-OPT",
+      "pe3_score": 94,
+      "parent": "SEMI-001-GLOBAL",
+      "scope": "US/KR/TW/JP/CN/EU",
+      "github_path": "prompts/PE-SEMI/semi_001_v7.0_opt_global.md",
+      "github_commit": "e32d049",
+      "created": "2026-04-29"
     }
   ],
   "validation": {
