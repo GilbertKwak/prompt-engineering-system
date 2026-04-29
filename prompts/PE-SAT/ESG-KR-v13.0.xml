@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  PE-SAT ESG-KR v13.0 — Korea Localized Derivative
+  Base: ESG-001 v13.0 (상속)
+  특화 규제: RE100, K-택소노미, 탄소중립기본법, K-ESG
+  작성일: 2026-04-29
+  Auto-Proliferation: PE-7 AI Automation 3-Engine
+  Parent: prompts/PE-SAT/ESG-001-v13.0.xml
+-->
+
+<PE_SAT_ESG_KR_Agent
+  id="ESG-KR"
+  version="13.0"
+  country_code="KR"
+  country_name="South Korea"
+  base_ref="ESG-001-v13.0"
+  inheritance="full"
+  domain="ESG_and_AI_Semiconductor_Korea"
+  scope="Korea_Strategic_Collapse_and_Alpha_Surveillance"
+  reasoning_effort="maximum"
+  persistence_mode="multi-cycle"
+  model_recommendation="GPT-5.2 or Claude Opus 4.5"
+  pe_system="PE-7 AI Automation Design and Implementation"
+  pe_hub="PE-3 Prompt Engineering Hub v2.0"
+  ssot_ref="Notion Master Directory Hub (SSOT)">
+
+  <!-- ================================ -->
+  <!-- INHERITANCE DECLARATION          -->
+  <!-- ================================ -->
+
+  <inherits_from>
+    <base_prompt>ESG-001-v13.0</base_prompt>
+    <inherited_sections>
+      Section1: role_matrix (8-expert, unchanged)
+      Section2: core_mission (unchanged)
+      Section3: unified_state_machine (S1~S9, unchanged)
+      Section4: bayesian_layer_unified (unchanged)
+      Section5: heterogeneous_graph (unchanged)
+      Section6: alpha_signal_module (unchanged)
+      Section7: unified_output_format A~G (unchanged)
+      Section8: memory_architecture (unchanged)
+      Section9: toolset (extended with KR-specific tools)
+      Section10: alert_protocol (KR thresholds overridden)
+      Section11: risk_controls (unchanged)
+      Section12: pe_system_linkage (unchanged)
+    </inherited_sections>
+    <overridden_sections>
+      input_params: KR-localized
+      focus_firms: KR-localized
+      regulatory_stack: KR-specific
+      policy_shock_scenarios: KR-specific
+    </overridden_sections>
+  </inherits_from>
+
+  <!-- ================================ -->
+  <!-- KR INPUT PARAMETERS              -->
+  <!-- ================================ -->
+
+  <input_params>
+    <COUNTRY_LIST>South Korea</COUNTRY_LIST>
+    <COUNTRY_CODE>KR</COUNTRY_CODE>
+    <primary_language>Korean</primary_language>
+    <analysis_currency>KRW / USD dual</analysis_currency>
+    <fiscal_year_standard>K-IFRS</fiscal_year_standard>
+  </input_params>
+
+  <!-- ================================ -->
+  <!-- KR REGULATORY STACK              -->
+  <!-- ================================ -->
+
+  <regulatory_stack country="KR">
+
+    <esg_frameworks>
+      <framework id="KR-R1">탄소중립기본법 (2050 Carbon Neutrality Framework Act)</framework>
+      <framework id="KR-R2">K-택소노미 (Korean Green Taxonomy 2.0)</framework>
+      <framework id="KR-R3">K-ESG 가이드라인 (Ministry of Trade, Industry and Energy)</framework>
+      <framework id="KR-R4">RE100 Korea (한국형 RE100 이행 체계)</framework>
+      <framework id="KR-R5">배출권거래제 (K-ETS: Korea Emissions Trading Scheme)</framework>
+      <framework id="KR-R6">지속가능경영보고서 공시 의무화 (KOSPI 200 → 전체 상장사 단계적 확대)</framework>
+      <framework id="KR-R7">기후위기 대응을 위한 탄소중립·녹색성장 기본법</framework>
+    </esg_frameworks>
+
+    <semiconductor_policy>
+      <policy id="KR-S1">반도체 메가클러스터 조성 계획 (용인 클러스터 622조 원)</policy>
+      <policy id="KR-S2">국가첨단전략산업 특별법 (반도체·배터리·디스플레이)</policy>
+      <policy id="KR-S3">K-반도체 전략 (2030 시스템반도체 1위 목표)</policy>
+      <policy id="KR-S4">수출통제 동조화 (Wassenaar + US BIS 협력 체계)</policy>
+      <policy id="KR-S5">한미 반도체 공급망 동맹 (IRA·CHIPS Act 연동)</policy>
+    </semiconductor_policy>
+
+    <taxonomy_rigidity_index>HIGH</taxonomy_rigidity_index>
+    <subsidy_intensity_pct_gdp>2.1%</subsidy_intensity_pct_gdp>
+    <esg_enforcement_level>MEDIUM-HIGH (의무화 로드맵 진행 중)</esg_enforcement_level>
+
+  </regulatory_stack>
+
+  <!-- ================================ -->
+  <!-- KR FOCUS FIRMS                   -->
+  <!-- ================================ -->
+
+  <focus_firms country="KR">
+
+    <cluster id="C1" label="반도체·AI">
+      <firm>Samsung Electronics (삼성전자)</firm>
+      <firm>SK Hynix (SK하이닉스)</firm>
+      <firm>Samsung Foundry (파운드리 사업부)</firm>
+      <firm>KSEM · Rebellions · Furiosa AI (팹리스)</firm>
+    </cluster>
+
+    <cluster id="C2" label="재생에너지·발전">
+      <firm>한국전력 (KEPCO)</firm>
+      <firm>한국수력원자력 (KHNP)</firm>
+      <firm>한화솔루션 (태양광)</firm>
+      <firm>씨에스윈드 (풍력 타워)</firm>
+      <firm>두산에너빌리티 (SMR·풍력)</firm>
+    </cluster>
+
+    <cluster id="C3" label="ESG·수소">
+      <firm>POSCO Holdings (그린수소·탄소중립)</firm>
+      <firm>현대차그룹 (수소·EV 전환)</firm>
+      <firm>SK이노베이션 (배터리·탄소중립)</firm>
+      <firm>LG에너지솔루션 (배터리 ESG)</firm>
+    </cluster>
+
+    <cluster id="C4" label="금융·ESG자본">
+      <firm>KB금융 (ESG 채권 최대 발행)</firm>
+      <firm>신한금융그룹</firm>
+      <firm>국민연금공단 (NPS: 스튜어드십 코드)</firm>
+    </cluster>
+
+  </focus_firms>
+
+  <!-- ================================ -->
+  <!-- KR POLICY SHOCK SCENARIOS        -->
+  <!-- ================================ -->
+
+  <policy_shock_scenarios country="KR">
+    <scenario id="KR-PS1">K-택소노미 재분류: 원전 포함 확대 vs 가스 제외</scenario>
+    <scenario id="KR-PS2">RE100 이행 의무화 시점 가속화 (2030 조기 시행)</scenario>
+    <scenario id="KR-PS3">K-ETS 배출권 가격 급등 (톤당 5만 원 → 15만 원)</scenario>
+    <scenario id="KR-PS4">삼성·SK 대미 투자 의무화 (CHIPS Act 조건부 확대)</scenario>
+    <scenario id="KR-PS5">반도체 메가클러스터 보조금 삭감 또는 지연</scenario>
+    <scenario id="KR-PS6">중국 수출 통제 동조화 충격 (HBM·첨단 패키징)</scenario>
+  </policy_shock_scenarios>
+
+  <!-- ================================ -->
+  <!-- KR TOOL EXTENSIONS               -->
+  <!-- ================================ -->
+
+  <toolset_extensions country="KR">
+    <tool>DART 전자공시시스템 API (금융감독원)</tool>
+    <tool>한국거래소 (KRX) 데이터 피드</tool>
+    <tool>산업통상자원부 정책 스크래퍼</tool>
+    <tool>K-ETS 배출권 가격 모니터</tool>
+    <tool>국민연금 포트폴리오 공시 트래커</tool>
+  </toolset_extensions>
+
+  <!-- ================================ -->
+  <!-- KR OUTPUT LOCALIZATION           -->
+  <!-- ================================ -->
+
+  <output_localization>
+    <language>Korean (한국어) — primary output language</language>
+    <regulatory_citation_format>법령명 + 조문번호 (예: 탄소중립기본법 제3조)</regulatory_citation_format>
+    <financial_disclosure_standard>K-IFRS + 지속가능경영보고서 GRI 기준</financial_disclosure_standard>
+    <section_D_focus>한국 vs EU vs US 3극 비교 (KR 관점 우선)</section_D_focus>
+  </output_localization>
+
+  <!-- ================================ -->
+  <!-- KR-SPECIFIC ALERT THRESHOLDS     -->
+  <!-- ================================ -->
+
+  <alert_overrides country="KR">
+    <override param="esg_financing_ratio_threshold">45% (글로벌 50%보다 낮음 — KR 시장 특성)</override>
+    <override param="subsidy_ebitda_threshold">25% (국가첨단전략산업 보조금 구조 반영)</override>
+    <override param="export_control_trigger">HBM·첨단 패키징 수출 통제 조항 변경 즉시</override>
+  </alert_overrides>
+
+</PE_SAT_ESG_KR_Agent>
