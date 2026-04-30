@@ -1,283 +1,1077 @@
 {
-  "graph_version": "4.4",
-  "rebuild_timestamp": "2026-04-30T17:00:00+09:00",
-  "rebuild_command": "pe-graph --rebuild v4.4 (CMD-FS-01)",
-  "base_from": "v4.3",
-  "base_nodes": 128,
-  "base_edges": 191,
-  "total_nodes": 133,
-  "total_edges": 200,
-  "delta": {
-    "nodes": "+5",
-    "edges": "+9",
-    "node_detail": "MAP-EDI + MAP-FDRS + MAP-ExportShock + EQP-v2 + SEMI-OPT-MAP(sub-node formalization)",
-    "edge_detail": "9 edges: FEEDS x3 / INTEGRATES x1 / UPGRADES_FROM x1 / CROSS_LINKS x2 / RISK_INPUT x2"
+  "meta": {
+    "generated_at": "2026-04-30T09:05:17.023631+00:00",
+    "version": "1.0",
+    "total_nodes": 45,
+    "total_edges": 60,
+    "scan_dirs": [
+      "docs",
+      "engines"
+    ],
+    "sha_enabled": false,
+    "version_extract": false
   },
-  "domains": [
-    "AI-Platform",
-    "Semiconductor",
-    "Power-Energy",
-    "Critical-Minerals",
-    "JV-Fund",
-    "Equipment",
-    "Legal-Risk",
-    "Consulting",
-    "NBD",
-    "Thermal",
-    "SAT",
-    "SEMI-OPT-Platform",
-    "GNN-ML",
-    "ExportShock-Engine"
-  ],
-  "new_nodes": [
+  "nodes": [
     {
-      "id": "MAP-EDI",
-      "label": "MAP-EDI · Equipment Disruption Index",
-      "domain": "ExportShock-Engine",
-      "type": "indicator",
-      "version": "v1.0",
-      "parent": "SEMI-OPT-MAP",
-      "formula": "EDI = (export_restriction_pct × 0.40) + (lead_time_extension_ratio × 0.35) + (single_source_dependency × 0.25)",
-      "range": "0.0~1.0",
-      "threshold_alert": 0.70,
-      "firms_tracked": ["ASML", "LamResearch", "KLA", "TEL", "AMAT"],
-      "current_values": {
-        "ASML": 0.74,
-        "LamResearch": 0.61,
-        "KLA": 0.48,
-        "TEL": 0.65,
-        "AMAT": 0.55
-      },
-      "feeds": ["MAP-FDRS", "EQP-v2"],
-      "github_path": "prompts/pe-eqp/PE-EQP-v2.0-MAP-integrated.xml#MAP-EDI",
-      "created": "2026-04-30"
-    },
-    {
-      "id": "MAP-FDRS",
-      "label": "MAP-FDRS · Fab Disruption Risk Score",
-      "domain": "ExportShock-Engine",
-      "type": "indicator",
-      "version": "v1.0",
-      "parent": "SEMI-OPT-MAP",
-      "formula": "FDRS = EDI × shock_multiplier × (1 - mitigation_factor)",
-      "range": "0.0~1.5",
-      "threshold_s3_alert": 1.00,
-      "firms_tracked": ["ASML", "LamResearch", "KLA", "TEL", "AMAT"],
-      "current_values_base": {
-        "ASML": 0.74,
-        "LamResearch": 0.61,
-        "KLA": 0.48,
-        "TEL": 0.65,
-        "AMAT": 0.55
-      },
-      "scenario_values_scn01": {
-        "ASML": 1.33
-      },
-      "scenario_values_scn02": {
-        "LamResearch": 0.98,
-        "AMAT": 0.88
-      },
-      "scenario_values_scn03": {
-        "TEL": 0.975
-      },
-      "feeds": ["EQP-v2", "PE-FIN"],
-      "github_path": "prompts/pe-eqp/PE-EQP-v2.0-MAP-integrated.xml#MAP-FDRS",
-      "created": "2026-04-30"
-    },
-    {
-      "id": "MAP-ExportShock",
-      "label": "MAP-ExportShock · Export Shock Scenario Engine (3종)",
-      "domain": "ExportShock-Engine",
-      "type": "scenario_engine",
-      "version": "v1.0",
-      "parent": "SEMI-OPT-MAP",
-      "scenarios": [
-        {
-          "id": "SCN-01",
-          "name": "BIS_EAR_HighNA_Restriction",
-          "shock_multiplier": 1.8,
-          "primary_target": "ASML",
-          "P2026": "35%",
-          "P2027": "52%",
-          "alert_level": "RED"
-        },
-        {
-          "id": "SCN-02",
-          "name": "China_Equipment_Service_Ban",
-          "shock_multiplier": 1.6,
-          "primary_target": "LamResearch",
-          "P2026": "45%",
-          "P2027": "68%",
-          "alert_level": "YELLOW_TO_RED"
-        },
-        {
-          "id": "SCN-03",
-          "name": "Japan_EUV_Regulatory_Alignment",
-          "shock_multiplier": 1.5,
-          "primary_target": "TEL",
-          "P2026": "55%",
-          "P2027": "72%",
-          "alert_level": "YELLOW_TO_RED"
-        }
+      "id": "README.md",
+      "type": "doc",
+      "title": "🧠 프롬프트 엔지니어링 시스템 — 자동개선·자동증식·자동검증",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-05",
+      "tags": [
+        "root",
+        "meta",
+        "RCA-001",
+        "RCA-004",
+        "RCA-002",
+        "RCA-003",
+        "v1.7",
+        "v2.7",
+        "v2.0",
+        "v1.0",
+        "v1.1",
+        "v1.2",
+        "v1.3",
+        "v1.4",
+        "v1.5",
+        "v1.6",
+        "v3.0",
+        "v4.0",
+        "v1.8"
       ],
-      "feeds": ["MAP-FDRS", "PE-JV"],
-      "github_path": "prompts/pe-eqp/PE-EQP-v2.0-MAP-integrated.xml#SCN-01",
-      "created": "2026-04-30"
+      "notion_url": "https://www.notion.so/33955ed436f081cc9f0bd014d631aa7b",
+      "file_size": 8870,
+      "sha": null
     },
     {
-      "id": "EQP-v2",
-      "label": "PE-EQP-MASTER v9.0 · MAP-Integrated Edition (v2.0)",
-      "domain": "Equipment",
-      "type": "prompt_master",
-      "version": "v9.0",
-      "pe3_score": 97,
-      "parent": "PE-EQP-MASTER",
-      "integrates": "SEMI-OPT-MAP v1.0",
-      "new_features": [
-        "EDI/FDRS/ExportShock_Multiplier 콸럼",
-        "5-firm FSM (ASML/LamResearch/KLA/TEL/AMAT)",
-        "3 ExportShock 시나리오 (SCN-01/02/03)",
-        "FP-05/FP-06 추가",
-        "PE-CHEM × PE-MIN 교차 충격 연계"
+      "id": "CHANGELOG.md",
+      "type": "doc",
+      "title": "CHANGELOG — 프롬프트 엔지니어링 시스템",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-30",
+      "tags": [
+        "root",
+        "meta",
+        "v4.4",
+        "v4.3",
+        "v2.0",
+        "v3.8",
+        "v13.0",
+        "v8.0",
+        "v3.5",
+        "v3.4",
+        "v11.1",
+        "v3.3"
       ],
-      "github_path": "prompts/pe-eqp/PE-EQP-v2.0-MAP-integrated.xml",
-      "github_commit": "edcf1c7",
-      "notion_url": "https://app.notion.com/p/35155ed436f0817eb8d8eed8242fa0d1",
-      "created": "2026-04-30",
-      "cmd_source": "CMD-FS-01"
+      "notion_url": null,
+      "file_size": 4179,
+      "sha": null
     },
     {
-      "id": "SEMI-OPT-MAP-SUB",
-      "label": "SEMI-OPT-MAP · Sub-node Formalization (EDI+FDRS+ExportShock)",
-      "domain": "SEMI-OPT-Platform",
-      "type": "platform_design",
-      "version": "v1.1",
-      "parent": "SEMI-OPT-MAP",
-      "sub_nodes": ["MAP-EDI", "MAP-FDRS", "MAP-ExportShock"],
-      "note": "v4.3에서 MAP이 신규 등록됨. v4.4에서 하위노드 3종 확정 및 EQP-v2 연계 완료",
-      "created": "2026-04-30"
+      "id": "docs/P4_SMR_Pipeline.md",
+      "type": "doc",
+      "title": "PE-7 P4: SMR Power Pipeline — GitHub Actions",
+      "status": "unknown",
+      "version": "v1.2",
+      "date": "2026-04-26",
+      "tags": [
+        "v1.2",
+        "v1.0"
+      ],
+      "notion_url": null,
+      "file_size": 3660,
+      "sha": null
+    },
+    {
+      "id": "docs/P6_ExaFLOPS_TCO.md",
+      "type": "doc",
+      "title": "P6: ExaFLOPS 통합 자원모델 — HBM·Glass·전력·패키징 단일 TCO",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-26",
+      "tags": [],
+      "notion_url": null,
+      "file_size": 4724,
+      "sha": null
+    },
+    {
+      "id": "docs/P7_Word_Report_Builder.md",
+      "type": "doc",
+      "title": "P7 — Word 보고서 자동 생성 운영 문서",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-26",
+      "tags": [
+        "v1.0",
+        "v1.1"
+      ],
+      "notion_url": null,
+      "file_size": 3179,
+      "sha": null
+    },
+    {
+      "id": "docs/PE-7-NextSteps-SecretsGuide.md",
+      "type": "doc",
+      "title": "PE-7 v2.0 — GitHub Secrets 등록 완전 가이드",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-26",
+      "tags": [
+        "v2.0"
+      ],
+      "notion_url": "https://www.notion.so/profile",
+      "file_size": 4104,
+      "sha": null
+    },
+    {
+      "id": "docs/PE-7-RunbookManual.md",
+      "type": "doc",
+      "title": "PE-7 v2.0 — 수동 실행 런북 + 스케줄 컨필보드",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-26",
+      "tags": [
+        "v2.0"
+      ],
+      "notion_url": null,
+      "file_size": 5708,
+      "sha": null
+    },
+    {
+      "id": "docs/PE-7-v2.0-MasterIndex.md",
+      "type": "doc",
+      "title": "PE-7 v2.0 — 마스터 인덱스 (SSOT 기준)",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-26",
+      "tags": [
+        "v2.0"
+      ],
+      "notion_url": "https://www.notion.so/34955ed436f081149dd6de25dba027d7",
+      "file_size": 3156,
+      "sha": null
+    },
+    {
+      "id": "docs/PE-7-v2.0-Section6-ValidationReport.md",
+      "type": "doc",
+      "title": "PE-7 v2.0 섹션 6 — E-0N 통합검증 + Notion SSOT 업데이트 완료 보고서",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-26",
+      "tags": [
+        "v2.0"
+      ],
+      "notion_url": null,
+      "file_size": 4035,
+      "sha": null
+    },
+    {
+      "id": "docs/REGISTER_VARIANT_GUIDE.md",
+      "type": "doc",
+      "title": "Variant 자동 등록 워크플로우 가이드 v2.1",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-28",
+      "tags": [
+        "v2.1"
+      ],
+      "notion_url": null,
+      "file_size": 5896,
+      "sha": null
+    },
+    {
+      "id": "docs/agent1/README.md",
+      "type": "agent",
+      "title": "🤖 PE-1 자동개선 엔진 (Auto-Refinement Engine)",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-09",
+      "tags": [
+        "agent1",
+        "RCA-001",
+        "v3.1",
+        "v3.0"
+      ],
+      "notion_url": null,
+      "file_size": 1465,
+      "sha": null
+    },
+    {
+      "id": "docs/agent2/README.md",
+      "type": "agent",
+      "title": "🤖 PE-2 자동증식 엔진 (Auto-Proliferation Engine)",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-09",
+      "tags": [
+        "agent2",
+        "v3.1",
+        "v3.0"
+      ],
+      "notion_url": null,
+      "file_size": 1430,
+      "sha": null
+    },
+    {
+      "id": "docs/agent3/README.md",
+      "type": "agent",
+      "title": "🤖 PE-3 자동검증 엔진 (Auto-Validation Engine)",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-09",
+      "tags": [
+        "agent3",
+        "RCA-002",
+        "v3.1",
+        "v3.0"
+      ],
+      "notion_url": null,
+      "file_size": 1780,
+      "sha": null
+    },
+    {
+      "id": "docs/agent4/README.md",
+      "type": "agent",
+      "title": "🤖 PE-4 실적용 케이스 매니저 (Applied Case Manager)",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-09",
+      "tags": [
+        "agent4",
+        "v0.2",
+        "v0.1"
+      ],
+      "notion_url": null,
+      "file_size": 1617,
+      "sha": null
+    },
+    {
+      "id": "docs/agent5/README.md",
+      "type": "agent",
+      "title": "🤖 PE-5 마스터 오케스트레이터 (Master Orchestrator)",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-09",
+      "tags": [
+        "agent5",
+        "RCA-004",
+        "v0.3",
+        "v0.2",
+        "v0.1"
+      ],
+      "notion_url": null,
+      "file_size": 1869,
+      "sha": null
+    },
+    {
+      "id": "docs/graph_patches/knowledge_graph_v3.1-osat_patch.md",
+      "type": "doc",
+      "title": "knowledge_graph.json — v3.1-osat 패치 노트",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-29",
+      "tags": [
+        "graph_patches",
+        "v3.1",
+        "v3.2",
+        "v1.0"
+      ],
+      "notion_url": "https://www.notion.so/35155ed436f0812295f2de6895e27c39",
+      "file_size": 2448,
+      "sha": null
+    },
+    {
+      "id": "docs/index.md",
+      "type": "doc",
+      "title": "📖 Master Documentation Index",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-09",
+      "tags": [
+        "RCA-001",
+        "RCA-002",
+        "RCA-003",
+        "RCA-004",
+        "RCA-005",
+        "v1.5",
+        "v3.1",
+        "v3.0",
+        "v1.4",
+        "v1.3",
+        "v1.2",
+        "v1.1",
+        "v1.0"
+      ],
+      "notion_url": "https://www.notion.so/33955ed436f081cc9f0bd014d631aa7b",
+      "file_size": 9501,
+      "sha": null
+    },
+    {
+      "id": "docs/integration-setup-guide.md",
+      "type": "doc",
+      "title": "🔧 Integration Setup Guide — 완전 자동화 셋업 절차",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-26",
+      "tags": [
+        "v1.0",
+        "v2.0"
+      ],
+      "notion_url": "https://www.notion.so/my-integrations",
+      "file_size": 6957,
+      "sha": null
+    },
+    {
+      "id": "docs/integration_setup_guide.md",
+      "type": "doc",
+      "title": "🔐 완전 자동화 Integration 설정 가이드",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-26",
+      "tags": [
+        "v1.0",
+        "v2.7"
+      ],
+      "notion_url": "https://www.notion.so/my-integrations",
+      "file_size": 5027,
+      "sha": null
+    },
+    {
+      "id": "docs/knowledge_graph_v3.7.md",
+      "type": "doc",
+      "title": "knowledge_graph v3.7",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-29",
+      "tags": [
+        "v3.7",
+        "v6.4",
+        "v3.4",
+        "v3.5",
+        "v3.6",
+        "v13.0"
+      ],
+      "notion_url": null,
+      "file_size": 2461,
+      "sha": null
+    },
+    {
+      "id": "docs/new/README.md",
+      "type": "doc",
+      "title": "🆕 신규 기능 파이프라인 (New Feature Pipeline)",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-09",
+      "tags": [
+        "new",
+        "v3.1"
+      ],
+      "notion_url": null,
+      "file_size": 1425,
+      "sha": null
+    },
+    {
+      "id": "docs/rca-capa/AUTO_SYNC_LOG.md",
+      "type": "rca",
+      "title": "🔄 Auto-Sync Log — Notion × GitHub 자동 연동 이력",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-15",
+      "tags": [
+        "rca-capa",
+        "RCA-001",
+        "RCA-002",
+        "RCA-003",
+        "RCA-004",
+        "v1.2",
+        "v2.0",
+        "v1.1",
+        "v1.0"
+      ],
+      "notion_url": "https://www.notion.so/33d55ed436f081bfa2aeccc26f344de5",
+      "file_size": 5096,
+      "sha": null
+    },
+    {
+      "id": "docs/rca-capa/AUTO_VALIDATE_RUN.md",
+      "type": "rca",
+      "title": "AUTO_VALIDATE_RUN.md",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-18",
+      "tags": [
+        "rca-capa",
+        "RCA-001",
+        "RCA-002",
+        "RCA-003",
+        "RCA-004",
+        "v1.3"
+      ],
+      "notion_url": "https://www.notion.so/33d55ed436f081bfa2aeccc26f344de5",
+      "file_size": 2137,
+      "sha": null
+    },
+    {
+      "id": "docs/rca-capa/RCA-001.md",
+      "type": "rca",
+      "title": "📋 RCA-001 — 프롬프트 구조 복잡도",
+      "status": "resolved",
+      "version": "",
+      "date": "2026-04-06",
+      "tags": [
+        "rca-capa",
+        "RCA-001",
+        "RCA-002",
+        "v3.0"
+      ],
+      "notion_url": "https://www.notion.so/33d55ed436f081c593ede0347d2b581a",
+      "file_size": 1636,
+      "sha": null
+    },
+    {
+      "id": "docs/rca-capa/RCA-002.md",
+      "type": "rca",
+      "title": "📋 RCA-002 — 검증 기준 모호성",
+      "status": "resolved",
+      "version": "",
+      "date": "2026-04-06",
+      "tags": [
+        "rca-capa",
+        "RCA-002",
+        "RCA-001",
+        "RCA-003",
+        "v3.1"
+      ],
+      "notion_url": "https://www.notion.so/33d55ed436f081d0a7a1d4a2a8de4a8f",
+      "file_size": 1498,
+      "sha": null
+    },
+    {
+      "id": "docs/rca-capa/RCA-003.md",
+      "type": "rca",
+      "title": "📋 RCA-003 — 필수 고려사항 누락",
+      "status": "resolved",
+      "version": "",
+      "date": "2026-04-06",
+      "tags": [
+        "rca-capa",
+        "RCA-003",
+        "RCA-002",
+        "RCA-004",
+        "v3.1"
+      ],
+      "notion_url": "https://www.notion.so/33d55ed436f0817e83e0f3bc0f168316",
+      "file_size": 1742,
+      "sha": null
+    },
+    {
+      "id": "docs/rca-capa/RCA-004.md",
+      "type": "rca",
+      "title": "📋 RCA-004 — 중복 출력 과다",
+      "status": "resolved",
+      "version": "",
+      "date": "2026-04-06",
+      "tags": [
+        "rca-capa",
+        "RCA-004",
+        "RCA-003",
+        "v3.1"
+      ],
+      "notion_url": "https://www.notion.so/33d55ed436f08195bd49cdd19f062644",
+      "file_size": 1516,
+      "sha": null
+    },
+    {
+      "id": "docs/rca-capa/README.md",
+      "type": "rca",
+      "title": "🔧 RCA/CAPA 허브",
+      "status": "resolved",
+      "version": "",
+      "date": "2026-04-09",
+      "tags": [
+        "rca-capa",
+        "RCA-001",
+        "RCA-002",
+        "RCA-003",
+        "RCA-004",
+        "v2.1",
+        "v3.0",
+        "v3.1",
+        "v2.0",
+        "v1.0"
+      ],
+      "notion_url": "https://www.notion.so/33d55ed436f081bfa2aeccc26f344de5",
+      "file_size": 6445,
+      "sha": null
+    },
+    {
+      "id": "docs/rca-capa/SYNC_ARCHITECTURE.md",
+      "type": "rca",
+      "title": "⚙️ Auto-Sync Architecture — Notion × GitHub 연동 설계",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-15",
+      "tags": [
+        "rca-capa",
+        "RCA-001",
+        "RCA-002",
+        "RCA-003",
+        "RCA-004",
+        "v1.0",
+        "v1.1",
+        "v2.0"
+      ],
+      "notion_url": null,
+      "file_size": 4254,
+      "sha": null
+    },
+    {
+      "id": "docs/report/2026-04-10_3engine-upgrade-report-v1.6.md",
+      "type": "report",
+      "title": "프롬프트 엔진니어링 시스템 — 3-Engine 업그레이드 통합 실행 보고서",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-10",
+      "tags": [
+        "report",
+        "v1.6",
+        "v1.0",
+        "v1.1",
+        "v1.5",
+        "v1.7"
+      ],
+      "notion_url": "https://www.notion.so/33955ed436f081cc9f0bd014d631aa7b",
+      "file_size": 7740,
+      "sha": null
+    },
+    {
+      "id": "docs/sim-results/CMD-FS-02-summary.md",
+      "type": "doc",
+      "title": "CMD-FS-02 · SEMI-OPT-GNN 가상 수치 완전 계산",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-30",
+      "tags": [
+        "sim-results",
+        "v4.3"
+      ],
+      "notion_url": null,
+      "file_size": 2255,
+      "sha": null
+    },
+    {
+      "id": "docs/support/README.md",
+      "type": "support",
+      "title": "🛠️ Support Modules — 공통 템플릿 & 루브릭",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-09",
+      "tags": [
+        "support"
+      ],
+      "notion_url": null,
+      "file_size": 1271,
+      "sha": null
+    },
+    {
+      "id": "engines/PE-1_auto-refinement/README.md",
+      "type": "engine",
+      "title": "🔁 PE-1: 자동개선 엔진 (Auto-Refinement Engine)",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-05",
+      "tags": [
+        "PE-1_auto-refinement",
+        "v1.1"
+      ],
+      "notion_url": "https://www.notion.so/33955ed436f081cc9f0bd014d631aa7b",
+      "file_size": 1747,
+      "sha": null
+    },
+    {
+      "id": "engines/PE-1_auto-refinement/prompt_template.md",
+      "type": "engine",
+      "title": "PE-1 자동개선 프롬프트 템플릿",
+      "status": "unknown",
+      "version": "",
+      "date": "",
+      "tags": [
+        "PE-1_auto-refinement",
+        "v1.1"
+      ],
+      "notion_url": null,
+      "file_size": 1403,
+      "sha": null
+    },
+    {
+      "id": "engines/PE-1_auto-refinement/upgrade_v1.4.md",
+      "type": "engine",
+      "title": "PE-1 자동개선 엔진 — v1.4 업그레이드",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-10",
+      "tags": [
+        "PE-1_auto-refinement",
+        "v1.4",
+        "v1.3"
+      ],
+      "notion_url": null,
+      "file_size": 2031,
+      "sha": null
+    },
+    {
+      "id": "engines/PE-2_auto-proliferation/README.md",
+      "type": "engine",
+      "title": "🌱 PE-2: 자동증식 엔진 (Auto-Proliferation Engine)",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-05",
+      "tags": [
+        "PE-2_auto-proliferation",
+        "v1.1"
+      ],
+      "notion_url": "https://www.notion.so/33955ed436f081cc9f0bd014d631aa7b",
+      "file_size": 1468,
+      "sha": null
+    },
+    {
+      "id": "engines/PE-2_auto-proliferation/prompt_template.md",
+      "type": "engine",
+      "title": "PE-2 자동증식 프롬프트 템플릿",
+      "status": "unknown",
+      "version": "",
+      "date": "",
+      "tags": [
+        "PE-2_auto-proliferation",
+        "v1.1"
+      ],
+      "notion_url": null,
+      "file_size": 1314,
+      "sha": null
+    },
+    {
+      "id": "engines/PE-2_auto-proliferation/upgrade_v1.4.md",
+      "type": "engine",
+      "title": "PE-2 자동증식 엔진 — v1.4 업그레이드",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-10",
+      "tags": [
+        "PE-2_auto-proliferation",
+        "v1.4",
+        "v1.3"
+      ],
+      "notion_url": null,
+      "file_size": 2583,
+      "sha": null
+    },
+    {
+      "id": "engines/PE-3_auto-validation/README.md",
+      "type": "engine",
+      "title": "✅ PE-3: 자동검증 엔진 (Auto-Validation Engine)",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-05",
+      "tags": [
+        "PE-3_auto-validation",
+        "v1.1"
+      ],
+      "notion_url": "https://www.notion.so/33955ed436f081cc9f0bd014d631aa7b",
+      "file_size": 1414,
+      "sha": null
+    },
+    {
+      "id": "engines/PE-3_auto-validation/prompt_template.md",
+      "type": "engine",
+      "title": "PE-3 자동검증 프롬프트 템플릿",
+      "status": "unknown",
+      "version": "",
+      "date": "",
+      "tags": [
+        "PE-3_auto-validation",
+        "v1.1"
+      ],
+      "notion_url": null,
+      "file_size": 1161,
+      "sha": null
+    },
+    {
+      "id": "engines/PE-3_auto-validation/scoring_rubric.md",
+      "type": "engine",
+      "title": "PE-3 5차원 채점 기준표 (Scoring Rubric)",
+      "status": "unknown",
+      "version": "",
+      "date": "",
+      "tags": [
+        "PE-3_auto-validation"
+      ],
+      "notion_url": null,
+      "file_size": 1874,
+      "sha": null
+    },
+    {
+      "id": "engines/PE-3_auto-validation/upgrade_v1.4.md",
+      "type": "engine",
+      "title": "PE-3 자동검증 엔진 — v1.4 업그레이드",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-10",
+      "tags": [
+        "PE-3_auto-validation",
+        "v1.4",
+        "v1.3"
+      ],
+      "notion_url": null,
+      "file_size": 2843,
+      "sha": null
+    },
+    {
+      "id": "engines/PE-7_ai-automation-design/CHANGELOG.md",
+      "type": "engine",
+      "title": "PE-7 Auto-Automation Design — CHANGELOG",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-26",
+      "tags": [
+        "PE-7_ai-automation-design"
+      ],
+      "notion_url": null,
+      "file_size": 1349,
+      "sha": null
+    },
+    {
+      "id": "engines/PE-7_ai-automation-design/README.md",
+      "type": "engine",
+      "title": "🤖 PE-7 · AI 자동화 설계 및 구현 — 심층 프롬프트 완전판 v1.0",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-21",
+      "tags": [
+        "PE-7_ai-automation-design",
+        "v1.0"
+      ],
+      "notion_url": "https://www.notion.so/34955ed436f081149dd6de25dba027d7",
+      "file_size": 2401,
+      "sha": null
+    },
+    {
+      "id": "engines/PE-7_ai-automation-design/prompt_template.md",
+      "type": "engine",
+      "title": "🤖 PE-7 · AI 자동화 설계 및 구현용 심층 프롬프트 — 완전판 v1.0",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-04-21",
+      "tags": [
+        "PE-7_ai-automation-design",
+        "v1.0"
+      ],
+      "notion_url": "https://www.notion.so/34955ed436f081149dd6de25dba027d7",
+      "file_size": 3237,
+      "sha": null
     }
   ],
-  "new_edges": [
+  "edges": [
     {
-      "source": "MAP-EDI",
-      "target": "SEMI-OPT-MAP",
-      "type": "FEEDS",
-      "label": "MAP-EDI 지수가 SEMI-OPT-MAP 플랫폼에 장비 충격데이터 제공",
-      "weight": 0.95,
-      "added_in": "v4.4"
+      "source": "docs/agent1/README.md",
+      "target": "docs/index.md",
+      "relation": "links_to"
     },
     {
-      "source": "MAP-FDRS",
-      "target": "SEMI-OPT-MAP",
-      "type": "FEEDS",
-      "label": "MAP-FDRS Fab 리스크 점수가 SEMI-OPT-MAP에 피드백",
-      "weight": 0.94,
-      "added_in": "v4.4"
+      "source": "docs/agent1/README.md",
+      "target": "docs/agent3/README.md",
+      "relation": "links_to"
     },
     {
-      "source": "MAP-ExportShock",
-      "target": "SEMI-OPT-MAP",
-      "type": "FEEDS",
-      "label": "ExportShock 시나리오 3종이 MAP에 충격배율 제공",
-      "weight": 0.92,
-      "added_in": "v4.4"
+      "source": "docs/agent1/README.md",
+      "target": "docs/agent5/README.md",
+      "relation": "links_to"
     },
     {
-      "source": "EQP-v2",
-      "target": "SEMI-OPT-MAP",
-      "type": "INTEGRATES",
-      "label": "PE-EQP v2.0이 SEMI-OPT-MAP v1.0을 완전 통합",
-      "weight": 0.98,
-      "added_in": "v4.4"
+      "source": "docs/agent1/README.md",
+      "target": "docs/rca-capa/README.md",
+      "relation": "links_to"
     },
     {
-      "source": "EQP-v2",
-      "target": "PE-EQP-MASTER",
-      "type": "UPGRADES_FROM",
-      "label": "EQP-v2(v9.0)는 PE-EQP-MASTER(v8.0)의 업그레이드로부터 생성됨",
-      "weight": 1.00,
-      "added_in": "v4.4"
+      "source": "docs/agent2/README.md",
+      "target": "docs/index.md",
+      "relation": "links_to"
     },
     {
-      "source": "EQP-v2",
-      "target": "PE-CHEM",
-      "type": "CROSS_LINKS",
-      "label": "EUV PR/CMP Slurry 수출통제 복합 충격 연계",
-      "weight": 0.87,
-      "added_in": "v4.4"
+      "source": "docs/agent2/README.md",
+      "target": "docs/agent1/README.md",
+      "relation": "links_to"
     },
     {
-      "source": "EQP-v2",
-      "target": "PE-MIN",
-      "type": "CROSS_LINKS",
-      "label": "Ga/Ge 수출제한 × 장비 충격 교차 시나리오 연계",
-      "weight": 0.86,
-      "added_in": "v4.4"
+      "source": "docs/agent2/README.md",
+      "target": "docs/agent3/README.md",
+      "relation": "links_to"
     },
     {
-      "source": "MAP-ExportShock",
-      "target": "PE-JV",
-      "type": "RISK_INPUT",
-      "label": "ExportShock 시나리오 활성화 시 PE-JV 투자 리스크 보정 신호",
-      "weight": 0.88,
-      "added_in": "v4.4"
+      "source": "docs/agent2/README.md",
+      "target": "docs/rca-capa/README.md",
+      "relation": "links_to"
     },
     {
-      "source": "MAP-FDRS",
-      "target": "PE-FIN",
-      "type": "RISK_INPUT",
-      "label": "FDRS Fab 위험 점수 → PE-FIN EBITDA 충격 모델 입력",
-      "weight": 0.91,
-      "added_in": "v4.4"
+      "source": "docs/agent3/README.md",
+      "target": "docs/index.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/agent3/README.md",
+      "target": "docs/agent1/README.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/agent3/README.md",
+      "target": "docs/rca-capa/RCA-002.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/agent4/README.md",
+      "target": "applied-cases/2026-04-05_upgrade-execution.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/agent4/README.md",
+      "target": "docs/index.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/agent4/README.md",
+      "target": "docs/agent3/README.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/agent4/README.md",
+      "target": "docs/agent5/README.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/agent5/README.md",
+      "target": "docs/index.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/agent5/README.md",
+      "target": "docs/rca-capa/RCA-004.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/agent5/README.md",
+      "target": "workflows/3engine_pipeline.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/index.md",
+      "target": "README.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/index.md",
+      "target": "CHANGELOG.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/index.md",
+      "target": "docs/new/README.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/index.md",
+      "target": "docs/support/README.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/index.md",
+      "target": "dashboard/README.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/index.md",
+      "target": "docs/agent1/README.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/index.md",
+      "target": "docs/agent2/README.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/index.md",
+      "target": "docs/agent3/README.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/index.md",
+      "target": "docs/agent4/README.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/index.md",
+      "target": "docs/agent5/README.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/index.md",
+      "target": "docs/rca-capa/README.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/index.md",
+      "target": "docs/rca-capa/RCA-001.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/index.md",
+      "target": "docs/rca-capa/RCA-002.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/index.md",
+      "target": "docs/rca-capa/RCA-003.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/index.md",
+      "target": "docs/rca-capa/RCA-004.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/index.md",
+      "target": "dashboard/metrics.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/new/README.md",
+      "target": "docs/index.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/new/README.md",
+      "target": "CHANGELOG.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/new/README.md",
+      "target": "dashboard/metrics.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/new/README.md",
+      "target": "docs/rca-capa/README.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/rca-capa/RCA-001.md",
+      "target": "docs/rca-capa/README.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/rca-capa/RCA-001.md",
+      "target": "docs/rca-capa/RCA-002.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/rca-capa/RCA-002.md",
+      "target": "docs/rca-capa/RCA-001.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/rca-capa/RCA-002.md",
+      "target": "docs/rca-capa/RCA-003.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/rca-capa/RCA-003.md",
+      "target": "docs/rca-capa/RCA-002.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/rca-capa/RCA-003.md",
+      "target": "docs/rca-capa/RCA-004.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/rca-capa/RCA-004.md",
+      "target": "docs/rca-capa/RCA-003.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/rca-capa/RCA-004.md",
+      "target": "docs/rca-capa/README.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/rca-capa/README.md",
+      "target": "docs/index.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/rca-capa/README.md",
+      "target": "docs/rca-capa/RCA-001.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/rca-capa/README.md",
+      "target": "docs/rca-capa/RCA-002.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/rca-capa/README.md",
+      "target": "docs/rca-capa/RCA-003.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/rca-capa/README.md",
+      "target": "docs/rca-capa/RCA-004.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/rca-capa/README.md",
+      "target": "CHANGELOG.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/support/README.md",
+      "target": "docs/index.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "docs/support/README.md",
+      "target": "docs/agent3/README.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "engines/PE-1_auto-refinement/upgrade_v1.4.md",
+      "target": "engines/PE-2_auto-proliferation/upgrade_v1.4.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "engines/PE-1_auto-refinement/upgrade_v1.4.md",
+      "target": "engines/PE-3_auto-validation/upgrade_v1.4.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "engines/PE-2_auto-proliferation/upgrade_v1.4.md",
+      "target": "engines/PE-1_auto-refinement/upgrade_v1.4.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "engines/PE-2_auto-proliferation/upgrade_v1.4.md",
+      "target": "engines/PE-3_auto-validation/upgrade_v1.4.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "engines/PE-3_auto-validation/upgrade_v1.4.md",
+      "target": "engines/PE-1_auto-refinement/upgrade_v1.4.md",
+      "relation": "links_to"
+    },
+    {
+      "source": "engines/PE-3_auto-validation/upgrade_v1.4.md",
+      "target": "engines/PE-2_auto-proliferation/upgrade_v1.4.md",
+      "relation": "links_to"
     }
-  ],
-  "validation": {
-    "duplicate_ids": false,
-    "bidirectional_conflicts": false,
-    "all_hubs_reachable": true,
-    "orphan_edges": 0,
-    "node_count_verified": true,
-    "edge_count_verified": true,
-    "status": "PASS",
-    "validated_at": "2026-04-30T17:00:00+09:00"
-  },
-  "changelog": {
-    "v4.4": {
-      "date": "2026-04-30",
-      "nodes_added": 5,
-      "edges_added": 9,
-      "total_nodes": 133,
-      "total_edges": 200,
-      "trigger": "CMD-FS-01 PE-EQP v2.0 SEMI-OPT-MAP 통합",
-      "key_additions": [
-        "MAP-EDI: Equipment Disruption Index 지표 노드",
-        "MAP-FDRS: Fab Disruption Risk Score 지표 노드",
-        "MAP-ExportShock: 3 시나리오 엔진 (SCN-01/02/03)",
-        "EQP-v2: PE-EQP-MASTER v9.0 MAP 통합판",
-        "SEMI-OPT-MAP 하위노드 확정 (EDI+FDRS+ExportShock)"
-      ]
-    },
-    "v4.3": {
-      "date": "2026-04-30",
-      "nodes_added": 5,
-      "edges_added": 8,
-      "total_nodes": 128,
-      "total_edges": 191
-    },
-    "v4.2": {
-      "date": "2026-04-29",
-      "nodes_added": 3,
-      "edges_added": 6,
-      "total_nodes": 123,
-      "total_edges": 183
-    },
-    "v4.1": {
-      "date": "2026-04-29",
-      "nodes_added": 5,
-      "edges_added": 8,
-      "total_nodes": 120,
-      "total_edges": 177
-    }
-  }
+  ]
 }
