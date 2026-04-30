@@ -1,0 +1,12 @@
+{
+  "cmd": "CMD-FS-03",
+  "title": "SEMI-OPT-GNN 반도체 공급망 노드-엣지 전체 맵",
+  "generated_at": "2026-04-30T18:06:00+09:00",
+  "model": "GraphSAGE-3L",
+  "nodes": 28,
+  "edges": 41,
+  "sectors": ["Equipment(9)","Foundry(5)","Memory(7)","Chemical(4)","Logistics(3)"],
+  "edge_types": ["SUPPLY","PROCESS","RISK"],
+  "node_encoding": "size=importance, border=BUY(white)/NEUTRAL(gold)/AVOID(red)",
+  "source": "docs/sim-results/CMD-FS-02-gnn-result.json"
+}

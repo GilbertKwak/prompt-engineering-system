@@ -1,0 +1,15 @@
+{
+  "cmd": "CMD-JV-01",
+  "title": "SK On 재무 구조 조정 시나리오 분석",
+  "generated_at": "2026-04-30T18:06:00+09:00",
+  "scenarios": {
+    "Base": "현 추이 — EBITDA 2029F +6.1조, 순부채 12.8조",
+    "A_JV": "JV 파트너 유치 (Ford/VW) — EBITDA +10.5조, 순부채 6.5조, capex 35% 절감",
+    "B_IPO": "분사·상장 (SK이노 분리+IPO) — EBITDA +7.2조, 순부채 4.5조 (최저)",
+    "C_Shock": "광물충격 無재조정 — EBITDA -0.5조, 순부채 25.3조 (위기)"
+  },
+  "metrics": ["revenue","ebitda","net_debt","capex"],
+  "unit": "KRW 조원",
+  "horizon": "2024-2029",
+  "source": "knowledge_graph_v4.3 PE-FIN-SKON + PE-MIN cascade"
+}
