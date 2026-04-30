@@ -1,44 +1,137 @@
 # =============================================================
-# PE-SEMI · I/O Contract v2.0
+# PE-SEMI · I/O Contract v2.1
 # 시스템 통합용 (PE-7 / PE-DC 멀티에이전트 오케스트레이터 플러그인)
 # Created  : 2026-04-30 KST
+# Updated  : 2026-04-30 KST  (v2.1 — PE-1/PE-3 검증 반영, 실행 프로토콜 강화)
 # Author   : Gilbert Kwak
 # Repo     : GilbertKwak/prompt-engineering-system
 # Notion   : https://app.notion.com/p/35155ed436f081ecb560c333a27f5a40
 # =============================================================
 
 contract:
-  id: PE-SEMI-IOC-v2.0
+  id: PE-SEMI-IOC-v2.1
   domain: PE-SEMI
-  version: "2.0"
+  version: "2.1"
   created_at: "2026-04-30T13:14:00Z"
+  updated_at: "2026-04-30T22:14:00+09:00"
   author: GilbertKwak
   pe1_target: 96
   pe3_target: 94
   applies_to:
-    - P-01 ~ P-14  # PE-SEMI 전 프롬프트
+    - P-01 ~ P-14  # PE-SEMI 전 프롱프트
+  optimization_variants:
+    - A: "실행용 (GPT-5.4 / pplx_pro 직접 실행)"
+    - B: "시스템 통합용 (PE-7/PE-DC 멀티에이전트 연결)"
 
 # -------------------------------------------------------------
-# PE-1 / PE-3 검증 결과
+# PE-1 / PE-3 검증 결과  (v2.1 업데이트)
 # -------------------------------------------------------------
 validation_scores:
   pe1:
-    role_clarity: 92
-    task_decomposition: 88
-    output_spec: 85
-    constraint_completeness: 78
-    io_contract: 70
+    role_clarity:
+      score: 92
+      note: "4인 합성 인격(v6.4) → 응답 분산 위험. v7.0 분리 구조가 우월"
+    task_decomposition:
+      score: 88
+      note: "단계 간 데이터 흐름(input→process→output) 명시 부재 — v2.1에서 보완"
+    output_spec:
+      score: 85
+      note: "항목별 분량 기준 미표시. 모델마다 10줄~50줄 편차 존재"
+    constraint_completeness:
+      score: 78
+      note: "데이터 공백 시 행동 지침 부재. [COUNTRY_CODE] 미입력 fallback 없음 — v2.1에서 추가"
+    io_contract:
+      score: 70
+      note: "upstream 입력 schema 미정의 → 멀티에이전트 연결 불가. 이 파일이 해결"
     overall_before: 83
     overall_target: 96
   pe3:
-    model_specific_fit: 74
-    execution_reproducibility: 82
-    edge_case_handling: 68
-    context_efficiency: 79
-    instruction_following: 85
-    multi_turn_persistence: 58
+    model_specific_fit:
+      score: 74
+      note: "GPT-5.4 structured output / extended thinking 미활용 — v2.1 명세서에 추가"
+    execution_reproducibility:
+      score: 82
+      note: "상태 전이 조건이 정성적 → 동일 입력에서 다른 분류 가능"
+    edge_case_handling:
+      score: 68
+      note: "데이터 없는 신흥국 기업 → 환각 위험. 아래 fallback_rules에서 처리"
+    context_efficiency:
+      score: 79
+      note: "system/user 분리 시 ~300 tokens 절감 가능"
+    instruction_following:
+      score: 85
+      note: "self-check가 사후 교정 형태 → 모델이 무시 가능. 지시 좌든에 forward 지시로 변경"
+    multi_turn_persistence:
+      score: 58
+      note: "세션 간 state memory 핸드오프 프로토콜 부재 — memory_handoff 섹션에서 해결"
     overall_before: 74
     overall_target: 94
+
+# -------------------------------------------------------------
+# 에이전트 실행 프로토콜  (v2.1 신규 — PE-3 재현성 향상)
+# -------------------------------------------------------------
+execution_protocol:
+  model_config:
+    primary: gpt-5.4
+    fallback: pplx_pro
+    structured_output: true
+    extended_thinking: true
+    max_tokens: 4096
+    conflict_resolution: pessimistic_priority  # P1(정량 리스크) 우선
+
+  persona_stack:
+    - id: P1
+      role: QuantRiskAnalyst
+      weight: 0.35
+      bias: pessimistic
+    - id: P2
+      role: RegulatoryExpert
+      weight: 0.30
+      bias: neutral
+    - id: P3
+      role: SupplyChainStrategist
+      weight: 0.20
+      bias: scenario_driven
+    - id: P4
+      role: ESGNarrativeWriter
+      weight: 0.15
+      bias: stakeholder_oriented
+    execution_order: [P1, P2, P3, P4]  # 순차 파이프라인
+
+  steps:
+    - step: 1
+      name: input_validation
+      action: "입력 스키마 검증 + 데이터 공백 감지"
+      on_failure: abort_with_error_record
+    - step: 2
+      name: memory_retrieval
+      action: "structured_state_db + vector_db에서 이전 상태 로드"
+    - step: 3
+      name: risk_scoring
+      action: "P1+P2+P3 병렬 스코어링. 충돌 시 pessimistic 우선"
+      triggers:
+        alert_ew3: "risk_score >= 7.5"
+        alert_policy: "policy_event.severity >= 4"
+        alert_carbon: "carbon_intensity_delta_pct >= 20"
+    - step: 4
+      name: scenario_modeling
+      action: "1.5°C / 2°C / BAU 3개 시나리오 전환 비용 계산"
+      missing_data: "sector_average + [ESTIMATED] 태그"
+    - step: 5
+      name: narrative_synthesis
+      action: "P4가 P1-P3 결과 통합, 최대 600어"
+    - step: 6
+      name: output_assembly
+      action: "FirmStateRecord + AlertRecord JSON 조립"
+    - step: 7
+      name: memory_write
+      action: "DB 저장 + EW3 push (alert_triggered 시)"
+
+  output_constraints:
+    max_words: 600
+    language: KR
+    format: structured_markdown  # Version A
+    json_schema: AlertRecord      # Version B
 
 # -------------------------------------------------------------
 # Upstream Input Schema
@@ -49,17 +142,17 @@ input_schema:
     country_code:
       type: str
       format: "ISO 3166-1 alpha-2"
-      source: C-28  # 거시정책 에이전트
-      fallback: "XX"
+      source: C-28
+      fallback: "XX"  # v2.1: 미입력 시 majority_country 자동 추론, 불가시 XX + low_confidence
       required: true
     firm_id:
       type: str
       format: "Bloomberg ticker preferred"
-      source: C-29  # 기업데이터 에이전트
+      source: C-29
       required: true
     policy_event:
       type: dict
-      source: C-30  # 정책이벤트 에이전트
+      source: C-30
       schema:
         type: str
         severity:
@@ -76,6 +169,12 @@ input_schema:
       values: [SCAN, DEEP, ALERT]
       default: SCAN
       source: orchestrator
+    data_coverage_pct:
+      type: float
+      range: [0, 100]
+      source: C-30
+      required: false
+      description: "데이터 커버리지 %. 60 미만 시 low_confidence 플래그"
 
 # -------------------------------------------------------------
 # Downstream Output Schema
@@ -95,18 +194,18 @@ output_schema:
     narrative:
       type: str
       max_words: 600
-      language: KR  # EN optional
+      language: KR
       destination:
         - PE-7
         - PE-DC
     risk_scores:
       type: dict
       schema:
-        12m: float  # 12개월 붕괴 확률
-        24m: float  # 24개월 붕괴 확률
-        36m: float  # 36개월 붕괴 확률
+        12m: float
+        24m: float
+        36m: float
       confidence_interval: 95
-      destination: PE-SEMI_P12  # Bayesian-GNN 파이프라인 연동
+      destination: PE-SEMI_P12
     vector_embedding:
       type: "float[]"
       destination: long_term_vector_db
@@ -123,15 +222,46 @@ output_schema:
       destination: PE-7_portfolio_engine
 
 # -------------------------------------------------------------
+# 데이터 공백 대응 및 환각 방지 가드  (v2.1 신규)
+# -------------------------------------------------------------
+fallback_rules:
+  missing_fields:
+    esg_score:         use_sector_average_and_flag
+    carbon_intensity:  use_sector_average_and_flag
+    market_data:       abort_firm_and_continue_others
+    policy_data:       skip_regulatory_step_and_log
+
+  low_confidence_threshold: 60  # data_coverage_pct < 60 → low_confidence flag
+
+  hallucination_guard:
+    enabled: true
+    rules:
+      - "수치 인용 시 upstream_data 필드명 반드시 명시"
+      - "추정값은 [ESTIMATED] 태그 부착"
+      - "출처 불명 수치는 [UNVERIFIED] 태그 부착 + 콘솔 경고"
+
+  abort_conditions:
+    - input_schema_validation_failure
+    - all_upstream_sources_unavailable
+    - request_id_duplicate_within_24h
+
+# -------------------------------------------------------------
 # 실행 트리거
 # -------------------------------------------------------------
 execution_triggers:
   scheduled:
-    cron: "0 0 * * MON"  # 매주 월요일 09:00 KST (UTC 00:00)
+    cron: "0 0 * * MON"
     timezone: Asia/Seoul
+    description: "매주 월요일 09:00 KST"
   event_driven:
-    condition: "policy_event.severity >= 3"
-    action: immediate_execution
+    - condition: "policy_event.severity >= 3"
+      action: immediate_execution
+      priority: high
+      max_latency_minutes: 30
+    - condition: "carbon_intensity_delta_pct >= 20"
+      action: deep_dive_execution
+      priority: high
+      max_latency_minutes: 60
   manual:
     command: CMD-SEMI-02
     description: "PE-SEMI 3-Engine 파이프라인 직접 실행"
@@ -192,7 +322,7 @@ agent_connections:
       type: bayesian_gnn_pipeline
 
 # -------------------------------------------------------------
-# Version A vs Version B
+# Version A vs Version B 비교
 # -------------------------------------------------------------
 version_comparison:
   version_a:
@@ -228,3 +358,25 @@ references:
     - PE-EQP
     - PE-THERM
     - PE-CHEM
+
+# -------------------------------------------------------------
+# Changelog
+# -------------------------------------------------------------
+changelog:
+  - version: "2.0"
+    date: "2026-04-30"
+    changes:
+      - "Version B (시스템 통합용) 최초 생성"
+      - "PE-7 / PE-DC / EW3 downstream 연결 정의"
+      - "FirmStateRecord + AlertRecord 충력 스키마 완전 정의"
+      - "C-28 / C-29 / C-30 upstream 계약 정식화"
+  - version: "2.1"
+    date: "2026-04-30"
+    changes:
+      - "PE-1/PE-3 검증 결과(Before 점수 + 진단 노트) 전면 반영"
+      - "execution_protocol 섹션 추가: 7단계 STEP, 페르소나 스택, conflict_resolution"
+      - "fallback_rules 섹션 추가: 데이터 공백 대응 + 환각 방지 가드"
+      - "data_coverage_pct 필드 + low_confidence 플래그 로직 추가"
+      - "country_code fallback 로직 명시화 (majority_country 추론 → XX)"
+      - "event_driven 트리거 2종 추가 (정책 심각도 / 탄소집약도 급등)"
+      - "model_config: structured_output + extended_thinking 플래그 명시"
