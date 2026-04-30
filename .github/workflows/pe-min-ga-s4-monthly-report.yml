@@ -1,34 +1,47 @@
 # ============================================================
-# PE-MIN Gallium S4 경보 — 비중국 생산량 월간 진척 리포트
-# 임계: 비중국 연간 갈륨 생산 50톤 달성 전까지 매월 실행
-# PE-JV 파트너 평가 인풋 자동 연동
+# PE-MIN Ga S4: Monthly Production Report — v2.0 COMPLETE
+# Trigger: 매월 1일 09:00 KST / 수동 dispatch
+# Pipeline:
+#   1. 비중국 갈륨 생산량 집계 (USGS·EU CRMA·JOGMEC·KCMA·NRCan)
+#   2. 50톤 임계 달성 여부 판정
+#   3. Notion Monthly Reports DB 자동 푸시
+#   4. PE-JV 파트너 평가 Notion 자동 연동
+#   5. 50톤 달성 시 → S4 경보 자동 비활성화
+#   6. global-semiconductor-ai-research 연동
 # ============================================================
-name: PE-MIN Ga S4 Monthly Production Report → PE-JV Sync
+name: PE-MIN Ga S4 · Monthly Production Report
 
 on:
   schedule:
-    # 매월 1일 09:00 KST (00:00 UTC)
-    - cron: '0 0 1 * *'
+    - cron: '0 0 1 * *'   # 매월 1일 00:00 UTC = 09:00 KST
   workflow_dispatch:
     inputs:
-      override_threshold:
-        description: '50톤 임계 초과 여부 강제 설정 (true=달성/false=미달성)'
+      reference_month:
+        description: '집계 기준 월 (YYYY-MM, 기본: 직전월)'
+        required: false
+        default: ''
+      force_s4_deactivate:
+        description: 'S4 경보 강제 비활성화 (50톤 달성 확인 시)'
         required: false
         default: 'false'
 
+env:
+  PYTHON_VERSION: '3.11'
+  GALLIUM_THRESHOLD_TONS: '50'
+
 jobs:
-  # ──────────────────────────────────────────
-  # JOB 1: 비중국 갈륨 생산량 집계
-  # ──────────────────────────────────────────
-  collect-production-data:
-    name: 'Collect Non-China Gallium Production Data'
+  # ──────────────────────────────────────
+  # JOB 1: 글로벌 갈륨 생산량 집계
+  # ──────────────────────────────────────
+  collect-production:
+    name: '⛏️ 갈륨 생산량 집계 (5개 기관)'
     runs-on: ubuntu-latest
     outputs:
-      total_non_cn_tons:  ${{ steps.aggregate.outputs.total_tons }}
-      threshold_reached:  ${{ steps.threshold.outputs.reached }}
-      yoy_growth_pct:     ${{ steps.aggregate.outputs.yoy_pct }}
-      months_to_target:   ${{ steps.threshold.outputs.months_remaining }}
-
+      total_non_cn_tons: ${{ steps.aggregate.outputs.total_non_cn_tons }}
+      threshold_achieved: ${{ steps.aggregate.outputs.threshold_achieved }}
+      s4_status: ${{ steps.aggregate.outputs.s4_status }}
+      report_month: ${{ steps.aggregate.outputs.report_month }}
+      breakdown_json: ${{ steps.aggregate.outputs.breakdown_json }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -36,49 +49,58 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install dependencies
-        run: pip install requests pandas openpyxl
+        run: pip install requests pandas openpyxl notion-client python-dotenv
 
-      - name: Collect production data from registered sources
+      - name: Collect from 5 agencies
         id: collect
         env:
-          USGS_API_KEY:     ${{ secrets.USGS_API_KEY }}
-          DERA_API_KEY:     ${{ secrets.DERA_API_KEY }}
+          USGS_API_KEY: ${{ secrets.USGS_API_KEY }}
+          REF_MONTH: ${{ github.event.inputs.reference_month || '' }}
         run: |
-          # 등록 소스: USGS MCS, EU CRMA Dashboard, JOGMEC (일본), KCMA (한국)
-          python scripts/pe_min/collect_ga_production.py \
-            --sources usgs eu_crma jogmec kcma nrcan \
-            --mineral gallium \
-            --exclude_china true \
-            --output_json /tmp/ga_production_latest.json
+          python scripts/pe_min_ga_production_collector.py \
+            --agencies USGS,EU_CRMA,JOGMEC,KCMA,NRCan \
+            --month "${REF_MONTH}" \
+            --output data/ga_production_raw.json
 
-      - name: Aggregate & YoY calc
+      - name: Aggregate & Threshold Evaluation
         id: aggregate
+        env:
+          FORCE_DEACTIVATE: ${{ github.event.inputs.force_s4_deactivate || 'false' }}
         run: |
-          python scripts/pe_min/aggregate_production.py \
-            --input /tmp/ga_production_latest.json \
-            --baseline_year 2024 \
-            --output_env $GITHUB_OUTPUT
+          python scripts/pe_min_ga_s4_aggregator.py \
+            --input data/ga_production_raw.json \
+            --threshold ${{ env.GALLIUM_THRESHOLD_TONS }} \
+            --output data/ga_s4_result.json
 
-      - name: S4 Threshold Check (50 tons/year)
-        id: threshold
-        run: |
-          python scripts/pe_min/s4_threshold_check.py \
-            --current_tons ${{ steps.aggregate.outputs.total_tons }} \
-            --target_tons 50 \
-            --start_date 2026-01-01 \
-            --output_env $GITHUB_OUTPUT
+          TOTAL=$(python -c "import json; d=json.load(open('data/ga_s4_result.json')); print(d['total_non_cn_tons'])")
+          ACHIEVED=$(python -c "import json; d=json.load(open('data/ga_s4_result.json')); print(str(d['threshold_achieved']).lower())")
+          S4=$(python -c "import json; d=json.load(open('data/ga_s4_result.json')); print(d['s4_status'])")
+          MONTH=$(python -c "import json; d=json.load(open('data/ga_s4_result.json')); print(d['report_month'])")
+          BRK=$(cat data/ga_s4_result.json | tr -d '\n')
 
-  # ──────────────────────────────────────────
-  # JOB 2: 월간 리포트 생성 & Notion 갱신
-  # ──────────────────────────────────────────
-  generate-monthly-report:
-    name: 'Generate Monthly S4 Progress Report'
+          echo "total_non_cn_tons=${TOTAL}" >> $GITHUB_OUTPUT
+          echo "threshold_achieved=${ACHIEVED}" >> $GITHUB_OUTPUT
+          echo "s4_status=${S4}" >> $GITHUB_OUTPUT
+          echo "report_month=${MONTH}" >> $GITHUB_OUTPUT
+          echo "breakdown_json=${BRK}" >> $GITHUB_OUTPUT
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ga-s4-result-${{ github.run_id }}
+          path: data/ga_s4_result.json
+          retention-days: 90
+
+  # ──────────────────────────────────────
+  # JOB 2: Notion DB 자동 기록
+  # ──────────────────────────────────────
+  notion-monthly-db:
+    name: '📊 Notion Monthly Reports DB 자동 기록'
     runs-on: ubuntu-latest
-    needs: collect-production-data
-
+    needs: collect-production
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -86,37 +108,38 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install report & Notion libs
-        run: pip install notion-client jinja2 markdown2 weasyprint
+      - name: Install dependencies
+        run: pip install notion-client requests
 
-      - name: Generate Monthly Markdown Report
-        run: |
-          python scripts/pe_min/generate_s4_monthly_report.py \
-            --total_tons     ${{ needs.collect-production-data.outputs.total_non_cn_tons }} \
-            --yoy_pct        ${{ needs.collect-production-data.outputs.yoy_growth_pct }} \
-            --months_left    ${{ needs.collect-production-data.outputs.months_to_target }} \
-            --threshold_hit  ${{ needs.collect-production-data.outputs.threshold_reached }} \
-            --output_md      /tmp/ga_s4_report_$(date +%Y%m).md \
-            --output_json    /tmp/ga_s4_report_$(date +%Y%m).json
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ga-s4-result-${{ github.run_id }}
+          path: data/
 
-      - name: Push report to Notion (PE-MIN Monthly Reports DB)
+      - name: Push to Notion Monthly Reports DB
         env:
-          NOTION_API_KEY:        ${{ secrets.NOTION_API_KEY }}
-          NOTION_PE_MIN_RPT_DB:  ${{ secrets.NOTION_PE_MIN_RPT_DB }}
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          NOTION_PE_MIN_RPT_DB: ${{ secrets.NOTION_PE_MIN_RPT_DB }}
+          NOTION_PE_MIN_DB_ID: ${{ secrets.NOTION_PE_MIN_DB_ID }}
+          TOTAL_TONS: ${{ needs.collect-production.outputs.total_non_cn_tons }}
+          THRESHOLD_ACHIEVED: ${{ needs.collect-production.outputs.threshold_achieved }}
+          S4_STATUS: ${{ needs.collect-production.outputs.s4_status }}
+          REPORT_MONTH: ${{ needs.collect-production.outputs.report_month }}
         run: |
-          python scripts/pe_min/notion_push_monthly_report.py \
-            --report_json /tmp/ga_s4_report_$(date +%Y%m).json
+          python scripts/pe_min_notion_db_loop.py \
+            --mode ga-s4-monthly \
+            --report-path data/ga_s4_result.json
 
-  # ──────────────────────────────────────────
-  # JOB 3: PE-JV 파트너 평가 인풋 자동 연동
-  # ──────────────────────────────────────────
-  sync-pe-jv-partner-eval:
-    name: 'Sync PE-JV Partner Evaluation Input'
+  # ──────────────────────────────────────
+  # JOB 3: PE-JV 파트너 평가 연동
+  # ──────────────────────────────────────
+  pejv-integration:
+    name: '🤝 PE-JV 파트너 평가 자동 연동'
     runs-on: ubuntu-latest
-    needs: [collect-production-data, generate-monthly-report]
-
+    needs: [collect-production, notion-monthly-db]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -124,34 +147,93 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install libs
-        run: pip install notion-client pandas
+      - name: Install dependencies
+        run: pip install notion-client requests
 
-      - name: Sync to PE-JV Partner Evaluation DB
+      - name: Update PE-JV Partner Evaluation
         env:
-          NOTION_API_KEY:       ${{ secrets.NOTION_API_KEY }}
-          NOTION_PE_JV_DB_ID:   ${{ secrets.NOTION_PE_JV_DB_ID }}
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          NOTION_PE_JV_DB_ID: ${{ secrets.NOTION_PE_JV_DB_ID }}
+          TOTAL_TONS: ${{ needs.collect-production.outputs.total_non_cn_tons }}
+          S4_STATUS: ${{ needs.collect-production.outputs.s4_status }}
+          REPORT_MONTH: ${{ needs.collect-production.outputs.report_month }}
         run: |
-          # JV 파트너 평가 업데이트 대상:
-          # - Teck Resources (CA) — Ga 공동생산 가능성
-          # - Recylex (DE)        — Ga 재활용 정제
-          # - Dowa Mining (JP)    — Ga 부산물 확보
-          # - POSCO (KR)          — Ga 국내 정제 JV
-          python scripts/pe_min/pe_jv_partner_sync.py \
-            --production_json /tmp/ga_production_latest.json \
-            --total_tons      ${{ needs.collect-production-data.outputs.total_non_cn_tons }} \
-            --threshold_hit   ${{ needs.collect-production-data.outputs.threshold_reached }} \
-            --partners        teck_resources recylex dowa_mining posco_futm nyrstar \
-            --output_notion   true
+          python scripts/pe_min_notion_db_loop.py \
+            --mode pejv-partner-update \
+            --report-path data/ga_s4_result.json
 
-      - name: Conditional S4 Deactivation
-        if: needs.collect-production-data.outputs.threshold_reached == 'true'
+  # ──────────────────────────────────────
+  # JOB 4: S4 경보 상태 갱신
+  # ──────────────────────────────────────
+  s4-status-update:
+    name: '🔔 S4 경보 상태 갱신'
+    runs-on: ubuntu-latest
+    needs: [collect-production, notion-monthly-db]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: S4 Alert Deactivation (50톤 달성 시)
+        if: needs.collect-production.outputs.threshold_achieved == 'true'
+        env:
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          NOTION_PE_MIN_DB_ID: ${{ secrets.NOTION_PE_MIN_DB_ID }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          TOTAL_TONS: ${{ needs.collect-production.outputs.total_non_cn_tons }}
+          REPORT_MONTH: ${{ needs.collect-production.outputs.report_month }}
         run: |
-          echo "✅ 비중국 갈륨 연간 50톤 임계 달성 — Ga S4 월간 알림 비활성화 조건 충족"
-          echo "Notion PE-MIN State: S3→S2 완화 판정 요청 생성"
-          python scripts/pe_min/deactivate_s4_alert.py \
-            --mineral gallium \
-            --new_state S2_stabilizing \
-            --notify_notion true
+          echo "🎉 갈륨 비중국 생산 50톤 달성! S4 경보 자동 비활성화"
+          python scripts/pe_min_notion_db_loop.py \
+            --mode s4-deactivate \
+            --total-tons ${TOTAL_TONS}
+
+          # Slack 달성 알림
+          curl -X POST "${SLACK_WEBHOOK_URL}" \
+            -H 'Content-type: application/json' \
+            --data "{
+              \"text\": \":tada: *Gallium 50톤 달성!* S4 경보 자동 비활성화\\n비중국 연간 생산량: ${TOTAL_TONS}톤 (기준: ${REPORT_MONTH})\\n\\n→ [PE-MIN Library](https://app.notion.com/p/35155ed436f081d4aed4f7fc1958187f)\"
+            }"
+
+      - name: S4 Alert Remain Active (50톤 미달)
+        if: needs.collect-production.outputs.threshold_achieved == 'false'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          TOTAL_TONS: ${{ needs.collect-production.outputs.total_non_cn_tons }}
+          REPORT_MONTH: ${{ needs.collect-production.outputs.report_month }}
+        run: |
+          echo "⚠️ 갈륨 50톤 미달 — S4 경보 유지"
+          curl -X POST "${SLACK_WEBHOOK_URL}" \
+            -H 'Content-type: application/json' \
+            --data "{
+              \"text\": \":warning: *Ga S4 Monthly Report* (${REPORT_MONTH})\\n비중국 생산량: ${TOTAL_TONS}톤 / 50톤 목표 미달\\nS4 경보 유지 중 — 다음 집계: 다음 달 1일\\n\\n→ [PE-MIN Library](https://app.notion.com/p/35155ed436f081d4aed4f7fc1958187f)\"
+            }"
+
+  # ──────────────────────────────────────
+  # JOB 5: GSR 연동
+  # ──────────────────────────────────────
+  gsr-integration:
+    name: '🔗 global-semiconductor-ai-research 연동'
+    runs-on: ubuntu-latest
+    needs: [collect-production, notion-monthly-db]
+    steps:
+      - name: Trigger GSR early-warning-monitor
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GH_PAT_CROSS_REPO }}
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: 'GilbertKwak',
+              repo: 'global-semiconductor-ai-research',
+              workflow_id: 'early-warning-monitor.yml',
+              ref: 'main',
+              inputs: {
+                source: 'pe-min-ga-s4-monthly-report',
+                s4_status: '${{ needs.collect-production.outputs.s4_status }}',
+                total_tons: '${{ needs.collect-production.outputs.total_non_cn_tons }}',
+                report_month: '${{ needs.collect-production.outputs.report_month }}',
+                run_id: '${{ github.run_id }}'
+              }
+            });
+            console.log('✅ GSR early-warning-monitor.yml 트리거 완료');
