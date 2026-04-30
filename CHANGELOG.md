@@ -1,5 +1,56 @@
 # CHANGELOG — 프롬프트 엔지니어링 시스템
 
+## v4.4 (2026-04-30) — CMD-FS-05 · PE-FIN C-31 재무·투자 분석 라이브러리 신설
+
+### 핵심 변경사항
+- **PE-FIN/ 디렉토리 신설** (C-31) — T-09 직계 하위 허브
+- **fin_master_v1.0.md**: PE-FIN-HUB MASTER · Auto Mode 4종 · PE-3 96점 목표
+- **FIN-001** EBITDA 충격 시뮬레이션 — SEMI-OPT-GNN·PE-MIN·PE-SEMI 3-도메인 입력 통합
+- **FIN-002** DCF 밸류에이션 + 시나리오 분석 — Damodaran 방법론 · 지정학 리스크 WACC 반영
+- **FIN-003** 채권/신용등급 리스크 모델 — Moody's/S&P 방법론 · IG/HY 경계 특화
+- **FIN-004** JV 펀드 수익률 시뮬레이션 — SEMI-OPT-GNN Alpha Signal IRR 통합
+- **knowledge_graph_v4.4.json**: 134 nodes / 201 edges (+5n/+8e from v4.3)
+
+### 그래프 변경
+| 구분 | v4.3 | v4.4 | 증가 |
+|---|---|---|---|
+| Nodes | 129 | **134** | +5 |
+| Edges | 193 | **201** | +8 |
+| PE-FIN 클러스터 | 0 | 5 | +5 |
+
+### 신규 엣지 8종
+| From | To | Type |
+|------|-----|------|
+| T-09 | PE-FIN-HUB | child_of |
+| PE-FIN-HUB | FIN-001 | contains |
+| PE-FIN-HUB | FIN-002 | contains |
+| PE-FIN-HUB | FIN-003 | contains |
+| PE-FIN-HUB | FIN-004 | contains |
+| SEMI-OPT-GNN | FIN-001 | RISK_INPUT |
+| PE-MIN-MASTER | FIN-001 | MINERAL_SHOCK_QUANTIFY |
+| PE-JV-MASTER | FIN-004 | ALPHA_SIGNAL_INPUT |
+
+### 파일 목록
+- `PE-FIN/fin_master_v1.0.md` (신규)
+- `PE-FIN/fin_001_ebitda_shock_v1.0.md` (신규)
+- `PE-FIN/fin_002_dcf_valuation_v1.0.md` (신규)
+- `PE-FIN/fin_003_credit_risk_v1.0.md` (신규)
+- `PE-FIN/fin_004_jv_fund_sim_v1.0.md` (신규)
+- `knowledge_graph_v4.4.json` (신규)
+
+---
+
+## v4.3 (2026-04-30) — CMD-FS-03 · knowledge_graph v4.3 빌드
+
+### 핵심 변경사항
+- SEMI-OPT 클러스터 신설 (MASTER/MAP/GNN/YIELD)
+- PE-EQP-v2.0 업그레이드 + PE-EQP-RISK 서브노드
+- PE-MIN 도메인 신설 (MASTER/MIN-SIM-D/PE-MIN-KR/PE-MIN-HHI)
+- PE-FIN-HUB 플레이스홀더 등록 (FS-05 완료 시 활성화 → 본 v4.4에서 완성)
+- knowledge_graph v4.3: 129 nodes / 193 edges
+
+---
+
 ## v3.8 (2026-04-29) — PE-SAT ESG+반도체 통합 에이전트 + CN 클러스터 신설
 
 ### 핵심 변경사항

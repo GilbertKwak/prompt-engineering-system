@@ -1,0 +1,87 @@
+{
+  "version": "4.4",
+  "created": "2026-04-30",
+  "author": "Gilbert Kwak",
+  "cmd_source": "CMD-FS-05",
+  "description": "PE-FIN C-31 도메인 신설. FIN-001~004 + PE-FIN-HUB. +5 nodes / +8 edges from v4.3",
+  "stats": {
+    "total_nodes": 134,
+    "total_edges": 201,
+    "delta_nodes": "+5 from v4.3",
+    "delta_edges": "+8 from v4.3",
+    "previous_version": "v4.3 (129 nodes / 193 edges)"
+  },
+  "new_nodes_v4.4": [
+    {
+      "id": "PE-FIN-HUB",
+      "type": "hub",
+      "section": "C-31",
+      "label": "재무·투자 분석 허브",
+      "pe3_target": 96,
+      "version": "v1.0",
+      "file": "PE-FIN/fin_master_v1.0.md",
+      "created": "2026-04-30",
+      "parent": "T-09"
+    },
+    {
+      "id": "FIN-001",
+      "type": "prompt",
+      "section": "C-31",
+      "label": "EBITDA 충격 시뮬레이션",
+      "pe3_target": 96,
+      "version": "v1.0",
+      "file": "PE-FIN/fin_001_ebitda_shock_v1.0.md",
+      "created": "2026-04-30",
+      "parent": "PE-FIN-HUB"
+    },
+    {
+      "id": "FIN-002",
+      "type": "prompt",
+      "section": "C-31",
+      "label": "DCF 밸류에이션 + 시나리오 분석",
+      "pe3_target": 95,
+      "version": "v1.0",
+      "file": "PE-FIN/fin_002_dcf_valuation_v1.0.md",
+      "created": "2026-04-30",
+      "parent": "PE-FIN-HUB"
+    },
+    {
+      "id": "FIN-003",
+      "type": "prompt",
+      "section": "C-31",
+      "label": "채권/신용등급 리스크 모델",
+      "pe3_target": 94,
+      "version": "v1.0",
+      "file": "PE-FIN/fin_003_credit_risk_v1.0.md",
+      "created": "2026-04-30",
+      "parent": "PE-FIN-HUB"
+    },
+    {
+      "id": "FIN-004",
+      "type": "prompt",
+      "section": "C-31",
+      "label": "JV 펀드 수익률 시뮬레이션",
+      "pe3_target": 96,
+      "version": "v1.0",
+      "file": "PE-FIN/fin_004_jv_fund_sim_v1.0.md",
+      "created": "2026-04-30",
+      "parent": "PE-FIN-HUB"
+    }
+  ],
+  "new_edges_v4.4": [
+    {"from": "T-09",          "to": "PE-FIN-HUB",    "type": "child_of",                "added": "v4.4"},
+    {"from": "PE-FIN-HUB",    "to": "FIN-001",        "type": "contains",                "added": "v4.4"},
+    {"from": "PE-FIN-HUB",    "to": "FIN-002",        "type": "contains",                "added": "v4.4"},
+    {"from": "PE-FIN-HUB",    "to": "FIN-003",        "type": "contains",                "added": "v4.4"},
+    {"from": "PE-FIN-HUB",    "to": "FIN-004",        "type": "contains",                "added": "v4.4"},
+    {"from": "SEMI-OPT-GNN",  "to": "FIN-001",        "type": "RISK_INPUT",              "added": "v4.4"},
+    {"from": "PE-MIN-MASTER", "to": "FIN-001",        "type": "MINERAL_SHOCK_QUANTIFY", "added": "v4.4"},
+    {"from": "PE-JV-MASTER",  "to": "FIN-004",        "type": "ALPHA_SIGNAL_INPUT",      "added": "v4.4"}
+  ],
+  "cumulative_summary": {
+    "v3.8": {"nodes": 108, "edges": 159},
+    "v3.9": {"nodes": 111, "edges": 163},
+    "v4.3": {"nodes": 129, "edges": 193},
+    "v4.4": {"nodes": 134, "edges": 201}
+  }
+}
