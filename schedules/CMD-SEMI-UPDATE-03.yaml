@@ -1,0 +1,31 @@
+# CMD-SEMI-UPDATE-03 · SEMI-OPT KR 분기 자동 갱신 스케줄
+cmd: CMD-SEMI-UPDATE-03
+task_id: d95090d0b5c14ad09155e3c3b93926a5
+frequency: quarterly  # Perplexity yearly × 4 또는 별도 수동 트리거
+schedule:
+  - month: 7
+    day: 1
+    time: "09:00 KST"
+    label: "Q2 결산 후 갱신"
+  - month: 10
+    day: 1
+    time: "09:00 KST"
+    label: "Q3 결산 후 갱신"
+  - month: 1
+    day: 2
+    time: "09:00 KST"
+    label: "Q4/연간 결산 후 갱신"
+  - month: 4
+    day: 1
+    time: "09:00 KST"
+    label: "Q1 결산 후 갱신"
+trigger_conditions:
+  - supply_risk_delta: 0.05  # 노드별 supply_risk 5% 이상 변동
+  - kchips_new_approval: true
+  - mi_dual_threshold: 0.90
+  - sk_on_restructuring_event: true
+output_targets:
+  - docs/sim-results/CMD-SEMI-OPT-01-kr-v{version}-result.json
+  - docs/charts/CMD-FS-03-gnn-node-edge-map.png
+  - docs/charts/CMD-JV-01-skon-scenario.png
+source_cmd: CMD-SEMI-OPT-01-KR-v2.0

@@ -1,0 +1,37 @@
+{
+  "cmd": "CMD-SEMI-OPT-01",
+  "variant": "KR-v2.0",
+  "executed_at": "2026-04-30T18:13:00+09:00",
+  "model": "GraphSAGE-3L",
+  "nodes": 22,
+  "features": 14,
+  "edges": 36,
+  "epochs": 8,
+  "total_params": 6208,
+  "convergence_l2": 5.0781,
+  "top5_composite": [
+    {"rank":1,"id":"KR22","name":"KR_TSMC_JV","composite":0.7098,"signal":"STRONG_BUY"},
+    {"rank":2,"id":"KR02","name":"SK_Hynix_HBM4","composite":0.6973,"signal":"BUY"},
+    {"rank":3,"id":"KR01","name":"Samsung_HBM4","composite":0.6911,"signal":"BUY"},
+    {"rank":4,"id":"KR19","name":"KSRC_HBM_Lab","composite":0.6835,"signal":"BUY"},
+    {"rank":5,"id":"KR18","name":"ETRI_Chip","composite":0.6708,"signal":"BUY"}
+  ],
+  "danger_nodes": [
+    {"id":"KR21","name":"Semi_CN_Trade","composite":0.3805,"supply_risk":0.7613,"mi_dual":0.95,"trigger":"PE-JV 동남아 다변화 자동 요청"},
+    {"id":"KR20","name":"KMIC_CN_Fab","composite":0.4064,"supply_risk":0.7443,"mi_dual":0.92,"trigger":"PE-JV 동남아 다변화 자동 요청"}
+  ],
+  "kchips_top": [
+    {"id":"KR02","name":"SK_Hynix_HBM4","subsidy_100m_krw":9200},
+    {"id":"KR01","name":"Samsung_HBM4","subsidy_100m_krw":8500},
+    {"id":"KR22","name":"KR_TSMC_JV","subsidy_100m_krw":6000}
+  ],
+  "ga_ge_recycle_2026f": {
+    "POSCO_Ga_Ge": 0.22,
+    "TK_Chemical": 0.18,
+    "Samsung_HBM4": 0.12,
+    "SK_Hynix_HBM4": 0.11,
+    "Samsung_3nm": 0.08
+  },
+  "next_run": "CMD-SEMI-UPDATE-03",
+  "schedule_task_id": "d95090d0b5c14ad09155e3c3b93926a5"
+}
