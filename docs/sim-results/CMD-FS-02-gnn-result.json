@@ -1,0 +1,66 @@
+{
+  "meta": {
+    "cmd": "CMD-FS-02",
+    "title": "SEMI-OPT-GNN 가상 수치 완전 계산 결과",
+    "executed_at": "2026-04-30T18:03:00.000+09:00",
+    "registered_in": "knowledge_graph_v4.3.json → prompts/SEMI-OPT/SEMI-OPT-GNN",
+    "status": "COMPLETE"
+  },
+  "model": {
+    "architecture": "GraphSAGE-3L",
+    "nodes": 28,
+    "edges": 41,
+    "feature_dim": 12,
+    "hidden_dims": [64, 32],
+    "output_dim": 4,
+    "output_features": ["supply_dis", "yield_drop", "mkt_loss", "strategic_up"],
+    "epochs": 7,
+    "total_params": 5888,
+    "convergence_l2": 0.0228,
+    "dropout": 0.2,
+    "blend_ratio": "GNN_0.45 + domain_prior_0.55"
+  },
+  "node_features": [
+    "fab_util", "eqp_state_norm", "hhi_norm", "geo_risk", "lead_time_norm",
+    "yield_rate", "inv_buffer", "esg_norm", "capex_ratio", "rev_growth", "chem_dep", "alt_src"
+  ],
+  "top10_nodes": [
+    {"rank": 1,  "node": "N11", "name": "Samsung_F",     "importance": 1.0000, "supply_dis": 0.5800, "yield_drop": 0.5397, "mkt_loss": 0.4958, "strategic_up": 0.3885, "irr_adj_bps": -10.8,  "signal": "NEUTRAL"},
+    {"rank": 2,  "node": "N10", "name": "TSMC_N3",       "importance": 0.9402, "supply_dis": 0.4769, "yield_drop": 0.3915, "mkt_loss": 0.3181, "strategic_up": 0.6418, "irr_adj_bps": 136.2,  "signal": "BUY"},
+    {"rank": 3,  "node": "N12", "name": "Intel_F",       "importance": 0.8115, "supply_dis": 0.5552, "yield_drop": 0.5780, "mkt_loss": 0.5933, "strategic_up": 0.3429, "irr_adj_bps": -23.4,  "signal": "NEUTRAL"},
+    {"rank": 4,  "node": "N16", "name": "Samsung_DRAM",  "importance": 0.7508, "supply_dis": 0.4812, "yield_drop": 0.4514, "mkt_loss": 0.3845, "strategic_up": 0.5944, "irr_adj_bps": 113.5,  "signal": "BUY"},
+    {"rank": 5,  "node": "N15", "name": "SK_Hynix_HBM",  "importance": 0.7446, "supply_dis": 0.4667, "yield_drop": 0.4326, "mkt_loss": 0.3683, "strategic_up": 0.6234, "irr_adj_bps": 131.2,  "signal": "BUY"},
+    {"rank": 6,  "node": "N13", "name": "SMIC",          "importance": 0.7442, "supply_dis": 0.6757, "yield_drop": 0.6184, "mkt_loss": 0.5879, "strategic_up": 0.3151, "irr_adj_bps": -74.4,  "signal": "AVOID"},
+    {"rank": 7,  "node": "N14", "name": "GlobalFoundry", "importance": 0.7335, "supply_dis": 0.4849, "yield_drop": 0.4417, "mkt_loss": 0.3905, "strategic_up": 0.5197, "irr_adj_bps": 78.7,   "signal": "NEUTRAL"},
+    {"rank": 8,  "node": "N05", "name": "AMAT",          "importance": 0.7062, "supply_dis": 0.3864, "yield_drop": 0.3663, "mkt_loss": 0.3192, "strategic_up": 0.5749, "irr_adj_bps": 135.1,  "signal": "BUY"},
+    {"rank": 9,  "node": "N02", "name": "LAM_Research",  "importance": 0.7036, "supply_dis": 0.4395, "yield_drop": 0.3851, "mkt_loss": 0.3519, "strategic_up": 0.5582, "irr_adj_bps": 110.6,  "signal": "BUY"},
+    {"rank": 10, "node": "N25", "name": "Entegris",      "importance": 0.6902, "supply_dis": 0.4510, "yield_drop": 0.3801, "mkt_loss": 0.3280, "strategic_up": 0.5922, "irr_adj_bps": 122.2,  "signal": "BUY"}
+  ],
+  "alpha_signals_summary": {
+    "STRONG_BUY": [],
+    "BUY": ["N10_TSMC_N3", "N15_SK_Hynix_HBM", "N05_AMAT", "N16_Samsung_DRAM", "N01_ASML", "N02_LAM", "N25_Entegris"],
+    "NEUTRAL": ["N11_Samsung_F", "N12_Intel_F", "N14_GlobalFoundry"],
+    "AVOID": ["N13_SMIC"],
+    "STRONG_AVOID": []
+  },
+  "jv_alpha_top3": [
+    {"rank": 1, "node": "N10_TSMC_N3",      "irr_adj_bps": 136.2, "signal": "BUY", "rationale": "EUV supply secured, geo-risk hedged via SEMI-OPT-MAP"},
+    {"rank": 2, "node": "N01_ASML_EUV",     "irr_adj_bps": 131.4, "signal": "BUY", "rationale": "Sole-source moat × strategic_up 0.74 → PE-JV STRONG_BUY"},
+    {"rank": 3, "node": "N15_SK_Hynix_HBM", "irr_adj_bps": 131.2, "signal": "BUY", "rationale": "HBM4 ramp × supply_dis 0.47 → SEMI-OPT-YIELD 수렴"}
+  ],
+  "fin001_ebitda_impact_pp": {
+    "SK_Hynix_HBM":  -10.46,
+    "Samsung_F":     -10.20,
+    "TSMC_N3":        -6.73,
+    "Samsung_DRAM":   -9.42,
+    "Intel_F":       -12.40
+  },
+  "cascade_probabilities": {
+    "LAM_S2_to_S3":         {"prob": 0.4431, "level": "MED",  "downstream": "SEMI-OPT-YIELD 주의"},
+    "Samsung_F_S3_to_S4":   {"prob": 0.5690, "level": "MED",  "downstream": "PE-FIN-SDI 리스크 재평가"},
+    "Intel_F_S3_retention": {"prob": 0.6670, "level": "HIGH", "downstream": "PE-EQP-RISK 트리거 발령"},
+    "SMIC_S4_entry":        {"prob": 0.7554, "level": "HIGH", "downstream": "CN_DualPressure + PE-MIN HHI S3 유지"}
+  },
+  "integration_targets_updated": ["PE-JV-MASTER", "PE-FIN-MASTER", "PE-EQP-v2.0", "SEMI-OPT-YIELD"],
+  "build_tag": "knowledge_graph_v4.3_official"
+}
