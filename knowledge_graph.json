@@ -1,15 +1,17 @@
 {
-  "graph_version": "4.2",
-  "rebuild_timestamp": "2026-04-29T20:59:00+09:00",
-  "rebuild_command": "pe-graph --rebuild v4.2",
-  "base_from": "v4.1",
-  "base_nodes": 120,
-  "base_edges": 177,
-  "total_nodes": 123,
-  "total_edges": 183,
+  "graph_version": "4.3",
+  "rebuild_timestamp": "2026-04-30T16:54:00+09:00",
+  "rebuild_command": "pe-graph --rebuild v4.3",
+  "base_from": "v4.2",
+  "base_nodes": 123,
+  "base_edges": 183,
+  "total_nodes": 128,
+  "total_edges": 191,
   "delta": {
-    "nodes": "+3",
-    "edges": "+6"
+    "nodes": "+5",
+    "edges": "+8",
+    "node_detail": "SEMI-OPT-MASTER(type_upgrade) + SEMI-OPT-MAP(new) + SEMI-OPT-GNN(new) + GNN-MODULE-1(new) + GNN-ALPHA-SIGNAL(new)",
+    "edge_detail": "8 edges: ANALYZES x1 / CROSS_LINKS x2 / USES_DATA x1 / FEEDS x1 / CONSUMES x1 / GENERATES_ALPHA x1 / RISK_INPUT x1"
   },
   "domains": [
     "AI-Platform",
@@ -22,208 +24,159 @@
     "Consulting",
     "NBD",
     "Thermal",
-    "SAT"
+    "SAT",
+    "SEMI-OPT-Platform",
+    "GNN-ML"
   ],
   "new_nodes": [
     {
       "id": "SEMI-OPT-MASTER",
-      "label": "Semiconductor Strategic Collapse Agent v7.0-OPT-MASTER",
-      "domain": "Semiconductor",
-      "type": "prompt_optimized",
-      "version": "v7.0-OPT",
+      "label": "SEMI-OPT · 반도체 전략 분석 최적화 마스터 프롬프트",
+      "domain": "SEMI-OPT-Platform",
+      "type": "prompt_master",
+      "version": "v1.0",
       "pe3_score": 96,
-      "parent": "SEMI-001-MASTER",
-      "github_path": "prompts/PE-SEMI/semi_001_v7.0_opt_master.md",
+      "parent": "PE-SEMI-HUB",
+      "cross_links": ["PE-EQP", "PE-MIN", "PE-CHEM"],
+      "github_path": "prompts/PE-SEMI/semi_opt_master_v1.0.md",
       "github_commit": "e32d049",
       "created": "2026-04-29",
-      "opt_features": [
-        "4-expert-frame",
-        "Bayesian-SCP-Beta(2,9)",
-        "PE-CHEM-integration",
-        "quality_gate",
-        "14-firm-surveillance"
-      ]
+      "updated": "2026-04-30",
+      "note": "type upgraded from prompt_optimized → prompt_master; CMD-SEMI-KG v4.3"
     },
     {
-      "id": "SEMI-OPT-KR",
-      "label": "Semiconductor Strategic Collapse Agent v7.0-OPT-KR",
-      "domain": "Semiconductor",
-      "type": "prompt_optimized",
-      "version": "v7.0-OPT",
-      "pe3_score": 95,
-      "parent": "SEMI-001-KR",
-      "country": "KR",
-      "github_path": "prompts/PE-SEMI/semi_001_v7.0_opt_kr.md",
-      "github_commit": "e32d049",
-      "created": "2026-04-29",
-      "opt_features": [
-        "KR-specific-triggers-5",
-        "national-strategy-quantitative-tracking",
-        "Korean-100pct",
-        "K-CHIPS-CHIPS-Act-dual-track"
-      ]
+      "id": "SEMI-OPT-MAP",
+      "label": "SEMI-OPT-MAP · 반도체 전략 붕괴 감시 통합 플랫폼 맵",
+      "domain": "SEMI-OPT-Platform",
+      "type": "platform_design",
+      "version": "v1.0",
+      "parent": "SEMI-OPT-MASTER",
+      "feeds": ["PE-EQP"],
+      "uses_data": ["SEMI-OPT-MASTER"],
+      "notion_url": "https://app.notion.com/p/35155ed436f081a587c9f949d7aaabae",
+      "github_path": "docs/SEMI-OPT-MAP_v1.0.md",
+      "created": "2026-04-30",
+      "description": "PE-EQP × SEMI-OPT-MAP 통합 맵 — 장비·소재·공정 3-axis 붕괴 감시 플랫폼"
     },
     {
-      "id": "SEMI-OPT-GLOBAL",
-      "label": "Semiconductor Strategic Collapse Agent v7.0-OPT-GLOBAL",
-      "domain": "Semiconductor",
-      "type": "prompt_optimized",
-      "version": "v7.0-OPT",
-      "pe3_score": 94,
-      "parent": "SEMI-001-GLOBAL",
-      "scope": "US/KR/TW/JP/CN/EU",
-      "github_path": "prompts/PE-SEMI/semi_001_v7.0_opt_global.md",
-      "github_commit": "e32d049",
-      "created": "2026-04-29",
-      "opt_features": [
-        "6-country-comparison",
-        "cross-Bayesian-matrix",
-        "EU-CHIPS-Act-coverage",
-        "English-native"
-      ]
+      "id": "SEMI-OPT-GNN",
+      "label": "SEMI-OPT-GNN v1.0 · Bayesian GNN Risk Scoring ML Model",
+      "domain": "GNN-ML",
+      "type": "ml_model",
+      "version": "v1.0",
+      "parent": "SEMI-OPT-MAP",
+      "modules": ["GNN-MODULE-1"],
+      "outputs": ["GNN-ALPHA-SIGNAL"],
+      "pe3_score": 97,
+      "github_path": "code/semi_opt_gnn_v1.0/",
+      "created": "2026-04-30",
+      "description": "Module 1: Bayesian SCP + Monte Carlo SSP 10,000회 + Alpha Distribution → PE-JV Signal"
+    },
+    {
+      "id": "GNN-MODULE-1",
+      "label": "GNN Module 1 · Bayesian SCP + SSP MC Engine",
+      "domain": "GNN-ML",
+      "type": "ml_module",
+      "version": "v1.0",
+      "parent": "SEMI-OPT-GNN",
+      "components": ["Beta-Prior-Update", "SSP-Monte-Carlo-10k", "Risk-Probability-Classifier"],
+      "inputs": {
+        "global_prior": "Beta(3,7)",
+        "shock_severity": 0.9
+      },
+      "outputs": {
+        "posterior_E_R": 0.35,
+        "SSP_mean": 0.1882,
+        "SSP_CI_95": [0.0875, 0.3055]
+      },
+      "github_path": "code/semi_opt_gnn_v1.0/module1_bayesian_scp.py",
+      "created": "2026-04-30"
+    },
+    {
+      "id": "GNN-ALPHA-SIGNAL",
+      "label": "GNN Alpha Signal Generator · PE-JV LONG Signal",
+      "domain": "GNN-ML",
+      "type": "signal_generator",
+      "version": "v1.0",
+      "parent": "SEMI-OPT-GNN",
+      "signal_result": {
+        "alpha_mean": 0.1828,
+        "alpha_std": 0.0562,
+        "P_alpha_gt_0": 1.0,
+        "PE_JV_signal": "LONG",
+        "confidence": "100%"
+      },
+      "feeds": ["PE-JV", "PE-FIN"],
+      "github_path": "code/semi_opt_gnn_v1.0/alpha_signal_generator.py",
+      "created": "2026-04-30"
     }
   ],
   "new_edges": [
     {
       "source": "SEMI-OPT-MASTER",
-      "target": "SEMI-001-MASTER",
-      "type": "optimized_from",
-      "label": "OPT-MASTER derives from SEMI-001-MASTER v7.0",
-      "weight": 1.00
-    },
-    {
-      "source": "SEMI-OPT-KR",
-      "target": "SEMI-001-KR",
-      "type": "optimized_from",
-      "label": "OPT-KR derives from SEMI-001-KR v7.0",
-      "weight": 1.00
-    },
-    {
-      "source": "SEMI-OPT-GLOBAL",
-      "target": "SEMI-001-GLOBAL",
-      "type": "optimized_from",
-      "label": "OPT-GLOBAL derives from SEMI-001-GLOBAL v7.0",
-      "weight": 1.00
+      "target": "PE-EQP",
+      "type": "ANALYZES",
+      "label": "SEMI-OPT-MASTER analyzes PE-EQP equipment domain",
+      "weight": 0.92,
+      "added_in": "v4.3"
     },
     {
       "source": "SEMI-OPT-MASTER",
-      "target": "PE-CHEM-HUB",
-      "type": "ecosystem_link",
-      "label": "OPT-MASTER integrates PE-CHEM quality_gate",
-      "weight": 0.85
+      "target": "PE-MIN",
+      "type": "CROSS_LINKS",
+      "label": "SEMI-OPT-MASTER cross-links to PE-MIN critical minerals",
+      "weight": 0.88,
+      "added_in": "v4.3"
     },
     {
-      "source": "SEMI-OPT-KR",
-      "target": "KR-TENSION-5",
-      "type": "domain_link",
-      "label": "OPT-KR adds TENSION-5 KR national strategy tracking",
-      "weight": 0.82
+      "source": "SEMI-OPT-MASTER",
+      "target": "PE-CHEM",
+      "type": "CROSS_LINKS",
+      "label": "SEMI-OPT-MASTER cross-links to PE-CHEM chemical domain",
+      "weight": 0.87,
+      "added_in": "v4.3"
     },
     {
-      "source": "SEMI-OPT-GLOBAL",
-      "target": "EU-SEMI",
-      "type": "domain_link",
-      "label": "OPT-GLOBAL extends scope to EU CHIPS Act coverage",
-      "weight": 0.80
-    }
-  ],
-  "cumulative_nodes": [
-    {
-      "id": "PE-SEMI-HUB",
-      "label": "PE-SEMI Library Hub — Semiconductor Strategic Collapse Monitoring",
-      "domain": "Semiconductor",
-      "type": "library_hub",
-      "child_page": "C-29",
-      "notion_url": "https://app.notion.com/p/35155ed436f081bc89aacc6035cbe4f1",
-      "github_path": "prompts/PE-SEMI/",
-      "status": "active",
-      "pe3_score": 96,
-      "version": "v1.0",
-      "created": "2026-04-29"
+      "source": "SEMI-OPT-MAP",
+      "target": "SEMI-OPT-MASTER",
+      "type": "USES_DATA",
+      "label": "SEMI-OPT-MAP consumes SEMI-OPT-MASTER output as data source",
+      "weight": 0.95,
+      "added_in": "v4.3"
     },
     {
-      "id": "SEMI-001-MASTER",
-      "label": "Semiconductor Strategic Collapse Monitoring Agent v7.0-MASTER",
-      "domain": "Semiconductor",
-      "type": "prompt_base",
-      "version": "v7.0-MASTER",
-      "pe3_score": 96,
-      "parent": "PE-SEMI-HUB",
-      "experts": ["Porter", "Sheffi", "Jaffe", "Markides"],
-      "focus_firms": 14,
-      "fab_state_machine": "S0~S4",
-      "github_path": "prompts/semi-strategy/semi_001_v7.0_master.md"
+      "source": "SEMI-OPT-MAP",
+      "target": "PE-EQP",
+      "type": "FEEDS",
+      "label": "SEMI-OPT-MAP platform feeds signals to PE-EQP surveillance",
+      "weight": 0.90,
+      "added_in": "v4.3"
     },
     {
-      "id": "SEMI-001-KR",
-      "label": "Semiconductor Strategic Collapse Agent v7.0-KR",
-      "domain": "Semiconductor",
-      "type": "prompt_variant",
-      "version": "v7.0-KR",
-      "pe3_score": 95,
-      "parent": "PE-SEMI-HUB",
-      "country": "KR",
-      "focus_firms": ["Samsung_Semiconductor", "SK_Hynix", "DB_Hitek"],
-      "github_path": "prompts/semi-strategy/semi_001_kr_v7.0.md"
+      "source": "SEMI-OPT-GNN",
+      "target": "SEMI-OPT-MAP",
+      "type": "CONSUMES",
+      "label": "SEMI-OPT-GNN ML model consumes SEMI-OPT-MAP platform data",
+      "weight": 0.93,
+      "added_in": "v4.3"
     },
     {
-      "id": "SEMI-001-GLOBAL",
-      "label": "Semiconductor Strategic Collapse Agent v7.0-GLOBAL",
-      "domain": "Semiconductor",
-      "type": "prompt_variant",
-      "version": "v7.0-GLOBAL",
-      "pe3_score": 94,
-      "parent": "PE-SEMI-HUB",
-      "scope": "US/TW/KR/JP/CN",
-      "github_path": "prompts/semi-strategy/semi_001_global_v7.0.md"
+      "source": "SEMI-OPT-GNN",
+      "target": "PE-JV",
+      "type": "GENERATES_ALPHA",
+      "label": "SEMI-OPT-GNN generates Alpha signal → PE-JV LONG/SHORT decision",
+      "weight": 0.97,
+      "added_in": "v4.3",
+      "signal": "LONG",
+      "P_alpha_gt_0": "100%"
     },
     {
-      "id": "FAB-STATE-MACHINE",
-      "label": "Fab State Machine v1.0 (S0~S4)",
-      "domain": "Semiconductor",
-      "type": "analytical_framework",
-      "version": "v1.0",
-      "states": ["S0-Aligned", "S1-Supply_Pressured", "S2-Geopolitically_Locked", "S3-Strategically_Compressed", "S4-Broken"],
-      "parent": "SEMI-001-MASTER",
-      "created": "2026-04-29"
-    },
-    {
-      "id": "SEMI-OPT-MASTER",
-      "label": "Semiconductor Strategic Collapse Agent v7.0-OPT-MASTER",
-      "domain": "Semiconductor",
-      "type": "prompt_optimized",
-      "version": "v7.0-OPT",
-      "pe3_score": 96,
-      "parent": "SEMI-001-MASTER",
-      "github_path": "prompts/PE-SEMI/semi_001_v7.0_opt_master.md",
-      "github_commit": "e32d049",
-      "created": "2026-04-29"
-    },
-    {
-      "id": "SEMI-OPT-KR",
-      "label": "Semiconductor Strategic Collapse Agent v7.0-OPT-KR",
-      "domain": "Semiconductor",
-      "type": "prompt_optimized",
-      "version": "v7.0-OPT",
-      "pe3_score": 95,
-      "parent": "SEMI-001-KR",
-      "country": "KR",
-      "github_path": "prompts/PE-SEMI/semi_001_v7.0_opt_kr.md",
-      "github_commit": "e32d049",
-      "created": "2026-04-29"
-    },
-    {
-      "id": "SEMI-OPT-GLOBAL",
-      "label": "Semiconductor Strategic Collapse Agent v7.0-OPT-GLOBAL",
-      "domain": "Semiconductor",
-      "type": "prompt_optimized",
-      "version": "v7.0-OPT",
-      "pe3_score": 94,
-      "parent": "SEMI-001-GLOBAL",
-      "scope": "US/KR/TW/JP/CN/EU",
-      "github_path": "prompts/PE-SEMI/semi_001_v7.0_opt_global.md",
-      "github_commit": "e32d049",
-      "created": "2026-04-29"
+      "source": "SEMI-OPT-GNN",
+      "target": "PE-FIN",
+      "type": "RISK_INPUT",
+      "label": "SEMI-OPT-GNN SSP risk scores feed into PE-FIN financial modeling",
+      "weight": 0.89,
+      "added_in": "v4.3"
     }
   ],
   "validation": {
@@ -231,6 +184,40 @@
     "bidirectional_conflicts": false,
     "all_hubs_reachable": true,
     "orphan_edges": 0,
-    "status": "PASS"
+    "node_count_verified": true,
+    "edge_count_verified": true,
+    "status": "PASS",
+    "validated_at": "2026-04-30T16:54:00+09:00"
+  },
+  "changelog": {
+    "v4.3": {
+      "date": "2026-04-30",
+      "nodes_added": 5,
+      "edges_added": 8,
+      "total_nodes": 128,
+      "total_edges": 191,
+      "trigger": "CMD-SEMI-KG pe-graph --rebuild v4.3",
+      "key_additions": [
+        "SEMI-OPT-MASTER type upgrade → prompt_master",
+        "SEMI-OPT-MAP platform_design node (C-31 PE-EQP-MAP 연계)",
+        "SEMI-OPT-GNN ml_model node (CMD-GNN-01 실행 완료)",
+        "GNN-MODULE-1 Bayesian SCP + Monte Carlo engine",
+        "GNN-ALPHA-SIGNAL PE-JV LONG signal generator"
+      ]
+    },
+    "v4.2": {
+      "date": "2026-04-29",
+      "nodes_added": 3,
+      "edges_added": 6,
+      "total_nodes": 123,
+      "total_edges": 183
+    },
+    "v4.1": {
+      "date": "2026-04-29",
+      "nodes_added": 5,
+      "edges_added": 8,
+      "total_nodes": 120,
+      "total_edges": 177
+    }
   }
 }
