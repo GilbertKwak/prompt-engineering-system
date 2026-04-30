@@ -1,0 +1,108 @@
+{
+  "version": "4.5",
+  "built": "2026-04-30T17:53 KST",
+  "builder": "pe-graph --rebuild v4.3 → v4.5",
+  "total_nodes": 52,
+  "total_edges": 94,
+  "changelog": [
+    "v4.5: SEMI-OPT-MASTER, SEMI-OPT-MAP, SEMI-OPT-GNN 노드 추가",
+    "v4.5: PE-EQP-STATE × SEMI-OPT-GNN 교차엣지 3종 추가",
+    "v4.5: FIN-001/004 → SEMI-OPT-GNN Alpha Signal 연동 엣지 추가",
+    "v4.5: CMD-FS-02 완전 계산 결과 수록",
+    "v4.5: CMD-CROSS-03 EQP×SEMI 교차분석 결과 수록"
+  ],
+  "domains": {
+    "PE-SEMI": {
+      "nodes": [
+        {
+          "id": "SEMI-OPT-MASTER",
+          "type": "prompt_hub",
+          "version": "1.0",
+          "pe3_score": 97,
+          "path": "prompts/PE-SEMI/SEMI-OPT-MASTER.md",
+          "dependencies": ["SEMI-OPT-MAP", "SEMI-OPT-GNN", "PE-EQP-STATE"]
+        },
+        {
+          "id": "SEMI-OPT-MAP",
+          "type": "prompt_analysis",
+          "version": "1.0",
+          "pe3_score": 96,
+          "path": "prompts/PE-SEMI/SEMI-OPT-MAP.md",
+          "spec": {
+            "nodes": 28,
+            "edges": 41,
+            "hhi_top": {"ASML_EUV": 9200, "JSR_PR": 8700, "TSMC_N3": 7800}
+          }
+        },
+        {
+          "id": "SEMI-OPT-GNN",
+          "type": "prompt_model",
+          "version": "1.0",
+          "pe3_score": 96,
+          "path": "prompts/PE-SEMI/SEMI-OPT-GNN.md",
+          "spec": {
+            "model": "GraphSAGE",
+            "layers": 3,
+            "dim": [12, 64, 32, 4],
+            "convergence_epoch": 7
+          },
+          "cmd_fs02_result": {
+            "computed": "2026-04-30T17:49 KST",
+            "alpha_signals": {
+              "TSMC_N3":       {"signal": "STRONG_BUY", "irr_adj_bps": 320, "importance": 0.891},
+              "SK_Hynix_HBM":  {"signal": "BUY",        "irr_adj_bps": 280, "importance": 0.847},
+              "ASML_EUV":      {"signal": "STRONG_BUY", "irr_adj_bps": 240, "importance": 0.823},
+              "Samsung_F":     {"signal": "AVOID",       "irr_adj_bps": -210, "importance": 0.798},
+              "Intel_F":       {"signal": "STRONG_AVOID","irr_adj_bps": -380, "importance": 0.741}
+            }
+          }
+        }
+      ],
+      "edges": [
+        {"from": "SEMI-OPT-MASTER", "to": "SEMI-OPT-MAP",  "type": "ORCHESTRATES", "weight": 1.0},
+        {"from": "SEMI-OPT-MASTER", "to": "SEMI-OPT-GNN",  "type": "ORCHESTRATES", "weight": 1.0},
+        {"from": "SEMI-OPT-MAP",    "to": "SEMI-OPT-GNN",  "type": "FEEDS",        "weight": 0.95},
+        {"from": "PE-EQP-STATE",    "to": "SEMI-OPT-GNN",  "type": "STATE_INPUT",  "weight": 0.88},
+        {"from": "SEMI-OPT-GNN",    "to": "FIN-001",        "type": "ALPHA_SIGNAL", "weight": 0.82},
+        {"from": "SEMI-OPT-GNN",    "to": "FIN-004",        "type": "IRR_ADJ",      "weight": 0.79},
+        {"from": "SEMI-OPT-GNN",    "to": "FIN-002",        "type": "EV_ADJ",       "weight": 0.71},
+        {"from": "SEMI-OPT-GNN",    "to": "FIN-003",        "type": "CREDIT_RISK",  "weight": 0.68},
+        {"from": "PE-MIN-HHI",      "to": "SEMI-OPT-MAP",   "type": "HHI_INPUT",   "weight": 0.91}
+      ]
+    },
+    "PE-EQP": {
+      "nodes": [
+        {
+          "id": "PE-EQP-STATE",
+          "type": "state_machine",
+          "version": "1.0",
+          "path": "prompts/pe-eqp/",
+          "states": ["S1_NORMAL", "S2_WARNING", "S3_DEGRADED", "S4_CRITICAL"],
+          "current_state_snapshot": {
+            "ASML": "S1", "LAM": "S2", "Samsung_F": "S3", "Intel_F": "S3"
+          },
+          "cmd_cross03_result": {
+            "computed": "2026-04-30T17:53 KST",
+            "cascade_risk": {
+              "LAM_S2_to_S3_prob": 0.41,
+              "Intel_F_S3_to_S4_prob": 0.58,
+              "Samsung_F_S4_entry_prob": 0.41
+            }
+          }
+        }
+      ]
+    }
+  },
+  "pe3_validation": {
+    "SEMI-OPT-MASTER": {"score": 97, "status": "PASS"},
+    "SEMI-OPT-MAP":    {"score": 96, "status": "PASS"},
+    "SEMI-OPT-GNN":    {"score": 96, "status": "PASS"}
+  },
+  "graph_stats": {
+    "domain_count": 9,
+    "prompt_count": 52,
+    "edge_count": 94,
+    "avg_pe3_score": 95.8,
+    "cross_domain_edges": 22
+  }
+}
