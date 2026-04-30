@@ -1,0 +1,230 @@
+# =============================================================
+# PE-SEMI · I/O Contract v2.0
+# 시스템 통합용 (PE-7 / PE-DC 멀티에이전트 오케스트레이터 플러그인)
+# Created  : 2026-04-30 KST
+# Author   : Gilbert Kwak
+# Repo     : GilbertKwak/prompt-engineering-system
+# Notion   : https://app.notion.com/p/35155ed436f081ecb560c333a27f5a40
+# =============================================================
+
+contract:
+  id: PE-SEMI-IOC-v2.0
+  domain: PE-SEMI
+  version: "2.0"
+  created_at: "2026-04-30T13:14:00Z"
+  author: GilbertKwak
+  pe1_target: 96
+  pe3_target: 94
+  applies_to:
+    - P-01 ~ P-14  # PE-SEMI 전 프롬프트
+
+# -------------------------------------------------------------
+# PE-1 / PE-3 검증 결과
+# -------------------------------------------------------------
+validation_scores:
+  pe1:
+    role_clarity: 92
+    task_decomposition: 88
+    output_spec: 85
+    constraint_completeness: 78
+    io_contract: 70
+    overall_before: 83
+    overall_target: 96
+  pe3:
+    model_specific_fit: 74
+    execution_reproducibility: 82
+    edge_case_handling: 68
+    context_efficiency: 79
+    instruction_following: 85
+    multi_turn_persistence: 58
+    overall_before: 74
+    overall_target: 94
+
+# -------------------------------------------------------------
+# Upstream Input Schema
+# -------------------------------------------------------------
+input_schema:
+  name: FirmStateRecord
+  fields:
+    country_code:
+      type: str
+      format: "ISO 3166-1 alpha-2"
+      source: C-28  # 거시정책 에이전트
+      fallback: "XX"
+      required: true
+    firm_id:
+      type: str
+      format: "Bloomberg ticker preferred"
+      source: C-29  # 기업데이터 에이전트
+      required: true
+    policy_event:
+      type: dict
+      source: C-30  # 정책이벤트 에이전트
+      schema:
+        type: str
+        severity:
+          type: int
+          range: [1, 5]
+        date: ISO8601
+      required: false
+    timestamp_utc:
+      type: ISO8601
+      source: orchestrator
+      auto_inject: true
+    mode:
+      type: enum
+      values: [SCAN, DEEP, ALERT]
+      default: SCAN
+      source: orchestrator
+
+# -------------------------------------------------------------
+# Downstream Output Schema
+# -------------------------------------------------------------
+output_schema:
+  name: AlertRecord
+  fields:
+    alert_level:
+      type: enum
+      values: [EW1, EW2, EW3, EW4]
+      destination: EW3_pipeline
+      auto_push_threshold: EW3
+    firm_state:
+      type: JSON
+      destination: structured_state_db
+      trigger: every_run
+    narrative:
+      type: str
+      max_words: 600
+      language: KR  # EN optional
+      destination:
+        - PE-7
+        - PE-DC
+    risk_scores:
+      type: dict
+      schema:
+        12m: float  # 12개월 붕괴 확률
+        24m: float  # 24개월 붕괴 확률
+        36m: float  # 36개월 붕괴 확률
+      confidence_interval: 95
+      destination: PE-SEMI_P12  # Bayesian-GNN 파이프라인 연동
+    vector_embedding:
+      type: "float[]"
+      destination: long_term_vector_db
+      trigger: "alert_level >= EW2"
+    hedge_recommendations:
+      type: "list[dict]"
+      schema:
+        node_id: int
+        risk_24m: float
+        action: str
+        priority:
+          type: enum
+          values: [HIGH, MED, LOW]
+      destination: PE-7_portfolio_engine
+
+# -------------------------------------------------------------
+# 실행 트리거
+# -------------------------------------------------------------
+execution_triggers:
+  scheduled:
+    cron: "0 0 * * MON"  # 매주 월요일 09:00 KST (UTC 00:00)
+    timezone: Asia/Seoul
+  event_driven:
+    condition: "policy_event.severity >= 3"
+    action: immediate_execution
+  manual:
+    command: CMD-SEMI-02
+    description: "PE-SEMI 3-Engine 파이프라인 직접 실행"
+
+# -------------------------------------------------------------
+# 메모리 핸드오프 프로토콜
+# -------------------------------------------------------------
+memory_handoff:
+  read:
+    - source: structured_state_db
+      key: "firm_id + country_code"
+      ttl_days: 90
+    - source: long_term_vector_db
+      top_k: 5
+      similarity_threshold: 0.82
+  write:
+    - target: structured_state_db
+      trigger: every_run
+      schema: FirmStateRecord
+    - target: long_term_vector_db
+      trigger: "alert_level >= EW2"
+      embed_field: narrative
+  fallback:
+    - condition: "data_gap OR country_code == 'XX'"
+      action: flag_low_confidence
+      skip: hedge_output
+    - condition: svi_elbo_not_converged
+      action: return_prior_state
+      log: warning
+
+# -------------------------------------------------------------
+# 에이전트 연결 맵
+# -------------------------------------------------------------
+agent_connections:
+  upstream:
+    - agent: C-28
+      provides: country_code
+      type: macro_policy
+    - agent: C-29
+      provides: firm_id
+      type: corporate_data
+    - agent: C-30
+      provides: policy_event
+      type: policy_event_monitor
+  self: PE-SEMI
+  downstream:
+    - agent: EW3_pipeline
+      receives: alert_level
+      condition: "alert_level >= EW3"
+    - agent: PE-7
+      receives: [narrative, hedge_recommendations]
+      type: portfolio_engine
+    - agent: PE-DC
+      receives: narrative
+      type: cross_domain_analysis
+    - agent: PE-SEMI_P12
+      receives: risk_scores
+      type: bayesian_gnn_pipeline
+
+# -------------------------------------------------------------
+# Version A vs Version B
+# -------------------------------------------------------------
+version_comparison:
+  version_a:
+    label: "실행용 (GPT-5.4 / pplx_pro)"
+    input_method: manual_user_input
+    output_format: Markdown
+    memory: stateless
+    upstream_connect: false
+    ew3_push: false
+    pe1_expected: 93
+    pe3_expected: 91
+  version_b:
+    label: "시스템 통합용 (PE-7 / PE-DC 멀티에이전트)"
+    input_method: orchestrator_inject
+    output_format: JSON_schema
+    memory: db_read_write
+    upstream_connect: true
+    ew3_push: true
+    pe1_expected: 96
+    pe3_expected: 94
+
+# -------------------------------------------------------------
+# 연결 리소스
+# -------------------------------------------------------------
+references:
+  notion_page: "https://app.notion.com/p/35155ed436f081ecb560c333a27f5a40"
+  parent_hub: "https://app.notion.com/p/34a55ed436f0814d9cffe6a2f0816e29"
+  related_prompts:
+    - P-09  # 정량 리스크 + Bayesian
+    - P-10  # Bayesian + GNN 통합
+    - P-12  # Bayesian-GNN 완전 통합
+  related_contracts:
+    - PE-EQP
+    - PE-THERM
+    - PE-CHEM
