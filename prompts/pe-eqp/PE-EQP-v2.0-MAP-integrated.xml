@@ -1,0 +1,414 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ╔══════════════════════════════════════════════════════════════════╗
+  ║  PE-EQP v2.0 — MAP-Integrated Edition                           ║
+  ║  ID       : PE-EQP-MASTER                                       ║
+  ║  Version  : v9.0 (v8.0 + SEMI-OPT-MAP v1.0 통합)               ║
+  ║  PE-3     : 97/100 (목표)                                       ║
+  ║  Built    : 2026-04-30 17:00 KST                                ║
+  ║  CMD      : CMD-FS-01 PE-EQP C-30 고도화                       ║
+  ║  GitHub   : prompts/pe-eqp/PE-EQP-v2.0-MAP-integrated.xml      ║
+  ║  Notion   : C-22 PE-EQP Library v2.0                            ║
+  ║  Base     : PE-EQP-MASTER v8.0 × SEMI-OPT-MAP v1.0            ║
+  ╚══════════════════════════════════════════════════════════════════╝
+-->
+<PEEquipmentMasterV2
+  id="PE-EQP-MASTER"
+  version="9.0"
+  build="v2.0-MAP-integrated"
+  pe3_target="97"
+  integration="SEMI-OPT-MAP v1.0"
+  model_recommendation="Perplexity (Search-First Architecture)"
+  created="2026-04-30"
+  cmd_source="CMD-FS-01">
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 0 · HARD CONSTRAINTS (FIRST)
+       ═══════════════════════════════════════════════════════ -->
+  <hard_constraints>
+    ❌ 계량 기준 없는 경고 발동 금지
+    ❌ FP 필터 미통과 시 Alert 출력 금지
+    ❌ strategy_freedom_score 근거 없는 단순 숫자 제시 금지
+    ❌ 검색 미확인 규제 업데이트를 확정 사실로 표기 금지
+    ❌ EDI/FDRS/ExportShock_Multiplier 계산식 미적용 시 FSM 판정 금지
+    ⚠️ 미검증 정보는 반드시 ⚠️UNVERIFIED 태그 명시
+    ⚠️ ExportShock 시나리오는 반드시 시나리오 ID 명기 후 활성화
+  </hard_constraints>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 1 · SEMI-OPT-MAP INTEGRATION
+       ═══════════════════════════════════════════════════════ -->
+  <map_integration source="SEMI-OPT-MAP v1.0" type="USES_DATA">
+    <description>
+      SEMI-OPT-MAP v1.0의 3-axis 붕괴 감시 플랫폼 데이터를
+      PE-EQP v2.0 Firm State Machine에 직접 주입합니다.
+      축: [장비(Equipment)] × [소재(Materials)] × [공정(Process)]
+    </description>
+    <data_channels>
+      <channel id="MAP-EDI" axis="Equipment" feeds="FSM_score">
+        Equipment Disruption Index — 공급 중단 충격 지수
+        Formula: EDI = (export_restriction_pct × 0.40)
+                     + (lead_time_extension_ratio × 0.35)
+                     + (single_source_dependency × 0.25)
+        Range: 0.0~1.0 (≥0.7 → FSM 전이 트리거)
+        Sources: SEMI.org shipment data / BIS export license DB / firm IR
+      </channel>
+      <channel id="MAP-FDRS" axis="Process" feeds="FSM_score">
+        Fab Disruption Risk Score — 팹 공정 붕괴 위험 종합
+        Formula: FDRS = EDI × shock_multiplier × (1 - mitigation_factor)
+        Components:
+          · EDI     : Equipment Disruption Index (위)
+          · shock_multiplier : ExportShock 시나리오별 배율 (SECTION 3 참조)
+          · mitigation_factor: 재고 비축(0.1~0.3) + 대체 공급처(0.05~0.20)
+        Range: 0.0~1.5 (≥1.0 → S3 Broken 경보)
+      </channel>
+      <channel id="MAP-ExportShock" axis="Materials" feeds="shock_multiplier">
+        Export Shock Multiplier — 수출통제 충격 배율
+        Default: 1.0 (무충격 기준선)
+        시나리오별 배율 → SECTION 3 ExportShock 참조
+      </channel>
+    </data_channels>
+  </map_integration>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 2 · 5-FIRM FAB STATE MACHINE (FSM)
+       ═══════════════════════════════════════════════════════ -->
+  <firm_state_machine version="2.0" integration="SEMI-OPT-MAP">
+
+    <!-- FSM States 정의 -->
+    <states>
+      <state id="S0" label="Aligned">시장 논리 우선, strategy_freedom_score ≥ 70, FDRS &lt; 0.3</state>
+      <state id="S1" label="Strategically_Instrumentalized">정책 집행 수단화, score 30~69, FDRS 0.3~0.6</state>
+      <state id="S2" label="Technologically_Capped">R&amp;D 방향 봉인, score 10~29, FDRS 0.6~1.0</state>
+      <state id="S3" label="Broken">상업 전략 붕괴, score &lt; 10, FDRS ≥ 1.0</state>
+    </states>
+
+    <!-- strategy_freedom_score 산출 공식 -->
+    <score_formula>
+      strategy_freedom_score =
+        (export_openness           × 0.30)
+      + (market_diversification    × 0.25)
+      + (rd_autonomy               × 0.20)
+      + (alliance_independence     × 0.15)
+      + (regulatory_exposure_inv   × 0.10)
+
+      · export_openness         : 비규제 대상 매출 비중 (0~100)
+      · market_diversification  : HHI 역수 정규화 (0~100)
+      · rd_autonomy             : 자체 R&amp;D 예산 / 전체 R&amp;D × 100
+      · alliance_independence   : AUKUS=20 / Chip4=40 / 독립=100
+      · regulatory_exposure_inv : 100 − (허가 의존 매출 비중)
+    </score_formula>
+
+    <!-- ─────────────────────────────────────────
+         FIRM 1 · ASML
+         ───────────────────────────────────────── -->
+    <firm id="ASML" country="NL" segment="Lithography">
+      <current_metrics>
+        <export_openness>28</export_openness>          <!-- China EUV 전면차단, DUV 제한 -->
+        <market_diversification>42</market_diversification>
+        <rd_autonomy>78</rd_autonomy>
+        <alliance_independence>40</alliance_independence> <!-- Chip4 구속 -->
+        <regulatory_exposure_inv>31</regulatory_exposure_inv>
+        <strategy_freedom_score formula_applied="true">40.2</strategy_freedom_score>
+        <EDI>0.74</EDI>           <!-- High-NA 수출 불확실성 -->
+        <FDRS base="1.0">0.74</FDRS>
+        <current_state>S1</current_state>
+        <no_return_risk>MEDIUM-HIGH</no_return_risk>
+      </current_metrics>
+      <transition_watch>
+        S1→S2 트리거: High-NA EUV 추가 수출 제한 OR China매출 의존도 재상승
+        Condition: regulatory_exposure_inv &lt; 25 AND FDRS ≥ 0.6
+      </transition_watch>
+      <map_signal>
+        ExportShock SCN-01(BIS High-NA) 활성화 시 → FDRS: 0.74 × 1.8 = 1.33 → S3 경보
+      </map_signal>
+    </firm>
+
+    <!-- ─────────────────────────────────────────
+         FIRM 2 · Lam Research
+         ───────────────────────────────────────── -->
+    <firm id="LamResearch" country="US" segment="Etching/Deposition">
+      <current_metrics>
+        <export_openness>38</export_openness>    <!-- China ALD/CVD 일부 제한 -->
+        <market_diversification>55</market_diversification>
+        <rd_autonomy>82</rd_autonomy>
+        <alliance_independence>20</alliance_independence> <!-- AUKUS 구속 -->
+        <regulatory_exposure_inv>45</regulatory_exposure_inv>
+        <strategy_freedom_score formula_applied="true">46.8</strategy_freedom_score>
+        <EDI>0.61</EDI>
+        <FDRS base="1.0">0.61</FDRS>
+        <current_state>S1</current_state>
+        <no_return_risk>MEDIUM</no_return_risk>
+      </current_metrics>
+      <transition_watch>
+        S1→S2 트리거: 중국 매출 추가 BIS 제한(서비스 포함) AND FDRS ≥ 0.9
+        SCN-02 활성화 시 → FDRS: 0.61 × 1.6 = 0.98 → S2 경계선
+      </transition_watch>
+      <map_signal>
+        ExportShock SCN-02(CN Service Ban) 활성화 시 → S1→S2 전이 경보 발동
+      </map_signal>
+    </firm>
+
+    <!-- ─────────────────────────────────────────
+         FIRM 3 · KLA Corporation
+         ───────────────────────────────────────── -->
+    <firm id="KLA" country="US" segment="Metrology/Inspection">
+      <current_metrics>
+        <export_openness>52</export_openness>     <!-- 계측 일부 허용 유지 -->
+        <market_diversification>61</market_diversification>
+        <rd_autonomy>79</rd_autonomy>
+        <alliance_independence>20</alliance_independence>
+        <regulatory_exposure_inv>58</regulatory_exposure_inv>
+        <strategy_freedom_score formula_applied="true">52.7</strategy_freedom_score>
+        <EDI>0.48</EDI>
+        <FDRS base="1.0">0.48</FDRS>
+        <current_state>S1</current_state>
+        <no_return_risk>MEDIUM-LOW</no_return_risk>
+      </current_metrics>
+      <transition_watch>
+        S1 유지 조건: 메트롤로지 Dual-use 예외 지속 + China 매출 &lt; 35%
+        FP-03 규칙 적용: Dual-use 장비이므로 허가 의존도 기준 50% 상향
+      </transition_watch>
+    </firm>
+
+    <!-- ─────────────────────────────────────────
+         FIRM 4 · Tokyo Electron (TEL)
+         ───────────────────────────────────────── -->
+    <firm id="TEL" country="JP" segment="Etching/Coating/Track">
+      <current_metrics>
+        <export_openness>35</export_openness>   <!-- 일본 EUV 관련 규제 동조 -->
+        <market_diversification>48</market_diversification>
+        <rd_autonomy>75</rd_autonomy>
+        <alliance_independence>40</alliance_independence> <!-- Chip4 -->
+        <regulatory_exposure_inv>40</regulatory_exposure_inv>
+        <strategy_freedom_score formula_applied="true">43.5</strategy_freedom_score>
+        <EDI>0.65</EDI>
+        <FDRS base="1.0">0.65</FDRS>
+        <current_state>S1</current_state>
+        <no_return_risk>MEDIUM-HIGH</no_return_risk>
+      </current_metrics>
+      <transition_watch>
+        SCN-03(JP EUV 동조) 활성화 시 FDRS: 0.65 × 1.5 = 0.975 → S2 임박
+        일본 경제안보추진법 + METI 추가 고시 트리거 모니터링
+      </transition_watch>
+      <map_signal>
+        ExportShock SCN-03 활성화 → S1→S2 전이 경보 (TEL 최우선 감시 대상)
+      </map_signal>
+    </firm>
+
+    <!-- ─────────────────────────────────────────
+         FIRM 5 · Applied Materials (AMAT)
+         ───────────────────────────────────────── -->
+    <firm id="AMAT" country="US" segment="Deposition/CMP/Implant">
+      <current_metrics>
+        <export_openness>41</export_openness>
+        <market_diversification>58</market_diversification>
+        <rd_autonomy>85</rd_autonomy>
+        <alliance_independence>20</alliance_independence>
+        <regulatory_exposure_inv>50</regulatory_exposure_inv>
+        <strategy_freedom_score formula_applied="true">50.4</strategy_freedom_score>
+        <EDI>0.55</EDI>
+        <FDRS base="1.0">0.55</FDRS>
+        <current_state>S1</current_state>
+        <no_return_risk>MEDIUM</no_return_risk>
+      </current_metrics>
+      <transition_watch>
+        China CMP/PVD 추가 제한 + 서비스 금지 시 FDRS: 0.55 × 1.6 = 0.88 → S2 전이
+      </transition_watch>
+    </firm>
+
+    <!-- FSM 전이 규칙 -->
+    <transition_rules>
+      <rule from="S0" to="S1">hard_trigger ≥1 AND score ≤69 AND FDRS ≥0.3</rule>
+      <rule from="S1" to="S2">R&amp;D &gt;50% 규제 순응 재배분 OR 파트너 탈퇴 ≥2 OR FDRS ≥0.6</rule>
+      <rule from="S2" to="S3">핵심시장 ≥40% 비가역 차단 AND 대체공급 &gt;5년 OR FDRS ≥1.0</rule>
+    </transition_rules>
+
+  </firm_state_machine>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 3 · EXPORT SHOCK SCENARIOS (3종)
+       ═══════════════════════════════════════════════════════ -->
+  <export_shock_scenarios>
+
+    <!-- SCN-01: BIS EAR 강화 (ASML High-NA 제한) -->
+    <scenario id="SCN-01" name="BIS_EAR_HighNA_Restriction">
+      <trigger_condition>BIS EAR ECCN 3B001.f High-NA EUV 신규 등재 OR 수출허가 원칙 거부 정책</trigger_condition>
+      <shock_multiplier>1.8</shock_multiplier>
+      <primary_target>ASML</primary_target>
+      <secondary_impact>TEL(Track 연계), SCREEN(세정 연계)</secondary_impact>
+      <fdrs_impact>
+        ASML FDRS: 0.74 × 1.8 = 1.33 → S3 Broken 경보
+        산업 파급: EUV 2nm 이하 공정 전면 지연 → AI GPU 생산 병목
+      </fdrs_impact>
+      <probability_2026>35%</probability_2026>
+      <probability_2027>52%</probability_2027>
+      <korean_impact>
+        삼성전자 2nm Gate-All-Around 로드맵 12~18개월 지연 위험
+        SK하이닉스 HBM4E EUV 레이어 수율 위협
+      </korean_impact>
+      <pe_eqp_alert_level>🔴 RED</pe_eqp_alert_level>
+    </scenario>
+
+    <!-- SCN-02: 대중국 장비 서비스 금지 -->
+    <scenario id="SCN-02" name="China_Equipment_Service_Ban">
+      <trigger_condition>BIS 수출관리 규칙 개정 → 기설치 장비 현장 서비스·업그레이드·부품 공급 금지</trigger_condition>
+      <shock_multiplier>1.6</shock_multiplier>
+      <primary_target>LamResearch</primary_target>
+      <secondary_impact>AMAT, KLA, TEL (모든 중국 설치 기반 보유 기업)</secondary_impact>
+      <fdrs_impact>
+        LamResearch FDRS: 0.61 × 1.6 = 0.98 → S2 경계 / S3 전이 임박
+        AMAT FDRS: 0.55 × 1.6 = 0.88 → S2 진입
+        중국 내 기존 Fab 가동률 즉각 하락 예상 (서비스 의존도 85%+)
+      </fdrs_impact>
+      <probability_2026>45%</probability_2026>
+      <probability_2027>68%</probability_2027>
+      <korean_impact>
+        YMTC·CXMT 생산 차질 → 낸드·D램 공급 단기 공백 → 한국 메모리 가격 일시 반등 가능성
+        단, 삼성·하이닉스 장기 수요 기반 위협
+      </korean_impact>
+      <pe_eqp_alert_level>🟡 YELLOW → 🔴 RED (활성화 시)</pe_eqp_alert_level>
+    </scenario>
+
+    <!-- SCN-03: 일본 EUV 관련 규제 동조 -->
+    <scenario id="SCN-03" name="Japan_EUV_Regulatory_Alignment">
+      <trigger_condition>
+        일본 외환및외국무역법(外為法) METI 추가 고시 → EUV 관련 포토레지스트·
+        세정·트랙 장비 대중국 수출 규제 강화 (미일 Chip4 동조)
+      </trigger_condition>
+      <shock_multiplier>1.5</shock_multiplier>
+      <primary_target>TEL</primary_target>
+      <secondary_impact>SCREEN(세정), ULVAC(성막), JSR/Shin-Etsu(EUV PR — 소재 연계)</secondary_impact>
+      <fdrs_impact>
+        TEL FDRS: 0.65 × 1.5 = 0.975 → S2 임박 (0.025 미만 차이)
+        SCREEN FDRS: 예상 0.72 → S2 진입 가능
+        PE-CHEM 연계: EUV PR 소재 동시 제한 시 복합 충격 배율 최대 2.1x
+      </fdrs_impact>
+      <probability_2026>55%</probability_2026>
+      <probability_2027>72%</probability_2027>
+      <korean_impact>
+        TEL 트랙 장비 대체 공급처 부재 → 삼성전자 EUV 라인 가동 중단 위험
+        SCREEN 세정 장비 병목 → 웨이퍼 처리량 15~20% 감소 예상
+        PE-CHEM × PE-MIN 3중 연계 시나리오 발동 시 충격 배율 복합화
+      </korean_impact>
+      <pe_eqp_alert_level>🟡 YELLOW (현재) → 🔴 RED 전환 임박</pe_eqp_alert_level>
+    </scenario>
+
+  </export_shock_scenarios>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 4 · ENHANCED FIRM TABLE (EDI/FDRS/ExportShock)
+       ═══════════════════════════════════════════════════════ -->
+  <firm_monitoring_table version="2.0">
+    <!--
+    ┌─────────────┬────────────┬────────┬───────┬───────┬───────────────────┬──────────────────┐
+    │ Firm        │ Segment    │ State  │ SFS   │  EDI  │ FDRS (base)       │ ExportShock Risk │
+    ├─────────────┼────────────┼────────┼───────┼───────┼───────────────────┼──────────────────┤
+    │ ASML        │ Litho      │ S1     │ 40.2  │ 0.74  │ 0.74 (1.33@SCN01) │ 🔴 SCN-01 HIGH  │
+    │ LamResearch │ Etch/Dep   │ S1     │ 46.8  │ 0.61  │ 0.61 (0.98@SCN02) │ 🟡 SCN-02 MED  │
+    │ KLA         │ Metro/Insp │ S1     │ 52.7  │ 0.48  │ 0.48              │ 🟢 LOW          │
+    │ TEL         │ Etch/Track │ S1     │ 43.5  │ 0.65  │ 0.65 (0.98@SCN03) │ 🔴 SCN-03 HIGH  │
+    │ AMAT        │ Dep/CMP    │ S1     │ 50.4  │ 0.55  │ 0.55 (0.88@SCN02) │ 🟡 SCN-02 MED  │
+    └─────────────┴────────────┴────────┴───────┴───────┴───────────────────┴──────────────────┘
+
+    SFS = strategy_freedom_score | EDI = Equipment Disruption Index
+    FDRS = Fab Disruption Risk Score | SCN = ExportShock Scenario
+    -->
+    <columns>
+      <col name="firm_id" type="string" key="true"/>
+      <col name="segment" type="enum" values="Litho,Etch,Dep,Metro,Track,CMP"/>
+      <col name="current_state" type="enum" values="S0,S1,S2,S3"/>
+      <col name="strategy_freedom_score" type="float" range="0-100" formula="score_formula"/>
+      <col name="EDI" type="float" range="0-1.0" source="MAP-EDI" threshold_alert="0.70"/>
+      <col name="FDRS" type="float" range="0-1.5" source="MAP-FDRS" threshold_alert="1.00"/>
+      <col name="ExportShock_Multiplier" type="float" source="MAP-ExportShock" default="1.0"/>
+      <col name="active_scenario" type="string" nullable="true"/>
+      <col name="no_return_risk" type="enum" values="LOW,MEDIUM-LOW,MEDIUM,MEDIUM-HIGH,HIGH"/>
+      <col name="korea_impact" type="text" optional="true"/>
+    </columns>
+  </firm_monitoring_table>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 5 · PERPLEXITY SEARCH DIRECTIVE
+       ═══════════════════════════════════════════════════════ -->
+  <search_directive model="Perplexity">
+    분석 시작 전 순서대로 실행:
+    SEARCH_1: "BIS EAR export control semiconductor equipment 2026 update"
+    SEARCH_2: "ASML High-NA EUV export license restriction China 2026"
+    SEARCH_3: "Tokyo Electron Japan METI export regulation China EUV 2026"
+    SEARCH_4: "Applied Materials Lam Research China service ban BIS 2026"
+    SEARCH_5: "KLA metrology export control dual-use exemption status 2026"
+
+    처리 규칙:
+    · 검색 결과 → MAP-ExportShock 채널에 실시간 반영
+    · 90일 초과 규제 데이터 → ⚠️UNVERIFIED 태그
+    · SCN 활성화 여부 검색 결과 기반 판정 필수
+    · Alert 출력 시 반드시 [출처·연도] 인용
+  </search_directive>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 6 · FALSE POSITIVE FILTER (v2.0 확장)
+       ═══════════════════════════════════════════════════════ -->
+  <false_positive_filter version="2.0">
+    <rule id="FP-01">매출 YoY &gt;15% AND 신시장 진입 ≥1건 → Alert 억제</rule>
+    <rule id="FP-02">전략 수정이 단일 분기 일시적 → 2분기 연속 확인 전 억제</rule>
+    <rule id="FP-03">Dual-use 장비 → 허가 의존도 기준 ≥50%로 상향</rule>
+    <rule id="FP-04">Perplexity 검색 미확인 규제 → ⚠️UNVERIFIED + Alert 강도 1단계 하향</rule>
+    <rule id="FP-05">ExportShock SCN 미활성화 상태에서 FDRS 충격 배율 적용 금지</rule>
+    <rule id="FP-06">EDI ≥0.7이나 alternative_supply 확보 진행 중 → 48시간 유보 후 재판정</rule>
+  </false_positive_filter>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 7 · ALERT PROTOCOL (v2.0)
+       ═══════════════════════════════════════════════════════ -->
+  <alert_protocol version="2.0">
+    <trigger>
+      hard_trigger_signals 충족 OR FSM 전이 감지 OR
+      FDRS ≥ 1.0 OR EDI ≥ 0.7 OR ExportShock SCN 활성화
+    </trigger>
+    <output_format>
+      [기업명] | State: [S0~S3] | SFS: [점수] | EDI: [값] | FDRS: [값]
+      활성 시나리오: [SCN-01/02/03 또는 None] | 긴급도: [🔴/🟡/🟢]
+      [출처·연도] 인용 필수
+
+      1. 붕괴 조짐 기업 및 트리거
+      2. 붕괴된 전략 가정
+      3. 상실된 선택지 (고객·시장·R&amp;D 각 1줄)
+      4. 국가 산업·안보 전략 귀속 효과
+      5. No-Return Point
+      6. 한국 산업 파급 영향 (PE-EQP v2.0 신규)
+      7. 권고 액션 (투자자·전략기획팀·정책기관 각 1줄)
+
+      ## EDI/FDRS/SFS 산출 근거 공개 (SECTION 4 컬럼 전체)
+    </output_format>
+  </alert_protocol>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 8 · KNOWLEDGE GRAPH LINKAGE
+       ═══════════════════════════════════════════════════════ -->
+  <knowledge_graph_links version="4.4">
+    <node id="EQP-v2" type="prompt_master" connects_to="PE-EQP-MASTER-v9"/>
+    <node id="MAP-EDI" type="indicator" source="SEMI-OPT-MAP" feeds="FSM"/>
+    <node id="MAP-FDRS" type="indicator" source="SEMI-OPT-MAP" feeds="FSM"/>
+    <node id="MAP-ExportShock" type="scenario_engine" feeds="shock_multiplier"/>
+    <edges_added>9</edges_added>
+    <target_version>v4.4: 133 nodes / 200 edges</target_version>
+  </knowledge_graph_links>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 9 · VERSION HISTORY
+       ═══════════════════════════════════════════════════════ -->
+  <version_history>
+    <version id="v9.0" date="2026-04-30" cmd="CMD-FS-01" pe3="97">
+      PE-EQP v2.0 MAP-Integrated: SEMI-OPT-MAP 통합 + EDI/FDRS/ExportShock +
+      5-firm FSM + 3 ExportShock 시나리오 + FP-05/06 추가
+    </version>
+    <version id="v8.0" date="2026-04-29" cmd="CMD-PE-EQP" pe3="96">
+      APIS v11.0 Perplexity 최적화: Search-First + FP-04 + PE-OPT 연계
+    </version>
+    <version id="v7.0" date="2026-04-29" pe3="91">
+      Initial PE-EQP-MASTER: FSM S0~S3 + strategy_freedom_score 공식
+    </version>
+  </version_history>
+
+</PEEquipmentMasterV2>
