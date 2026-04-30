@@ -1,17 +1,17 @@
 {
-  "graph_version": "4.3",
-  "rebuild_timestamp": "2026-04-30T16:54:00+09:00",
-  "rebuild_command": "pe-graph --rebuild v4.3",
-  "base_from": "v4.2",
-  "base_nodes": 123,
-  "base_edges": 183,
-  "total_nodes": 128,
-  "total_edges": 191,
+  "graph_version": "4.4",
+  "rebuild_timestamp": "2026-04-30T17:00:00+09:00",
+  "rebuild_command": "pe-graph --rebuild v4.4 (CMD-FS-01)",
+  "base_from": "v4.3",
+  "base_nodes": 128,
+  "base_edges": 191,
+  "total_nodes": 133,
+  "total_edges": 200,
   "delta": {
     "nodes": "+5",
-    "edges": "+8",
-    "node_detail": "SEMI-OPT-MASTER(type_upgrade) + SEMI-OPT-MAP(new) + SEMI-OPT-GNN(new) + GNN-MODULE-1(new) + GNN-ALPHA-SIGNAL(new)",
-    "edge_detail": "8 edges: ANALYZES x1 / CROSS_LINKS x2 / USES_DATA x1 / FEEDS x1 / CONSUMES x1 / GENERATES_ALPHA x1 / RISK_INPUT x1"
+    "edges": "+9",
+    "node_detail": "MAP-EDI + MAP-FDRS + MAP-ExportShock + EQP-v2 + SEMI-OPT-MAP(sub-node formalization)",
+    "edge_detail": "9 edges: FEEDS x3 / INTEGRATES x1 / UPGRADES_FROM x1 / CROSS_LINKS x2 / RISK_INPUT x2"
   },
   "domains": [
     "AI-Platform",
@@ -26,157 +26,210 @@
     "Thermal",
     "SAT",
     "SEMI-OPT-Platform",
-    "GNN-ML"
+    "GNN-ML",
+    "ExportShock-Engine"
   ],
   "new_nodes": [
     {
-      "id": "SEMI-OPT-MASTER",
-      "label": "SEMI-OPT · 반도체 전략 분석 최적화 마스터 프롬프트",
-      "domain": "SEMI-OPT-Platform",
-      "type": "prompt_master",
-      "version": "v1.0",
-      "pe3_score": 96,
-      "parent": "PE-SEMI-HUB",
-      "cross_links": ["PE-EQP", "PE-MIN", "PE-CHEM"],
-      "github_path": "prompts/PE-SEMI/semi_opt_master_v1.0.md",
-      "github_commit": "e32d049",
-      "created": "2026-04-29",
-      "updated": "2026-04-30",
-      "note": "type upgraded from prompt_optimized → prompt_master; CMD-SEMI-KG v4.3"
-    },
-    {
-      "id": "SEMI-OPT-MAP",
-      "label": "SEMI-OPT-MAP · 반도체 전략 붕괴 감시 통합 플랫폼 맵",
-      "domain": "SEMI-OPT-Platform",
-      "type": "platform_design",
-      "version": "v1.0",
-      "parent": "SEMI-OPT-MASTER",
-      "feeds": ["PE-EQP"],
-      "uses_data": ["SEMI-OPT-MASTER"],
-      "notion_url": "https://app.notion.com/p/35155ed436f081a587c9f949d7aaabae",
-      "github_path": "docs/SEMI-OPT-MAP_v1.0.md",
-      "created": "2026-04-30",
-      "description": "PE-EQP × SEMI-OPT-MAP 통합 맵 — 장비·소재·공정 3-axis 붕괴 감시 플랫폼"
-    },
-    {
-      "id": "SEMI-OPT-GNN",
-      "label": "SEMI-OPT-GNN v1.0 · Bayesian GNN Risk Scoring ML Model",
-      "domain": "GNN-ML",
-      "type": "ml_model",
+      "id": "MAP-EDI",
+      "label": "MAP-EDI · Equipment Disruption Index",
+      "domain": "ExportShock-Engine",
+      "type": "indicator",
       "version": "v1.0",
       "parent": "SEMI-OPT-MAP",
-      "modules": ["GNN-MODULE-1"],
-      "outputs": ["GNN-ALPHA-SIGNAL"],
-      "pe3_score": 97,
-      "github_path": "code/semi_opt_gnn_v1.0/",
-      "created": "2026-04-30",
-      "description": "Module 1: Bayesian SCP + Monte Carlo SSP 10,000회 + Alpha Distribution → PE-JV Signal"
-    },
-    {
-      "id": "GNN-MODULE-1",
-      "label": "GNN Module 1 · Bayesian SCP + SSP MC Engine",
-      "domain": "GNN-ML",
-      "type": "ml_module",
-      "version": "v1.0",
-      "parent": "SEMI-OPT-GNN",
-      "components": ["Beta-Prior-Update", "SSP-Monte-Carlo-10k", "Risk-Probability-Classifier"],
-      "inputs": {
-        "global_prior": "Beta(3,7)",
-        "shock_severity": 0.9
+      "formula": "EDI = (export_restriction_pct × 0.40) + (lead_time_extension_ratio × 0.35) + (single_source_dependency × 0.25)",
+      "range": "0.0~1.0",
+      "threshold_alert": 0.70,
+      "firms_tracked": ["ASML", "LamResearch", "KLA", "TEL", "AMAT"],
+      "current_values": {
+        "ASML": 0.74,
+        "LamResearch": 0.61,
+        "KLA": 0.48,
+        "TEL": 0.65,
+        "AMAT": 0.55
       },
-      "outputs": {
-        "posterior_E_R": 0.35,
-        "SSP_mean": 0.1882,
-        "SSP_CI_95": [0.0875, 0.3055]
-      },
-      "github_path": "code/semi_opt_gnn_v1.0/module1_bayesian_scp.py",
+      "feeds": ["MAP-FDRS", "EQP-v2"],
+      "github_path": "prompts/pe-eqp/PE-EQP-v2.0-MAP-integrated.xml#MAP-EDI",
       "created": "2026-04-30"
     },
     {
-      "id": "GNN-ALPHA-SIGNAL",
-      "label": "GNN Alpha Signal Generator · PE-JV LONG Signal",
-      "domain": "GNN-ML",
-      "type": "signal_generator",
+      "id": "MAP-FDRS",
+      "label": "MAP-FDRS · Fab Disruption Risk Score",
+      "domain": "ExportShock-Engine",
+      "type": "indicator",
       "version": "v1.0",
-      "parent": "SEMI-OPT-GNN",
-      "signal_result": {
-        "alpha_mean": 0.1828,
-        "alpha_std": 0.0562,
-        "P_alpha_gt_0": 1.0,
-        "PE_JV_signal": "LONG",
-        "confidence": "100%"
+      "parent": "SEMI-OPT-MAP",
+      "formula": "FDRS = EDI × shock_multiplier × (1 - mitigation_factor)",
+      "range": "0.0~1.5",
+      "threshold_s3_alert": 1.00,
+      "firms_tracked": ["ASML", "LamResearch", "KLA", "TEL", "AMAT"],
+      "current_values_base": {
+        "ASML": 0.74,
+        "LamResearch": 0.61,
+        "KLA": 0.48,
+        "TEL": 0.65,
+        "AMAT": 0.55
       },
-      "feeds": ["PE-JV", "PE-FIN"],
-      "github_path": "code/semi_opt_gnn_v1.0/alpha_signal_generator.py",
+      "scenario_values_scn01": {
+        "ASML": 1.33
+      },
+      "scenario_values_scn02": {
+        "LamResearch": 0.98,
+        "AMAT": 0.88
+      },
+      "scenario_values_scn03": {
+        "TEL": 0.975
+      },
+      "feeds": ["EQP-v2", "PE-FIN"],
+      "github_path": "prompts/pe-eqp/PE-EQP-v2.0-MAP-integrated.xml#MAP-FDRS",
+      "created": "2026-04-30"
+    },
+    {
+      "id": "MAP-ExportShock",
+      "label": "MAP-ExportShock · Export Shock Scenario Engine (3종)",
+      "domain": "ExportShock-Engine",
+      "type": "scenario_engine",
+      "version": "v1.0",
+      "parent": "SEMI-OPT-MAP",
+      "scenarios": [
+        {
+          "id": "SCN-01",
+          "name": "BIS_EAR_HighNA_Restriction",
+          "shock_multiplier": 1.8,
+          "primary_target": "ASML",
+          "P2026": "35%",
+          "P2027": "52%",
+          "alert_level": "RED"
+        },
+        {
+          "id": "SCN-02",
+          "name": "China_Equipment_Service_Ban",
+          "shock_multiplier": 1.6,
+          "primary_target": "LamResearch",
+          "P2026": "45%",
+          "P2027": "68%",
+          "alert_level": "YELLOW_TO_RED"
+        },
+        {
+          "id": "SCN-03",
+          "name": "Japan_EUV_Regulatory_Alignment",
+          "shock_multiplier": 1.5,
+          "primary_target": "TEL",
+          "P2026": "55%",
+          "P2027": "72%",
+          "alert_level": "YELLOW_TO_RED"
+        }
+      ],
+      "feeds": ["MAP-FDRS", "PE-JV"],
+      "github_path": "prompts/pe-eqp/PE-EQP-v2.0-MAP-integrated.xml#SCN-01",
+      "created": "2026-04-30"
+    },
+    {
+      "id": "EQP-v2",
+      "label": "PE-EQP-MASTER v9.0 · MAP-Integrated Edition (v2.0)",
+      "domain": "Equipment",
+      "type": "prompt_master",
+      "version": "v9.0",
+      "pe3_score": 97,
+      "parent": "PE-EQP-MASTER",
+      "integrates": "SEMI-OPT-MAP v1.0",
+      "new_features": [
+        "EDI/FDRS/ExportShock_Multiplier 콸럼",
+        "5-firm FSM (ASML/LamResearch/KLA/TEL/AMAT)",
+        "3 ExportShock 시나리오 (SCN-01/02/03)",
+        "FP-05/FP-06 추가",
+        "PE-CHEM × PE-MIN 교차 충격 연계"
+      ],
+      "github_path": "prompts/pe-eqp/PE-EQP-v2.0-MAP-integrated.xml",
+      "github_commit": "edcf1c7",
+      "notion_url": "https://app.notion.com/p/35155ed436f0817eb8d8eed8242fa0d1",
+      "created": "2026-04-30",
+      "cmd_source": "CMD-FS-01"
+    },
+    {
+      "id": "SEMI-OPT-MAP-SUB",
+      "label": "SEMI-OPT-MAP · Sub-node Formalization (EDI+FDRS+ExportShock)",
+      "domain": "SEMI-OPT-Platform",
+      "type": "platform_design",
+      "version": "v1.1",
+      "parent": "SEMI-OPT-MAP",
+      "sub_nodes": ["MAP-EDI", "MAP-FDRS", "MAP-ExportShock"],
+      "note": "v4.3에서 MAP이 신규 등록됨. v4.4에서 하위노드 3종 확정 및 EQP-v2 연계 완료",
       "created": "2026-04-30"
     }
   ],
   "new_edges": [
     {
-      "source": "SEMI-OPT-MASTER",
-      "target": "PE-EQP",
-      "type": "ANALYZES",
-      "label": "SEMI-OPT-MASTER analyzes PE-EQP equipment domain",
+      "source": "MAP-EDI",
+      "target": "SEMI-OPT-MAP",
+      "type": "FEEDS",
+      "label": "MAP-EDI 지수가 SEMI-OPT-MAP 플랫폼에 장비 충격데이터 제공",
+      "weight": 0.95,
+      "added_in": "v4.4"
+    },
+    {
+      "source": "MAP-FDRS",
+      "target": "SEMI-OPT-MAP",
+      "type": "FEEDS",
+      "label": "MAP-FDRS Fab 리스크 점수가 SEMI-OPT-MAP에 피드백",
+      "weight": 0.94,
+      "added_in": "v4.4"
+    },
+    {
+      "source": "MAP-ExportShock",
+      "target": "SEMI-OPT-MAP",
+      "type": "FEEDS",
+      "label": "ExportShock 시나리오 3종이 MAP에 충격배율 제공",
       "weight": 0.92,
-      "added_in": "v4.3"
+      "added_in": "v4.4"
     },
     {
-      "source": "SEMI-OPT-MASTER",
-      "target": "PE-MIN",
-      "type": "CROSS_LINKS",
-      "label": "SEMI-OPT-MASTER cross-links to PE-MIN critical minerals",
-      "weight": 0.88,
-      "added_in": "v4.3"
+      "source": "EQP-v2",
+      "target": "SEMI-OPT-MAP",
+      "type": "INTEGRATES",
+      "label": "PE-EQP v2.0이 SEMI-OPT-MAP v1.0을 완전 통합",
+      "weight": 0.98,
+      "added_in": "v4.4"
     },
     {
-      "source": "SEMI-OPT-MASTER",
+      "source": "EQP-v2",
+      "target": "PE-EQP-MASTER",
+      "type": "UPGRADES_FROM",
+      "label": "EQP-v2(v9.0)는 PE-EQP-MASTER(v8.0)의 업그레이드로부터 생성됨",
+      "weight": 1.00,
+      "added_in": "v4.4"
+    },
+    {
+      "source": "EQP-v2",
       "target": "PE-CHEM",
       "type": "CROSS_LINKS",
-      "label": "SEMI-OPT-MASTER cross-links to PE-CHEM chemical domain",
+      "label": "EUV PR/CMP Slurry 수출통제 복합 충격 연계",
       "weight": 0.87,
-      "added_in": "v4.3"
+      "added_in": "v4.4"
     },
     {
-      "source": "SEMI-OPT-MAP",
-      "target": "SEMI-OPT-MASTER",
-      "type": "USES_DATA",
-      "label": "SEMI-OPT-MAP consumes SEMI-OPT-MASTER output as data source",
-      "weight": 0.95,
-      "added_in": "v4.3"
+      "source": "EQP-v2",
+      "target": "PE-MIN",
+      "type": "CROSS_LINKS",
+      "label": "Ga/Ge 수출제한 × 장비 충격 교차 시나리오 연계",
+      "weight": 0.86,
+      "added_in": "v4.4"
     },
     {
-      "source": "SEMI-OPT-MAP",
-      "target": "PE-EQP",
-      "type": "FEEDS",
-      "label": "SEMI-OPT-MAP platform feeds signals to PE-EQP surveillance",
-      "weight": 0.90,
-      "added_in": "v4.3"
-    },
-    {
-      "source": "SEMI-OPT-GNN",
-      "target": "SEMI-OPT-MAP",
-      "type": "CONSUMES",
-      "label": "SEMI-OPT-GNN ML model consumes SEMI-OPT-MAP platform data",
-      "weight": 0.93,
-      "added_in": "v4.3"
-    },
-    {
-      "source": "SEMI-OPT-GNN",
+      "source": "MAP-ExportShock",
       "target": "PE-JV",
-      "type": "GENERATES_ALPHA",
-      "label": "SEMI-OPT-GNN generates Alpha signal → PE-JV LONG/SHORT decision",
-      "weight": 0.97,
-      "added_in": "v4.3",
-      "signal": "LONG",
-      "P_alpha_gt_0": "100%"
+      "type": "RISK_INPUT",
+      "label": "ExportShock 시나리오 활성화 시 PE-JV 투자 리스크 보정 신호",
+      "weight": 0.88,
+      "added_in": "v4.4"
     },
     {
-      "source": "SEMI-OPT-GNN",
+      "source": "MAP-FDRS",
       "target": "PE-FIN",
       "type": "RISK_INPUT",
-      "label": "SEMI-OPT-GNN SSP risk scores feed into PE-FIN financial modeling",
-      "weight": 0.89,
-      "added_in": "v4.3"
+      "label": "FDRS Fab 위험 점수 → PE-FIN EBITDA 충격 모델 입력",
+      "weight": 0.91,
+      "added_in": "v4.4"
     }
   ],
   "validation": {
@@ -187,23 +240,30 @@
     "node_count_verified": true,
     "edge_count_verified": true,
     "status": "PASS",
-    "validated_at": "2026-04-30T16:54:00+09:00"
+    "validated_at": "2026-04-30T17:00:00+09:00"
   },
   "changelog": {
+    "v4.4": {
+      "date": "2026-04-30",
+      "nodes_added": 5,
+      "edges_added": 9,
+      "total_nodes": 133,
+      "total_edges": 200,
+      "trigger": "CMD-FS-01 PE-EQP v2.0 SEMI-OPT-MAP 통합",
+      "key_additions": [
+        "MAP-EDI: Equipment Disruption Index 지표 노드",
+        "MAP-FDRS: Fab Disruption Risk Score 지표 노드",
+        "MAP-ExportShock: 3 시나리오 엔진 (SCN-01/02/03)",
+        "EQP-v2: PE-EQP-MASTER v9.0 MAP 통합판",
+        "SEMI-OPT-MAP 하위노드 확정 (EDI+FDRS+ExportShock)"
+      ]
+    },
     "v4.3": {
       "date": "2026-04-30",
       "nodes_added": 5,
       "edges_added": 8,
       "total_nodes": 128,
-      "total_edges": 191,
-      "trigger": "CMD-SEMI-KG pe-graph --rebuild v4.3",
-      "key_additions": [
-        "SEMI-OPT-MASTER type upgrade → prompt_master",
-        "SEMI-OPT-MAP platform_design node (C-31 PE-EQP-MAP 연계)",
-        "SEMI-OPT-GNN ml_model node (CMD-GNN-01 실행 완료)",
-        "GNN-MODULE-1 Bayesian SCP + Monte Carlo engine",
-        "GNN-ALPHA-SIGNAL PE-JV LONG signal generator"
-      ]
+      "total_edges": 191
     },
     "v4.2": {
       "date": "2026-04-29",
