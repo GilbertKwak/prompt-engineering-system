@@ -1,0 +1,125 @@
+name: Intel Report Update Pipeline
+
+on:
+  schedule:
+    - cron: '0 2 * * 1'
+  workflow_dispatch:
+    inputs:
+      report_version:
+        description: '보고서 버전 (예: v1.1)'
+        required: false
+        default: 'latest'
+      sections:
+        description: '갱신 섹션 (comma-separated, 1~11 or all)'
+        required: false
+        default: 'all'
+      dry_run:
+        description: 'Dry-run 모드 (true/false)'
+        required: false
+        default: 'false'
+
+env:
+  PYTHON_VERSION: '3.11'
+  REPORT_DIR:     'reports/ai-intel'
+  KG_PATH:        'knowledge_graph_v4.6.json'
+  NOTION_PAGE_ID: ${{ secrets.NOTION_C31_PAGE_ID }}
+
+jobs:
+  parse-entities:
+    name: '① CSV 파싱 → 엔티티 추출'
+    runs-on: ubuntu-latest
+    outputs:
+      entity_count: ${{ steps.extract.outputs.entity_count }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - run: pip install -r scripts/requirements.txt
+      - name: Run entity extractor
+        id: extract
+        run: |
+          python scripts/parse_ai_intel_csv.py data/ai_intel_11sec.csv --out-json artifacts/entities_extracted.json --out-csv artifacts/entities_batch.csv
+          COUNT=$(python -c "import json; d=json.load(open('artifacts/entities_extracted.json')); print(d['meta']['total_entities'])")
+          echo "entity_count=$COUNT" >> $GITHUB_OUTPUT
+      - uses: actions/upload-artifact@v4
+        with:
+          name: entities-${{ github.run_id }}
+          path: artifacts/
+          retention-days: 7
+
+  patch-knowledge-graph:
+    name: '② KG v4.6 corp-nodes 패치'
+    runs-on: ubuntu-latest
+    needs: parse-entities
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: entities-${{ github.run_id }}
+          path: artifacts/
+      - run: python scripts/kg_patch.py --base knowledge_graph_v4.5.json --patch knowledge_graph_v4.6_patch.json --entities artifacts/entities_extracted.json --output knowledge_graph_v4.6.json
+      - run: python scripts/kg_validate.py knowledge_graph_v4.6.json
+      - name: Commit KG v4.6
+        if: github.event.inputs.dry_run != 'true'
+        run: |
+          git config user.name "intel-bot"
+          git config user.email "intel-bot@gilbertkwak.dev"
+          git add knowledge_graph_v4.6.json
+          git commit -m "auto: KG v4.6 업데이트 (run#${{ github.run_id }})" || echo "no changes"
+          git push
+
+  generate-report:
+    name: '③ 보고서 초안 생성 Part 1~2'
+    runs-on: ubuntu-latest
+    needs: patch-knowledge-graph
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - run: pip install -r scripts/requirements.txt
+      - name: Generate report
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
+        run: python scripts/generate_report.py --prompt prompts/ai-platform/notion_005_v1.0.md --kg knowledge_graph_v4.6.json --parts 1,2 --output ${{ env.REPORT_DIR }}/intel_report_draft_v${{ github.run_number }}.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: report-draft-${{ github.run_id }}
+          path: ${{ env.REPORT_DIR }}/
+          retention-days: 30
+
+  sync-notion:
+    name: '④ Notion C-31 동기화'
+    runs-on: ubuntu-latest
+    needs: generate-report
+    if: github.event.inputs.dry_run != 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: report-draft-${{ github.run_id }}
+          path: reports/
+      - name: Sync to Notion
+        env:
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+        run: python scripts/notion_sync.py --page-id ${{ env.NOTION_PAGE_ID }} --report reports/intel_report_draft_v${{ github.run_number }}.md --section "보고서 1차 초안"
+
+  notify:
+    name: '⑤ 완료 알림'
+    runs-on: ubuntu-latest
+    needs: [parse-entities, patch-knowledge-graph, generate-report, sync-notion]
+    if: always()
+    steps:
+      - name: Summarize
+        run: |
+          echo "## Intel Report Pipeline 완료" >> $GITHUB_STEP_SUMMARY
+          echo "| 단계 | 상태 |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|------|" >> $GITHUB_STEP_SUMMARY
+          echo "| ① 엔티티 (${{ needs.parse-entities.outputs.entity_count }}개) | ${{ needs.parse-entities.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| ② KG v4.6 패치 | ${{ needs.patch-knowledge-graph.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| ③ 보고서 초안 | ${{ needs.generate-report.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| ④ Notion 동기화 | ${{ needs.sync-notion.result }} |" >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "version": "v4.6",
+    "patch_type": "corp-nodes",
+    "base_version": "v4.5",
+    "patch_date": "2026-05-01",
+    "description": "글로벌 AI 코퍼레이트 노드 신설 및 엣지 확장 (C-31 인텔리전스 라이브러리 연동)",
+    "node_count_delta": "+18",
+    "edge_count_delta": "+31"
+  },
+  "patch": {
+    "add_nodes": [
+      {"id": "CORP-001", "type": "COMPANY", "name": "NVIDIA",         "tier": 1, "domain": "GPU/AI-Accelerator", "hq": "US"},
+      {"id": "CORP-002", "type": "COMPANY", "name": "AMD",            "tier": 1, "domain": "CPU/GPU",            "hq": "US"},
+      {"id": "CORP-003", "type": "COMPANY", "name": "Intel",          "tier": 1, "domain": "CPU/Foundry",        "hq": "US"},
+      {"id": "CORP-004", "type": "COMPANY", "name": "Qualcomm",       "tier": 1, "domain": "Mobile-SoC",         "hq": "US"},
+      {"id": "CORP-005", "type": "COMPANY", "name": "Google DeepMind","tier": 1, "domain": "AI-Research",        "hq": "UK"},
+      {"id": "CORP-006", "type": "COMPANY", "name": "OpenAI",         "tier": 1, "domain": "LLM/Foundation",     "hq": "US"},
+      {"id": "CORP-007", "type": "COMPANY", "name": "Anthropic",      "tier": 1, "domain": "LLM/Safety",         "hq": "US"},
+      {"id": "CORP-008", "type": "COMPANY", "name": "Microsoft",      "tier": 1, "domain": "Cloud/AI-Platform",  "hq": "US"},
+      {"id": "CORP-009", "type": "COMPANY", "name": "Amazon AWS",     "tier": 1, "domain": "Cloud/AI-Infra",     "hq": "US"},
+      {"id": "CORP-010", "type": "COMPANY", "name": "Meta AI",        "tier": 1, "domain": "LLM/Open-Source",    "hq": "US"},
+      {"id": "CORP-011", "type": "COMPANY", "name": "Samsung HBM",    "tier": 1, "domain": "Memory/HBM",         "hq": "KR"},
+      {"id": "CORP-012", "type": "COMPANY", "name": "SK Hynix",       "tier": 1, "domain": "Memory/HBM",         "hq": "KR"},
+      {"id": "CORP-013", "type": "COMPANY", "name": "TSMC",           "tier": 1, "domain": "Foundry",            "hq": "TW"},
+      {"id": "CORP-014", "type": "COMPANY", "name": "Huawei Ascend",  "tier": 2, "domain": "AI-Chip",            "hq": "CN"},
+      {"id": "CORP-015", "type": "COMPANY", "name": "Baidu ERNIE",    "tier": 2, "domain": "LLM/China",          "hq": "CN"},
+      {"id": "CORP-016", "type": "COMPANY", "name": "xAI",            "tier": 2, "domain": "LLM/Foundation",     "hq": "US"},
+      {"id": "CORP-017", "type": "COMPANY", "name": "Mistral AI",     "tier": 2, "domain": "LLM/Open-Source",    "hq": "FR"},
+      {"id": "CORP-018", "type": "COMPANY", "name": "Groq",           "tier": 2, "domain": "AI-Inference-Chip",  "hq": "US"}
+    ],
+    "add_edges": [
+      {"from": "CORP-001", "to": "CORP-011", "rel": "SOURCING",      "label": "HBM3E 공급"},
+      {"from": "CORP-001", "to": "CORP-012", "rel": "SOURCING",      "label": "HBM3E 공급"},
+      {"from": "CORP-001", "to": "CORP-013", "rel": "MANUFACTURING", "label": "3nm 파운드리"},
+      {"from": "CORP-006", "to": "CORP-008", "rel": "PARTNERSHIP",   "label": "Azure OpenAI"},
+      {"from": "CORP-007", "to": "CORP-009", "rel": "PARTNERSHIP",   "label": "AWS Bedrock"},
+      {"from": "CORP-010", "to": "CORP-001", "rel": "PROCUREMENT",   "label": "H100/H200 구매"},
+      {"from": "CORP-005", "to": "CORP-009", "rel": "PARTNERSHIP",   "label": "GCP-DeepMind"},
+      {"from": "CORP-002", "to": "CORP-013", "rel": "MANUFACTURING", "label": "4nm MI300X"},
+      {"from": "CORP-014", "to": "CORP-013", "rel": "RESTRICTION",   "label": "US 수출규제"},
+      {"from": "CORP-016", "to": "CORP-001", "rel": "PROCUREMENT",   "label": "Grok 학습 GPU"},
+      {"from": "CORP-017", "to": "CORP-001", "rel": "PROCUREMENT",   "label": "추론 GPU"},
+      {"from": "CORP-018", "to": "CORP-013", "rel": "MANUFACTURING", "label": "LPU TSMC 생산"},
+      {"from": "C31",      "to": "CORP-001", "rel": "COVERS",        "label": "분석 대상"},
+      {"from": "C31",      "to": "CORP-006", "rel": "COVERS",        "label": "분석 대상"},
+      {"from": "C31",      "to": "CORP-007", "rel": "COVERS",        "label": "분석 대상"},
+      {"from": "C31",      "to": "CORP-005", "rel": "COVERS",        "label": "분석 대상"},
+      {"from": "notion_005", "to": "C31",    "rel": "GENERATES",     "label": "프롬프트 기반 생성"},
+      {"from": "KG_v4.6",   "to": "C31",    "rel": "INDEXES",       "label": "그래프 인덱스"}
+    ],
+    "modify_nodes": [
+      {"id": "C31", "patch": {"status": "active", "kg_version": "v4.6", "prompt_ref": "notion_005_v1.0"}}
+    ]
+  }
+}
