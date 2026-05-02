@@ -1,8 +1,8 @@
 {
   "meta": {
-    "generated_at": "2026-05-01T02:04:40.834987+00:00",
+    "generated_at": "2026-05-02T07:54:29.369675+00:00",
     "version": "1.0",
-    "total_nodes": 46,
+    "total_nodes": 47,
     "total_edges": 60,
     "scan_dirs": [
       "docs",
@@ -226,6 +226,20 @@
       ],
       "notion_url": null,
       "file_size": 1430,
+      "sha": null
+    },
+    {
+      "id": "docs/agent3/OUTPUT_3-4_evidence_protocol_S3.md",
+      "type": "agent",
+      "title": "§3 Evidence 수집 프로토콜 — OUTPUT 3-4 베이지안 방법론",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-05-02",
+      "tags": [
+        "agent3"
+      ],
+      "notion_url": null,
+      "file_size": 2631,
       "sha": null
     },
     {
