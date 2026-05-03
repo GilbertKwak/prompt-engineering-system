@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================
+  FILE    : PE-STRAT-SESSION-CMD_v1.0.xml
+  TITLE   : Session Command Set — Strategic Monitoring System
+  VERSION : 1.0.0
+  AUTHOR  : Gilbert (GilbertKwak)
+  CREATED : 2026-05-03
+  REPO    : prompt-engineering-system / prompts/PE-STRAT/
+  NOTION  : C-3x · PE-PROMPT-OPT Hub (T-09 하위)
+  PURPOSE : 전략 모니터링 세션 시작·보고서 생성·후속 관리를 위한
+            재사용 가능 명령어 세트. 세 가지 시나리오(A·B·C)를 커버.
+  ============================================================
+-->
+
+<SessionCommandSet
+  name="PE-STRAT-SESSION-CMD_v1.0"
+  version="1.0.0"
+  scope="Strategic Monitoring System — Full Workflow"
+  created="2026-05-03"
+  author="GilbertKwak"
+  linked_github="prompts/PE-STRAT/PE-STRAT-SESSION-CMD_v1.0.xml">
+
+  <usage_guide>
+    CMD-A: 세션 시작용 (전략 분석 실행)
+    CMD-B: 보고서 생성용 (DIR-09 / FU-008 연계)
+    CMD-C: 업데이트·관리용 (GitHub + Notion 동시)
+    [ ]로 감싼 파라미터를 실제 값으로 교체하여 사용한다.
+  </usage_guide>
+
+  <command_group id="CMD-A" name="Session_Start">
+    <cmd id="CMD-A-1" name="Standard_Analysis_Session">
+      <description>국가·산업·World 조합으로 Variant 생성 후 즉시 실행.</description>
+      <template>
+        이번 세션에서는 [C-33 PE-STRAT]와 [DIR-09]를 대상으로,
+        [PE-STRAT-OPT_v1.0] 검증 → [PE-STRAT-VARIANT-GEN_v1.0] 생성 순서로,
+        COUNTRY_CODE=[KR], TARGET_INDUSTRY=[Semiconductor+AI],
+        TARGET_WORLD=[Mixed(A+B)], OUTPUT_DEPTH=[Standard] 기준으로
+        최적화된 Variant를 생성하고 [DIR-09 RPT-09-00X] 구조에 맞춰 출력하라.
+      </template>
+    </cmd>
+    <cmd id="CMD-A-2" name="Alert_Focused_Session">
+      <description>특정 산업만 집중하는 압축형 세션.</description>
+      <template>
+        [PE-STRAT-META-EXT_v1.0]을 먼저 실행하여 [COUNTRY_CODE=KR] 기준
+        [TARGET_INDUSTRY=Semiconductor]에서 가장 임박한 전략 붕괴 신호 3개를 식별하고,
+        각각에 대해 World별 Alert 표와 권장 전환 방향을 출력하라.
+        저장: [DIR-09] 하단 [RPT-09-00X EW-Tracker] 섹션.
+      </template>
+    </cmd>
+    <cmd id="CMD-A-3" name="Cross_Industry_Collision_Session">
+      <description>반도체·AI 전략 충돌 지점 집중 탐지 세션.</description>
+      <template>
+        [PE-STRAT-OPT_v1.0]으로 기존 v5.2 프롬프트 품질 검증 후,
+        [COUNTRY_CODE=KR] 기준 반도체·AI 전략이 서로 다른 World를 요구하는
+        충돌 지점을 식별하라. 출력: 충돌 발생 조건 / 상실 선택지 / 국가 전략 수정 여부 /
+        [DIR-09] RPT-09-00X 다음 섹션 추가 초안.
+      </template>
+    </cmd>
+  </command_group>
+
+  <command_group id="CMD-B" name="Report_Generation">
+    <cmd id="CMD-B-1" name="Full_Report_Generation">
+      <description>DIR-09 RPT-09-00X 생성. FU-008 템플릿 구조 강제 적용.</description>
+      <template>
+        [DIR-09 RPT-09-00X 초안]과 [C-33 PE-STRAT 프롬프트]를 기반으로
+        [PE-STRAT-OPT_v1.0] 품질 점검 후, FU-008 구조에 맞춰
+        1.Executive Summary / 2.전략환경진단 / 3.산업별 붕괴·분기점 /
+        4.병목 매트릭스 / 5.전략 함의 / 6.EW 트리거 테이블
+        순서로 한국어 보고서 8~12페이지 생성. 보고서 번호: [RPT-09-00X]
+      </template>
+    </cmd>
+    <cmd id="CMD-B-2" name="Report_Template_Series_Setup">
+      <description>RPT-09-003~006 연속 생성을 위한 템플릿 일괄 정의.</description>
+      <template>
+        [RPT-09-001], [RPT-09-002] 구조를 템플릿으로 추출하고,
+        RPT-09-003~006에 동일한 섹션 구조와 EW 트리거 테이블을 강제하는
+        보고서 생성 프롬프트를 설계하라.
+        저장: [DIR-09] 하단 [Report Templates] 섹션
+             + GitHub prompts/PE-STRAT/DIR-09-report-template_v1.0.xml
+      </template>
+    </cmd>
+  </command_group>
+
+  <command_group id="CMD-C" name="Update_Management">
+    <cmd id="CMD-C-1" name="GitHub_Commit">
+      <description>최적화 프롬프트 GitHub 커밋 표준 명령어.</description>
+      <template><![CDATA[
+git add prompts/PE-STRAT/PE-STRAT-OPT_v1.0.xml
+git add prompts/PE-STRAT/PE-STRAT-VARIANT-GEN_v1.0.xml
+git add prompts/PE-STRAT/PE-STRAT-META-EXT_v1.0.xml
+git add prompts/PE-STRAT/PE-STRAT-SESSION-CMD_v1.0.xml
+git add prompts/PE-STRAT/README.md
+git commit -m "feat(PE-STRAT): add optimization controller, variant generator, meta-ext, session commands v1.0"
+git push origin main
+      ]]></template>
+    </cmd>
+    <cmd id="CMD-C-2" name="Notion_Page_Create">
+      <description>Notion C-3x PE-PROMPT-OPT Hub 신규 생성 지시.</description>
+      <template>
+        [T-09 · 프롬프트 엔지니어링 시스템] 하위에
+        [C-3x · PE-PROMPT-OPT · Global Prompt Optimization Library v1.0] 페이지 생성.
+        상단: Library Index + GitHub 링크 + 버전 v1.0.0 / 2026-05-03
+        도메인 섹션: PE-STRAT(4개 XML 요약+링크) / PE-SEMI / PE-AI / PE-MIN / DIR-xx (추후)
+        첫 엔트리(PE-STRAT): 파일명/목적1줄/GitHub경로/Notion연계 표로 정리.
+      </template>
+    </cmd>
+    <cmd id="CMD-C-3" name="Version_Update_Workflow">
+      <description>기존 최적화 프롬프트 버전 업데이트 표준 절차.</description>
+      <template>
+        1. XML 헤더 [CHANGELOG] 섹션에 변경 이유·내역 기록
+        2. git add + git commit -m "refactor(PE-STRAT): upgrade OPT controller to v[신규버전]"
+        3. git push origin main
+        4. Notion C-3x PE-PROMPT-OPT Hub 해당 엔트리 버전·링크 업데이트
+        5. C-33 PE-STRAT 페이지에서 구버전 @멘션을 신버전으로 교체
+      </template>
+    </cmd>
+    <cmd id="CMD-C-4" name="Follow_Up_Comparative_Analysis">
+      <description>후속 진행 옵션 비교 분석 및 우선순위 결정.</description>
+      <template>
+        Option A: C-33/DIR-09 대상 PE-STRAT 최적화 즉시 적용
+        Option B: T-09 하위 C-3x PE-PROMPT-OPT Hub 정식 론칭
+        Option C: DIR-09 RPT-09-003~006 연속 보고서 템플릿 일괄 생성
+
+        비교 기준: 즉각 실행 가능성 / Notion 생태계 연계 강도 / 향후 확장성 / 분석 우선순위 정렬
+        출력: 비교 표(4기준×3옵션) + 추천 실행 순서+이유(3줄) + 각 옵션 첫 번째 실행 명령어
+      </template>
+    </cmd>
+  </command_group>
+
+  <ecosystem_links>
+    <notion_hub>T-09 · 프롬프트 엔지니어링 시스템</notion_hub>
+    <notion_page>C-33 · PE-STRAT</notion_page>
+    <notion_page>C-3x · PE-PROMPT-OPT Hub</notion_page>
+    <notion_report>DIR-09 · 반도체×AI 전략 분석</notion_report>
+    <notion_template>FU-008 · 보고서 생성 템플릿</notion_template>
+    <notion_template>FU-025 · 전략 분기 경보 템플릿</notion_template>
+    <github_repo>GilbertKwak/prompt-engineering-system</github_repo>
+    <github_path>prompts/PE-STRAT/PE-STRAT-SESSION-CMD_v1.0.xml</github_path>
+  </ecosystem_links>
+
+</SessionCommandSet>

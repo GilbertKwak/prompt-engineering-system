@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================
+  FILE    : PE-STRAT-VARIANT-GEN_v1.0.xml
+  TITLE   : PromptVariantGenerator — Strategic Monitoring
+  VERSION : 1.0.0
+  AUTHOR  : Gilbert (GilbertKwak)
+  CREATED : 2026-05-03
+  REPO    : prompt-engineering-system / prompts/PE-STRAT/
+  NOTION  : C-3x · PE-PROMPT-OPT Hub (T-09 하위)
+  PURPOSE : StrategicMonitoringAgent_v5.2 Base를 받아
+            국가·산업·World별 특화 Variant를 자동 생성.
+  ============================================================
+-->
+
+<PromptVariantGenerator
+  name="PE-STRAT-VARIANT-GEN_v1.0"
+  version="1.0.0"
+  base="StrategicMonitoringAgent_v5.2_*"
+  created="2026-05-03"
+  author="GilbertKwak"
+  linked_pages="C-33·PE-STRAT | DIR-09 | C-3x·PE-PROMPT-OPT"
+  linked_github="prompts/PE-STRAT/PE-STRAT-VARIANT-GEN_v1.0.xml">
+
+  <mission>
+    Base_Agent_Prompt(StrategicMonitoringAgent_v5.2)를 입력으로 받아,
+    지정된 [COUNTRY_CODE] / [TARGET_INDUSTRY] / [TARGET_WORLD] 조합에
+    특화된 Variant XML을 자동 생성한다.
+    Variant는 Base 구조를 유지하면서 불필요한 모듈을 제거·축소하고
+    Notion 생태계 연결(ecosystem_links)을 추가하며
+    현재 연도(2026) 데이터 기반 failure_signals로 교체한다.
+  </mission>
+
+  <input_parameters>
+    <param name="COUNTRY_CODE" description="ISO 3166-1 alpha-2" required="true" example="KR"/>
+    <param name="TARGET_INDUSTRY" description="분석 대상 산업. '+' 구분" required="true" example="Semiconductor+AI"
+           allowed_values="Semiconductor | AI | Critical_Minerals | Energy_Infrastructure | Defense | All"/>
+    <param name="TARGET_WORLD" description="분석 기준 World" required="true" example="Mixed(A+B)"
+           allowed_values="A | B | C | D | Mixed(A+B) | Mixed(C+D)"/>
+    <param name="OUTPUT_DEPTH" required="false" default="Standard"
+           allowed_values="Compact | Standard | Full"/>
+    <param name="NOTION_LINKS" description="연결할 Notion 페이지 목록 (선택)" required="false" example="C-33, DIR-09, C-3x"/>
+  </input_parameters>
+
+  <variant_generation_workflow>
+    <step seq="1" name="Module_Extraction">
+      TARGET_INDUSTRY에 해당하는 모듈만 추출.
+      - Semiconductor → Semiconductor_Module 전체
+      - AI → AI_Module 전체
+      - Critical_Minerals → Resource_Infrastructure_Module의 Critical_Minerals/Strategic_Resources만
+      - All → 전체 모듈 포함
+      - 미지정 모듈은 summary_placeholder로 축소
+    </step>
+    <step seq="2" name="World_Narrowing">
+      TARGET_WORLD별 failure_signals 재정렬:
+      - World A: 장비·소재 수출 통제 강화를 primary signal로 설정
+      - World B: 조건부 허가·보조금 연계를 primary signal로 설정
+      - World C: 예외 접근의 기업별 편중을 primary signal로 설정
+      - World D: 동맹 내 기술 예외 조항 축소를 primary signal로 설정
+      - Mixed: 두 World 병렬 처리, 별도 섹션으로 출력
+    </step>
+    <step seq="3" name="Country_Calibration">
+      COUNTRY_CODE 기반 조정:
+      - COUNTRY_NAME 삽입
+      - baseline_strategy를 해당 국가 실제 전략 기조로 설정
+      - 주요 기업/정책 기관을 monitoring_context에 추가
+        (KR 예시: 삼성전자, SK하이닉스, 산업통상자원부, KEIT)
+    </step>
+    <step seq="4" name="Notion_Ecosystem_Link">
+      NOTION_LINKS 기반 ecosystem_links 추가.
+      미지정 기본값: C-33 · PE-STRAT / DIR-09 · 반도체×AI / C-3x · PE-PROMPT-OPT
+      각 링크에 연결 목적 1줄 명시.
+    </step>
+    <step seq="5" name="Output_Assembly">
+      완성 Variant XML 조합: XML헤더 → role → core_mission → assumed_world
+      → industry_modules → cross_industry_analysis → alert_protocol
+      → ecosystem_links → constraints + output_verbosity_spec
+    </step>
+  </variant_generation_workflow>
+
+  <quick_start_example>
+    <description>대한민국 · 반도체+AI · World A+B 기준 Variant 생성</description>
+    <command>
+      COUNTRY_CODE=KR, TARGET_INDUSTRY=Semiconductor+AI,
+      TARGET_WORLD=Mixed(A+B), OUTPUT_DEPTH=Standard, NOTION_LINKS=C-33,DIR-09,C-3x
+    </command>
+    <expected_output>StrategicMonitoringAgent_v5.2_KR_Semiconductor_AI_WorldAB.xml</expected_output>
+  </quick_start_example>
+
+  <ecosystem_links>
+    <notion_hub>T-09 · 프롬프트 엔지니어링 시스템</notion_hub>
+    <notion_page>C-33 · PE-STRAT</notion_page>
+    <notion_page>C-3x · PE-PROMPT-OPT Hub</notion_page>
+    <notion_report>DIR-09 · 반도체×AI 전략 분석</notion_report>
+    <github_repo>GilbertKwak/prompt-engineering-system</github_repo>
+    <github_path>prompts/PE-STRAT/PE-STRAT-VARIANT-GEN_v1.0.xml</github_path>
+  </ecosystem_links>
+
+  <constraints>
+    - Base_Agent_Prompt의 핵심 구조(role/core_mission/alert_protocol)는 유지.
+    - 추가된 failure_signals는 DIR-xx 보고서에서 실제 관측한 지표 기반일 것.
+    - 종합적 완충 결론 금지 규칙을 Variant에도 적용.
+    - OUTPUT_DEPTH=Compact인 경우 각 모듈 5불릿 이내 압축.
+    - 생성된 Variant XML은 prompts/PE-STRAT/ 저장 권고.
+  </constraints>
+
+</PromptVariantGenerator>

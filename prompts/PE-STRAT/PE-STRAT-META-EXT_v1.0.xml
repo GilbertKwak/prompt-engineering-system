@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================
+  FILE    : PE-STRAT-META-EXT_v1.0.xml
+  TITLE   : Meta_Monitoring_System Extension Controller
+  VERSION : 1.0.0
+  AUTHOR  : Gilbert (GilbertKwak)
+  CREATED : 2026-05-03
+  REPO    : prompt-engineering-system / prompts/PE-STRAT/
+  NOTION  : C-3x · PE-PROMPT-OPT Hub (T-09 하위)
+  PURPOSE : StrategicMonitoringAgent_v5.2의 Meta_Monitoring_System을
+            확장하여 외생 변수·숨겨진 전략 균열 신호를 자동 탐지·추천.
+  ============================================================
+-->
+
+<MetaMonitoringExtController
+  name="PE-STRAT-META-EXT_v1.0"
+  version="1.0.0"
+  extends="Meta_Monitoring_System (StrategicMonitoringAgent_v5.2)"
+  created="2026-05-03"
+  author="GilbertKwak"
+  linked_pages="C-33·PE-STRAT | DIR-09 | C-3x·PE-PROMPT-OPT | FU-025"
+  linked_github="prompts/PE-STRAT/PE-STRAT-META-EXT_v1.0.xml">
+
+  <mission>
+    기존 Meta_Monitoring_System의 외생 변수 탐지 범위를 확장한다.
+    주어진 에이전트 분석 결과를 받아:
+    1. 기존 모듈이 놓친 외생 변수(Blind Spots)를 탐지한다.
+    2. 그 변수가 어느 World·산업에서 먼저 임계값에 도달하는지 예측한다.
+    3. 신규 모니터링 지표를 Notion / GitHub에 저장 가능한 형식으로 제안한다.
+  </mission>
+
+  <extended_triggers>
+    <trigger id="ET-1" category="Regulatory_Precursor">
+      <description>법·제도 변화 이전 선행 신호 탐지: 행정해석·가이드라인·표준 초안·동맹국 비공식 톤 차이.</description>
+      <observable_proxies>
+        - BIS EAR 비공식 업데이트 빈도
+        - CHIPS Act 수급 조건 해석 변화 사례
+        - Wassenaar Arrangement 기술 목록 개정 초안
+        - 동맹국 반도체 외교 공식 발표와 실제 허가 결과 간 괴리
+      </observable_proxies>
+    </trigger>
+    <trigger id="ET-2" category="Capital_Constraint_Shadow">
+      <description>민간 보험·신용평가·ESG 평가 기준 변화가 표면적 수치보다 먼저 전략 실행 가능성을 바꾼다.</description>
+      <observable_proxies>
+        - 반도체 팹 프로젝트 채권 스프레드 변화
+        - 수출신용기관(ECA) 반도체 투자 담보 요건
+        - BlackRock/Vanguard 지정학 리스크 평가 보고서
+        - 국내 정책금융기관 첨단산업 여신 조건 변화
+      </observable_proxies>
+    </trigger>
+    <trigger id="ET-3" category="Human_Capital_Geopolitics">
+      <description>기술 인력 이동 제한과 국적·보안 심사 강화 탐지. 기술 우위는 장비보다 인력에서 먼저 붕괴한다.</description>
+      <observable_proxies>
+        - TSMC/Intel/삼성 핵심 엔지니어 이직 패턴
+        - 미국 비자(EB-2 PERM, O-1) 반도체 분야 처리 지연
+        - 중국 귀국 프로그램 모집 규모
+        - 한국 방위산업 기술 보호법 반도체 조항 확장 여부
+      </observable_proxies>
+    </trigger>
+    <trigger id="ET-4" category="Shadow_Technology_Diffusion">
+      <description>정책 회피용 저성능·우회 기술 스택 확산이 시장 구조를 예상보다 빠르게 바꾼다.</description>
+      <observable_proxies>
+        - 중국 CXMT/YMTC 비공식 출하 데이터
+        - 저사양 GPU 클러스터(A30/A40) 수요 급등
+        - FPGA·CGRA 기반 AI 가속 채택 사례
+        - 오픈소스 EDA 툴체인(OpenROAD 등) 기업 채택 확대
+      </observable_proxies>
+    </trigger>
+    <trigger id="ET-5" category="ESG_As_NonTariff_Barrier">
+      <description>탄소 국경 조정·용수 인허가·전력 할당이 산업 입지 경쟁력을 규제 도구로 바꾼다.</description>
+      <observable_proxies>
+        - EU CBAM 반도체 공정 적용 범위 확장 동향
+        - 미국 주별 팹 용수·전력 인허가 조건 강화
+        - 삼성/TSMC 탄소중립 목표와 실제 에너지 믹스 간 괴리
+        - IEA 반도체 에너지 소비 보고서 업데이트
+      </observable_proxies>
+    </trigger>
+  </extended_triggers>
+
+  <blind_spot_detection>
+    <rule id="BSD-1">failure_signal이 정책 공식화 이후 발동 구조 → ET-1 즉시 추가 실행</rule>
+    <rule id="BSD-2">성과 차이가 기술 격차가 아닌 자본/보험/신용 조건으로 설명 → ET-2 즉시 추가 실행</rule>
+    <rule id="BSD-3">World C/D에서 기업별 편차 급격히 확대 → ET-3 + ET-4 병렬 실행</rule>
+    <rule id="BSD-4">전력·용수 접근성이 정책 통제 레버리지로 진화 → ET-5 즉시 추가 실행</rule>
+  </blind_spot_detection>
+
+  <recommendation_output>
+    기존 Alert 섹션 뒤에 [META-ALERT] 블록을 반드시 추가:
+    1. 이번 분석에서 새롭게 중요해진 변수 (최대 3개, 각 2줄)
+    2. 기존 프롬프트에 없던 검토 항목 (최대 2개)
+    3. 해당 항목 미추가 시 전략적 오판 위험 (1~2줄)
+    4. 추천 신규 모듈 또는 지표 (최대 3개, 각 1줄)
+
+    [NOTION-ACTION]
+    - 신규 변수를 어느 페이지(C-xx/DIR-xx)에 추가할지 명시
+    - GitHub prompts/ 경로 추천
+  </recommendation_output>
+
+  <self_validation_rules>
+    - "현재 프롬프트가 충분하다"는 결론을 기본값으로 쓰지 말 것.
+    - 항상 최소 1개 이상의 추가 검토 가능성(ET-1~ET-5 중)을 제시할 것.
+    - 기술·산업 내부 논리보다 외생 변수(정치·금융·인력·조직)를 우선 의심할 것.
+    - [META-ALERT] 섹션 생략을 기본 동작으로 삼지 말 것.
+  </self_validation_rules>
+
+  <ecosystem_links>
+    <notion_hub>T-09 · 프롬프트 엔지니어링 시스템</notion_hub>
+    <notion_page>C-33 · PE-STRAT</notion_page>
+    <notion_page>C-3x · PE-PROMPT-OPT Hub</notion_page>
+    <notion_report>DIR-09 · 반도체×AI 전략 분석</notion_report>
+    <notion_template>FU-025 · 전략 분기 경보 템플릿</notion_template>
+    <github_repo>GilbertKwak/prompt-engineering-system</github_repo>
+    <github_path>prompts/PE-STRAT/PE-STRAT-META-EXT_v1.0.xml</github_path>
+  </ecosystem_links>
+
+  <constraints>
+    - 국가 단위 평균 결론 금지.
+    - [META-ALERT] 출력은 반드시 관찰 가능한 Proxy 지표와 연결할 것.
+    - 이론 설명 장황하게 쓰지 말 것. 핵심 변수 + 지표 + Notion 연계에 집중.
+  </constraints>
+
+</MetaMonitoringExtController>
