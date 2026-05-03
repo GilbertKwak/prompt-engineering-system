@@ -1,5 +1,59 @@
 # CHANGELOG — 프롬프트 엔지니어링 시스템
 
+## v4.14 (2026-05-03) — PIPE-2026-0503-KR · KG Delta Sync · PE-7 STEP 5
+
+### 핵심 변경사항
+- **KG v4.13 → v4.14** 델타 업데이트 (PIPE-2026-0503-KR 분석 결과 반영)
+- **SKH-S1** 노드 신규 등록 — SK Hynix HBM Salvage Strategy (HBM3E/HBM4 로드맵)
+- **SEC-S1** 노드 신규 등록 — Samsung Electronics Memory/HBM Strategy (SEMI-STRAT-001 v6.2 기반)
+- **E-KG-001~006** 엣지 6종 신규 (COMPETES_WITH · ANALYZED_BY · STORED_IN · SUPPLY_CHAIN_OVERLAP)
+- **Notion Master Directory Hub** KG 버전 필드 v4.13 → v4.14 업데이트 완료
+- **knowledge_graph_v4.14_delta.json** 커밋 (SHA: c7b3612)
+
+### 그래프 변경
+| 구분 | v4.13 | v4.14 | 증가 |
+|---|---|---|---|
+| Nodes | 127 | **129** | +2 |
+| Edges | 191 | **197** | +6 |
+| 신규 클러스터 | — | SKH-S1 / SEC-S1 | +2 |
+
+### 신규 노드 2종
+| Node ID | Label | 도메인 | 소스 |
+|---------|-------|--------|------|
+| SKH-S1 | SK Hynix — HBM Salvage Strategy | Semiconductor · HBM | HBM_Salvage Ch.2/3/6 |
+| SEC-S1 | Samsung Electronics — Memory/HBM Strategy | Semiconductor · Memory | SEMI-STRAT-001 v6.2 |
+
+### 신규 엣지 6종
+| Edge ID | From | To | Type |
+|---------|------|----|------|
+| E-KG-001 | SKH-S1 | SEC-S1 | COMPETES_WITH (w=0.92) |
+| E-KG-002 | SKH-S1 | PE-7 | ANALYZED_BY (w=0.88) |
+| E-KG-003 | SEC-S1 | PE-7 | ANALYZED_BY (w=0.85) |
+| E-KG-004 | SKH-S1 | DIR-09 | STORED_IN (w=1.00) |
+| E-KG-005 | SEC-S1 | DIR-09 | STORED_IN (w=1.00) |
+| E-KG-006 | SKH-S1 | SEC-S1 | SUPPLY_CHAIN_OVERLAP (w=0.76) |
+
+### SSOT Sync 현황
+- ✅ Notion Master Directory Hub — KG v4.14 업데이트
+- ✅ GitHub `knowledge_graph_v4.14_delta.json` 커밋 (c7b3612)
+- ✅ CHANGELOG PE-7 STEP 5 Sync Push (본 커밋)
+- ⬜ T-09 변경 로그 — 수동 paste 권고 (Notion API exact-match 제한)
+
+### 파일 목록
+- `knowledge_graph_v4.14_delta.json` (신규 · 루트)
+- `CHANGELOG.md` (업데이트)
+
+---
+
+## v4.5 (2026-05-01) — knowledge_graph v4.5 · C-31 PE-AI Intel 등록
+
+### 핵심 변경사항
+- knowledge_graph v4.5 생성 · C-31 PE-AI Intel 신규 노드 반영
+- notion_005 최적화 프롬프트 수록 (AI 플랫폼 전략 / 글로벌 AI 기술 트렌드)
+- 생태계 연계: PE-AI(C-28) · PE-DC(C-30) · PE-SEMI · PE-JV
+
+---
+
 ## v4.4 (2026-04-30) — CMD-FS-05 · PE-FIN C-31 재무·투자 분석 라이브러리 신설
 
 ### 핵심 변경사항
