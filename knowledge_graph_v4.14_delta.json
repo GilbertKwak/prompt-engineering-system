@@ -1,0 +1,121 @@
+{
+  "kg_version_prev": "v4.13",
+  "kg_version_new": "v4.14",
+  "trigger": "PIPE-2026-0503-KR 분석 결과 DIR-09 저장 후 PE-7 memory_handler.run() 실행",
+  "updated_at": "2026-05-03T16:54:00+09:00",
+  "delta": {
+    "nodes_added": 2,
+    "edges_added": 6,
+    "nodes_list": ["SKH-S1", "SEC-S1"],
+    "edges_list": ["E-KG-001", "E-KG-002", "E-KG-003", "E-KG-004", "E-KG-005", "E-KG-006"]
+  },
+  "e0n_status": {
+    "E-01": "✅ SHA 정합 확인",
+    "E-02": "✅ status 필드 정상",
+    "E-03": "✅ 버전 순행 (v4.13 → v4.14)",
+    "E-04": "✅ 구조 일치",
+    "E-06": "✅ 중복 노드 없음",
+    "E-07": "✅ 필수 필드 완비"
+  },
+  "ssot_sync": {
+    "notion_hub": "완료 — Master Directory Hub KG 버전 v4.14 업데이트 2026-05-03T16:55:00+09:00",
+    "github_commit": "완료 — knowledge_graph_v4.14_delta.json 커밋",
+    "pe7_protocol": "memory_handler.run() → STEP 3 수정 실행 → STEP 5 Sync Push"
+  },
+  "nodes": [
+    {
+      "node_id": "SKH-S1",
+      "label": "SK Hynix — HBM Salvage Strategy Node",
+      "type": "Company / Strategy",
+      "domain": "Semiconductor · HBM",
+      "source_doc": [
+        "HBM_Salvage_Chapter06_KR_v1.0.docx",
+        "HBM_Salvage_Chapter2_KO.docx",
+        "Ch03_KR_HBM_Salvage_Strategy_Differentiation.docx"
+      ],
+      "attributes": {
+        "hbm_gen": "HBM3E / HBM4 (roadmap)",
+        "salvage_focus": "Yield-loss 재활용 → 저사양 HBM 패키징 전환",
+        "key_metric": "Salvage Rate ≥ 35%  |  Cost/GB 개선 목표 -22%",
+        "risk_flag": "E-03 (버전 역행 방지 대상)"
+      },
+      "kg_version": "v4.14",
+      "created_at": "2026-05-03T16:54:00+09:00"
+    },
+    {
+      "node_id": "SEC-S1",
+      "label": "Samsung Electronics — HBM / Memory Strategy Node",
+      "type": "Company / Strategy",
+      "domain": "Semiconductor · Memory · HBM",
+      "source_doc": [
+        "SEMI-STRAT-001-v6.2-OPT_Report_20260502.docx",
+        "SEMI-STRAT-007-v1.0-KR_Report_20260502.docx",
+        "Chapter4_Memory_Technology.docx"
+      ],
+      "attributes": {
+        "hbm_status": "HBM3E 양산 · HBM4 개발 진행",
+        "gap_vs_skh": "HBM3E 수율 격차 ~8~12%p (est. 2025Q4)",
+        "strategy_flag": "DRAM+HBM 통합 원가 절감 로드맵 추진",
+        "risk_flag": "E-04 (구조 불일치 모니터링)"
+      },
+      "kg_version": "v4.14",
+      "created_at": "2026-05-03T16:54:00+09:00"
+    }
+  ],
+  "edges": [
+    {
+      "edge_id": "E-KG-001",
+      "source": "SKH-S1",
+      "target": "SEC-S1",
+      "relation": "COMPETES_WITH",
+      "weight": 0.92,
+      "context": "HBM3E 시장 점유율 경쟁 (SKH 우위 유지 중)",
+      "kg_version": "v4.14"
+    },
+    {
+      "edge_id": "E-KG-002",
+      "source": "SKH-S1",
+      "target": "PE-7",
+      "relation": "ANALYZED_BY",
+      "weight": 0.88,
+      "context": "PE-7 AI 자동화 파이프라인 — HBM Salvage 분석 자동화 (템플릿 A)",
+      "kg_version": "v4.14"
+    },
+    {
+      "edge_id": "E-KG-003",
+      "source": "SEC-S1",
+      "target": "PE-7",
+      "relation": "ANALYZED_BY",
+      "weight": 0.85,
+      "context": "SEMI-STRAT-001 v6.2 기반 전략 분석 자동화",
+      "kg_version": "v4.14"
+    },
+    {
+      "edge_id": "E-KG-004",
+      "source": "SKH-S1",
+      "target": "DIR-09",
+      "relation": "STORED_IN",
+      "weight": 1.0,
+      "context": "본 분석 결과 DIR-09 저장 (PIPE-2026-0503-KR)",
+      "kg_version": "v4.14"
+    },
+    {
+      "edge_id": "E-KG-005",
+      "source": "SEC-S1",
+      "target": "DIR-09",
+      "relation": "STORED_IN",
+      "weight": 1.0,
+      "context": "본 분석 결과 DIR-09 저장 (PIPE-2026-0503-KR)",
+      "kg_version": "v4.14"
+    },
+    {
+      "edge_id": "E-KG-006",
+      "source": "SKH-S1",
+      "target": "SEC-S1",
+      "relation": "SUPPLY_CHAIN_OVERLAP",
+      "weight": 0.76,
+      "context": "OSAT(Amkor·ASE) 공통 활용 · HBM 패키징 경쟁",
+      "kg_version": "v4.14"
+    }
+  ]
+}
