@@ -1,8 +1,8 @@
 {
   "meta": {
-    "generated_at": "2026-05-02T07:54:29.369675+00:00",
+    "generated_at": "2026-05-04T13:19:45.697637+00:00",
     "version": "1.0",
-    "total_nodes": 47,
+    "total_nodes": 48,
     "total_edges": 60,
     "scan_dirs": [
       "docs",
@@ -50,10 +50,14 @@
       "title": "CHANGELOG — 프롬프트 엔지니어링 시스템",
       "status": "unknown",
       "version": "",
-      "date": "2026-04-30",
+      "date": "2026-05-03",
       "tags": [
         "root",
         "meta",
+        "v4.14",
+        "v4.13",
+        "v6.2",
+        "v4.5",
         "v4.4",
         "v4.3",
         "v2.0",
@@ -66,7 +70,23 @@
         "v3.3"
       ],
       "notion_url": null,
-      "file_size": 4179,
+      "file_size": 6452,
+      "sha": null
+    },
+    {
+      "id": "docs/C31-AI-research-hub/A-AI-001-ai-history-1950-2011.md",
+      "type": "doc",
+      "title": "🧠 A-AI-001 · AI의 탄생과 초기 발전 (1950~2011) — 심층 보고서",
+      "status": "unknown",
+      "version": "",
+      "date": "2026-05-04",
+      "tags": [
+        "C31-AI-research-hub",
+        "v1.4",
+        "v1.0"
+      ],
+      "notion_url": null,
+      "file_size": 6668,
       "sha": null
     },
     {
