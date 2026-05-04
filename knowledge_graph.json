@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-05-04T13:36:28.827070+00:00",
+    "generated_at": "2026-05-04T13:54:10.203285+00:00",
     "version": "1.0",
     "total_nodes": 48,
     "total_edges": 60,
@@ -82,12 +82,13 @@
       "date": "2026-05-04",
       "tags": [
         "C31-AI-research-hub",
-        "v1.5",
+        "v1.6",
         "v1.0",
-        "v1.4"
+        "v1.4",
+        "v1.5"
       ],
       "notion_url": null,
-      "file_size": 14030,
+      "file_size": 24642,
       "sha": null
     },
     {
