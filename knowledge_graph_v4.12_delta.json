@@ -1,0 +1,180 @@
+{
+  "kg_version_prev": "v4.11",
+  "kg_version_new": "v4.12",
+  "trigger": "ADOA-SDP 3종 신설 — C-23 PE-OPT 메인 인덱스 갱신 후 pe-graph --rebuild v4.12 실행",
+  "updated_at": "2026-05-05T14:35:00+09:00",
+  "delta": {
+    "nodes_added": 3,
+    "edges_added": 9,
+    "nodes_list": [
+      "ADOA-SDP-MASTER",
+      "ADOA-SDP-LITE",
+      "ADOA-SDP-SRC-01"
+    ],
+    "edges_list": [
+      "E-SDP-001", "E-SDP-002", "E-SDP-003",
+      "E-SDP-004", "E-SDP-005", "E-SDP-006",
+      "E-SDP-007", "E-SDP-008", "E-SDP-009"
+    ]
+  },
+  "e0n_status": {
+    "E-01": "✅ SHA 정합 확인",
+    "E-02": "✅ status 필드 정상",
+    "E-03": "✅ 버전 순행 (v4.11 → v4.12)",
+    "E-04": "✅ 구조 일치",
+    "E-06": "✅ 중복 노드 없음",
+    "E-07": "✅ 필수 필드 완비"
+  },
+  "cumulative_stats": {
+    "total_nodes": 165,
+    "total_edges": 269,
+    "note": "v4.11 기준 162 nodes / 260 edges + delta (+3 / +9)"
+  },
+  "ssot_sync": {
+    "notion_c23": "완료 — C-23 PE-OPT 메인 인덱스 테이블 ADOA-SDP-MASTER 행 추가 2026-05-05T14:35:00+09:00",
+    "github_commit": "완료 — knowledge_graph_v4.12_delta.json + ADOA-SDP 3종 프롬프트 파일 커밋",
+    "t09_version": "v5.2 → v5.3 확정 예정 (T-09 배너 수동 갱신 필요)"
+  },
+  "nodes": [
+    {
+      "node_id": "ADOA-SDP-MASTER",
+      "label": "Strategic Decision Portfolio Master Agent (ADOA-SDP-MASTER v1.0-OPT)",
+      "type": "Prompt / Agent",
+      "domain": "Decision Optimization · Portfolio Strategy",
+      "source_doc": [
+        "prompts/decision-opt/ADOA-SDP-MASTER-v1.0-OPT.md"
+      ],
+      "attributes": {
+        "pe3_score": "95+",
+        "version": "v1.0-OPT",
+        "engine_count": 9,
+        "engine_ids": "E1(OR-Stochastic) E2(MCDM) E3(MonteCarlo) E4(BnB) E5(RobustOpt) E6(Sensitivity) E7(PortfolioOpt) E8(EarlyWarning) E9(T09Mapping)",
+        "key_feature": "9엔진 자동선택 · T-09 전 도메인 자동 매핑 · CVaR α=0.95 · N≥1000 MC",
+        "notion_path": "T-09 > C-23 PE-OPT > ADOA-SDP 섹션",
+        "github_path": "prompts/decision-opt/ADOA-SDP-MASTER-v1.0-OPT.md",
+        "status": "✅ 운영 중"
+      },
+      "kg_version": "v4.12",
+      "created_at": "2026-05-05T14:35:00+09:00"
+    },
+    {
+      "node_id": "ADOA-SDP-LITE",
+      "label": "Strategic Decision Portfolio Lite Agent (ADOA-SDP-LITE v1.0)",
+      "type": "Prompt / Agent",
+      "domain": "Decision Optimization · Lightweight",
+      "source_doc": [
+        "prompts/decision-opt/ADOA-SDP-LITE-v1.0.md"
+      ],
+      "attributes": {
+        "pe3_score": "88+",
+        "version": "v1.0",
+        "key_feature": "3대안 이하 경량형 · 빠른 Pareto + MC(N=300) · ADOA-SDP-MASTER 파생",
+        "notion_path": "T-09 > C-23 PE-OPT > ADOA-SDP 섹션",
+        "github_path": "prompts/decision-opt/ADOA-SDP-LITE-v1.0.md",
+        "status": "✅ 운영 중"
+      },
+      "kg_version": "v4.12",
+      "created_at": "2026-05-05T14:35:00+09:00"
+    },
+    {
+      "node_id": "ADOA-SDP-SRC-01",
+      "label": "ADOA-SDP 원본군 노드 (SRC-01 통합)",
+      "type": "Prompt / Source",
+      "domain": "Decision Optimization · Archive",
+      "source_doc": [
+        "prompts/decision-opt/ADOA-SDP-SRC-01.md"
+      ],
+      "attributes": {
+        "pe3_score": "68~72 (원본)",
+        "version": "v1.0 (원본)",
+        "key_feature": "PE-1 자동개선 전 원본 보관 — ADOA-SDP-MASTER 의 진화 기준점",
+        "status": "🔄 원본 보관"
+      },
+      "kg_version": "v4.12",
+      "created_at": "2026-05-05T14:35:00+09:00"
+    }
+  ],
+  "edges": [
+    {
+      "edge_id": "E-SDP-001",
+      "source": "ADOA-SDP-MASTER",
+      "target": "C-23",
+      "relation": "REGISTERED_IN",
+      "weight": 1.0,
+      "context": "C-23 PE-OPT 메인 인덱스 테이블 + ADOA-SDP 섹션 등록",
+      "kg_version": "v4.12"
+    },
+    {
+      "edge_id": "E-SDP-002",
+      "source": "ADOA-SDP-MASTER",
+      "target": "C-33",
+      "relation": "DOMAIN_LINKED",
+      "weight": 0.92,
+      "context": "PE-STRAT(C-33) — 국가전략 붕괴 시나리오 S집합 자동 구성",
+      "kg_version": "v4.12"
+    },
+    {
+      "edge_id": "E-SDP-003",
+      "source": "ADOA-SDP-MASTER",
+      "target": "C-29",
+      "relation": "DOMAIN_LINKED",
+      "weight": 0.90,
+      "context": "PE-SEMI(C-29) — 반도체 공급망 리스크 p_ij^s 데이터 공급",
+      "kg_version": "v4.12"
+    },
+    {
+      "edge_id": "E-SDP-004",
+      "source": "ADOA-SDP-MASTER",
+      "target": "C-06",
+      "relation": "DELEGATES_TO",
+      "weight": 0.88,
+      "context": "PE-11(C-06) — 결과를 Multi-Agent 실행으로 위임",
+      "kg_version": "v4.12"
+    },
+    {
+      "edge_id": "E-SDP-005",
+      "source": "ADOA-SDP-MASTER",
+      "target": "C-03",
+      "relation": "VALIDATED_BY",
+      "weight": 0.95,
+      "context": "PE-3(C-03) — PE-3 5차원 루브릭으로 자동검증",
+      "kg_version": "v4.12"
+    },
+    {
+      "edge_id": "E-SDP-006",
+      "source": "ADOA-SDP-MASTER",
+      "target": "PE-JV",
+      "relation": "DOMAIN_LINKED",
+      "weight": 0.85,
+      "context": "PE-JV — 투자 포트폴리오 대안 A집합 확장",
+      "kg_version": "v4.12"
+    },
+    {
+      "edge_id": "E-SDP-007",
+      "source": "ADOA-SDP-MASTER",
+      "target": "PE-NBD",
+      "relation": "DOMAIN_LINKED",
+      "weight": 0.85,
+      "context": "PE-NBD — 신사업 타당성 기준 C집합 + 가중치 자동 설정",
+      "kg_version": "v4.12"
+    },
+    {
+      "edge_id": "E-SDP-008",
+      "source": "ADOA-SDP-MASTER",
+      "target": "ADOA-MASTER",
+      "relation": "EVOLVED_FROM",
+      "weight": 0.93,
+      "context": "ADOA-MASTER(v1.0-OPT) 기반 포트폴리오 최적화 확장판 — 9엔진 자동선택 추가",
+      "kg_version": "v4.12"
+    },
+    {
+      "edge_id": "E-SDP-009",
+      "source": "ADOA-SDP-LITE",
+      "target": "ADOA-SDP-MASTER",
+      "relation": "DERIVED_FROM",
+      "weight": 0.90,
+      "context": "ADOA-SDP-MASTER 경량화 파생 — 3대안 이하 빠른 의사결정 전용",
+      "kg_version": "v4.12"
+    }
+  ]
+}
