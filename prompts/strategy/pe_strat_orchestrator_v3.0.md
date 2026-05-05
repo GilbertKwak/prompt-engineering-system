@@ -209,6 +209,27 @@ long_term_memory:
   - GitHub sessions_log.json (세션별 과제·결과 누적)
   - Notion Sessions DB (과제명, 날짜, PE-3 점수, 개선 이력)
 
+session_memory:
+  store: Notion PE-STRAT Sessions DB
+  notion_db_id: e90767d1503d4a78a74acf81455df08b
+  notion_db_url: https://www.notion.so/e90767d1503d4a78a74acf81455df08b
+  data_source_id: dcd065f6-af34-4d38-8f9e-5739fdb962ab
+  parent: T-09 Mother Page (34a55ed436f0814d9cffe6a2f0816e29)
+  fields:
+    - session_id     : UNIQUE_ID (prefix: STRAT, auto-increment)
+    - task_type      : SELECT [전략기획 / 투자 / 리스크 / 신사업 / 국가전략 / 복합]
+    - tools_used     : MULTI_SELECT [market / risk / forecast / innovation / investment / validation / geo]
+    - pe3_score_before : NUMBER
+    - pe3_score_after  : NUMBER
+    - iterations       : NUMBER
+    - result           : SELECT [PASS / FAIL / HUMAN_REVIEW]
+    - timestamp        : CREATED_TIME (자동)
+    - notes            : RICH_TEXT
+  auto_save_trigger:
+    - Phase 4 validation_tool 완료 즉시
+    - PE-3 점수 90+ 달성 확인 후
+  registered: 2026-05-05
+
 자동 저장 트리거:
   - Phase 4 validation_tool 완료 즉시
   - PE-3 점수 90+ 달성 확인 후
@@ -270,7 +291,8 @@ long_term_memory:
 
 ## ✅ 세션 저장 확인
 - GitHub: sessions_log.json 업데이트 완료
-- Notion: Sessions DB 행 추가 완료
+- Notion: PE-STRAT Sessions DB 행 추가 완료
+  (DB ID: e90767d1503d4a78a74acf81455df08b)
 ```
 
 ---
@@ -291,6 +313,7 @@ long_term_memory:
 |---|---|
 | PE-STRAT-01 v2.0 | `prompts/strategy/pe_strat_01_v2.0.md` |
 | PE-STRAT-02 v1.0 | `prompts/strategy/pe_strat_02_investment_v1.0.md` |
+| PE-STRAT Sessions DB | https://www.notion.so/e90767d1503d4a78a74acf81455df08b |
 | PE-1 자동개선 | Notion PE Hub → PE-1 섹션 |
 | PE-2 자동증식 | Notion PE Hub → PE-2 섹션 |
 | PE-3 자동검증 | validation_tool 내 직접 호출 |
@@ -304,5 +327,6 @@ long_term_memory:
 | 버전 | 날짜 | 변경 내용 |
 |------|------|-----------|
 | v3.0 | 2026-05-05 | PE-STRAT-ORCH 메타 오케스트레이터 신규 — 7-Tool MoE+Bayesian+RL, PE-3 96/100, Agent-as-Tools 아키텍처 |
+| v3.0.1 | 2026-05-05 | § 5 session_memory: Notion PE-STRAT Sessions DB 등록 (DB ID: e90767d1503d4a78a74acf81455df08b) |
 | v2.0 | 2026-05-05 | PE-STRAT-01 v2.0 완전 최적화 + PE-STRAT-02 신규 등록 (투자전략 특화) |
 | v1.0 | 2026-05-05 | PE-STRAT-01 v1.0 초안 (Porter 5-Forces 기반, PE-3 71/100) |
