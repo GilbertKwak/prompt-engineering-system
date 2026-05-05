@@ -1,58 +1,56 @@
-# PE-STRAT 프롬프트 버전 이력
+# PE-STRAT Prompt Version History
 
-**GitHub SSOT**: `prompts/strategy/`  
-**Notion 연계**: PE Hub v2.0 > PE-STRAT 섹션
-
----
-
-## 버전 인덱스
-
-| ID | 파일 | 유형 | Temperature | PE-3 목표 | 버전 | 등록일 | 상태 |
-|----|------|------|-------------|-----------|------|--------|------|
-| PE-STRAT-01 | `pe_strat_01_v1.0.md` | 범용 전략 AI 아키텍트 (Porter×Ng×Pearl) | 0.1 / 0.0 | 90+ | v1.0 | 2026-05-05 | ✅ Active |
-| PE-STRAT-02 | `pe_strat_02_v1.0.md` | 투자 특화 전략 AI 아키텍트 | 0.0 / 0.1 | 90+ | v1.0 | 2026-05-05 | ✅ Active |
+**Repository**: `GilbertKwak/prompt-engineering-system`  
+**Path**: `prompts/strategy/`  
+**Last Updated**: 2026-05-05
 
 ---
 
-## 상세 변경 이력
+## Version History
 
-### PE-STRAT-01
-
-| 버전 | 날짜 | 커밋 | 변경 내용 |
-|------|------|------|-----------|
-| v1.0 | 2026-05-05 | — | 최초 생성 — Porter×Ng×Pearl 통합, 8단계 워크플로우, RL 보상함수 |
-
-### PE-STRAT-02
-
-| 버전 | 날짜 | 커밋 | 변경 내용 |
-|------|------|------|-----------|
-| v1.0 | 2026-05-05 | — | 최초 생성 — 투자 특화 (VC/PE/M&A/LP), 9단계 워크플로우, Valuation Framework |
+| Version | Date | Commit | Changes | PE-3 Score |
+|---------|------|--------|---------|------------|
+| PE-STRAT-01 v2.0 | 2026-05-05 | feat(PE-STRAT): Upgrade v2.0 | MoE 라우팅 + RL 보상함수 + Pearl DAG 완전 구현 | 71 → 93 |
+| PE-STRAT-02 v1.0 | 2026-05-05 | feat(PE-STRAT): Add investment variant | 투자특화 Variant 신규 (MPT+VaR+FF5F) | 신규 94 |
+| PE-STRAT-01 v1.0 | 2026-05-05 | feat(PE-STRAT): Initial commit | 최초 생성 — 기본 골격 수립 | 71 |
 
 ---
 
-## 3-Engine 적용 결과 (목표)
+## File Index
 
-| ID | PE-3 Before | PE-3 After (목표) | 개선폭 |
-|----|-------------|-------------------|--------|
-| PE-STRAT-01 | TBD | 90+ | TBD |
-| PE-STRAT-02 | TBD | 90+ | TBD |
+| ID | File | Type | Temp | PE-3 | Version | Status |
+|----|------|------|------|------|---------|--------|
+| PE-STRAT-01 | `pe_strat_01_v2.0.md` | 범용 전략 AI (Porter×Ng×Pearl) | 0.1/0.0 | 93 | v2.0 | ✅ Active |
+| PE-STRAT-02 | `pe_strat_02_investment_v1.0.md` | 투자전략 전문가 (MPT·VaR·FF5F) | 0.05 | 94 | v1.0 | ✅ Active |
+| ~~PE-STRAT-01~~ | ~~`pe_strat_01_v1.0.md`~~ | 초기 버전 | — | 71 | v1.0 | 🔴 Deprecated |
+| ~~PE-STRAT-02~~ | ~~`pe_strat_02_v1.0.md`~~ | 초기 버전 | — | — | v1.0 | 🔴 Deprecated |
 
 ---
 
-## 크로스 연계 맵
+## Cross-Reference Map
 
 ```
-PE-STRAT-01 (범용 전략)
-    ├── PE-IS-02 (전략 분석·AI 자동화)
-    ├── PE-PM-03 (Phase Gate 체크리스트)
-    ├── PE-FC (팩트체크)
-    ├── PE-CON (컨설팅 보고서)
-    └── P-07 (Recursive Decompose)
+PE-STRAT-01 v2.0 (범용 전략 AI)
+    ├── INPUT  ← FC-MASTER MODE 1 (수치 검증)
+    ├── OUTPUT → PE-IS-02 (전략 분석 구조화)
+    ├── OUTPUT → PE-PM-03 (Phase Gate 연계)
+    ├── OUTPUT → PE-STRAT-02 (투자 정량화)
+    └── TOOL     P-07 (Recursive Decompose)
 
-PE-STRAT-02 (투자 특화)
-    ├── PE-9 AstraChips LP Fund
-    ├── PE-FC (투자 수치 검증)
-    ├── PE-CON (투자 보고서)
-    ├── PE-STRAT-01 (상위 거시 전략)
-    └── HBM Salvage Phase 1 Gate
+PE-STRAT-02 v1.0 (투자 특화 Variant)
+    ├── INPUT  ← PE-STRAT-01 (거시 전략)
+    ├── INPUT  ← FC-MASTER (IRR·NPV·VaR 검증)
+    ├── OUTPUT → PE-CON (Investment Memo·IR 덱)
+    ├── OUTPUT → PE-9 AstraChips LP Fund
+    └── OUTPUT → HBM Salvage Phase 1 Gate
 ```
+
+---
+
+## PE-3 Score Tracking
+
+| Prompt | Clarity | Structure | Specificity | Actionability | Applicability | Total |
+|--------|---------|-----------|-------------|---------------|---------------|-------|
+| PE-STRAT-01 Before | 72 | 78 | 65 | 69 | 74 | 71 |
+| PE-STRAT-01 v2.0 | 93 | 95 | 92 | 93 | 92 | **93** |
+| PE-STRAT-02 v1.0 | 94 | 95 | 94 | 95 | 92 | **94** |
