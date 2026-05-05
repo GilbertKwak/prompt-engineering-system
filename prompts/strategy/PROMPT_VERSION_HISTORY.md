@@ -10,12 +10,28 @@
 
 | ID | 파일 | 유형 | Temp | PE-3 Before | PE-3 After | 버전 | 상태 |
 |---|---|---|---|---|---|---|---|
+| PE-STRAT-ORCH | `pe_strat_orchestrator_v3.0.md` | 메타 오케스트레이터 (7-Tool MoE+Bayesian+RL) | 0.1 / 0.0 | 68 | 96 | v3.0 | ✅ Active |
 | PE-STRAT-01 | `pe_strat_01_v2.0.md` | 범용 전략 AI 아키텍트 (Porter×Ng×Pearl · MoE · RL) | 0.1 / 0.0 | 71 | 93 | v2.0 | ✅ Active |
 | PE-STRAT-02 | `pe_strat_02_investment_v1.0.md` | 투자전략 전문가 Variant (MPT · VaR · Fama-French 5F) | 0.05 | — | 94 | v1.0 | ✅ Active |
 
 ---
 
 ## 🔄 버전 변경 이력
+
+### v3.0 — 2026-05-05
+**변경 유형**: PE-STRAT-ORCH 메타 오케스트레이터 신규 등록
+
+- **아키텍처**: Agent-as-Tools (7-Tool 병렬·순차 혼합)
+- **MoE 라우팅**: 6×6 매트릭스, Bayesian Laplace smoothing (α=1)
+- **실행 페이즈**: Phase 1 병렬 → Phase 2 순차 → Phase 3 순차 → Phase 4 검증
+- **RL 보상함수**: β(0.30)+γ(0.25)+δ(0.25)+ε(0.20) = 1.00
+- **PE-3 점수**: 68 → 96 (+28 pts)
+- **자동 저장**: GitHub sessions_log.json + Notion Sessions DB 연동
+- **크로스 링크**: PE-STRAT-01/02 · PE-1/PE-2/PE-3 · P-07 Recursive Decompose
+
+**커밋**: `feat(PE-STRAT): Add orchestrator v3.0 — 7-Tool Agent-as-Tools, MoE 6x6 routing, PE-3 score 68→96 (2026-05-05)`
+
+---
 
 ### v2.0 — 2026-05-05
 **변경 유형**: PE-STRAT-01 완전 최적화 업그레이드 + PE-STRAT-02 신규 등록
