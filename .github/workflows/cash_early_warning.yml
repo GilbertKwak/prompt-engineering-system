@@ -1,0 +1,53 @@
+name: Cash Early Warning Monitor
+
+on:
+  schedule:
+    - cron: '0 0 1 * *'  # 매월 1일 00:00 UTC = 09:00 KST
+  workflow_dispatch:     # 수동 실행돈 선택지 (테스트용)
+
+jobs:
+  cash-kpi-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt 2>/dev/null || pip install requests python-dotenv
+
+      - name: Run KPI Threshold Check
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python automation/cash_monitor.py \
+            --check-current-ratio 1.3 \
+            --check-ccc-days 75 \
+            --check-ar-days 60 \
+            --create-issue-on-breach true
+
+      - name: Notify Notion
+        if: always()
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+        run: |
+          python automation/notion_sync.py \
+            --mode alert \
+            --section "Early Warning Dashboard"
+
+      - name: Upload KPI Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cash-kpi-report-${{ github.run_id }}
+          path: reports/cash_kpi_*.json
+          retention-days: 30
