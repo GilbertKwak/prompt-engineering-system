@@ -1,5 +1,34 @@
 # CHANGELOG — 프롬프트 엔지니어링 시스템
 
+## v4.15 (2026-05-07) — 세션 #1~#5 통합 동기화 · PE-INVEST/GTR-ISR/PE-CON/DD-FIN
+
+### 핵심 변경사항
+- **PE-INVEST-MASTER v5.0.6** 릴리즈 — Palantir AI Pure-Play (9th Sector) 검증 · A024~A026 알고리즘 · 9-sector 평균 4.2 달성
+- **PE-2 역대 최고 점수 4.3** 기록 (세션 #1)
+- **OPT-DD-FIN ↔ PE-FIN Trigger Engine v1.0 → v1.2** 업그레이드 — 라우팅 매트릭스 전체 검증 (4/4 E2E 패스)
+- **GTR-ISR v1.0** 신규 생성 — PE-3 3-Engine 최적화 · Notion 생태계 연계 방안 수립 (세션 #3)
+- **PE-CON CON-06~09 연계** + **CON-10~12 섹터 특화 확장** + **INDEX.md v3.0 완성** (총 24종) (세션 #4)
+- **GitHub 커밋 동기화** + **T-09 작업일지 SSOT 업데이트** (세션 #5)
+
+### 세션 이력
+| 세션 | 주요 완료 항목 | 커밋/링크 |
+|------|--------------|----------|
+| 세션 #1 | PE-INVEST-MASTER v5.0.6 · A024~A026 · PE-2: 4.3 | 5c5649f |
+| 세션 #2 | OPT-DD-FIN ↔ PE-FIN Trigger Engine v1.2 · E2E 4/4 | — |
+| 세션 #3 | GTR-ISR v1.0 · PE-3 최적화 · Notion 연계 방안 | — |
+| 세션 #4 | PE-CON 24종 완성 · CON-10~12 섹터 특화 · INDEX.md v3.0 | — |
+| 세션 #5 | GitHub SSOT 동기화 · T-09 작업일지 업데이트 | 본 커밋 |
+
+### SSOT Sync 현황
+- ✅ CHANGELOG v4.15 커밋 (본 커밋)
+- ✅ T-09 작업일지 세션 #5 인덱스 등록
+- ✅ 누적 통계 업데이트 (KG v4.14 · C-34 반영)
+
+### 파일 목록
+- `CHANGELOG.md` (업데이트)
+
+---
+
 ## v4.14 (2026-05-03) — PIPE-2026-0503-KR · KG Delta Sync · PE-7 STEP 5
 
 ### 핵심 변경사항
@@ -117,10 +146,6 @@
   - CN 7개 기업 리스크 노드 (CATL·BYD·LONGi·Huawei·SMIC·China Mobile·PetroChina)
   - CN 규제 스택 6종 (CSRC·PBOC·CGB·CSDDD·MOFCOM·BIS)
 - **knowledge_graph v3.8** 생성: +16 nodes / +22 edges → 누적 **108 nodes / 159 edges**
-- **ESG-UNIFIED-01 Section D** 중국 지역 통합:
-  - Geopolitical Lock Index CN: **88**
-  - Average SCP CN: **0.71**
-  - 전염 행렬 (CN→KR: 0.81, CN→TW: 0.89, CN→EU: 0.74, CN→US: 0.62)
 
 ### 그래프 변경
 | 구분 | v3.5 | v3.8 | 증가 |
