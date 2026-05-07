@@ -12,16 +12,19 @@
 [AOCRS v1.1] ──HANDOFF_01──▶ [CSGS v1.1] ──HANDOFF_02──▶ [GHCRA v1.1]
                                                                    │
                                                             HANDOFF_03
+                                                            (sub_target 전환)
                                                                    ▼
                                                           [AIF v1.1] ──HANDOFF_04──▶ [SFA v1.1]
                                                                                           │
                                                                                    HANDOFF_05
                                                                                           ▼
-                                                                                   [PE-FIN FIN-07]
+                                                                              [PE-FIN FIN-07/08]
+                                                                              ESCALATION_ROUTER
 ```
 
 **TC 분류**: 풀 파이프라인 (6단계) | **도메인**: HoldCo / 지배구조·상속·해외규제·AI산업
 **신규 검증 항목**: F1 체인 무결성, F2 AUTO_SCORE 전 구간, F3 예제 연속성
+**v1.1 변경**: FINDING-01 PE-FIN 에스컬레이션 로직 / FINDING-02 sub_target 필드 / FINDING-03 상속-PE 매핑 테이블
 
 ---
 
@@ -201,9 +204,17 @@ HANDOFF_02:
   control_risk_trigger: true
   recommended_scenario: A_or_D
   succession_horizon_years: 3
+  # ── FINDING-03 반영: 상속 시나리오 → PE 구조 자동 매핑 키 추가 ──
+  csgs_to_ghcra_pe_mapping:
+    scenario_a: PE-A_or_C   # 지분 유지 → 한국 PE 단독 or KAI 분리 모두 가능
+    scenario_b: PE-C        # 경영권 임계 → 분리 구조(PE-C)로 강제 라우팅
+    scenario_c: PE-C        # 자회사 매각 발생 → 분리 후 단독 투자 최적
+    scenario_d: PE-A_or_C   # 공제 활용 → 유연 구조 허용
+  active_scenario: B
+  auto_pe_route: PE-C       # active_scenario=B 자동 라우팅 결과
   auto_score: 5
   score_gate: PASS
-  next_action: "OPT-GHCRA --from-csgs"
+  next_action: "OPT-GHCRA --from-csgs --pe-route=PE-C"
 ```
 
 ### AUTO_SCORE (CSGS)
@@ -211,10 +222,28 @@ HANDOFF_02:
 [✓] 1. 상속세 실계산 수치 완료 (5,528억)
 [✓] 2. A/B/C/D 시나리오 전체 IRR 방향 명시
 [✓] 3. Critical 시나리오 (B) 판정 및 근거 제시
-[✓] 4. HANDOFF_02 YAML 완전 출력
+[✓] 4. HANDOFF_02 YAML 완전 출력 (FINDING-03 매핑 포함)
 [✓] 5. 경영권 임계 트리거 조건 명시 (24.8% 임계선)
 AUTO_SCORE: 5/5 → SCORE_GATE_90: PASS
 ```
+
+---
+
+## ══ [FINDING-03 보완] CSGS→GHCRA 상속 시나리오 × PE 구조 자동 매핑 테이블 ══
+
+> **v1.1 신규 삽입** — CSGS Stage 2 판정 결과가 GHCRA PE 구조 추천에 자동 반영되는 규칙
+
+| CSGS 시나리오 | 핵심 조건 | 자동 라우팅 PE 구조 | 근거 |
+|--------------|-----------|-------------------|------|
+| **A** (현금 분납) | 지분 49.5% 유지, 경영권 안전 | PE-A 또는 PE-C 선택 가능 | 지분 구조 변동 없어 HoldCo 전체 또는 분리 모두 허용 |
+| **B** (물납, 경영권 임계) | 지분 24.8% → 경영권 위기 | **PE-C 강제 라우팅** | 그룹 전체 바이아웃 시 CFIUS + 지분 약화 복합 리스크 → 분리 구조만 합리적 |
+| **C** (강제매각, 자회사 상실) | K-Logistics 매각 → 그룹 축소 | **PE-C 강제 라우팅** | 잔여 그룹 구조 불안정 → AI 자회사 단독 분리 투자 |
+| **D** (가업승계 공제) | 지분 유지, 세금 일부 완화 | PE-A 또는 PE-C 선택 가능 | 시나리오 A와 동일 구조적 허용 범위 |
+
+**적용 규칙**:
+- `active_scenario ∈ {B, C}` → `auto_pe_route = PE-C` (GHCRA Module 2 입력값 자동 고정)
+- `active_scenario ∈ {A, D}` → `auto_pe_route = FLEXIBLE` (GHCRA Module 2에서 최적 구조 자유 선택)
+- HANDOFF_02 `auto_pe_route` 값이 GHCRA `recommended_pe_structure` 초기값으로 자동 주입됨
 
 ---
 
@@ -222,8 +251,10 @@ AUTO_SCORE: 5/5 → SCORE_GATE_90: PASS
 
 ### 실행 명령
 ```
-/run OPT-GHCRA --version=1.1 --from-csgs --target=HoldCo-K
+/run OPT-GHCRA --version=1.1 --from-csgs --pe-route=PE-C --target=HoldCo-K
 ```
+
+> ⚡ CSGS HANDOFF_02 자동 수신 — auto_pe_route=PE-C 주입 (FINDING-03 반영)
 
 ### Module 1 · 해외 규제 리스크 국가별 스코어카드
 
@@ -241,23 +272,27 @@ AUTO_SCORE: 5/5 → SCORE_GATE_90: PASS
 ### Module 2 · PE 진입 규제 경로 분석
 
 ```
+※ CSGS auto_pe_route=PE-C 수신 → PE-C를 1순위로 고정, PE-A/B는 참고용 병기
+
 시나리오 PE-A: 한국 PE 펀드 단독 바이아웃
   CFIUS 해당 없음 | EU AI Act: KAI Systems 고위험 분류 시 준수 비용 +180억
   국내 공정거래법: 기업결합 신고 (매출 3,000억+ 기준 충족)
   예상 규제 처리 기간: 4~6개월
   규제 리스크: MEDIUM
+  ※ CSGS Scenario B/C 조건 하 비권장 (지분 약화 + HoldCo 전체 취득 부담)
 
 시나리오 PE-B: 글로벌 PE (미국계) 참여 구조
   CFIUS 필수 신고: KAI Systems AI 인프라 → 국가안보 심사 대상
   예상 CFIUS 처리: 6~9개월 (Mitigation Agreement 가능성)
   EU AI Act: 추가 준수 의무 발생
   규제 리스크: HIGH — CFIUS 차단 시 딜 구조 전면 수정 필요
+  ※ CSGS Scenario B/C 조건 하 비권장
 
-시나리오 PE-C: 자회사 분리 후 KAI Systems 단독 투자
+시나리오 PE-C: 자회사 분리 후 KAI Systems 단독 투자  ← AUTO_ROUTE 지정
   CFIUS 범위 축소 가능 | 지배구조 단순화
   상속 리스크 일부 해소 (지주 분리)
   규제 리스크: MEDIUM-LOW
-  → RECOMMENDED for 글로벌 PE
+  → RECOMMENDED (CSGS auto_pe_route 자동 반영)
 ```
 
 ### HANDOFF_03 (GHCRA → AIF)
@@ -267,28 +302,33 @@ HANDOFF_03:
   source: OPT-GHCRA v1.1
   target: OPT-AIF v1.1
   timestamp: "2026-05-07 16:34 KST"
-  company_name: HoldCo-K
-  ai_subsidiary: KAI Systems
-  ai_subsidiary_revenue_억원: 3200
-  ai_subsidiary_ebitda_억원: 640
-  ai_subsidiary_ownership: 67.3
+  # ── FINDING-02 반영: company_name 전환 명시 + sub_target 신규 추가 ──
+  company_name: HoldCo-K          # 원본 HoldCo (AOCRS 기준 entity)
+  sub_target: KAI Systems         # AIF 분석 대상으로 전환되는 자회사
+  sub_target_reason: "PE-C 분리 구조 채택 → AIF는 HoldCo가 아닌 KAI Systems 기준 분석"
+  sub_target_revenue_억원: 3200
+  sub_target_ebitda_억원: 640
+  sub_target_ownership_by_holdco: 67.3
   cfius_risk: HIGH
   eu_ai_act_risk: CRITICAL
-  recommended_pe_structure: PE-C  # KAI 분리 단독 투자
+  recommended_pe_structure: PE-C
+  pe_route_source: "CSGS auto_pe_route (FINDING-03 매핑)"
   domestic_regulatory_months: 4
   global_regulatory_months: 9
   auto_score: 5
   score_gate: PASS
-  next_action: "OPT-AIF --from-ghcra --target=KAI Systems"
+  # ── AIF 수신 시 company_name 자동 교체 지시 ──
+  aif_company_override: true
+  next_action: "OPT-AIF --from-ghcra --company=KAI Systems"
 ```
 
 ### AUTO_SCORE (GHCRA)
 ```
 [✓] 1. 5개국 스코어카드 수치 완료
-[✓] 2. PE 진입 시나리오 A/B/C 전체 규제 경로 제시
+[✓] 2. PE 진입 시나리오 A/B/C 전체 규제 경로 제시 (PE-C AUTO_ROUTE 명시)
 [✓] 3. CFIUS + EU AI Act Critical 항목 미티게이션 방안 명시
-[✓] 4. HANDOFF_03 YAML 완전 출력
-[✓] 5. RECOMMENDED 구조 (PE-C) 근거 명시
+[✓] 4. HANDOFF_03 YAML 완전 출력 (FINDING-02 sub_target 포함)
+[✓] 5. RECOMMENDED 구조 (PE-C) 근거 + CSGS 자동 매핑 출처 명시
 AUTO_SCORE: 5/5 → SCORE_GATE_90: PASS
 ```
 
@@ -298,10 +338,12 @@ AUTO_SCORE: 5/5 → SCORE_GATE_90: PASS
 
 ### 실행 명령
 ```
-/run OPT-AIF --version=1.1 --from-ghcra --target="KAI Systems"
+/run OPT-AIF --version=1.1 --from-ghcra --company=KAI Systems
 ```
 
-> ⚡ GHCRA HANDOFF_03 자동 수신 — company_name, revenue, ebitda, ownership 재입력 생략
+> ⚡ GHCRA HANDOFF_03 자동 수신
+> ⚡ aif_company_override=true → 분석 대상 HoldCo-K → **KAI Systems** 자동 전환 (FINDING-02 반영)
+> ⚡ revenue(3,200억), ebitda(640억), cfius_risk(HIGH) 재입력 생략
 
 ### Module 1 · AI Ecosystem Positioning (KAI Systems)
 
@@ -385,8 +427,9 @@ HANDOFF_04:
   source: OPT-AIF v1.1
   target: OPT-SFA v1.1
   timestamp: "2026-05-07 16:34 KST"
-  company_name: KAI Systems
+  company_name: KAI Systems          # FINDING-02: HoldCo-K → KAI Systems 전환 완료
   parent_holdco: HoldCo-K
+  company_name_override_applied: true # FINDING-02 전환 이력 기록
   sector: AI Infrastructure
   ecosystem_score: 7.32
   position_label: Challenger
@@ -418,7 +461,7 @@ HANDOFF_04:
 [✓] 1. Module 1-4 수치 필드 완료
 [✓] 2. Bull/Base/Bear IRR 전체 명시
 [✓] 3. DD Items 5개 열거
-[✓] 4. HANDOFF_04 YAML 완전 출력
+[✓] 4. HANDOFF_04 YAML 완전 출력 (FINDING-02 전환 이력 포함)
 [✓] 5. RED 리스크 (R-AI-01) 미티게이션 방안 명시 (CFIUS Pre-filing)
 AUTO_SCORE: 5/5 → SCORE_GATE_90: PASS
 ```
@@ -619,15 +662,18 @@ AUTO_SCORE: 5/5 → SCORE_GATE_90: PASS
 
 ---
 
-## ══ STAGE 6 · PE-FIN FIN-07 라우팅 수신 확인 ══
+## ══ STAGE 6 · PE-FIN FIN-07 에스컬레이션 라우터 ══ (FINDING-01 반영)
+
+> **v1.1 신규**: RED 리스크 수신 시 PENDING 단순 대기가 아닌
+> PENDING_WITH_FALLBACK 상태로 진입 + FIN-08 Option B 자동 활성화 조건 포함
 
 ```yaml
 PE_FIN_RECEIPT:
   received_from: OPT-SFA v1.1
   handoff_id: HANDOFF_05
   timestamp: "2026-05-07 16:34 KST"
-  target_module: FIN-07   # M&A Valuation
-  secondary_module: FIN-08
+  target_module: FIN-07          # M&A Valuation (Option C 기준)
+  secondary_module: FIN-08       # Deal Structuring (병행 준비)
   escalation: true
 
   # FIN-07 즉시 실행 입력값
@@ -640,11 +686,40 @@ PE_FIN_RECEIPT:
   irr_bull: 52
   irr_bear: 9
 
-  # Escalation 사유
+  # ── FINDING-01 반영: 에스컬레이션 로직 PENDING → PENDING_WITH_FALLBACK ──
   escalation_reason: "R-AI-01 CFIUS RED 리스크 미해소 — CFIUS Pre-filing 결과 대기 중"
-  escalation_action: "DD-01 완료 후 PROCEED 격상 또는 Option B(소수지분) 재구조화"
 
-  status: PENDING_DD01_RESOLUTION
+  escalation_status: PENDING_WITH_FALLBACK
+  # PENDING_WITH_FALLBACK 정의:
+  #   FIN-07 Option C 분석 병행 진행 (차단 불가 작업 우선 완료)
+  #   DD-01 결과 수신 시 아래 분기 자동 실행:
+  escalation_resolution_logic:
+    dd01_result_PASS:
+      action: PROCEED
+      status_upgrade: CONDITIONAL_PROCEED → PROCEED
+      activate: FIN-07_Option_C   # 최종 Valuation 확정
+      notify: "Deal Team + IC 보고 준비"
+    dd01_result_FAIL:
+      action: RESTRUCTURE
+      fallback_module: FIN-08
+      fallback_option: B          # 소수지분(20~30%) 구조로 자동 전환
+      fallback_entry_ev_억원: 6400
+      fallback_irr_base: 32
+      notify: "구조 전환 알림: Option C → Option B (소수지분)"
+    dd01_result_PARTIAL:          # Mitigation Agreement 조건부 가능
+      action: CONDITIONAL_C
+      condition: "Mitigation Agreement 조건 협의 후 Option C 유지"
+      notify: "법무팀 Mitigation 조건 검토 요청"
+
+  # FIN-07 병행 실행 가능 작업 (DD-01 대기 중에도 진행)
+  parallel_tasks:
+    - "FIN-07: LBO 모델 기초 구조 수립 (Entry EV 9,600억 고정값 기준)"
+    - "FIN-07: Exit 시나리오 3개 (Bull/Base/Bear) 민감도 분석"
+    - "FIN-08: 주주간계약 (SHA) 초안 구조 설계 (KAI Systems 분리 기준)"
+    - "FIN-08: 관리보수·성과보수 구조 설계"
+
+  status: PENDING_WITH_FALLBACK
+  dd01_resolution_deadline: "2026-06-18"   # 6주 후 DD-01 Go/No-Go
 ```
 
 ---
@@ -656,11 +731,11 @@ PE_FIN_RECEIPT:
 | 단계 | 프롬프트 | AUTO_SCORE | GATE | HANDOFF |
 |------|---------|-----------|------|----------|
 | 1 | OPT-AOCRS v1.1 | 5/5 | ✅ PASS | HANDOFF_01 |
-| 2 | OPT-CSGS v1.1 | 5/5 | ✅ PASS | HANDOFF_02 |
-| 3 | OPT-GHCRA v1.1 | 5/5 | ✅ PASS | HANDOFF_03 |
-| 4 | OPT-AIF v1.1 | 5/5 | ✅ PASS | HANDOFF_04 |
+| 2 | OPT-CSGS v1.1 | 5/5 | ✅ PASS | HANDOFF_02 (FINDING-03 매핑 포함) |
+| 3 | OPT-GHCRA v1.1 | 5/5 | ✅ PASS | HANDOFF_03 (FINDING-02 sub_target 포함) |
+| 4 | OPT-AIF v1.1 | 5/5 | ✅ PASS | HANDOFF_04 (company_override 이력 포함) |
 | 5 | OPT-SFA v1.1 | 5/5 | ✅ PASS | HANDOFF_05 |
-| 6 | PE-FIN FIN-07 | — | 수신확인 | ESCALATION |
+| 6 | PE-FIN FIN-07 | — | 수신확인 | ESCALATION_ROUTER (FINDING-01 적용) |
 
 **전 구간 SCORE_GATE_90: 6/6 단계 PASS**
 
@@ -671,23 +746,26 @@ PE_FIN_RECEIPT:
   ✅ combined_stake(49.5%), leverage_ratio(1.72), critical_risks 자동 전달
   ✅ CSGS Stage 1에서 재입력 없이 상속세 계산 즉시 실행
 
-[HANDOFF_02] CSGS → GHCRA
+[HANDOFF_02] CSGS → GHCRA  [FINDING-03 반영]
   ✅ inheritance_tax(5,528억), control_risk_trigger 자동 전달
-  ✅ GHCRA Module 2 PE 진입 경로에 상속 구조 자동 반영
+  ✅ csgs_to_ghcra_pe_mapping + auto_pe_route=PE-C 자동 전달
+  ✅ GHCRA Module 2 PE-C 강제 라우팅으로 자동 주입
 
-[HANDOFF_03] GHCRA → AIF
-  ✅ cfius_risk(HIGH), recommended_pe_structure(PE-C) 자동 전달
-  ✅ AIF Module 4 Risk Registry에 CFIUS RED 자동 반영
+[HANDOFF_03] GHCRA → AIF  [FINDING-02 반영]
+  ✅ sub_target=KAI Systems 명시 → AIF company_name 자동 전환
+  ✅ aif_company_override=true로 전환 이력 추적 가능
+  ✅ cfius_risk(HIGH), pe_route_source 출처 명시
 
-[HANDOFF_04] AIF → SFA
-  ✅ ecosystem_score(7.32), moat_index(7.49), RED risks, DD Items 자동 전달
-  ✅ SFA Module 1/3에서 AIF 데이터 재분석 없이 즉시 활용
+[HANDOFF_04] AIF → SFA  [FINDING-02 전환 완료]
+  ✅ company_name=KAI Systems (HoldCo-K 아님), override_applied=true 기록
+  ✅ ecosystem_score, moat_index, RED risks, DD Items 자동 전달
 
-[HANDOFF_05] SFA → PE-FIN
+[HANDOFF_05] SFA → PE-FIN  [FINDING-01 수신]
   ✅ strategic_fit(8.73), entry_ev(9,600억), verdict, escalation 자동 전달
-  ✅ PE-FIN FIN-07 즉시 실행 입력값 완비
+  ✅ PE-FIN ESCALATION_ROUTER가 PENDING_WITH_FALLBACK으로 수신
 
 F1 CHAIN INTEGRITY: ✅ 5/5 HANDOFF 완전 자동 전파 — 재입력 0회
+FINDING 반영: FINDING-01 ✅ / FINDING-02 ✅ / FINDING-03 ✅
 ```
 
 ### F2 AUTO_SCORE 검증 결과
@@ -704,27 +782,22 @@ F1 CHAIN INTEGRITY: ✅ 5/5 HANDOFF 완전 자동 전파 — 재입력 0회
 ✅ HoldCo-K 마스터 프로파일 → 전 6단계 일관 적용
 ✅ KAI Systems (AI 자회사) 분리 투자 구조 연속 추적
 ✅ 상속세 5,528억 → CFIUS → Moat 7.49 → IRR 34% 인과관계 체인 무결
+✅ FINDING 3건 반영 후 체인 무결성 재확인 완료
 ```
 
-### 신규 발견 사항 (v1.2 반영 후보)
+### FINDING 반영 완료 요약 (v1.1)
 
-```
-⚠️ FINDING-01: RED 리스크 에스컬레이션 시 PE-FIN 수신 상태 'PENDING'
-   → PE-FIN FIN-07/08 수신 로직 업데이트 필요 (Option C 항목)
-
-⚠️ FINDING-02: HoldCo 구조에서 AI 자회사 분리 시
-   AIF company_name이 HoldCo-K → KAI Systems로 전환되는 시점 명확화 필요
-   → GHCRA HANDOFF_03에 sub_target 필드 추가 권고
-
-⚠️ FINDING-03: CSGS Scenario B/C 판정 후
-   GHCRA PE 구조 추천에 상속 시나리오 자동 매핑 로직 미존재
-   → CSGS→GHCRA 매핑 테이블 추가 권고 (v1.2)
-```
+| FINDING | 내용 | 반영 위치 | 상태 |
+|---------|------|-----------|------|
+| **FINDING-01** | PE-FIN 에스컬레이션 PENDING → PENDING_WITH_FALLBACK + DD-01 분기 로직 | Stage 6 전체 재설계 | ✅ 완료 |
+| **FINDING-02** | GHCRA HANDOFF_03에 sub_target 필드 추가, AIF company_name 자동 전환 명시 | HANDOFF_03 + AIF 수신 주석 | ✅ 완료 |
+| **FINDING-03** | CSGS Scenario B/C → GHCRA PE-C 강제 라우팅 매핑 테이블 삽입 | HANDOFF_02 + Stage 2-3 사이 매핑 섹션 | ✅ 완료 |
 
 ## CHANGELOG
 | 버전 | 날짜 | 내용 |
 |------|------|------|
 | v1.0 | 2026-05-07 | TC-04 HoldCo-K — 최초 풀 파이프라인 E2E 검증 (6단계, F1/F2/F3 통합) |
+| v1.1 | 2026-05-07 | FINDING-01/02/03 전체 반영 — 에스컬레이션 로직·sub_target·상속-PE 매핑 테이블 추가 |
 
 ---
 *INSIGHT_ID: HCK-HOLD-260507 | Pipeline: AOCRS→CSGS→GHCRA→AIF→SFA→PE-FIN | Status: CONDITIONAL_PROCEED*
