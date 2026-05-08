@@ -1,0 +1,119 @@
+{
+  "kg_version_prev": "v4.17",
+  "kg_version_new": "v4.18",
+  "trigger": "DD-011 (AI Infra 전용) 프롬프트 생성 완료 — E-KG-025 신규 + E-KG-026~030 연결 + DD-MASTER→DD-011 엣지 planned→active",
+  "updated_at": "2026-05-08T13:47:00+09:00",
+  "delta": {
+    "nodes_added": 1,
+    "edges_added": 6,
+    "edges_updated": 1,
+    "nodes_list": ["DD-011"],
+    "edges_added_list": ["E-KG-025", "E-KG-026", "E-KG-027", "E-KG-028", "E-KG-029", "E-KG-030"],
+    "edges_updated_list": ["E-KG-DD011-parent"]
+  },
+  "e0n_status": {
+    "E-01": "✅ SHA 정합 확인",
+    "E-02": "✅ status 필드 정상",
+    "E-03": "✅ 버전 순행 (v4.17 → v4.18)",
+    "E-04": "✅ 구조 일치",
+    "E-06": "✅ 중복 노드 없음",
+    "E-07": "✅ 필수 필드 완비"
+  },
+  "ssot_sync": {
+    "github_commit": "완료 — DD-011 파일 + KG v4.18 delta 단일 커밋",
+    "notion_db1": "완료 — DB-1 Master Index DD-011 엔트리 등록",
+    "pe7_protocol": "memory_handler.run() → STEP 3 → STEP 5 Sync Push"
+  },
+  "edges_updated": [
+    {
+      "edge_id": "E-KG-DD011-parent",
+      "source": "DD-MASTER-v2",
+      "target": "DD-011",
+      "relation": "PARENT_OF",
+      "weight": 0.95,
+      "context": "AI Infra M&A 전용 파생 — 10-Param, 10-Zone, E-14 가드 (PE-3 96)",
+      "status": "active",
+      "prev_status": "planned",
+      "activated_at": "2026-05-08T13:47:00+09:00",
+      "kg_version": "v4.18"
+    }
+  ],
+  "nodes": [
+    {
+      "node_id": "DD-011",
+      "label": "P-OPT-DD-011 v1.0 · Enterprise DD — AI Infra 전용 (GPU·LLM·DC·Energy)",
+      "type": "Prompt / Derived",
+      "domain": "PE-DD / AI Infra",
+      "github_path": "prompts/PE-DD/dd_011_ai_infra_v1.0.md",
+      "attributes": {
+        "version": "v1.0",
+        "pe3_score": 96,
+        "preset": "AI_INFRA",
+        "status": "✅ Active",
+        "params": ["COMPANY_NAME","DD_TYPE","DEAL_CONTEXT","INFRA_SEGMENT","GPU_EXPOSURE","LLM_ASSET","ENERGY_RISK","EXPORT_RISK","DEPTH","OUTPUT_LANG"],
+        "guards_added": ["E-10 GPUSupplyChain","E-11 LLMAssetValidation","E-12 EnergyRiskMap","E-13 AIRegulatoryCompliance","E-14 HyperscalerDependency"],
+        "zones_added": ["Z-7 GPU&Compute Roadmap","Z-8 Energy&DC Infrastructure","Z-9 Hyperscaler&Customer Dependency","Z-10 AI Regulatory&Export Control"],
+        "parent": "DD-MASTER-v2",
+        "siblings": ["DD-009-A","DD-009-B","DD-010"]
+      },
+      "kg_version": "v4.18",
+      "created_at": "2026-05-08T13:47:00+09:00"
+    }
+  ],
+  "edges": [
+    {
+      "edge_id": "E-KG-025",
+      "source": "PE-DD",
+      "target": "DD-011",
+      "relation": "CONTAINS_PROMPT",
+      "weight": 1.0,
+      "context": "PE-DD 라이브러리 내 AI Infra M&A 전용 파생 프롬프트",
+      "kg_version": "v4.18"
+    },
+    {
+      "edge_id": "E-KG-026",
+      "source": "DD-011",
+      "target": "DD-009-A",
+      "relation": "SIBLING_OF",
+      "weight": 0.75,
+      "context": "SEMI·AI Infra 겹치 도메인 (HBM·GPU 연계)",
+      "kg_version": "v4.18"
+    },
+    {
+      "edge_id": "E-KG-027",
+      "source": "DD-011",
+      "target": "DD-010",
+      "relation": "SIBLING_OF",
+      "weight": 0.78,
+      "context": "OSAT·AI Infra 겹치 도메인 (CoWoS·SoIC 시스템인패키징 연계)",
+      "kg_version": "v4.18"
+    },
+    {
+      "edge_id": "E-KG-028",
+      "source": "DD-011",
+      "target": "PE-SEMI",
+      "relation": "CROSS_DOMAIN_LINK",
+      "weight": 0.88,
+      "context": "GPU·HBM 반도체 연계 — EAR §742.6·B-Star 4",
+      "kg_version": "v4.18"
+    },
+    {
+      "edge_id": "E-KG-029",
+      "source": "DD-011",
+      "target": "PE-FIN",
+      "relation": "CROSS_DOMAIN_LINK",
+      "weight": 0.85,
+      "context": "EV/GPU-FLOP·EV/DC-MW·ARR·LTV/CAC AI Infra 가치평가 PE-FIN 연계",
+      "kg_version": "v4.18"
+    },
+    {
+      "edge_id": "E-KG-030",
+      "source": "DD-011",
+      "target": "DD-009-B",
+      "relation": "OUTPUT_FEEDS",
+      "weight": 0.8,
+      "context": "DEEP_OUTPUT O11: DD-009-B Board Pack 연계 — AI Infra M&A 이사회 제출용",
+      "kg_version": "v4.18"
+    }
+  ]
+}
