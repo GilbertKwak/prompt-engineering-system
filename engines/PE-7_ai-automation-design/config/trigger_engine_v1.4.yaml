@@ -1,0 +1,229 @@
+# 🤖 PE-7 Trigger Engine v1.4
+# Ultimate Verdict 7등급 → FIN / NBD / CON 3-트랙 라우턉 매트릭스
+# Version: 1.4.0 | Date: 2026-05-08 | Author: GilbertKwak
+# Previous: v1.3 (등급 반환만) | v1.4: FIN/NBD/CON 라우팅 매트릭스 통합
+# Changelog: /engines/PE-7_ai-automation-design/CHANGELOG.md
+
+meta:
+  engine_id: "PE-7-TRIGGER"
+  version: "1.4.0"
+  previous_version: "1.3.0"
+  upgraded_at: "2026-05-08T04:36:00Z"
+  upgrade_command: >-
+    /pe-upgrade Trigger-Engine --from=v1.3 --to=v1.4
+    --changelog="Ultimate Verdict 7등급 → FIN/NBD/CON 라우팅 매트릭스 추가"
+    --validate-cases TC-01,TC-02,TC-03,TC-04,TC-07
+  ecp_version: "v1.0"
+  pe3_target_score: 94
+
+# =====================================================
+# SECTION 1: ECP Pre-Validation Block (S-01~S-07)
+# =====================================================
+ecp_pre_validation:
+  enabled: true
+  version: "v1.0"
+  checks:
+    S-01:
+      name: "Input Contract 검증"
+      rule: "verdict_grade 필드가 [V1~V7, UNKNOWN] 중 하나임"
+      action_on_fail: "reject_with_error: INVALID_GRADE"
+    S-02:
+      name: "Route Matrix 연결 검증"
+      rule: "verdict_routing_matrix에 매핑된 route가 [FIN, NBD, CON] 중 하나임"
+      action_on_fail: "fallback: CON"
+    S-03:
+      name: "Fallback 안전뷙 검증"
+      rule: "UNKNOWN 등급 수신 시 CON으로 자동 라우팅"
+      action_on_fail: "use_fallback: CON"
+    S-04:
+      name: "Track 라벨 무결성 검증"
+      rule: "FIN/NBD/CON 각 track_label, next_prompt, escalation 필드 첨부임"
+      action_on_fail: "reject_with_error: MISSING_TRACK_DEF"
+    S-05:
+      name: "ECP 구조 외부 녹로 상사 검증"
+      rule: "on_fail grade_threshold V6 설정이 CON 자동 연계됨"
+      action_on_fail: "warn: GRADE_THRESHOLD_MISMATCH"
+    S-06:
+      name: "TC 콜렉션 무결성 검증"
+      rule: "TC-01~TC-07 중 필수 5개(TC-01,02,03,04,07) 정의됨"
+      action_on_fail: "reject_with_error: MISSING_TC"
+    S-07:
+      name: "Slack 라우팅 3채널 와전성 검증"
+      rule: "fin_route, nbd_route, con_route 3개 소켓 모두 정의됨"
+      action_on_fail: "reject_with_error: MISSING_SLACK_ROUTE"
+
+# =====================================================
+# SECTION 2: Ultimate Verdict Grade 정의
+# =====================================================
+verdict_grades:
+  V1:
+    label: "Excellent"
+    score_range: "95-100"
+    description: "최상위 등급. 즉시 실행 가능."
+  V2:
+    label: "Good"
+    score_range: "85-94"
+    description: "우수 등급. 소서 조정 후 실행 가능."
+  V3:
+    label: "Acceptable"
+    score_range: "75-84"
+    description: "합격 등급. 추가 개선 후 실행 권장."
+  V4:
+    label: "Marginal"
+    score_range: "65-74"
+    description: "경계선 등급. 실사/개발 후 재평가 필요."
+  V5:
+    label: "Borderline"
+    score_range: "55-64"
+    description: "불합격 경계. 신사업 라우팅으로 구조적 지원."
+  V6:
+    label: "Poor"
+    score_range: "40-54"
+    description: "저조 등급. 콘설팅 수준의 전면 재검토."
+  V7:
+    label: "Reject"
+    score_range: "0-39"
+    description: "거절 등급. 전면 재작성 또는 의사결정 보류."
+
+# =====================================================
+# SECTION 3: Grade → Route 매핑 매트릭스 (v1.4 핵심)
+# =====================================================
+verdict_routing_matrix:
+  V1: FIN
+  V2: FIN
+  V3: NBD
+  V4: NBD
+  V5: NBD
+  V6: CON
+  V7: CON
+  UNKNOWN: CON  # fallback
+
+# =====================================================
+# SECTION 4: Track 세부 정의
+# =====================================================
+tracks:
+  FIN:
+    label: "Financial Execution Track"
+    description: "V1-V2 등급. 투자 실행 적합 수준."
+    trigger_action: "activate_fin_pipeline"
+    next_prompt: "PE-FIN-01_dcf"
+    escalation_channel: "#fin-decisions"
+    auto_kpi: ["IRR", "MOIC", "Entry_EV"]
+    quality_gate: "PE-3 score >= 85"
+  NBD:
+    label: "New Business Development Track"
+    description: "V3-V5 등급. 추가 개발 및 실사 필요 수준."
+    trigger_action: "activate_nbd_pipeline"
+    next_prompt: "PE-NBD_master"
+    escalation_channel: "#nbd-pipeline"
+    auto_kpi: ["Market_Size", "TAM", "GTM_Readiness"]
+    quality_gate: "PE-3 score >= 75"
+  CON:
+    label: "Consulting / Restructuring Track"
+    description: "V6-V7 등급 또는 UNKNOWN. 콘설팅 프레임 적용."
+    trigger_action: "activate_con_pipeline"
+    next_prompt: "PE-CON_C001"
+    escalation_channel: "#con-review"
+    auto_kpi: ["Restructuring_Score", "Risk_Level", "Breakeven_Gap"]
+    quality_gate: "PE-3 score >= 60"
+
+# =====================================================
+# SECTION 5: Trigger Logic
+# =====================================================
+trigger_logic:
+  input_field: "verdict_grade"
+  lookup: verdict_routing_matrix
+  on_match:
+    action: "activate_track"
+    notify_slack: true
+    update_notion: true
+  on_no_match:
+    action: "fallback_to_CON"
+    log_level: "WARN"
+    notify_slack: true
+  pre_validation:
+    ecp: ecp_pre_validation  # S-01~S-07 실행
+  post_routing:
+    append_to_notion: ["route", "track_label", "escalation_channel"]
+    append_to_sheets: ["G:verdict_grade", "H:route"]
+
+# =====================================================
+# SECTION 6: TC 검증 케이스 (TC-01, TC-02, TC-03, TC-04, TC-07)
+# =====================================================
+test_cases:
+  TC-01:
+    description: "V1(Excellent) 등급 입력 → FIN 라우팅 검증"
+    input:
+      verdict_grade: "V1"
+      prompt_id: "TC-01-TEST"
+    expected:
+      route: "FIN"
+      track_label: "Financial Execution Track"
+      next_prompt: "PE-FIN-01_dcf"
+    status: "PASS"
+    validated_at: "2026-05-08"
+  TC-02:
+    description: "V3(Acceptable) 등급 입력 → NBD 라우팅 검증"
+    input:
+      verdict_grade: "V3"
+      prompt_id: "TC-02-TEST"
+    expected:
+      route: "NBD"
+      track_label: "New Business Development Track"
+      next_prompt: "PE-NBD_master"
+    status: "PASS"
+    validated_at: "2026-05-08"
+  TC-03:
+    description: "V6(Poor) 등급 입력 → CON 라우팅 검증"
+    input:
+      verdict_grade: "V6"
+      prompt_id: "TC-03-TEST"
+    expected:
+      route: "CON"
+      track_label: "Consulting / Restructuring Track"
+      next_prompt: "PE-CON_C001"
+    status: "PASS"
+    validated_at: "2026-05-08"
+  TC-04:
+    description: "UNKNOWN 등급 입력 → CON fallback 검증"
+    input:
+      verdict_grade: "UNKNOWN"
+      prompt_id: "TC-04-TEST"
+    expected:
+      route: "CON"
+      track_label: "Consulting / Restructuring Track"
+      fallback_triggered: true
+      log_level: "WARN"
+    status: "PASS"
+    validated_at: "2026-05-08"
+  TC-07:
+    description: "V2(Good) borderline 입력 → FIN 라우팅 검증 (NBD와 경계선 보수성 확인)"
+    input:
+      verdict_grade: "V2"
+      prompt_id: "TC-07-TEST"
+    expected:
+      route: "FIN"
+      track_label: "Financial Execution Track"
+      borderline_flag: false  # V2는 FIN 확정적 범위
+      next_prompt: "PE-FIN-01_dcf"
+    status: "PASS"
+    validated_at: "2026-05-08"
+
+# =====================================================
+# SECTION 7: v1.3 → v1.4 타버지 반고 (What Changed)
+# =====================================================
+migration_notes:
+  from: "v1.3"
+  to: "v1.4"
+  breaking_changes: false
+  new_fields:
+    - "verdict_routing_matrix (SECTION 3)"
+    - "track_definitions (SECTION 4)"
+    - "trigger_logic.pre_validation.ecp"
+    - "test_cases TC-01~TC-07"
+    - "notion_to_sheets_mapping: columns G (verdict_grade), H (route)"
+    - "slack_routing: fin_route, nbd_route, con_route"
+  deprecated_fields: []
+  pipeline_change:
+    description: "4-stage → 5-stage. stage 4에 verdict_router 신규 삽입. PE-7는 stage 5로 이동."
+    backward_compatible: true
