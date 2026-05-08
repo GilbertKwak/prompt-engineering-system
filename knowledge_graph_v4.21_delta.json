@@ -1,0 +1,95 @@
+{
+  "kg_version_prev": "v4.20",
+  "kg_version_new": "v4.21",
+  "trigger": "DD-015 (Energy Transition) + DD-016 (TMT/미디어) 동시 생성 — E-KG-051~066 신규 + planned→active",
+  "updated_at": "2026-05-08T15:29:00+09:00",
+  "delta": {
+    "nodes_added": 2,
+    "edges_added": 16,
+    "edges_updated": 2,
+    "nodes_list": ["DD-015", "DD-016"]
+  },
+  "e0n_status": {
+    "E-01": "✅ SHA 정합 확인",
+    "E-02": "✅ status 필드 정상",
+    "E-03": "✅ 버전 순행 (v4.20 → v4.21)",
+    "E-04": "✅ 구조 일치",
+    "E-06": "✅ 중복 노드 없음",
+    "E-07": "✅ 필수 필드 완비"
+  },
+  "ssot_sync": {
+    "github_commit": "완료 — DD-015/016 파일 + KG v4.21 delta 단일 커밋",
+    "notion_db1": "완료 — DB-1 Master Index DD-015/016 엔트리 등록",
+    "pe7_protocol": "memory_handler.run() → STEP 3 → STEP 5 Sync Push"
+  },
+  "edges_updated": [
+    {
+      "edge_id": "E-KG-DD015-parent",
+      "source": "DD-MASTER-v2", "target": "DD-015",
+      "relation": "PARENT_OF", "status": "active", "prev_status": "planned",
+      "context": "Energy Transition 전용 파생 — 10-Param, 9-Zone, E-13 가드 (PE-3 96)",
+      "activated_at": "2026-05-08T15:29:00+09:00", "kg_version": "v4.21"
+    },
+    {
+      "edge_id": "E-KG-DD016-parent",
+      "source": "DD-MASTER-v2", "target": "DD-016",
+      "relation": "PARENT_OF", "status": "active", "prev_status": "planned",
+      "context": "TMT/미디어·플랫폼 전용 파생 — 9-Param, 9-Zone, E-13 가드 (PE-3 96)",
+      "activated_at": "2026-05-08T15:29:00+09:00", "kg_version": "v4.21"
+    }
+  ],
+  "nodes": [
+    {
+      "node_id": "DD-015",
+      "label": "P-OPT-DD-015 v1.0 · Enterprise DD — Energy Transition/재생에너지 전용",
+      "type": "Prompt / Derived", "domain": "PE-DD / ENERGY",
+      "github_path": "prompts/PE-DD/dd_015_energy_transition_v1.0.md",
+      "attributes": {
+        "version": "v1.0", "pe3_score": 96, "preset": "ENERGY", "status": "✅ Active",
+        "params": ["COMPANY_NAME","DD_TYPE","DEAL_CONTEXT","ENERGY_SEGMENT","PPA_STRUCTURE","IRA_EXPOSURE","CARBON_CREDIT","HYDROGEN_PLAY","DEPTH","OUTPUT_LANG"],
+        "guards_added": ["E-10 LCOEValidation","E-11 PPAContractScan","E-12 RegulatoryIncentiveMap","E-13 HydrogenEconomics"],
+        "zones_added": ["Z-7 LCOE & Project Economics","Z-8 PPA & Revenue Certainty","Z-9 Regulatory Incentives & Green Hydrogen"],
+        "key_regulations": ["IRA §45Y/48E","EU CBAM","K-REC","RE100","RFNBO","UFLPA"],
+        "valuation_multiples": ["EV/EBITDA","EV/MW","EV/MWh","DSCR","LLCR","PLCR","IRR"],
+        "parent": "DD-MASTER-v2",
+        "siblings": ["DD-009-A","DD-009-B","DD-010","DD-011","DD-012","DD-013","DD-014","DD-016"]
+      },
+      "kg_version": "v4.21", "created_at": "2026-05-08T15:29:00+09:00"
+    },
+    {
+      "node_id": "DD-016",
+      "label": "P-OPT-DD-016 v1.0 · Enterprise DD — TMT/미디어·플랫폼 전용",
+      "type": "Prompt / Derived", "domain": "PE-DD / TMT",
+      "github_path": "prompts/PE-DD/dd_016_tmt_media_v1.0.md",
+      "attributes": {
+        "version": "v1.0", "pe3_score": 96, "preset": "TMT", "status": "✅ Active",
+        "params": ["COMPANY_NAME","DD_TYPE","DEAL_CONTEXT","TMT_SEGMENT","REVENUE_MODEL","ARR_SCALE","AI_INTEGRATION","REGULATORY_RISK","DEPTH","OUTPUT_LANG"],
+        "guards_added": ["E-10 SaaSMetricsValidation","E-11 IPContentAssetScan","E-12 PlatformRegulatoryMap","E-13 AIIntegrationValue"],
+        "zones_added": ["Z-7 SaaS/Platform Metrics Deep Dive","Z-8 IP & Content Moat Analysis","Z-9 Regulatory & AI Governance"],
+        "key_regulations": ["EU DMA","EU DSA","GDPR","CCPA","EU AI Act","EO 14110","NIST AI RMF","HSR"],
+        "valuation_multiples": ["EV/ARR","EV/EBITDA","EV/GMV","P/S","LTV/CAC","Rule of 40","Magic Number"],
+        "parent": "DD-MASTER-v2",
+        "siblings": ["DD-009-A","DD-009-B","DD-010","DD-011","DD-012","DD-013","DD-014","DD-015"]
+      },
+      "kg_version": "v4.21", "created_at": "2026-05-08T15:29:00+09:00"
+    }
+  ],
+  "edges": [
+    {"edge_id": "E-KG-051", "source": "PE-DD", "target": "DD-015", "relation": "CONTAINS_PROMPT", "weight": 1.0},
+    {"edge_id": "E-KG-052", "source": "PE-DD", "target": "DD-016", "relation": "CONTAINS_PROMPT", "weight": 1.0},
+    {"edge_id": "E-KG-053", "source": "DD-015", "target": "DD-016", "relation": "SIBLING_OF", "weight": 0.62, "context": "AI 에너지 최적화·데이터센터 전력·PPA 교차"},
+    {"edge_id": "E-KG-054", "source": "DD-015", "target": "DD-009-B", "relation": "OUTPUT_FEEDS", "weight": 0.80, "context": "DEEP O11 → Board Pack 연계"},
+    {"edge_id": "E-KG-055", "source": "DD-016", "target": "DD-009-B", "relation": "OUTPUT_FEEDS", "weight": 0.80, "context": "DEEP O11 → Board Pack 연계"},
+    {"edge_id": "E-KG-056", "source": "DD-015", "target": "PE-FIN", "relation": "CROSS_DOMAIN_LINK", "weight": 0.88, "context": "EV/MW·IRR·DSCR·LCOE 가치평가"},
+    {"edge_id": "E-KG-057", "source": "DD-016", "target": "PE-FIN", "relation": "CROSS_DOMAIN_LINK", "weight": 0.90, "context": "EV/ARR·LTV/CAC·Rule of 40·Magic Number"},
+    {"edge_id": "E-KG-058", "source": "DD-015", "target": "DD-014", "relation": "SIBLING_OF", "weight": 0.75, "context": "인프라 에너지 RE_SEGMENT 교차·PPA·RAB"},
+    {"edge_id": "E-KG-059", "source": "DD-015", "target": "DD-013", "relation": "SIBLING_OF", "weight": 0.78, "context": "MFG 탄소중립·RE100·CBAM 공통 구조"},
+    {"edge_id": "E-KG-060", "source": "DD-016", "target": "DD-011", "relation": "SIBLING_OF", "weight": 0.82, "context": "AI Infra·LLM·EU AI Act·EO14110 공통 규제"},
+    {"edge_id": "E-KG-061", "source": "DD-016", "target": "DD-012", "relation": "SIBLING_OF", "weight": 0.60, "context": "디지털헬스·HealthTech SaaS M&A 교차"},
+    {"edge_id": "E-KG-062", "source": "DD-015", "target": "DD-011", "relation": "SIBLING_OF", "weight": 0.70, "context": "AI 데이터센터 전력수요·그린수소 연료전지"},
+    {"edge_id": "E-KG-063", "source": "DD-016", "target": "PE-SEMI", "relation": "CROSS_DOMAIN_LINK", "weight": 0.65, "context": "반도체 소프트웨어·EDA·팹리스 TMT 교차"},
+    {"edge_id": "E-KG-064", "source": "DD-015", "target": "DD-009-A", "relation": "SIBLING_OF", "weight": 0.55, "context": "반도체 제조 전력·재생에너지 조달 교차"},
+    {"edge_id": "E-KG-065", "source": "DD-016", "target": "DD-009-A", "relation": "SIBLING_OF", "weight": 0.58, "context": "반도체 IP·EDA소프트웨어·팹리스 플랫폼"},
+    {"edge_id": "E-KG-066", "source": "DD-015", "target": "DD-016", "relation": "CROSS_DOMAIN_LINK", "weight": 0.65, "context": "AI 에너지 플랫폼·그리드 최적화 SaaS·디지털트윈"}
+  ]
+}
