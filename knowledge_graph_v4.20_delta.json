@@ -1,0 +1,61 @@
+{
+  "kg_version_prev": "v4.19",
+  "kg_version_new": "v4.20",
+  "trigger": "DD-014 (Real Estate/인프라) 생성 — E-KG-043~050 신규 + planned→active",
+  "updated_at": "2026-05-08T14:41:00+09:00",
+  "delta": {
+    "nodes_added": 1,
+    "edges_added": 8,
+    "edges_updated": 1,
+    "nodes_list": ["DD-014"]
+  },
+  "e0n_status": {
+    "E-01": "✅ SHA 정합 확인",
+    "E-02": "✅ status 필드 정상",
+    "E-03": "✅ 버전 순행 (v4.19 → v4.20)",
+    "E-04": "✅ 구조 일치",
+    "E-06": "✅ 중복 노드 없음",
+    "E-07": "✅ 필수 필드 완비"
+  },
+  "ssot_sync": {
+    "github_commit": "완료 — DD-014 파일 + KG v4.20 delta 단일 커밋",
+    "notion_db1": "완료 — DB-1 Master Index DD-014 엔트리 등록",
+    "pe7_protocol": "memory_handler.run() → STEP 3 → STEP 5 Sync Push"
+  },
+  "edges_updated": [
+    {
+      "edge_id": "E-KG-DD014-parent",
+      "source": "DD-MASTER-v2", "target": "DD-014",
+      "relation": "PARENT_OF", "status": "active", "prev_status": "planned",
+      "context": "Real Estate/인프라 전용 파생 — 10-Param, 9-Zone, E-13 가드 (PE-3 96)",
+      "activated_at": "2026-05-08T14:41:00+09:00", "kg_version": "v4.20"
+    }
+  ],
+  "nodes": [
+    {
+      "node_id": "DD-014",
+      "label": "P-OPT-DD-014 v1.0 · Enterprise DD — Real Estate/인프라 전용",
+      "type": "Prompt / Derived", "domain": "PE-DD / RE_INFRA",
+      "github_path": "prompts/PE-DD/dd_014_realestate_infra_v1.0.md",
+      "attributes": {
+        "version": "v1.0", "pe3_score": 96, "preset": "RE_INFRA", "status": "✅ Active",
+        "params": ["COMPANY_NAME","DD_TYPE","DEAL_CONTEXT","RE_SEGMENT","ASSET_CLASS","LEVERAGE_RATIO","PERMIT_RISK","ESG_RATING","DEPTH","OUTPUT_LANG"],
+        "guards_added": ["E-10 CashFlowIntegrity","E-11 PermitRegulatoryRisk","E-12 InfraRegulatoryPathway","E-13 ESGGreenBuilding"],
+        "zones_added": ["Z-7 Valuation & Cap Rate","Z-8 Leverage & Debt Structure","Z-9 Infra Regulatory & Concession"],
+        "parent": "DD-MASTER-v2",
+        "siblings": ["DD-009-A","DD-009-B","DD-010","DD-011","DD-012","DD-013"]
+      },
+      "kg_version": "v4.20", "created_at": "2026-05-08T14:41:00+09:00"
+    }
+  ],
+  "edges": [
+    {"edge_id": "E-KG-043", "source": "PE-DD", "target": "DD-014", "relation": "CONTAINS_PROMPT", "weight": 1.0, "kg_version": "v4.20"},
+    {"edge_id": "E-KG-044", "source": "DD-014", "target": "DD-009-B", "relation": "OUTPUT_FEEDS", "weight": 0.80, "context": "DEEP O11 → Board Pack 연계", "kg_version": "v4.20"},
+    {"edge_id": "E-KG-045", "source": "DD-014", "target": "PE-FIN", "relation": "CROSS_DOMAIN_LINK", "weight": 0.90, "context": "Cap Rate·DCF·NAV·DSCR·IRR 가치평가", "kg_version": "v4.20"},
+    {"edge_id": "E-KG-046", "source": "DD-014", "target": "DD-013", "relation": "SIBLING_OF", "weight": 0.72, "context": "ESG·탄소·공급망·CapEx 공통 구조", "kg_version": "v4.20"},
+    {"edge_id": "E-KG-047", "source": "DD-014", "target": "DD-011", "relation": "SIBLING_OF", "weight": 0.68, "context": "Data Center RE·AI Infra DC 교차 — 전력·냉각·PPA", "kg_version": "v4.20"},
+    {"edge_id": "E-KG-048", "source": "DD-014", "target": "DD-009-A", "relation": "SIBLING_OF", "weight": 0.58, "context": "반도체 팹 부동산·산업용 RE 교차", "kg_version": "v4.20"},
+    {"edge_id": "E-KG-049", "source": "DD-014", "target": "PE-FIN", "relation": "CROSS_DOMAIN_LINK", "weight": 0.88, "context": "인프라 EV/RAB·EV/EBITDA·EV/MW 가치평가", "kg_version": "v4.20"},
+    {"edge_id": "E-KG-050", "source": "DD-014", "target": "DD-012", "relation": "SIBLING_OF", "weight": 0.55, "context": "헬스케어 RE·메디컬 오피스·병원 시설 교차", "kg_version": "v4.20"}
+  ]
+}
