@@ -1,0 +1,60 @@
+{
+  "kg_version_prev": "v4.21",
+  "kg_version_new": "v4.22",
+  "trigger": "DD-MASTER v2.1 업그레이드 — Z-10 Geopolitical Zone 파생 전체 소급 — E-KG-067~084",
+  "updated_at": "2026-05-08T15:40:00+09:00",
+  "delta": {
+    "nodes_updated": 10,
+    "edges_added": 18,
+    "edges_updated": 9,
+    "description": "DD-MASTER v2.0 → v2.1 업그레이드. Z-10 Geopolitical Zone + E-14 가드 전체 소급. 파생 8종 zone_count +1."
+  },
+  "version_updates": [
+    {"node_id": "DD-MASTER-v2",  "prev_version": "v2.0", "new_version": "v2.1", "change": "Z-10+E-14 추가"},
+    {"node_id": "DD-009-A",       "zones_prev": "Z-1~8",   "zones_new": "Z-1~8+Z-10",  "guards_new": "E-01~12+E-14"},
+    {"node_id": "DD-009-B",       "zones_prev": "Z-1~7",   "zones_new": "Z-1~7+Z-10",  "guards_new": "E-01~09+E-14"},
+    {"node_id": "DD-010",         "zones_prev": "Z-1~9",   "zones_new": "Z-1~9+Z-10",  "guards_new": "E-01~13+E-14"},
+    {"node_id": "DD-011",         "zones_prev": "Z-1~10",  "zones_new": "Z-1~10(Z-10병합)", "guards_new": "E-01~14+E-14", "note": "기존 Z-10은 지정학 콘텐츠 보유 → v2.1 Z-10 콘텐츠로 통합 강화"},
+    {"node_id": "DD-012",         "zones_prev": "Z-1~9",   "zones_new": "Z-1~9+Z-10",  "guards_new": "E-01~13+E-14"},
+    {"node_id": "DD-013",         "zones_prev": "Z-1~9",   "zones_new": "Z-1~9+Z-10",  "guards_new": "E-01~13+E-14"},
+    {"node_id": "DD-014",         "zones_prev": "Z-1~9",   "zones_new": "Z-1~9+Z-10",  "guards_new": "E-01~13+E-14"},
+    {"node_id": "DD-015",         "zones_prev": "Z-1~9",   "zones_new": "Z-1~9+Z-10",  "guards_new": "E-01~13+E-14"},
+    {"node_id": "DD-016",         "zones_prev": "Z-1~9",   "zones_new": "Z-1~9+Z-10",  "guards_new": "E-01~13+E-14"}
+  ],
+  "z10_domain_mapping": {
+    "DD-009-A": {"geo_risk_auto": "HIGH",     "key_triggers": ["UFLPA","CHIPS","BIS Entity List","China Fab","EAR ECCN 3E"]},
+    "DD-009-B": {"geo_risk_auto": "MED",      "key_triggers": ["Board용 지정학 요약"]},
+    "DD-010":   {"geo_risk_auto": "HIGH",     "key_triggers": ["OSAT 대만/동남아 노출","BIS","CHIPS Guardrail"]},
+    "DD-011":   {"geo_risk_auto": "CRITICAL",  "key_triggers": ["AI 모델 수출통제","EAR(ML HW)","CFIUS AI","EO14110"]},
+    "DD-012":   {"geo_risk_auto": "MED",      "key_triggers": ["API 규제","CHN 시장 접근","FDA/EMA"]},
+    "DD-013":   {"geo_risk_auto": "HIGH",     "key_triggers": ["UFLPA(자동차부품)","CBAM","공급망 단절"]},
+    "DD-014":   {"geo_risk_auto": "MED",      "key_triggers": ["CFIUS(에너지 인프라)","RAB라이선싱"]},
+    "DD-015":   {"geo_risk_auto": "HIGH",     "key_triggers": ["UFLPA(태양광패널)","IRA Guardrail","CFIUS(에너지)"]},
+    "DD-016":   {"geo_risk_auto": "HIGH",     "key_triggers": ["DMA지정학","AI모델수출","CFIUS(AI/Data)","EU AI Act"]}
+  },
+  "edges": [
+    {"edge_id": "E-KG-067", "source": "DD-MASTER-v2", "target": "Z-10-GEO", "relation": "DEFINES_ZONE",    "weight": 1.0, "context": "v2.1 Z-10 Geopolitical Zone 정의"},
+    {"edge_id": "E-KG-068", "source": "DD-MASTER-v2", "target": "E-14",      "relation": "DEFINES_GUARD",   "weight": 1.0, "context": "v2.1 E-14 GeopoliticalGuard 정의"},
+    {"edge_id": "E-KG-069", "source": "DD-009-A", "target": "Z-10-GEO", "relation": "INHERITS_ZONE",  "weight": 0.95, "context": "UFLPA·CHIPS·BIS 자동 활성"},
+    {"edge_id": "E-KG-070", "source": "DD-009-B", "target": "Z-10-GEO", "relation": "INHERITS_ZONE",  "weight": 0.80, "context": "Board 지정학 요약"},
+    {"edge_id": "E-KG-071", "source": "DD-010",   "target": "Z-10-GEO", "relation": "INHERITS_ZONE",  "weight": 0.90, "context": "OSAT 대만/동남아 노출"},
+    {"edge_id": "E-KG-072", "source": "DD-011",   "target": "Z-10-GEO", "relation": "INHERITS_ZONE",  "weight": 1.0,  "context": "AI 모델 수출통제 CRITICAL — 기존 Z-10과 병합"},
+    {"edge_id": "E-KG-073", "source": "DD-012",   "target": "Z-10-GEO", "relation": "INHERITS_ZONE",  "weight": 0.75, "context": "API 규제·CHN 시장"},
+    {"edge_id": "E-KG-074", "source": "DD-013",   "target": "Z-10-GEO", "relation": "INHERITS_ZONE",  "weight": 0.88, "context": "UFLPA(자동차)·CBAM·공급망"},
+    {"edge_id": "E-KG-075", "source": "DD-014",   "target": "Z-10-GEO", "relation": "INHERITS_ZONE",  "weight": 0.70, "context": "CFIUS 에너지·RAB 라이선싱"},
+    {"edge_id": "E-KG-076", "source": "DD-015",   "target": "Z-10-GEO", "relation": "INHERITS_ZONE",  "weight": 0.92, "context": "UFLPA(태양광패널)·IRA Guardrail·CFIUS"},
+    {"edge_id": "E-KG-077", "source": "DD-016",   "target": "Z-10-GEO", "relation": "INHERITS_ZONE",  "weight": 0.90, "context": "DMA·AI모델수출·CFIUS(AI/Data)"},
+    {"edge_id": "E-KG-078", "source": "DD-009-A", "target": "E-14", "relation": "APPLIES_GUARD",  "weight": 0.95},
+    {"edge_id": "E-KG-079", "source": "DD-010",   "target": "E-14", "relation": "APPLIES_GUARD",  "weight": 0.90},
+    {"edge_id": "E-KG-080", "source": "DD-011",   "target": "E-14", "relation": "APPLIES_GUARD",  "weight": 1.0},
+    {"edge_id": "E-KG-081", "source": "DD-012",   "target": "E-14", "relation": "APPLIES_GUARD",  "weight": 0.75},
+    {"edge_id": "E-KG-082", "source": "DD-013",   "target": "E-14", "relation": "APPLIES_GUARD",  "weight": 0.88},
+    {"edge_id": "E-KG-083", "source": "DD-015",   "target": "E-14", "relation": "APPLIES_GUARD",  "weight": 0.92},
+    {"edge_id": "E-KG-084", "source": "DD-016",   "target": "E-14", "relation": "APPLIES_GUARD",  "weight": 0.90}
+  ],
+  "ssot_sync": {
+    "github_commit": "완료 — dd_master_v2.1.md + KG v4.22 delta 단일 커밋",
+    "notion_db1": "완료 — DD-MASTER 엔트리 v2.1로 업데이트",
+    "retroactive_scope": "DD-009-A/B · DD-010~016 전체 8종 Z-10+E-14 소급 적용"
+  }
+}
