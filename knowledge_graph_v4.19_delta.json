@@ -1,0 +1,87 @@
+{
+  "kg_version_prev": "v4.18",
+  "kg_version_new": "v4.19",
+  "trigger": "DD-012 (BIO/Pharma) + DD-013 (MFG/ESG) 동시 생성 — E-KG-031~042 신규 + planned→active",
+  "updated_at": "2026-05-08T14:37:00+09:00",
+  "delta": {
+    "nodes_added": 2,
+    "edges_added": 12,
+    "edges_updated": 2,
+    "nodes_list": ["DD-012", "DD-013"]
+  },
+  "e0n_status": {
+    "E-01": "✅ SHA 정합 확인",
+    "E-02": "✅ status 필드 정상",
+    "E-03": "✅ 버전 순행 (v4.18 → v4.19)",
+    "E-04": "✅ 구조 일치",
+    "E-06": "✅ 중복 노드 없음",
+    "E-07": "✅ 필수 필드 완비"
+  },
+  "ssot_sync": {
+    "github_commit": "완료 — DD-012/013 파일 + KG v4.19 delta 단일 커밋",
+    "notion_db1": "완료 — DB-1 Master Index DD-012/013 엔트리 등록",
+    "pe7_protocol": "memory_handler.run() → STEP 3 → STEP 5 Sync Push"
+  },
+  "edges_updated": [
+    {
+      "edge_id": "E-KG-DD012-parent",
+      "source": "DD-MASTER-v2", "target": "DD-012",
+      "relation": "PARENT_OF", "status": "active", "prev_status": "planned",
+      "context": "BIO/Pharma M&A 전용 파생 — 9-Param, 9-Zone, E-13 가드 (PE-3 96)",
+      "activated_at": "2026-05-08T14:37:00+09:00", "kg_version": "v4.19"
+    },
+    {
+      "edge_id": "E-KG-DD013-parent",
+      "source": "DD-MASTER-v2", "target": "DD-013",
+      "relation": "PARENT_OF", "status": "active", "prev_status": "planned",
+      "context": "MFG/ESG 전용 파생 — 9-Param, 9-Zone, E-13 가드 (PE-3 96)",
+      "activated_at": "2026-05-08T14:37:00+09:00", "kg_version": "v4.19"
+    }
+  ],
+  "nodes": [
+    {
+      "node_id": "DD-012",
+      "label": "P-OPT-DD-012 v1.0 · Enterprise DD — BIO/Pharma M&A 전용",
+      "type": "Prompt / Derived", "domain": "PE-DD / BIO",
+      "github_path": "prompts/PE-DD/dd_012_bio_pharma_v1.0.md",
+      "attributes": {
+        "version": "v1.0", "pe3_score": 96, "preset": "BIO", "status": "✅ Active",
+        "params": ["COMPANY_NAME","DD_TYPE","DEAL_CONTEXT","BIO_SEGMENT","PIPELINE_STAGE","PATENT_CLIFF","REGULATORY_PATH","EXPORT_RISK","DEPTH","OUTPUT_LANG"],
+        "guards_added": ["E-10 ClinicalRiskScore","E-11 PatentCliffMap","E-12 RegulatoryPathway","E-13 LicensingContractReview"],
+        "zones_added": ["Z-7 Pipeline Valuation Deep Dive","Z-8 Patent Cliff & LOE Roadmap","Z-9 Regulatory Timeline & Risk"],
+        "parent": "DD-MASTER-v2",
+        "siblings": ["DD-009-A","DD-009-B","DD-010","DD-011","DD-013"]
+      },
+      "kg_version": "v4.19", "created_at": "2026-05-08T14:37:00+09:00"
+    },
+    {
+      "node_id": "DD-013",
+      "label": "P-OPT-DD-013 v1.0 · Enterprise DD — MFG/ESG 전용",
+      "type": "Prompt / Derived", "domain": "PE-DD / MFG",
+      "github_path": "prompts/PE-DD/dd_013_mfg_esg_v1.0.md",
+      "attributes": {
+        "version": "v1.0", "pe3_score": 96, "preset": "MFG", "status": "✅ Active",
+        "params": ["COMPANY_NAME","DD_TYPE","DEAL_CONTEXT","MFG_SEGMENT","CAPEX_INTENSITY","CARBON_RISK","SUPPLY_CHAIN_RISK","LABOR_RISK","DEPTH","OUTPUT_LANG"],
+        "guards_added": ["E-10 CapExAudit","E-11 CarbonFootprintScan","E-12 SupplyChainRisk","E-13 LaborHumanRights"],
+        "zones_added": ["Z-7 CapEx & Capacity Roadmap","Z-8 Carbon & Energy Transition","Z-9 Supply Chain & Geopolitical Risk"],
+        "parent": "DD-MASTER-v2",
+        "siblings": ["DD-009-A","DD-009-B","DD-010","DD-011","DD-012"]
+      },
+      "kg_version": "v4.19", "created_at": "2026-05-08T14:37:00+09:00"
+    }
+  ],
+  "edges": [
+    {"edge_id": "E-KG-031", "source": "PE-DD", "target": "DD-012", "relation": "CONTAINS_PROMPT", "weight": 1.0, "kg_version": "v4.19"},
+    {"edge_id": "E-KG-032", "source": "PE-DD", "target": "DD-013", "relation": "CONTAINS_PROMPT", "weight": 1.0, "kg_version": "v4.19"},
+    {"edge_id": "E-KG-033", "source": "DD-012", "target": "DD-013", "relation": "SIBLING_OF", "weight": 0.70, "context": "공동 ESG 규제 연계 — CSRD·UFLPA·공급망 실사", "kg_version": "v4.19"},
+    {"edge_id": "E-KG-034", "source": "DD-012", "target": "DD-009-B", "relation": "OUTPUT_FEEDS", "weight": 0.80, "context": "DEEP O11 → Board Pack 연계", "kg_version": "v4.19"},
+    {"edge_id": "E-KG-035", "source": "DD-013", "target": "DD-009-B", "relation": "OUTPUT_FEEDS", "weight": 0.80, "context": "DEEP O11 → Board Pack 연계", "kg_version": "v4.19"},
+    {"edge_id": "E-KG-036", "source": "DD-012", "target": "PE-FIN", "relation": "CROSS_DOMAIN_LINK", "weight": 0.88, "context": "rNPV·EV/Pipeline·Peak Sales 가치평가", "kg_version": "v4.19"},
+    {"edge_id": "E-KG-037", "source": "DD-013", "target": "PE-FIN", "relation": "CROSS_DOMAIN_LINK", "weight": 0.85, "context": "EV/Installed CAPA·ESG 프리미엄 가치평가", "kg_version": "v4.19"},
+    {"edge_id": "E-KG-038", "source": "DD-013", "target": "PE-SEMI", "relation": "CROSS_DOMAIN_LINK", "weight": 0.72, "context": "반도체 제조 MFG 교차 — CapEx·클린룸·공급망", "kg_version": "v4.19"},
+    {"edge_id": "E-KG-039", "source": "DD-012", "target": "DD-011", "relation": "SIBLING_OF", "weight": 0.65, "context": "AI Drug Discovery 교차 — LLM 신약개발 연계", "kg_version": "v4.19"},
+    {"edge_id": "E-KG-040", "source": "DD-013", "target": "DD-010", "relation": "SIBLING_OF", "weight": 0.68, "context": "OSAT·MFG 교차 — CapEx·공급망·ESG 공통 구조", "kg_version": "v4.19"},
+    {"edge_id": "E-KG-041", "source": "DD-012", "target": "DD-009-A", "relation": "SIBLING_OF", "weight": 0.60, "context": "반도체·BIO 공통 — EAR 수출통제·IP 규제 연계", "kg_version": "v4.19"},
+    {"edge_id": "E-KG-042", "source": "DD-013", "target": "DD-009-A", "relation": "SIBLING_OF", "weight": 0.62, "context": "반도체·MFG 공통 — CapEx·공급망·수출통제", "kg_version": "v4.19"}
+  ]
+}
