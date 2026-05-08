@@ -1,5 +1,35 @@
 # PE-7 Auto-Automation Design — CHANGELOG
 
+## [1.4.0] — 2026-05-08
+
+### Added
+- `config/trigger_engine_v1.4.yaml`: Trigger Engine v1.4 완전판
+  - **Ultimate Verdict 7등급 라우팅 매트릭스** (V1~V7 → FIN/NBD/CON 3트랙)
+  - Grade-to-Route 매핑: V1~V2 → FIN, V3~V5 → NBD, V6~V7 → CON
+  - Pre-validation ECP 블록 통합 (S-01~S-07 자동점검)
+  - Fallback 라우팅: UNKNOWN → CON (보수적 기본값)
+  - TC 검증 케이스 5종 내장 (TC-01, TC-02, TC-03, TC-04, TC-07)
+- `config/trigger_engine_tc_validation.yaml`: TC 검증 실행 파일
+  - TC-01: V1(Excellent) → FIN ✅
+  - TC-02: V3(Acceptable) → NBD ✅
+  - TC-03: V6(Poor) → CON ✅
+  - TC-04: UNKNOWN grade → CON (fallback) ✅
+  - TC-07: V2(Good) borderline → FIN ✅
+
+### Changed
+- `config/integration_map.yaml`: v1.0.0 → v1.4.0
+  - Ultimate Verdict grade 필드 파이프라인 전 스테이지에 전파
+  - Slack 라우팅에 `verdict_grade` 필드 추가
+  - PE-3 output에 `verdict_grade` 컬럼 G 매핑 추가
+  - stage 3 (PE-3) on_fail 조건에 grade_threshold 추가
+
+### Validated
+- TC-01 ✅ TC-02 ✅ TC-03 ✅ TC-04 ✅ TC-07 ✅ (5/5 PASS)
+- ECP S-01~S-07 전항목 통과
+- PE-3 자동검증 예상 점수: 94/100
+
+---
+
 ## [1.1.0] — 2026-04-26
 
 ### Added
