@@ -1,0 +1,79 @@
+{
+  "kg_version_prev": "v4.22",
+  "kg_version_new": "v4.23",
+  "trigger": "DD-017 (Consumer/Retail) + DD-018 (FinTech/FS) 동시 생성 — E-KG-085~102",
+  "updated_at": "2026-05-08T15:45:00+09:00",
+  "delta": {
+    "nodes_added": 2,
+    "edges_added": 18,
+    "edges_updated": 2
+  },
+  "nodes": [
+    {
+      "node_id": "DD-017",
+      "label": "P-OPT-DD-017 v1.0 · Enterprise DD — Consumer/Retail 전용",
+      "type": "Prompt / Derived", "domain": "PE-DD / CONSUMER",
+      "github_path": "prompts/PE-DD/dd_017_consumer_retail_v1.0.md",
+      "attributes": {
+        "version": "v1.0", "pe3_score": 96, "preset": "CONSUMER", "status": "✅ Active",
+        "params": ["COMPANY_NAME","DD_TYPE","DEAL_CONTEXT","RETAIL_SEGMENT","CHANNEL_MIX","BRAND_TIER","SUPPLY_CHAIN_ORIGIN","DIGITAL_MATURITY","GEO_RISK","DEPTH","OUTPUT_LANG"],
+        "guards_added": ["E-10 GMVCohortValidation","E-11 BrandEquityAssessment","E-12 SupplyChainCompliance","E-13 DigitalConsumerValue"],
+        "guards_inherited": ["E-01~09","E-14 GeopoliticalGuard"],
+        "zones_added": ["Z-7 GMV & Cohort Economics","Z-8 Brand Equity & Pricing Power","Z-9 Supply Chain & Sourcing Risk"],
+        "zones_inherited": ["Z-1~6","Z-10 Geopolitical (v2.1)"],
+        "key_regulations": ["UFLPA","CBAM","CA SB 657","GDPR","CCPA","IRA Domestic Content"],
+        "valuation_multiples": ["EV/EBITDA","EV/GMV","EV/Sales","P/E","LTV/CAC","AOV"],
+        "geo_risk_auto": "HIGH (SUPPLY_CHAIN_ORIGIN=CHINA_LED 시)",
+        "parent": "DD-MASTER-v2",
+        "siblings": ["DD-009-A","DD-009-B","DD-010","DD-011","DD-012","DD-013","DD-014","DD-015","DD-016","DD-018"]
+      },
+      "kg_version": "v4.23", "created_at": "2026-05-08T15:45:00+09:00"
+    },
+    {
+      "node_id": "DD-018",
+      "label": "P-OPT-DD-018 v1.0 · Enterprise DD — FinTech/Financial Services 전용",
+      "type": "Prompt / Derived", "domain": "PE-DD / FINTECH",
+      "github_path": "prompts/PE-DD/dd_018_fintech_fs_v1.0.md",
+      "attributes": {
+        "version": "v1.0", "pe3_score": 97, "preset": "FINTECH",  "status": "✅ Active",
+        "params": ["COMPANY_NAME","DD_TYPE","DEAL_CONTEXT","FS_SEGMENT","REVENUE_MODEL","REGULATORY_REGIME","AML_RISK","AI_MODEL_RISK","GEO_RISK","DEPTH","OUTPUT_LANG"],
+        "guards_added": ["E-10 PrudentialMetricsValidation","E-11 AMLKYCRiskScan","E-12 RegulatoryCapitalCompliance","E-13 AIModelRiskGovernance"],
+        "guards_inherited": ["E-01~09","E-14 GeopoliticalGuard"],
+        "zones_added": ["Z-7 Prudential Health & Capital Adequacy","Z-8 AML/KYC & Compliance Risk","Z-9 Regulatory Capital & Licensing Strategy"],
+        "zones_inherited": ["Z-1~6","Z-10 Geopolitical & Regulatory Arbitrage (v2.1)"],
+        "key_regulations": ["Basel III/IV","MiFID II","PSD2","DORA","K-FSB","AML FATF","SR 11-7","EU AI Act","MiCA","CFIUS"],
+        "valuation_multiples": ["P/B","P/E","EV/EBITDA","EV/AUM","EV/ARR","NIM","ROE","ROA"],
+        "geo_risk_auto": "CRITICAL (REGULATORY_REGIME=MULTI + AML_RISK=HIGH 시)",
+        "parent": "DD-MASTER-v2",
+        "siblings": ["DD-009-A","DD-009-B","DD-010","DD-011","DD-012","DD-013","DD-014","DD-015","DD-016","DD-017"]
+      },
+      "kg_version": "v4.23", "created_at": "2026-05-08T15:45:00+09:00"
+    }
+  ],
+  "edges": [
+    {"edge_id": "E-KG-085", "source": "PE-DD",   "target": "DD-017", "relation": "CONTAINS_PROMPT",   "weight": 1.0},
+    {"edge_id": "E-KG-086", "source": "PE-DD",   "target": "DD-018", "relation": "CONTAINS_PROMPT",   "weight": 1.0},
+    {"edge_id": "E-KG-087", "source": "DD-017",  "target": "DD-018", "relation": "SIBLING_OF",        "weight": 0.65, "context": "소비자 금융·BNPL·임베디드파이낸스·결제 교차"},
+    {"edge_id": "E-KG-088", "source": "DD-017",  "target": "DD-009-B","relation": "OUTPUT_FEEDS",    "weight": 0.80, "context": "DEEP O11 → Board Pack"},
+    {"edge_id": "E-KG-089", "source": "DD-018",  "target": "DD-009-B","relation": "OUTPUT_FEEDS",    "weight": 0.85, "context": "DEEP O11 → Board Pack"},
+    {"edge_id": "E-KG-090", "source": "DD-017",  "target": "PE-FIN", "relation": "CROSS_DOMAIN_LINK", "weight": 0.80, "context": "EV/GMV·LTV/CAC·Working Capital"},
+    {"edge_id": "E-KG-091", "source": "DD-018",  "target": "PE-FIN", "relation": "CROSS_DOMAIN_LINK", "weight": 0.98, "context": "NIM·P/B·EV/AUM·Basel III·AML — 최강 PE-FIN 연계"},
+    {"edge_id": "E-KG-092", "source": "DD-017",  "target": "DD-013", "relation": "SIBLING_OF",        "weight": 0.72, "context": "CPG 제조·UFLPA·공급망 탄소"},
+    {"edge_id": "E-KG-093", "source": "DD-017",  "target": "DD-016", "relation": "SIBLING_OF",        "weight": 0.78, "context": "DTC·마켓플레이스·소셜커머스·AI 개인화"},
+    {"edge_id": "E-KG-094", "source": "DD-018",  "target": "DD-011", "relation": "SIBLING_OF",        "weight": 0.80, "context": "AI 신용모델·EU AI Act·SR 11-7·LLM 금융"},
+    {"edge_id": "E-KG-095", "source": "DD-018",  "target": "DD-016", "relation": "SIBLING_OF",        "weight": 0.75, "context": "FinTech SaaS ARR·GDPR·Open Banking·임베디드파이낸스"},
+    {"edge_id": "E-KG-096", "source": "DD-018",  "target": "DD-012", "relation": "SIBLING_OF",        "weight": 0.68, "context": "InsurTech·헬스케어 금융·의료비 결제"},
+    {"edge_id": "E-KG-097", "source": "DD-017",  "target": "DD-015", "relation": "SIBLING_OF",        "weight": 0.55, "context": "ESG 소비자 프리미엄·탈탄소 포장·재생에너지 조달"},
+    {"edge_id": "E-KG-098", "source": "DD-018",  "target": "DD-015", "relation": "CROSS_DOMAIN_LINK", "weight": 0.62, "context": "Green Bond·ESG금융·재생에너지 PPA 파이낸싱"},
+    {"edge_id": "E-KG-099", "source": "DD-017",  "target": "Z-10-GEO","relation": "INHERITS_ZONE",   "weight": 0.88, "context": "UFLPA·CHINA_LED 공급망·IRA Domestic Content"},
+    {"edge_id": "E-KG-100", "source": "DD-018",  "target": "Z-10-GEO","relation": "INHERITS_ZONE",   "weight": 0.85, "context": "CFIUS 금융데이터·MULTI 규제 차익·MiCA 지정학"},
+    {"edge_id": "E-KG-101", "source": "DD-017",  "target": "E-14",   "relation": "APPLIES_GUARD",    "weight": 0.88},
+    {"edge_id": "E-KG-102", "source": "DD-018",  "target": "E-14",   "relation": "APPLIES_GUARD",    "weight": 0.85}
+  ],
+  "ssot_sync": {
+    "github_commit": "완료 — DD-017/018 파일 + KG v4.23 delta 단일 커밋",
+    "notion_db1": "완료 — DB-1 Master Index DD-017/018 엔트리 등록",
+    "kg_total_edges": "E-KG-001~102",
+    "pe_dd_complete": "DD-009-A/B + DD-010~018 = 10종 파생 완성"
+  }
+}
