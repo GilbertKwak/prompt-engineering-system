@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-05-08T01:49:24.048299+00:00",
+    "generated_at": "2026-05-08T04:35:20.974686+00:00",
     "version": "1.0",
     "total_nodes": 51,
     "total_edges": 60,
@@ -840,12 +840,14 @@
       "title": "PE-7 Auto-Automation Design — CHANGELOG",
       "status": "unknown",
       "version": "",
-      "date": "2026-04-26",
+      "date": "2026-05-08",
       "tags": [
-        "PE-7_ai-automation-design"
+        "PE-7_ai-automation-design",
+        "v1.4",
+        "v1.0"
       ],
       "notion_url": null,
-      "file_size": 1349,
+      "file_size": 2547,
       "sha": null
     },
     {
