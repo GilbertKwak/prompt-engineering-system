@@ -1,0 +1,154 @@
+{
+  "kg_version_prev": "v4.15",
+  "kg_version_new": "v4.16",
+  "trigger": "DD-009-A (PRESET-SEMI) + DD-009-B (BOARD_PACK) 파생 프롬프트 생성 완료 — E-KG-010/011 status planned → active 갱신",
+  "updated_at": "2026-05-08T13:35:00+09:00",
+  "delta": {
+    "nodes_added": 2,
+    "edges_added": 6,
+    "edges_updated": 2,
+    "nodes_list": ["DD-009-A", "DD-009-B"],
+    "edges_added_list": [
+      "E-KG-014", "E-KG-015", "E-KG-016",
+      "E-KG-017", "E-KG-018", "E-KG-019"
+    ],
+    "edges_updated_list": ["E-KG-010", "E-KG-011"]
+  },
+  "e0n_status": {
+    "E-01": "✅ SHA 정합 확인",
+    "E-02": "✅ status 필드 정상",
+    "E-03": "✅ 버전 순행 (v4.15 → v4.16)",
+    "E-04": "✅ 구조 일치",
+    "E-06": "✅ 중복 노드 없음",
+    "E-07": "✅ 필수 필드 완비"
+  },
+  "ssot_sync": {
+    "github_commit": "완료 — DD-009-A/B 파일 + KG v4.16 delta 단일 커밋",
+    "notion_db1": "필요 — DB-1 Master Index DD-009-A/B 엔트리 등록 권장",
+    "pe7_protocol": "memory_handler.run() → STEP 3 수정 실행 → STEP 5 Sync Push"
+  },
+  "edges_updated": [
+    {
+      "edge_id": "E-KG-010",
+      "source": "DD-MASTER-v2",
+      "target": "DD-009-A",
+      "relation": "PARENT_OF",
+      "weight": 0.95,
+      "context": "PRESET-SEMI 파생 — 반도체·AI반도체 특화 DD (PE-3 96)",
+      "status": "active",
+      "prev_status": "planned",
+      "activated_at": "2026-05-08T13:35:00+09:00",
+      "kg_version": "v4.16"
+    },
+    {
+      "edge_id": "E-KG-011",
+      "source": "DD-MASTER-v2",
+      "target": "DD-009-B",
+      "relation": "PARENT_OF",
+      "weight": 0.95,
+      "context": "BOARD_PACK 파생 — 이사회·투자위원회 제출 전용 DD (PE-3 95)",
+      "status": "active",
+      "prev_status": "planned",
+      "activated_at": "2026-05-08T13:35:00+09:00",
+      "kg_version": "v4.16"
+    }
+  ],
+  "nodes": [
+    {
+      "node_id": "DD-009-A",
+      "label": "P-OPT-DD-009-A v1.0 · Enterprise DD — 반도체·AI반도체 특화 (PRESET-SEMI)",
+      "type": "Prompt / Derived",
+      "domain": "PE-DD / SEMI",
+      "github_path": "prompts/PE-DD/dd_009_a_semi_v1.0.md",
+      "attributes": {
+        "version": "v1.0",
+        "pe3_score": 96,
+        "preset": "SEMI",
+        "status": "✅ Active",
+        "params": ["COMPANY_NAME","DD_TYPE","DEAL_CONTEXT","SEMI_SEGMENT","PROCESS_NODE","HBM_EXPOSURE","EXPORT_RISK","DEPTH","OUTPUT_LANG"],
+        "guards_added": ["E-10 ExportControlScan", "E-11 GeopoliticalRisk", "E-12 TechNodeValidation"],
+        "zones_added": ["Z-7 Geopolitical & Supply Chain", "Z-8 HBM & Advanced Packaging Deep Dive"],
+        "parent": "DD-MASTER-v2",
+        "sibling": "DD-009-B"
+      },
+      "kg_version": "v4.16",
+      "created_at": "2026-05-08T13:35:00+09:00"
+    },
+    {
+      "node_id": "DD-009-B",
+      "label": "P-OPT-DD-009-B v1.0 · Enterprise DD — 이사회용 Board Pack (BOARD_PACK)",
+      "type": "Prompt / Derived",
+      "domain": "PE-DD / BOARD_PACK",
+      "github_path": "prompts/PE-DD/dd_009_b_board_pack_v1.0.md",
+      "attributes": {
+        "version": "v1.0",
+        "pe3_score": 95,
+        "preset": "BOARD_PACK",
+        "status": "✅ Active",
+        "params": ["COMPANY_NAME","DEAL_TYPE","DEAL_SIZE","AUDIENCE","PRESET","CONFIDENTIALITY","OUTPUT_LANG"],
+        "guards_added": ["E-10 SCQStructure", "E-11 DevilsAdvocate"],
+        "sections": ["S-1 Cover", "S-2 Deal Thesis", "S-3 Financial", "S-4 Key Risks", "S-5 DD Summary", "S-6 Devil's Advocate", "S-7 Decision"],
+        "parent": "DD-MASTER-v2",
+        "sibling": "DD-009-A"
+      },
+      "kg_version": "v4.16",
+      "created_at": "2026-05-08T13:35:00+09:00"
+    }
+  ],
+  "edges": [
+    {
+      "edge_id": "E-KG-014",
+      "source": "PE-DD",
+      "target": "DD-009-A",
+      "relation": "CONTAINS_PROMPT",
+      "weight": 1.0,
+      "context": "PE-DD 라이브러리 내 SEMI 특화 파생 프롬프트",
+      "kg_version": "v4.16"
+    },
+    {
+      "edge_id": "E-KG-015",
+      "source": "PE-DD",
+      "target": "DD-009-B",
+      "relation": "CONTAINS_PROMPT",
+      "weight": 1.0,
+      "context": "PE-DD 라이브러리 내 BOARD_PACK 파생 프롬프트",
+      "kg_version": "v4.16"
+    },
+    {
+      "edge_id": "E-KG-016",
+      "source": "DD-009-A",
+      "target": "DD-009-B",
+      "relation": "SIBLING_OF",
+      "weight": 0.8,
+      "context": "동일 부모(DD-MASTER-v2) 파생 형제 프롬프트",
+      "kg_version": "v4.16"
+    },
+    {
+      "edge_id": "E-KG-017",
+      "source": "DD-009-A",
+      "target": "PE-SEMI",
+      "relation": "CROSS_DOMAIN_LINK",
+      "weight": 0.92,
+      "context": "SEMI 특화 — HBM·OSAT·EAR §742.4·B-Star 4 연계",
+      "kg_version": "v4.16"
+    },
+    {
+      "edge_id": "E-KG-018",
+      "source": "DD-009-B",
+      "target": "PE-FIN",
+      "relation": "CROSS_DOMAIN_LINK",
+      "weight": 0.88,
+      "context": "Board Pack 재무 섹션 — 가치평가·IRR·MOIC PE-FIN 연계",
+      "kg_version": "v4.16"
+    },
+    {
+      "edge_id": "E-KG-019",
+      "source": "DD-009-A",
+      "target": "SKH-S1",
+      "relation": "APPLIED_TO",
+      "weight": 0.85,
+      "context": "삼성전자 HBM Salvage Deal 실사 (SESSION-C34-20260508) 적용 사례",
+      "kg_version": "v4.16"
+    }
+  ]
+}
