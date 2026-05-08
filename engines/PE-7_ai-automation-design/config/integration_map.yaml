@@ -1,13 +1,48 @@
 # PE-7 Integration Map — 엔진 간 데이터 흐름 정의
-# Version: 1.0.0 | Updated: 2026-04-26
+# Version: 1.4.0 | Updated: 2026-05-08
+# Changelog: verdict_grade (Ultimate Verdict 7등급) 파이프라인 전체 전파
+#            FIN/NBD/CON 3-트랙 라우팅 매트릭스 연계
 
-version: "1.0.0"
+version: "1.4.0"
+
+# ─────────────────────────────────────────
+# Ultimate Verdict Grade → Route 매핑 (v1.4 신규)
+# V1(Excellent) V2(Good) → FIN  직접 투자실행
+# V3(Acceptable) V4(Marginal) V5(Borderline) → NBD  신사업 개발로 라우팅
+# V6(Poor) V7(Reject) → CON  콘설팅/구조조정 튜닝
+# UNKNOWN → CON (fallback 기본값)
+# ─────────────────────────────────────────
+verdict_routing_matrix:
+  V1: FIN
+  V2: FIN
+  V3: NBD
+  V4: NBD
+  V5: NBD
+  V6: CON
+  V7: CON
+  UNKNOWN: CON  # fallback
+
+track_definitions:
+  FIN:
+    label: "Financial Execution Track"
+    description: "V1-V2 등급. 투자 실행 적합 수준. IRR/MOIC 환경 수신."
+    next_prompt: "PE-FIN-01_dcf" 
+    escalation: "#fin-decisions"
+  NBD:
+    label: "New Business Development Track"
+    description: "V3-V5 등급. 추가 개발/실사 필요 수준. NBD 파이프라인 진입."
+    next_prompt: "PE-NBD_master"
+    escalation: "#nbd-pipeline"
+  CON:
+    label: "Consulting / Restructuring Track"
+    description: "V6-V7 등급. 구조적 재검토 필요. 콘설팅 프레임 적용."
+    next_prompt: "PE-CON_C001"
+    escalation: "#con-review"
 
 # ─────────────────────────────────────────
 # 전체 파이프라인 흐름
-# PE-1 → PE-2 → PE-3 → PE-7 (KPI 기록 & 알림)
+# PE-1 → PE-2 → PE-3 → Verdict Routing → PE-7 KPI
 # ─────────────────────────────────────────
-
 pipeline:
   trigger: "GitHub Actions (schedule / workflow_dispatch / push)"
   stages:
@@ -18,6 +53,7 @@ pipeline:
         - source: notion_db
           db_id_secret: NOTION_KPI_DB_ID
           filter: "Status = 'needs_refinement'"
+          fields: [prompt_id, title, verdict_grade]  # v1.4: verdict_grade 전파
         - source: google_sheets
           sheet_id_secret: GOOGLE_SHEETS_ID
           range: "Experiments!A:Z"
@@ -28,6 +64,7 @@ pipeline:
           action: "append_row: refinement log"
       on_complete:
         notify: slack
+        include_fields: [prompt_id, verdict_grade]
         trigger_next: PE-2
 
     - stage: 2
@@ -36,16 +73,19 @@ pipeline:
       input:
         - source: notion_db
           filter: "Status = 'refined'"
+          fields: [prompt_id, title, verdict_grade]
       output:
         - target: notion_db
           action: "create_pages: proliferated variants"
+          include_parent_verdict: true  # v1.4: 라우팅 상속
       on_complete:
         notify: slack
+        include_fields: [prompt_id, verdict_grade]
         trigger_next: PE-3
 
     - stage: 3
       engine: PE-3_auto-validation
-      role: "품질 자동 검증 (RCA + Pass/Fail)"
+      role: "품질 자동 검증 (RCA + Pass/Fail + Verdict Grade)"
       input:
         - source: notion_db
           filter: "Status = 'proliferated'"
@@ -53,35 +93,56 @@ pipeline:
           range: "Validation!A:Z"
       output:
         - target: notion_db
-          action: "update_property: validation_result, quality_score"
+          action: "update_property: validation_result, quality_score, verdict_grade"  # v1.4
         - target: google_sheets
-          action: "append_row: validation results"
+          action: "append_row: validation results + verdict_grade column G"  # v1.4
       on_fail:
         notify: slack
         severity: "high"
-        message_template: "⚠️ PE-3 Validation FAILED — {prompt_id}: {reason}"
+        grade_threshold: "V6"  # v1.4: V6 이상시 자동 CON 라우팅
+        message_template: "⚠️ PE-3 Validation FAILED — {prompt_id}: {reason} | Grade: {verdict_grade} → {route}"
       on_complete:
         notify: slack
-        trigger_next: PE-7
+        include_fields: [prompt_id, verdict_grade, route]
+        trigger_next: verdict_router  # v1.4: PE-7 직접이 아닌 verdict_router 경유
 
     - stage: 4
-      engine: PE-7_ai-automation-design
-      role: "KPI 집계 및 대시보드 업데이트"
+      engine: verdict_router  # v1.4 신규 스테이지
+      role: "Ultimate Verdict Grade → FIN/NBD/CON 라우팅"
       input:
         - source: notion_db
           filter: "Status = 'validated'"
+          fields: [prompt_id, verdict_grade]
+      routing_logic:
+        matrix: verdict_routing_matrix  # 상단 정의 참조
+        fallback: CON
+        ecp_pre_validation: true  # S-01~S-07 자동점검 요청
+      output:
+        - target: notion_db
+          action: "update_property: route_assigned"
+        - target: slack
+          action: "route_notification: {prompt_id} → {route} ({track_label})"
+      on_complete:
+        trigger_next: PE-7
+
+    - stage: 5
+      engine: PE-7_ai-automation-design
+      role: "KPI 집계 및 대시보드 업데이트 (verdict-aware)"
+      input:
+        - source: notion_db
+          filter: "Status = 'routed'"
         - source: google_sheets
           range: "KPI_Summary!A:Z"
       output:
         - target: notion_db
           action: "update_property: kpi_synced = true"
         - target: google_sheets
-          action: "update_kpi_dashboard"
+          action: "update_kpi_dashboard + verdict_breakdown_tab"  # v1.4
         - target: slack
-          action: "daily_summary_report"
+          action: "daily_summary_report + verdict_distribution"  # v1.4
 
 # ─────────────────────────────────────────
-# Notion DB 속성 → Sheets 컬럼 매핑
+# Notion DB 속성 → Sheets 콜럼 매핑 (v1.4 업데이트)
 # ─────────────────────────────────────────
 notion_to_sheets_mapping:
   prompt_id: "A"
@@ -90,16 +151,21 @@ notion_to_sheets_mapping:
   engine: "D"
   quality_score: "E"
   validation_result: "F"
-  created_date: "G"
-  last_updated: "H"
-  iteration_count: "I"
-  rca_notes: "J"
+  verdict_grade: "G"   # v1.4 신규
+  route: "H"           # v1.4 신규 (FIN/NBD/CON)
+  created_date: "I"
+  last_updated: "J"
+  iteration_count: "K"
+  rca_notes: "L"
 
 # ─────────────────────────────────────────
-# Slack 알림 채널 라우팅
+# Slack 알림 채널 라우팅 (v1.4 업데이트)
 # ─────────────────────────────────────────
 slack_routing:
   default_channel: "#pe-automation"
   severity_high: "#pe-alerts"
   daily_summary: "#pe-automation"
   monthly_report: "#pe-automation"
+  fin_route: "#fin-decisions"     # v1.4 신규
+  nbd_route: "#nbd-pipeline"      # v1.4 신규
+  con_route: "#con-review"        # v1.4 신규
