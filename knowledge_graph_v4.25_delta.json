@@ -1,0 +1,51 @@
+{
+  "kg_version_prev": "v4.24",
+  "kg_version_new": "v4.25",
+  "trigger": "DD-020 Real Estate Private Equity 생성 — E-KG-117~130",
+  "updated_at": "2026-05-08T16:42:00+09:00",
+  "delta": {"nodes_added": 1, "edges_added": 14, "edges_updated": 0},
+  "nodes": [
+    {
+      "node_id": "DD-020",
+      "label": "P-OPT-DD-020 v1.0 · Enterprise DD — Real Estate Private Equity 전용",
+      "type": "Prompt / Derived", "domain": "PE-DD / REPE",
+      "github_path": "prompts/PE-DD/dd_020_repe_v1.0.md",
+      "attributes": {
+        "version": "v1.0", "pe3_score": 97, "preset": "REPE", "status": "✅ Active",
+        "params": ["COMPANY_NAME","DD_TYPE","DEAL_CONTEXT","RE_SEGMENT","HOLD_PERIOD","FINANCING_TYPE","LEVERAGE_LEVEL","ESG_MANDATE","INTEREST_RATE_ENV","GEO_RISK","DEPTH","OUTPUT_LANG"],
+        "guards_added": ["E-10 AssetValuationValidation","E-11 DebtStructureStressTest","E-12 WaterfallAndReturnAnalysis","E-13 ESGAndClimateRiskAssessment"],
+        "guards_inherited": ["E-01~09","E-14 GeopoliticalGuard"],
+        "zones_added": ["Z-7 Asset Valuation & Debt Structure","Z-8 Waterfall & Return Structure","Z-9 ESG, Climate & Regulatory Risk"],
+        "zones_inherited": ["Z-1~6","Z-10 Geopolitical (v2.1)"],
+        "key_regulations": ["CFIUS","FIRPTA","EU SFDR Art8/9","K-Taxonomy","SEC Climate Rule","TCFD Phase II","GRESB","EU CBAM","Flood Zone FEMA"],
+        "valuation_methods": ["Cap Rate","NOI DCF","Comparable Sales","IRR","EM","CoC","FFO"],
+        "geo_risk_auto": "HIGH (RE_SEGMENT=DATA_CENTER 시 CFIUS / 외국인 토지소유)",
+        "parent": "DD-MASTER-v2",
+        "siblings": ["DD-009-A","DD-009-B","DD-010","DD-011","DD-012","DD-013","DD-014","DD-015","DD-016","DD-017","DD-018","DD-019"]
+      },
+      "kg_version": "v4.25", "created_at": "2026-05-08T16:42:00+09:00"
+    }
+  ],
+  "edges": [
+    {"edge_id": "E-KG-117", "source": "PE-DD",  "target": "DD-020",   "relation": "CONTAINS_PROMPT",   "weight": 1.0},
+    {"edge_id": "E-KG-118", "source": "DD-020",  "target": "DD-014",   "relation": "SIBLING_OF",        "weight": 0.92, "context": "RE/Infra 유사 DD 체계 중 최강 연계 — 자산부체·ESG·인프라모털게"},
+    {"edge_id": "E-KG-119", "source": "DD-020",  "target": "DD-018",   "relation": "SIBLING_OF",        "weight": 0.78, "context": "CMBS·리조널론드·리파이난싱·부동산 금융"},
+    {"edge_id": "E-KG-120", "source": "DD-020",  "target": "DD-015",   "relation": "SIBLING_OF",        "weight": 0.70, "context": "Net Zero CAPEX·재생에너지 PPA·에너지인프라 RE"},
+    {"edge_id": "E-KG-121", "source": "DD-020",  "target": "DD-011",   "relation": "SIBLING_OF",        "weight": 0.72, "context": "Data Center RE·AI 커피지·전력인프라"},
+    {"edge_id": "E-KG-122", "source": "DD-020",  "target": "DD-013",   "relation": "SIBLING_OF",        "weight": 0.65, "context": "Logistics·산업시설 RE·ESG 제조 인프라"},
+    {"edge_id": "E-KG-123", "source": "DD-020",  "target": "DD-019",   "relation": "SIBLING_OF",        "weight": 0.60, "context": "Life Science Lab RE·시니어하우징·헬스케어 RE"},
+    {"edge_id": "E-KG-124", "source": "DD-020",  "target": "DD-009-B", "relation": "OUTPUT_FEEDS",    "weight": 0.85, "context": "DEEP O11 → Board Pack (자산 포트폴리오 포함)"},
+    {"edge_id": "E-KG-125", "source": "DD-020",  "target": "PE-FIN",   "relation": "CROSS_DOMAIN_LINK", "weight": 0.90, "context": "Cap Rate DCF·DSCR·LTV·Waterfall·CMBS·REIT FFO"},
+    {"edge_id": "E-KG-126", "source": "DD-020",  "target": "DD-017",   "relation": "SIBLING_OF",        "weight": 0.55, "context": "Retail Mall RE·마켓플레이스 인프라"},
+    {"edge_id": "E-KG-127", "source": "DD-020",  "target": "Z-10-GEO", "relation": "INHERITS_ZONE",   "weight": 0.88, "context": "CFIUS Data Center·외국인 토지·자본통제·통화헤지"},
+    {"edge_id": "E-KG-128", "source": "DD-020",  "target": "E-14",     "relation": "APPLIES_GUARD",    "weight": 0.88},
+    {"edge_id": "E-KG-129", "source": "DD-020",  "target": "DD-MASTER-v2", "relation": "CHILD_OF",   "weight": 1.0},
+    {"edge_id": "E-KG-130", "source": "DD-020",  "target": "DD-016",   "relation": "SIBLING_OF",        "weight": 0.58, "context": "PropTech SaaS·디지털 인프라·스마트빌딩"}
+  ],
+  "ssot_sync": {
+    "github_commit": "완료 — DD-020 파일 + KG v4.25 delta",
+    "notion_db1": "완료 — DB-1 Master Index DD-020 엔트리",
+    "kg_total_edges": "E-KG-001~130",
+    "pe_dd_complete": "DD-009-A/B + DD-010~020 = 12종 파생 완성"
+  }
+}
