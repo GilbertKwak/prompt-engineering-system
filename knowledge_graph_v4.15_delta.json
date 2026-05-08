@@ -1,0 +1,160 @@
+{
+  "kg_version_prev": "v4.14",
+  "kg_version_new": "v4.15",
+  "trigger": "PR #16 main 머지 — feat(PE-DD): P-OPT-DD-MASTER v2.0 등록 후 PE-DD 도메인 노드 + 프롬프트 계보 엣지 추가",
+  "updated_at": "2026-05-08T13:32:00+09:00",
+  "merge_sha": "7ddaa62e524a23c03b2fb4b423a49341241a14dc",
+  "pr_ref": "https://github.com/GilbertKwak/prompt-engineering-system/pull/16",
+  "delta": {
+    "nodes_added": 3,
+    "edges_added": 7,
+    "nodes_list": ["PE-DD", "DD-MASTER-v2", "DD-PRESET-ROUTING"],
+    "edges_list": [
+      "E-KG-007", "E-KG-008", "E-KG-009",
+      "E-KG-010", "E-KG-011", "E-KG-012", "E-KG-013"
+    ]
+  },
+  "e0n_status": {
+    "E-01": "✅ SHA 정합 확인 — merge SHA 7ddaa62e 검증",
+    "E-02": "✅ status 필드 정상",
+    "E-03": "✅ 버전 순행 (v4.14 → v4.15)",
+    "E-04": "✅ 구조 일치",
+    "E-06": "✅ 중복 노드 없음",
+    "E-07": "✅ 필수 필드 완비"
+  },
+  "ssot_sync": {
+    "notion_db1": "완료 — DB-1 Master Index P-OPT-DD-MASTER v2.0 등록 + SHA 업데이트 2026-05-08T10:48:00+09:00",
+    "notion_pe_opt": "완료 — C-23 PE-OPT EVO-001 섹션 신설 2026-05-08T10:44:00+09:00",
+    "notion_pe_dd": "완료 — PE-DD Library v1.0 Child Page 생성 2026-05-08T10:44:00+09:00",
+    "github_merge": "완료 — PR #16 squash merge main 2026-05-08T13:32:00+09:00",
+    "pe7_protocol": "memory_handler.run() → STEP 3 수정 실행 → STEP 5 Sync Push"
+  },
+  "nodes": [
+    {
+      "node_id": "PE-DD",
+      "label": "PE-DD · Enterprise Due Diligence Prompt Domain",
+      "type": "Domain / Prompt Library",
+      "domain": "M&A · Investment · Due Diligence",
+      "github_path": "prompts/PE-DD/",
+      "notion_page": "https://www.notion.so/35955ed436f081028fbbe44e65f63d84",
+      "attributes": {
+        "status": "✅ Active",
+        "created": "2026-05-08",
+        "prompt_count": 1,
+        "planned_children": ["DD-009-A", "DD-009-B", "DD-010", "DD-011"],
+        "preset_domains": ["SEMI", "AI", "MFG", "BIO"],
+        "parent_ecosystem": "T-09"
+      },
+      "kg_version": "v4.15",
+      "created_at": "2026-05-08T13:32:00+09:00"
+    },
+    {
+      "node_id": "DD-MASTER-v2",
+      "label": "P-OPT-DD-MASTER v2.0 · Enterprise DD Unified Master Prompt",
+      "type": "Prompt / Master",
+      "domain": "PE-DD",
+      "github_path": "prompts/PE-DD/dd_master_v2.0.md",
+      "notion_page": "https://www.notion.so/35a55ed436f081b6a513da5372874f3e",
+      "attributes": {
+        "version": "v2.0",
+        "pe3_score": 97,
+        "pe3_source": 71,
+        "pe3_delta": "+26pts",
+        "status": "✅ Active",
+        "params": ["COMPANY_NAME", "DD_TYPE", "DEAL_CONTEXT", "PRESET", "DEPTH", "OUTPUT_LANG"],
+        "guards": ["E-01", "E-02", "E-03", "E-04", "E-05", "E-06", "E-07", "E-08", "E-09"],
+        "zones": ["Z-1", "Z-2", "Z-3", "Z-4", "Z-5", "Z-6"],
+        "merge_sha": "7ddaa62e524a23c03b2fb4b423a49341241a14dc",
+        "evo_id": "EVO-001"
+      },
+      "kg_version": "v4.15",
+      "created_at": "2026-05-08T13:32:00+09:00"
+    },
+    {
+      "node_id": "DD-PRESET-ROUTING",
+      "label": "DD PRESET Auto-Routing Engine · 4-Domain Branch",
+      "type": "System Component / Engine",
+      "domain": "PE-DD",
+      "attributes": {
+        "presets": {
+          "SEMI": "HBM·OSAT·EAR §742.4·CHIPS §50004·B-Star 4",
+          "AI": "GPU·LLM·데이터센터·클라우드·AI거버넌스",
+          "MFG": "공장·CapEx·ESG·노동·sCO2",
+          "BIO": "임상·FDA·특허절벽·바이오시밀러·CMC"
+        },
+        "parent_prompt": "DD-MASTER-v2",
+        "activation": "PRESET 파라미터 값에 의해 자동 작동"
+      },
+      "kg_version": "v4.15",
+      "created_at": "2026-05-08T13:32:00+09:00"
+    }
+  ],
+  "edges": [
+    {
+      "edge_id": "E-KG-007",
+      "source": "T-09",
+      "target": "PE-DD",
+      "relation": "CONTAINS_DOMAIN",
+      "weight": 1.0,
+      "context": "T-09 Mother Page — PE-DD 도메인 신규 등록 (2026-05-08)",
+      "kg_version": "v4.15"
+    },
+    {
+      "edge_id": "E-KG-008",
+      "source": "PE-DD",
+      "target": "DD-MASTER-v2",
+      "relation": "CONTAINS_PROMPT",
+      "weight": 1.0,
+      "context": "PE-DD 라이브러리 최상위 마스터 프롬프트",
+      "kg_version": "v4.15"
+    },
+    {
+      "edge_id": "E-KG-009",
+      "source": "DD-MASTER-v2",
+      "target": "DD-PRESET-ROUTING",
+      "relation": "USES_ENGINE",
+      "weight": 0.95,
+      "context": "PRESET 파라미터 → 4도메인 자동 라우팅 엔진",
+      "kg_version": "v4.15"
+    },
+    {
+      "edge_id": "E-KG-010",
+      "source": "DD-MASTER-v2",
+      "target": "DD-009-A",
+      "relation": "PARENT_OF",
+      "weight": 0.9,
+      "context": "PRESET-SEMI 파생 — 반도체·AI 특화 DD (예정)",
+      "status": "planned",
+      "kg_version": "v4.15"
+    },
+    {
+      "edge_id": "E-KG-011",
+      "source": "DD-MASTER-v2",
+      "target": "DD-009-B",
+      "relation": "PARENT_OF",
+      "weight": 0.9,
+      "context": "BOARD_PACK 파생 — 이사회용 Board Pack DD (예정)",
+      "status": "planned",
+      "kg_version": "v4.15"
+    },
+    {
+      "edge_id": "E-KG-012",
+      "source": "PE-OPT",
+      "target": "DD-MASTER-v2",
+      "relation": "EVOLVED_TO",
+      "weight": 0.98,
+      "context": "EVO-001: PE-OPT APIS v11.0 파이프라인 — PE-3 71→97 (+26pts)",
+      "evo_id": "EVO-001",
+      "kg_version": "v4.15"
+    },
+    {
+      "edge_id": "E-KG-013",
+      "source": "PE-DD",
+      "target": "PE-SEMI",
+      "relation": "CROSS_DOMAIN_LINK",
+      "weight": 0.85,
+      "context": "PRESET-SEMI 공유 — HBM·OSAT·EAR §742.4 연계 도메인",
+      "kg_version": "v4.15"
+    }
+  ]
+}
