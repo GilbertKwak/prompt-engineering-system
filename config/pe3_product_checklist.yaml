@@ -1,0 +1,232 @@
+# ============================================================
+# PE-3 제품 PM용 QC 체크리스트 v1.0
+# Version : 1.0 | Date: 2026-05-09
+# Author  : Gilbert
+# 대상  : PE-PROD-01~04 + PE-PROD-ORCH 출력물 전체
+# 연동  : pe7_product_mece_loop.py / auto_validate.py
+# ============================================================
+
+meta:
+  name        : PE-3-PROD — 제품 PM용 QC 체크리스트
+  version     : "1.0"
+  created     : "2026-05-09"
+  parent_spec : PE-3 자동검증 엔진 v2.0
+  scope       : 신사업·제품 기획 프롬프트 품질 검증
+  pass_threshold: 88          # 88점 이상 자동 PASS
+  total_weight: 100
+
+# ============================================================
+# 필수 5대 차원 (Dimension) — 각 차원 20점
+# ============================================================
+dimensions:
+
+  # ──────────────────────────────────────────────────────────
+  - id     : D1
+    name   : 명확성 (Clarity)
+    weight : 20
+    desc   : 입력 조건, 출력 포맷, 역할이 구체적으로 정의되어 있는가
+    checks:
+      - id      : D1-C1
+        name    : 필수 입력필드 MECE 정의
+        desc    : PRODUCT_IDEA / DOMAIN / ACTOR_TYPE 입력필드에 기본값과 유형이 명시되어 있는가
+        pattern : "PRODUCT_IDEA|\{\{.*\}\}.*\uae30본값|default"
+        weight  : 7
+        level   : MUST
+
+      - id      : D1-C2
+        name    : 출력 포맷 표준 준수
+        desc    : 표준 세퍼레이터(===) + [X/5] 섹션 로고가 포함되어 있는가
+        pattern : "={10,}|\\[\\d/5\\]"
+        weight  : 7
+        level   : MUST
+
+      - id      : D1-C3
+        name    : SYSTEM ROLE 명시
+        desc    : """당신은 ..." 또는 ## SYSTEM ROLE 헤더를 포함하는가
+        pattern : "SYSTEM ROLE|당신은|You are"
+        weight  : 6
+        level   : MUST
+
+  # ──────────────────────────────────────────────────────────
+  - id     : D2
+    name   : 구조적 MECE성 (Structure)
+    weight : 20
+    desc   : Layer A~E가 누락없이 증스러지고, 중복 없이 동일 공간을 커버하는가
+    checks:
+      - id      : D2-C1
+        name    : Layer A (고객) 포함
+        desc    : B2B/B2C/B2G 세그먼트 또는 고객·사용자 구분이 명시되어 있는가
+        pattern : "Layer A|B2B|B2C|B2G|고객|사용자 세그먼트"
+        weight  : 4
+        level   : MUST
+
+      - id      : D2-C2
+        name    : Layer B (문제·기회) 포함
+        desc    : 문제 정의 또는 기회 공간 트리가 명시되어 있는가
+        pattern : "Layer B|문제 정의|기회 공간|Pain Point|Gap"
+        weight  : 4
+        level   : MUST
+
+      - id      : D2-C3
+        name    : Layer C (솔루션) 포함
+        desc    : Build/Buy/Partner 또는 제품 모듈 MECE가 명시되어 있는가
+        pattern : "Layer C|Build|Buy|Partner|Core.*Adjacent|MVP"
+        weight  : 4
+        level   : MUST
+
+      - id      : D2-C4
+        name    : Layer D (수익·비즈니스 모델) 포함
+        desc    : SaaS/거래수수료/라이센스 등 수익모델 유형이 명시되어 있는가
+        pattern : "Layer D|SaaS|거래수수료|라이센스|Unit Economics|LTV|CAC"
+        weight  : 4
+        level   : MUST
+
+      - id      : D2-C5
+        name    : Layer E (경쟁·포지셔닝) 포함
+        desc    : 직접/간접 경쟁자 또는 모방장벽이 명시되어 있는가
+        pattern : "Layer E|직접 경쟁|대체재|모방 장벽|특허|Moat"
+        weight  : 4
+        level   : MUST
+
+  # ──────────────────────────────────────────────────────────
+  - id     : D3
+    name   : 시장·재무 특이성 (Market & Finance)
+    weight : 20
+    desc   : TAM/SAM/SOM 수치화 + IRR 역산 + 3시나리오가 모두 포함되는가
+    checks:
+      - id      : D3-C1
+        name    : TAM/SAM/SOM 수치 기재
+        desc    : TAM, SAM, SOM 세 가지에 $ 또는 단위 수치가 모두 포함되는가
+        pattern : "TAM.*\\$|SAM.*\\$|SOM.*\\$|TAM.*[\\d]+|\\$[\\d]+[BMT]"
+        weight  : 6
+        level   : MUST
+
+      - id      : D3-C2
+        name    : Unit Economics 4지표
+        desc    : ASP/Contribution Margin/LTV/CAC 또는 Payback Period가 포함되는가
+        pattern : "ASP|Contribution Margin|LTV.*CAC|CAC.*LTV|Payback|CM%"
+        weight  : 5
+        level   : MUST
+
+      - id      : D3-C3
+        name    : IRR 역산 수식 명시
+        desc    : IRR 역산 공식 또는 목표 IRR값이 포함되는가
+        pattern : "IRR.*%|\\d+%.*IRR|역산|NPV.*=.*0"
+        weight  : 5
+        level   : MUST
+
+      - id      : D3-C4
+        name    : 3-시나리오 (Bull/Base/Bear)
+        desc    : Bull Case, Base Case, Bear Case 세 가지가 모두 명시되는가
+        pattern : "Bull.*Base.*Bear|\U0001f7e2.*\U0001f7e1.*\U0001f534|\ub099연.*기준.*비관"
+        weight  : 4
+        level   : MUST
+
+  # ──────────────────────────────────────────────────────────
+  - id     : D4
+    name   : 실행가능성 (Executability)
+    weight : 20
+    desc   : TRL 평가 + MVP 로드맵 + 리스크 대응방안이 포함되는가
+    checks:
+      - id      : D4-C1
+        name    : TRL 수준 명시
+        desc    : TRL 1~9 수준 수치가 명시되어 있는가
+        pattern : "TRL [1-9]|TRL\\d|Technology Readiness"
+        weight  : 5
+        level   : SHOULD
+
+      - id      : D4-C2
+        name    : MVP 정의 명시
+        desc    : MVP 또는 Phase 1/2/3 로드맵이 명시되어 있는가
+        pattern : "MVP|Phase [123]|로드맵|개발 로드맵|\\(Phase"
+        weight  : 5
+        level   : SHOULD
+
+      - id      : D4-C3
+        name    : 리스크 매트릭스 (크리티삌/하이/미디엄)
+        desc    : 크리티컈 또는 리스크 등급이 명시되어 있는가
+        pattern : "Critical|High.*리스크|\U0001f534.*Critical|\U0001f7e0.*High|크리티컈|리스크 매트릭스"
+        weight  : 5
+        level   : MUST
+
+      - id      : D4-C4
+        name    : 대응방안 명시
+        desc    : 리스크별 대응방안이 최소 1개 이상 명시되어 있는가
+        pattern : "대응 방안|대안|리스크 미티게이션|Mitigation|Contingency"
+        weight  : 5
+        level   : MUST
+
+  # ──────────────────────────────────────────────────────────
+  - id     : D5
+    name   : 적용가능성 (Applicability)
+    weight : 20
+    desc   : Executive Summary + 크로스 라이브러리 권고 + Perplexity 실행 명령어가 포함되는가
+    checks:
+      - id      : D5-C1
+        name    : Executive Summary 3문장 이내
+        desc    : Executive Summary 또는 핵심결론 섹션이 3문장 이내로 작성되어 있는가
+        pattern : "Executive Summary|\U0001f4cb.*핵심|핥심 결론"
+        weight  : 5
+        level   : MUST
+
+      - id      : D5-C2
+        name    : 귀거수준 [HIGH/MED/LOW] 표시
+        desc    : \[HIGH\] \[MEDIUM\] \[LOW\] \[ESTIMATED\] 중 하나 이상이 명시되어 있는가
+        pattern : "\\[HIGH\\]|\\[MEDIUM\\]|\\[LOW\\]|\\[ESTIMATED\\]"
+        weight  : 4
+        level   : MUST
+
+      - id      : D5-C3
+        name    : 크로스 라이브러리 권고
+        desc    : PE-STRAT/PE-FIN/PE-SEMI/PE-AI/PE-DD 중 하나 이상 연계 권고가 명시되어 있는가
+        pattern : "PE-STRAT|PE-FIN|PE-SEMI|PE-AI|PE-DD"
+        weight  : 5
+        level   : SHOULD
+
+      - id      : D5-C4
+        name    : Perplexity 실행 명령어 포함
+        desc    : "\'PE-PROD-\'" 또는 실행 명령어 코드블록이 포함되어 있는가
+        pattern : "PE-PROD-0[1-9]|PE-PROD-ORCH|```javascript"
+        weight  : 6
+        level   : MUST
+
+# ============================================================
+# PE-3 자동검증 체크포인트 (프롬프트 내부 자체 포함 여부)
+# 출력물 검증과 이중 적용
+# ============================================================
+self_check_items:
+  - "[ ] Layer A~E 모두 MECE 검증 완료"
+  - "[ ] 근거수준 표시 완료 ([HIGH]/[MEDIUM]/[LOW]/[ESTIMATED])"
+  - "[ ] 가정(Assumption) vs 검증된 사실(Fact) 분리 완료"
+  - "[ ] TAM/SAM/SOM 수치화 완료"
+  - "[ ] Unit Economics 4지표 수치 기재"
+  - "[ ] IRR 역산 수식 명시"
+  - "[ ] Bull/Base/Bear 3-시나리오 완성"
+  - "[ ] 리스크 매트릭스 (커리티컈/하이/미디엄) + 대응방안"
+  - "[ ] Executive Summary 3문장 이내"
+  - "[ ] 크낅스 라이브러리 연계 권고 포함"
+  - "[ ] Perplexity 실행 명령어 코드블록 완성"
+
+# ============================================================
+# 점수 등급 정의
+# ============================================================
+grade_thresholds:
+  S  : { min: 95, label: "⭐ S-Grade — 배포 싦시 사용마"          }
+  A  : { min: 88, label: "✅ A-Grade — PASS (정식 사용 가능)"        }
+  B  : { min: 75, label: "⚠️ B-Grade — REVIEW (서수절 수정 후 사용)"   }
+  C  : { min: 60, label: "🔄 C-Grade — REWORK (구조 재설계 필요)"     }
+  F  : { min:  0, label: "❌ F-Grade — FAIL (실사용 불가)"             }
+
+# ============================================================
+# 버전 이력
+# ============================================================
+changelog:
+  - version : "1.0"
+    date    : "2026-05-09"
+    changes :
+      - "🆕 PE-3-PROD QC 체크리스트 v1.0 신규 생성"
+      - "5차원(D1~D5) / 16개 콜 항목 정의"
+      - "MUST/SHOULD 레벨 구분"
+      - "S/A/B/C/F 등급 정의 (PASS: 88점)"
+      - "auto_validate.py 연동 패턴 포함"
+      - "pe7_product_mece_loop.py 통합 지원"
