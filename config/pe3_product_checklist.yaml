@@ -1,61 +1,67 @@
 # ============================================================
-# PE-3 제품 PM용 QC 체크리스트 v2.0
-# Version : 2.0 | Date: 2026-05-09
+# PE-3 제품 PM용 QC 체크리스트 v3.0
+# Version : 3.0 | Date: 2026-05-09
 # Author  : Gilbert
 # 대상  : PE-PROD-ORCH-v2 출력물 전체 (8-Block MECE)
-# 연동  : pe7_product_mece_loop.py / pe3_product_validator.py
-# 변경  : v1.0 → v2.0 | D6(JTBD) + D7(AARRR) + D8(Blue Ocean/NSM) 추가
-# 총계  : 8차원 / 28개 체크항목 / PASS 기준 88점
+# 연동  : pe7_product_mece_loop.py v2.0 / pe3_product_validator.py
+#
+# ▶ v3.0 핵심 변경:
+#   - D6 = IRR 역산 세부 (Entry EV 상한선·Bear IRR·Exit 감응도)  ← pe7 v2 파싱 정합
+#   - D7 = Blue Ocean ERRC 4액션 + North Star Metric + Vanity 경고 ← pe7 v2 파싱 정합
+#   - D8 = KPI 로드맵 Phase별 마일스톤 + Go/No-Go 트리거          ← pe7 v2 파싱 정합
+#   - D4에 JTBD(고객심리)·AARRR(성장퍼널) 흡수 (기존 D6/D7 폐기)
+#   - 총계: 9차원 / 33개 체크항목 / PASS 88점 유지
 # ============================================================
 
 meta:
   name        : PE-3-PROD — 제품 PM용 QC 체크리스트
-  version     : "2.0"
+  version     : "3.0"
   created     : "2026-05-09"
   updated     : "2026-05-09"
-  parent_spec : PE-3 자동검증 엔진 v2.0
+  parent_spec : PE-3 자동검증 엔진 v2.0 / pe7_product_mece_loop.py v2.0
   scope       : 신사업·제품 기획 프롬프트 품질 검증 (9-Framework 통합)
   pass_threshold: 88          # 88점 이상 자동 PASS
   total_weight: 100
-  dimensions  : 8
-  total_checks: 28
+  dimensions  : 9
+  total_checks: 33
 
 # ============================================================
 # 차원 배점 배분 (총 100점)
-# D1 명확성        : 14점
-# D2 구조적 MECE성 : 14점
-# D3 시장·재무     : 16점  ← IRR 핵심 (MUST 가중)
-# D4 실행가능성    : 14점
-# D5 적용가능성    : 14점
-# D6 고객심리 JTBD : 14점  ← 신규 v2.0
-# D7 성장퍼널 AARRR: 7점   ← 신규 v2.0
-# D8 혁신·KPI      : 7점   ← 신규 v2.0 (Blue Ocean + NSM)
+# D1 명확성           : 12점
+# D2 구조적 MECE성    : 12점
+# D3 시장·재무 기본   : 14점
+# D4 고객심리·성장퍼널: 14점  ← v2 D6/D7 흡수 통합
+# D5 적용가능성       : 10점
+# D6 IRR 역산 세부    : 14점  ★ 신규 v3.0 (pe7 v2 D6 파싱 정합)
+# D7 Blue Ocean & NSM : 10점  ★ 신규 v3.0 (pe7 v2 D7 파싱 정합)
+# D8 KPI 로드맵       : 10점  ★ 신규 v3.0 (pe7 v2 D8 파싱 정합)
+# D9 실행·리스크      :  4점  (기존 D4 실행가능성 경량화)
 # ============================================================
 dimensions:
 
   # ──────────────────────────────────────────────────────────
   - id     : D1
     name   : 명확성 (Clarity)
-    weight : 14
+    weight : 12
     desc   : 입력 조건, 출력 포맷, 역할이 구체적으로 정의되어 있는가
     checks:
       - id      : D1-C1
         name    : 필수 입력필드 MECE 정의
         desc    : IDEA_NAME / DOMAIN / TARGET_CUSTOMER 등 입력필드가 명시되어 있는가
         pattern : "IDEA_NAME|PRODUCT_IDEA|\{\{.*\}\}|TARGET_CUSTOMER|DOMAIN"
-        weight  : 5
+        weight  : 4
         level   : MUST
 
       - id      : D1-C2
         name    : 출력 포맷 표준 준수
         desc    : 표준 블록 헤더(## B1~B8) 또는 섹션 구분자가 포함되어 있는가
         pattern : "## B[1-8]|={10,}|\\[\\d/[58]\\]"
-        weight  : 5
+        weight  : 4
         level   : MUST
 
       - id      : D1-C3
         name    : SYSTEM ROLE 명시
-        desc    : """당신은 ..." 또는 McKinsey/Sequoia 수준 역할 정의가 포함되는가
+        desc    : 당신은... 또는 McKinsey/Sequoia 수준 역할 정의가 포함되는가
         pattern : "SYSTEM ROLE|당신은|You are|McKinsey|Sequoia|Reforge"
         weight  : 4
         level   : MUST
@@ -63,8 +69,8 @@ dimensions:
   # ──────────────────────────────────────────────────────────
   - id     : D2
     name   : 구조적 MECE성 (Structure)
-    weight : 14
-    desc   : B1~B8 블록이 누락없이 MECE 커버하���가
+    weight : 12
+    desc   : B1~B8 블록이 누락없이 MECE 커버하는가
     checks:
       - id      : D2-C1
         name    : 고객·문제 정의 블록 포함 (B1)
@@ -88,24 +94,24 @@ dimensions:
         level   : MUST
 
       - id      : D2-C4
-        name    : 실행 로드맵 블록 포함 (B8)
-        desc    : Phase별 마일스톤 또는 KPI가 명시되어 있는가
-        pattern : "Phase [123]|마일스톤|로드맵|KPI|B8|Go.*No-Go"
-        weight  : 3
-        level   : MUST
+        name    : 전체 블록 연속성 (B1~B8)
+        desc    : B1부터 B8까지 8개 블록이 모두 포함되어 있는가
+        pattern : "B1.*B2.*B3|B4.*B5.*B6|B7.*B8|## B[1-8]"
+        weight  : 2
+        level   : SHOULD
 
       - id      : D2-C5
         name    : Strategic Priorities 표 포함
         desc    : Priority / Strategy / Impact / Difficulty 표가 포함되어 있는가
         pattern : "Priority|Strategic Priorities|Impact.*Difficulty|Time Horizon"
-        weight  : 2
+        weight  : 1
         level   : SHOULD
 
   # ──────────────────────────────────────────────────────────
   - id     : D3
-    name   : 시장·재무 특이성 (Market & Finance)
-    weight : 16
-    desc   : TAM/SAM/SOM 수치화 + IRR 역산 + 3시나리오가 모두 포함되는가
+    name   : 시장·재무 기본 (Market & Finance)
+    weight : 14
+    desc   : TAM/SAM/SOM 수치화 + 3시나리오 + Unit Economics가 포함되는가
     checks:
       - id      : D3-C1
         name    : TAM/SAM/SOM 수치 기재
@@ -122,211 +128,316 @@ dimensions:
         level   : MUST
 
       - id      : D3-C3
-        name    : IRR 역산 수식 명시
-        desc    : IRR 역산 공식 또는 목표 IRR 수치가 포함되는가
-        pattern : "IRR.*%|\\d+%.*IRR|역산|Entry EV|Exit.*Multiple"
-        weight  : 4
-        level   : MUST
-
-      - id      : D3-C4
         name    : 3-시나리오 (Bull/Base/Bear)
         desc    : Bull Case, Base Case, Bear Case 세 가지가 모두 명시되는가
         pattern : "Bull.*Base.*Bear|Bull Case|Base Case|Bear Case|낙관.*기준.*비관"
         weight  : 3
         level   : MUST
 
-  # ──────────────────────────────────────────────────────────
-  - id     : D4
-    name   : 실행가능성 (Executability)
-    weight : 14
-    desc   : TRL 평가 + 로드맵 + 리스크 대응방안이 포함되는가
-    checks:
-      - id      : D4-C1
-        name    : TRL 수준 명시
-        desc    : TRL 1~9 수준 수치가 명시되어 있는가
-        pattern : "TRL [1-9]|TRL\\d|Technology Readiness"
-        weight  : 4
+      - id      : D3-C4
+        name    : CAGR 또는 성장률 명시
+        desc    : 시장 CAGR 또는 YoY 성장률이 명시되는가
+        pattern : "CAGR|YoY|성장률.*%|연평균.*성장"
+        weight  : 2
         level   : SHOULD
 
-      - id      : D4-C2
-        name    : Phase 로드맵 명시
-        desc    : Phase 1/2/3 또는 0~6개월 / 6~18개월 구분 로드맵이 명시되어 있는가
-        pattern : "Phase [123]|0~6|6~18|18~36|로드맵|마일스톤"
-        weight  : 5
+  # ──────────────────────────────────────────────────────────
+  - id     : D4
+    name   : 고객심리·성장퍼널 (JTBD + AARRR)
+    weight : 14
+    desc   : JTBD 3-Jobs + Switching Trigger + AARRR 5단계가 포함되는가
+    desc_note: |
+      v2.0의 D6(JTBD)·D7(AARRR)을 통합. v3.0 D6~D8은 재무·혁신·KPI 전용.
+    checks:
+      - id      : D4-C1
+        name    : Functional Jobs 최소 2개
+        desc    : 고객이 실제 해결하려는 기능적 과업(Functional Job)이 2개 이상 명시되는가
+        pattern : "Functional Job|기능적 과업|Functional.*해결|B3"
+        weight  : 3
         level   : MUST
 
+      - id      : D4-C2
+        name    : Emotional / Social Jobs
+        desc    : 감정적(Emotional) 또는 사회적(Social) 욕구가 1개 이상 명시되는가
+        pattern : "Emotional Job|Social Job|감정적 욕구|사회적 인정|정체성"
+        weight  : 2
+        level   : SHOULD
+
       - id      : D4-C3
-        name    : 리스크 & 미티게이션
-        desc    : 크리티컬 리스크 또는 Mitigation 방안이 최소 2개 이상 명시되어 있는가
-        pattern : "Critical|리스크.*Mitigation|Mitigation|대응 방안|Contingency|크리티컬"
-        weight  : 5
+        name    : Switching Trigger 최소 2개
+        desc    : 고객이 기존 솔루션에서 이탈하는 전환 트리거가 2개 이상 명시되는가
+        pattern : "Switching Trigger|전환 트리거|이탈 계기|기존.*이탈"
+        weight  : 3
         level   : MUST
+
+      - id      : D4-C4
+        name    : Acquisition CAC 포함 (AARRR)
+        desc    : 고객 획득 채널 Top3 또는 CAC 가정값이 명시되는가
+        pattern : "Acquisition|CAC|고객 획득|채널.*Top|B4"
+        weight  : 2
+        level   : MUST
+
+      - id      : D4-C5
+        name    : Retention 락인 요소 (AARRR)
+        desc    : 락인(Lock-in) 요소 또는 재방문율 KPI가 명시되는가
+        pattern : "Retention|락인|Lock-in|재방문|이탈률"
+        weight  : 2
+        level   : MUST
+
+      - id      : D4-C6
+        name    : Referral / NPS 목표 (AARRR)
+        desc    : 바이럴 메커니즘 또는 NPS 목표값이 명시되는가
+        pattern : "Referral|바이럴|NPS|추천.*메커니즘"
+        weight  : 2
+        level   : SHOULD
 
   # ──────────────────────────────────────────────────────────
   - id     : D5
     name   : 적용가능성 (Applicability)
-    weight : 14
-    desc   : Executive Summary + Top 5 Insights + 크로스 라이브러리 권고가 포함되는가
+    weight : 10
+    desc   : Top 5 Insights + 크로스 라이브러리 권고가 포함되는가
     checks:
       - id      : D5-C1
-        name    : Executive Summary 또는 Top 5 Insights 포함
+        name    : Top 5 Key Insights 포함
         desc    : Executive Summary 또는 Top 5 Key Insights 섹션이 포함되어 있는가
         pattern : "Executive Summary|Top 5|Key Insights|핵심 결론"
-        weight  : 5
+        weight  : 4
         level   : MUST
 
       - id      : D5-C2
         name    : 근거수준 표시
         desc    : "[HIGH] [MEDIUM] [LOW] [ESTIMATED] 중 하나 이상 명시"
         pattern : "\\[HIGH\\]|\\[MEDIUM\\]|\\[LOW\\]|\\[ESTIMATED\\]"
-        weight  : 4
+        weight  : 2
         level   : SHOULD
 
       - id      : D5-C3
         name    : 크로스 라이브러리 연계 권고
-        desc    : PE-STRAT/PE-FIN/PE-SEMI/PE-AI/PE-DD/PE-NBD 중 하나 이상 포함되는가
-        pattern : "PE-STRAT|PE-FIN|PE-SEMI|PE-AI|PE-DD|PE-NBD|\\[CROSS:"
-        weight  : 5
+        desc    : PE-STRAT/PE-FIN/PE-SEMI/PE-AI/PE-DD/PE-NBD/PE-JV 중 하나 이상 포함
+        pattern : "PE-STRAT|PE-FIN|PE-SEMI|PE-AI|PE-DD|PE-NBD|PE-JV|\\[CROSS:"
+        weight  : 4
         level   : MUST
 
   # ──────────────────────────────────────────────────────────
-  # ★ 신규 v2.0 — D6 JTBD 고객심리 분석
+  # ★ 신규 v3.0 — D6  IRR 역산 세부
+  #   pe7_product_mece_loop.py v2.0 parse_analysis() D6 파싱 완전 정합
+  #   파싱 키: irr_entry_ev_cap / irr_bear / irr_exit_sensitivity
   # ──────────────────────────────────────────────────────────
   - id     : D6
-    name   : 고객심리 JTBD (Jobs-to-be-Done)
+    name   : IRR 역산 세부 (FIN-06 연동)
     weight : 14
-    desc   : Functional / Emotional / Social Jobs + Switching Trigger가 명시되는가
-    version_added: "2.0"
+    version_added: "3.0"
+    desc   : Entry EV 상한선·Bear IRR·Exit Multiple 감응도가 B6에 명시되는가
+    parse_keys: [irr_entry_ev_cap, irr_bear, irr_exit_sensitivity, irr]
     checks:
       - id      : D6-C1
-        name    : Functional Jobs 최소 2개
-        desc    : 고객이 실제 해결하려는 기능적 과업(Functional Job)이 2개 이상 명시되는가
-        pattern : "Functional Job|기능적 과업|B3-1|Functional.*해결"
+        name    : IRR 역산 수식 명시 (Base)
+        desc    : B6 내 IRR 역산 공식 또는 목표 IRR %가 명시되는가 (pe7 parse: irr)
+        pattern : "IRR[\\s\\u00a0]*(?:역산|결과|기준)[^\\n]*?[\\d\.]+%|IRR\\s*[≈=~]\\s*[\\d\.]+%"
         weight  : 4
         level   : MUST
 
       - id      : D6-C2
-        name    : Emotional Jobs 최소 1개
-        desc    : 고객의 감정적 욕구(Emotional Job)가 1개 이상 명시되는가
-        pattern : "Emotional Job|감정적 욕구|B3-2|Emotional.*고객"
-        weight  : 3
-        level   : MUST
-
-      - id      : D6-C3
-        name    : Social Jobs 최소 1개
-        desc    : 사회적 인정 또는 정체성 욕구(Social Job)가 명시되는가
-        pattern : "Social Job|사회적 인정|정체성|B3-3"
-        weight  : 3
-        level   : SHOULD
-
-      - id      : D6-C4
-        name    : Switching Trigger 최소 2개
-        desc    : 고객이 기존 솔루션에서 이탈하는 전환 트리거가 2개 이상 명시되는가
-        pattern : "Switching Trigger|전환 트리거|이탈 계기|B3-4|기존.*이탈"
+        name    : Entry EV 상한선 명시
+        desc    : 목표 IRR 달성을 위한 Entry EV 최대 허용치가 억원 단위로 명시되는가 (pe7 parse: irr_entry_ev_cap)
+        pattern : "Entry EV\\s*상한|IRR.*Entry EV.*상한|상한선.*억|억원.*상한"
         weight  : 4
         level   : MUST
 
+      - id      : D6-C3
+        name    : Bear IRR 명시
+        desc    : Bear 시나리오 기준 IRR %가 별도 명시되는가 (pe7 parse: irr_bear)
+        pattern : "Bear\\s*IRR|Bear[^\\n]*IRR[^\\d]*[\\d\.]+%"
+        weight  : 3
+        level   : MUST
+
+      - id      : D6-C4
+        name    : Exit Multiple 감응도 분석
+        desc    : Exit Multiple ±1x 변화 시 IRR 변화폭(%)이 명시되는가 (pe7 parse: irr_exit_sensitivity)
+        pattern : "Exit.*Multiple.*\\u00b11x|Exit.*감응도|±1x.*IRR|Exit Multiple.*변화"
+        weight  : 2
+        level   : SHOULD
+
+      - id      : D6-C5
+        name    : 재무 리스크 Top3 확률·영향도
+        desc    : 재무 리스크 항목에 확률(H/M/L)과 영향도가 함께 명시되는가
+        pattern : "재무 리스크|[확률·영향].*[HML]|리스크.*확률|Top.*리스크"
+        weight  : 1
+        level   : SHOULD
+
   # ──────────────────────────────────────────────────────────
-  # ★ 신규 v2.0 — D7 AARRR 성장퍼널
+  # ★ 신규 v3.0 — D7  Blue Ocean ERRC + North Star Metric
+  #   pe7_product_mece_loop.py v2.0 parse_analysis() D7 파싱 완전 정합
+  #   파싱 키: nsm_metric / nsm_target / blue_ocean_actions / vanity_metric_warning
   # ──────────────────────────────────────────────────────────
   - id     : D7
-    name   : 성장퍼널 AARRR
-    weight : 7
-    desc   : Acquisition / Activation / Retention / Revenue / Referral 5단계가 포함되는가
-    version_added: "2.0"
+    name   : Blue Ocean & NSM (혁신 포지셔닝)
+    weight : 10
+    version_added: "3.0"
+    desc   : ERRC 4액션 + NSM 지표명·목표값·선행지표 + Vanity Metric 경고가 B7에 포함되는가
+    parse_keys: [blue_ocean_actions, nsm_metric, nsm_target, vanity_metric_warning]
     checks:
       - id      : D7-C1
-        name    : Acquisition CAC 포함
-        desc    : 고객 획득 채널 Top3 또는 CAC 가정값이 명시되는가
-        pattern : "Acquisition|CAC|고객 획득|채널.*Top|B4-1"
-        weight  : 2
+        name    : ERRC 4액션 전체 명시
+        desc    : Eliminate / Reduce / Raise / Create 4가지 액션이 모두 B7에 명시되는가 (pe7 parse: blue_ocean_actions)
+        pattern : "Eliminate\\([^)]+\\).*Reduce\\([^)]+\\).*Raise\\([^)]+\\).*Create\\([^)]+\\)|ERRC.*4액션|Blue Ocean.*ERRC"
+        weight  : 3
         level   : MUST
 
       - id      : D7-C2
-        name    : Retention 락인 요소 포함
-        desc    : 락인(Lock-in) 요소 또는 재방문율 KPI가 명시되는가
-        pattern : "Retention|락인|Lock-in|재방문|B4-3"
-        weight  : 2
+        name    : North Star Metric 지표명·측정주기·목표값
+        desc    : NSM 지표명, 측정 주기(일/주/월), 목표값이 파이프(|) 구분으로 명시되는가 (pe7 parse: nsm_metric, nsm_target)
+        pattern : "North Star Metric.*\\|.*\\||NSM.*지표.*목표|North Star Metric:[^\\n]+"
+        weight  : 3
         level   : MUST
 
       - id      : D7-C3
-        name    : Revenue ARPU 또는 결제전환율
-        desc    : ARPU 또는 결제 전환율 수치가 명시되는가
-        pattern : "ARPU|결제 전환|Revenue.*전환|B4-4"
+        name    : NSM 선행지표 최소 2개
+        desc    : NSM을 움직이는 선행지표(Input Metrics)가 2개 이상 명시되는가
+        pattern : "NSM 선행지표|선행지표.*NSM|Input Metric.*NSM|NSM.*선행.*[\\d]"
         weight  : 2
         level   : SHOULD
 
       - id      : D7-C4
-        name    : Referral 바이럴 메커니즘
-        desc    : 바이럴 메커니즘 또는 NPS 목표값이 명시되는가
-        pattern : "Referral|바이럴|NPS|추천.*메커니즘|B4-5"
-        weight  : 1
+        name    : Vanity Metric 경고 항목
+        desc    : 허무 지표(Vanity Metric) 항목이 구체적으로 명시되는가 (pe7 parse: vanity_metric_warning)
+        pattern : "Vanity Metric 경고|허무 지표|Vanity Metric:[^\\n]+"
+        weight  : 2
         level   : SHOULD
 
   # ──────────────────────────────────────────────────────────
-  # ★ 신규 v2.0 — D8 Blue Ocean & North Star Metric
+  # ★ 신규 v3.0 — D8  KPI 로드맵 (Phase별 마일스톤 + Go/No-Go)
+  #   pe7_product_mece_loop.py v2.0 parse_analysis() D8 파싱 완전 정합
+  #   파싱 키: kpi_phase1 / kpi_phase2 / kpi_phase3 / go_no_go_trigger
   # ──────────────────────────────────────────────────────────
   - id     : D8
-    name   : 혁신·KPI (Blue Ocean & NSM)
-    weight : 7
-    desc   : ERRC 4액션 + North Star Metric 정의 + Vanity Metric 경고가 포함되는가
-    version_added: "2.0"
+    name   : KPI 로드맵 (실행 마일스톤)
+    weight : 10
+    version_added: "3.0"
+    desc   : Phase 1~3 마일스톤 + 핵심 KPI 5개 + Go/No-Go 트리거가 B8에 포함되는가
+    parse_keys: [kpi_phase1, kpi_phase2, kpi_phase3, go_no_go_trigger]
     checks:
       - id      : D8-C1
-        name    : ERRC 4액션 프레임워크
-        desc    : Eliminate / Reduce / Raise / Create 4개 액션이 모두 명시되는가
-        pattern : "Eliminate|Reduce|Raise|Create|ERRC|Blue Ocean|B7-1"
+        name    : Phase 1 마일스톤 (0~6개월)
+        desc    : Phase 1 (0~6개월) 기간·달성 목표가 구체적으로 명시되는가 (pe7 parse: kpi_phase1)
+        pattern : "Phase\\s*1[^:\\n]*:[\\s]*[^\\n]+|Phase 1.*0.?~.?6"
         weight  : 3
         level   : MUST
 
       - id      : D8-C2
-        name    : North Star Metric 정의
-        desc    : North Star Metric 또는 핵심 성장 지표가 측정 주기와 함께 명시되는가
-        pattern : "North Star|NSM|핵심 성장 지표|B7-3|North Star Metric"
+        name    : Phase 2 마일스톤 (6~18개월)
+        desc    : Phase 2 (6~18개월) 기간·달성 목표가 명시되는가 (pe7 parse: kpi_phase2)
+        pattern : "Phase\\s*2[^:\\n]*:[\\s]*[^\\n]+|Phase 2.*6.?~.?18"
         weight  : 2
         level   : MUST
 
       - id      : D8-C3
-        name    : NSM 선행지표 (Input Metrics)
-        desc    : NSM을 움직이는 선행지표(Input Metrics)가 최소 2개 명시되는가
-        pattern : "Input Metric|선행지표|B7-4|NSM.*선행"
-        weight  : 1
+        name    : Phase 3 마일스톤 (18~36개월)
+        desc    : Phase 3 (18~36개월) 기간·달성 목표가 명시되는가 (pe7 parse: kpi_phase3)
+        pattern : "Phase\\s*3[^:\\n]*:[\\s]*[^\\n]+|Phase 3.*18.?~.?36"
+        weight  : 2
         level   : SHOULD
 
       - id      : D8-C4
-        name    : Vanity Metric 위험 경고
-        desc    : 허무 지표(Vanity Metric) 위험 항목이 명시되는가
-        pattern : "Vanity Metric|허무 지표|B7-5|Vanity.*위험"
-        weight  : 1
+        name    : 핵심 KPI 5개 (지표|주기|목표값)
+        desc    : 측정 주기와 목표값이 함께 명시된 KPI가 5개 이상 포함되는가
+        pattern : "핵심 KPI.*5|KPI.*\\|.*\\|.*\\||KPI [1-5]|ARR.*NPS.*수율"
+        weight  : 2
         level   : SHOULD
 
+      - id      : D8-C5
+        name    : Go/No-Go 트리거 명시
+        desc    : 특정 조건 미달 시 피벗·철수를 결정하는 Go/No-Go 트리거가 명시되는가 (pe7 parse: go_no_go_trigger)
+        pattern : "Go[/\\\\]?No[\\-\\s]?Go\\s*트리거|Go/No-Go.*Pivot|Go-No-Go[^\\n]+"
+        weight  : 1
+        level   : MUST
+
+  # ──────────────────────────────────────────────────────────
+  - id     : D9
+    name   : 실행·리스크 (Executability)
+    weight : 4
+    desc   : TRL 수준 + 리스크 Mitigation이 포함되는가
+    checks:
+      - id      : D9-C1
+        name    : TRL 수준 명시
+        desc    : TRL 1~9 수준 수치가 명시되어 있는가
+        pattern : "TRL [1-9]|TRL\\d|Technology Readiness"
+        weight  : 2
+        level   : SHOULD
+
+      - id      : D9-C2
+        name    : 리스크 & Mitigation 최소 2개
+        desc    : 크리티컬 리스크 또는 Mitigation 방안이 최소 2개 이상 명시되어 있는가
+        pattern : "Critical|리스크.*Mitigation|Mitigation|대응 방안|Contingency|크리티컬"
+        weight  : 2
+        level   : MUST
+
 # ============================================================
-# PE-3 자동검증 셀프체크 (v2.0 확장)
+# pe7_product_mece_loop.py v2.0 파싱 키 ↔ QC 체크 대응표
+# ============================================================
+parse_key_dimension_map:
+  # D6 IRR 역산
+  irr               : { dimension: D6, check: D6-C1, level: MUST }
+  irr_entry_ev_cap  : { dimension: D6, check: D6-C2, level: MUST }
+  irr_bear          : { dimension: D6, check: D6-C3, level: MUST }
+  irr_exit_sensitivity: { dimension: D6, check: D6-C4, level: SHOULD }
+  # D7 Blue Ocean & NSM
+  blue_ocean_actions    : { dimension: D7, check: D7-C1, level: MUST }
+  nsm_metric            : { dimension: D7, check: D7-C2, level: MUST }
+  nsm_target            : { dimension: D7, check: D7-C2, level: MUST }
+  vanity_metric_warning : { dimension: D7, check: D7-C4, level: SHOULD }
+  # D8 KPI 로드맵
+  kpi_phase1      : { dimension: D8, check: D8-C1, level: MUST }
+  kpi_phase2      : { dimension: D8, check: D8-C2, level: MUST }
+  kpi_phase3      : { dimension: D8, check: D8-C3, level: SHOULD }
+  go_no_go_trigger: { dimension: D8, check: D8-C5, level: MUST }
+
+# ============================================================
+# PE-3 자동검증 셀프체크 v3.0 (33항목)
 # ============================================================
 self_check_items:
-  # D1~D5 (기존 유지)
+  # D1 명확성
   - "[ ] IDEA_NAME / DOMAIN / TARGET_CUSTOMER 입력필드 명시"
   - "[ ] B1~B8 블록 헤더 MECE 완비"
-  - "[ ] TAM/SAM/SOM 수치화 완료"
+  - "[ ] SYSTEM ROLE (McKinsey/Sequoia급) 명시"
+  # D2 구조적 MECE성
+  - "[ ] 고객·문제 정의 (B1 Pain Point / 3C)"
+  - "[ ] 시장구조 (B2 TAM/SAM/SOM / Porter)"
+  - "[ ] 비즈니스 모델 (B5 Unit Eco / Lean Canvas)"
+  - "[ ] Strategic Priorities 우선순위 표"
+  # D3 시장·재무 기본
+  - "[ ] TAM/SAM/SOM 달러 수치화 완료"
   - "[ ] Unit Economics (CAC/LTV/Payback/ARPU) 기재"
-  - "[ ] IRR 역산 수식 명시 (B6-2 MUST)"
   - "[ ] Bull/Base/Bear 3-시나리오 완성"
-  - "[ ] Phase 1/2/3 로드맵 & KPI 5개 기재"
-  - "[ ] 리스크 & Mitigation 3개 이상"
-  - "[ ] Executive Summary + Top 5 Key Insights"
-  - "[ ] 크로스 라이브러리 [CROSS: XX] 태그 포함"
-  # D6 JTBD (신규)
-  - "[ ] Functional Jobs 2개 이상 (B3-1)"
-  - "[ ] Emotional Jobs 1개 이상 (B3-2)"
-  - "[ ] Switching Trigger 2개 이상 (B3-4)"
-  # D7 AARRR (신규)
-  - "[ ] Acquisition 채널 Top3 + CAC (B4-1)"
-  - "[ ] Retention 락인 요소 (B4-3)"
-  - "[ ] Revenue ARPU + 결제전환율 (B4-4)"
-  # D8 Blue Ocean / NSM (신규)
-  - "[ ] ERRC 4액션 표 완성 (B7-1)"
-  - "[ ] North Star Metric 정의 (B7-3)"
-  - "[ ] Vanity Metric 위험 경고 (B7-5)"
+  - "[ ] CAGR 또는 YoY 성장률 명시"
+  # D4 고객심리·성장퍼널
+  - "[ ] Functional Jobs 2개 이상 (B3)"
+  - "[ ] Emotional / Social Jobs 1개 이상 (B3)"
+  - "[ ] Switching Trigger 2개 이상 (B3)"
+  - "[ ] Acquisition 채널 Top3 + CAC (B4)"
+  - "[ ] Retention 락인 요소 + 이탈률 (B4)"
+  - "[ ] Referral 바이럴 / NPS 목표 (B4)"
+  # D5 적용가능성
+  - "[ ] Top 5 Key Insights 섹션"
+  - "[ ] 근거수준 [HIGH/MEDIUM/LOW] 표시"
+  - "[ ] 크로스 라이브러리 [CROSS: PE-XX] 태그"
+  # D6 IRR 역산 ★
+  - "[ ] B6 IRR 역산 수치 (IRR ≈ __%) MUST"
+  - "[ ] Entry EV 상한선 (억원 단위) MUST"
+  - "[ ] Bear IRR (%) 별도 명시 MUST"
+  - "[ ] Exit Multiple ±1x 감응도 분석 SHOULD"
+  - "[ ] 재무 리스크 Top3 확률·영향도 SHOULD"
+  # D7 Blue Ocean & NSM ★
+  - "[ ] ERRC 4액션 Eliminate·Reduce·Raise·Create 전체 MUST"
+  - "[ ] North Star Metric 지표명|측정주기|목표값 MUST"
+  - "[ ] NSM 선행지표 2개 이상 SHOULD"
+  - "[ ] Vanity Metric 경고 항목 명시 SHOULD"
+  # D8 KPI 로드맵 ★
+  - "[ ] Phase 1 마일스톤 (0~6개월) MUST"
+  - "[ ] Phase 2 마일스톤 (6~18개월) MUST"
+  - "[ ] Phase 3 마일스톤 (18~36개월) SHOULD"
+  - "[ ] 핵심 KPI 5개 (지표|주기|목표값) SHOULD"
+  - "[ ] Go/No-Go 트리거 명시 MUST"
 
 # ============================================================
 # 점수 등급 정의
@@ -342,20 +453,25 @@ grade_thresholds:
 # 버전 이력
 # ============================================================
 changelog:
+  - version : "3.0"
+    date    : "2026-05-09"
+    changes :
+      - "🆕 D6 IRR 역산 세부 (14점, 5항목): Entry EV 상한선·Bear IRR·Exit 감응도 — pe7 v2.0 파싱 완전 정합"
+      - "🆕 D7 Blue Ocean & NSM (10점, 4항목): ERRC 4액션·NSM 지표·Vanity Metric — pe7 v2.0 파싱 완전 정합"
+      - "🆕 D8 KPI 로드맵 (10점, 5항목): Phase 1~3 마일스톤·핵심 KPI·Go/No-Go — pe7 v2.0 파싱 완전 정합"
+      - "🆕 parse_key_dimension_map 섹션 추가 (파싱키 ↔ QC 체크 대응표)"
+      - "♻️ D4 = JTBD + AARRR 통합 (14점, 6항목) — 기존 v2 D6·D7 역할 흡수"
+      - "♻️ D9 = 실행·리스크 경량화 (4점, 2항목) — 기존 D4 분리"
+      - "♻️ 차원 수: 8 → 9, 체크항목: 28 → 33, 셀프체크: 19 → 34"
+      - "📊 PASS 88점 유지, 총 배점 100점 재분배"
   - version : "2.0"
     date    : "2026-05-09"
     changes :
       - "🆕 D6 JTBD 고객심리 차원 신규 추가 (4항목, 14점)"
       - "🆕 D7 AARRR 성장퍼널 차원 신규 추가 (4항목, 7점)"
       - "🆕 D8 Blue Ocean + NSM 혁신·KPI 차원 신규 추가 (4항목, 7점)"
-      - "♻️ D1~D5 배점 재조정 (D3 16점 유지, D1/D2/D4/D5 14점)"
-      - "♻️ D2 체크항목 B1~B8 블록 기준으로 재정렬"
-      - "♻️ self_check_items 19개 항목으로 확장"
-      - "📊 총계: 8차원 / 28개 체크항목 / PASS 88점 유지"
   - version : "1.0"
     date    : "2026-05-09"
     changes :
       - "🆕 PE-3-PROD QC 체크리스트 v1.0 신규 생성"
       - "5차원(D1~D5) / 16개 체크항목 정의"
-      - "MUST/SHOULD 레벨 구분"
-      - "S/A/B/C/F 등급 정의 (PASS: 88점)"
