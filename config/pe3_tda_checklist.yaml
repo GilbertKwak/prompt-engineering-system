@@ -1,0 +1,187 @@
+# ============================================================
+# pe3_tda_checklist.yaml  v1.0
+# TDA (Total Deal Attractiveness) 체크리스트
+# pe3_product_checklist.yaml의 D6/D7/D8 결과를 종합하여
+# 딜(Deal) 전체 매력도를 정량 판정하는 최종 QC 레이어
+# ============================================================
+
+meta:
+  version: "1.0"
+  created: "2026-05-09"
+  author: "GilbertKwak"
+  purpose: >
+    pe3 D6(IRR역산) · D7(BlueOcean·NSM) · D8(KPI로드맵) 세 차원의
+    체크 결과를 통합하여 딜(투자·신사업·M&A) 전체 매력도를 S~D로 판정.
+    Notion 'PE3 Grade' 필드 자동 기록 및 Go/No-Go 트리거 조건 확정.
+  linked_files:
+    - config/pe3_product_checklist.yaml
+    - scripts/pe3_tda_validator.py
+    - config/pe7_product_mece_loop.yaml
+  notion_db: "collection://e34f78c6-d1df-4575-8a2f-a45d716c593e"
+
+# ============================================================
+# 1. TDA 점수 구성 (총 100점)
+# ============================================================
+scoring:
+  total_max: 100
+
+  dimensions:
+    D6_irr:
+      label: "IRR 역산 타당성"
+      weight: 40          # 재무 매력도가 가장 중요
+      sub_items:
+        - id: D6-T1
+          label: "Base IRR ≥ Target IRR"
+          level: MUST
+          points: 16
+          eval: "irr_base >= target_irr"
+        - id: D6-T2
+          label: "Bear IRR ≥ 허들레이트(15%)"
+          level: MUST
+          points: 12
+          eval: "irr_bear >= 15.0"
+        - id: D6-T3
+          label: "Entry EV ≤ EV Cap (역산 상한)"
+          level: MUST
+          points: 8
+          eval: "entry_ev <= irr_entry_ev_cap"
+        - id: D6-T4
+          label: "Exit Multiple ±1x에서 Bear IRR 미달 없음"
+          level: SHOULD
+          points: 4
+          eval: "irr_exit_sensitivity_ok == true"
+
+    D7_market:
+      label: "시장 차별성 & 성장 지표"
+      weight: 35
+      sub_items:
+        - id: D7-T1
+          label: "Blue Ocean Score ≥ 6 (10점 만점)"
+          level: MUST
+          points: 14
+          eval: "blue_ocean_score >= 6"
+        - id: D7-T2
+          label: "NSM Metric 정의 완료 (허상 지표 아님)"
+          level: MUST
+          points: 12
+          eval: "nsm_metric != '' and vanity_metric_warning == false"
+        - id: D7-T3
+          label: "NSM Target 수치 명시"
+          level: SHOULD
+          points: 6
+          eval: "nsm_target != ''"
+        - id: D7-T4
+          label: "Vanity Metric 경고 없음"
+          level: SHOULD
+          points: 3
+          eval: "vanity_metric_warning == false"
+
+    D8_execution:
+      label: "실행 로드맵 완성도"
+      weight: 25
+      sub_items:
+        - id: D8-T1
+          label: "KPI Phase1 수치 목표 명시"
+          level: MUST
+          points: 8
+          eval: "kpi_phase1 != ''"
+        - id: D8-T2
+          label: "KPI Phase2 수치 목표 명시"
+          level: MUST
+          points: 7
+          eval: "kpi_phase2 != ''"
+        - id: D8-T3
+          label: "Go No-Go Trigger 조건 명시"
+          level: MUST
+          points: 7
+          eval: "go_no_go_trigger != ''"
+        - id: D8-T4
+          label: "KPI Phase3 명시 (장기 비전)"
+          level: SHOULD
+          points: 3
+          eval: "kpi_phase3 != ''"
+
+# ============================================================
+# 2. TDA 등급 기준
+# ============================================================
+grade_table:
+  - grade: "S"
+    label: "최우선 투자·추진"
+    condition: "score >= 90 AND all MUST passed"
+    color: "purple"
+    action: "즉시 딜 소싱 / IC 상정"
+
+  - grade: "A"
+    label: "조건부 강력 추진"
+    condition: "score >= 75 AND all MUST passed"
+    color: "blue"
+    action: "세부 DD 착수 / 조건 협상 병행"
+
+  - grade: "B"
+    label: "잠재력 있음, 보완 필요"
+    condition: "score >= 55 AND MUST failed <= 1"
+    color: "green"
+    action: "핵심 MUST 보완 후 재평가"
+
+  - grade: "C"
+    label: "구조적 리스크 존재"
+    condition: "score >= 35 OR MUST failed >= 2"
+    color: "orange"
+    action: "재구조화 또는 EV 재협상"
+
+  - grade: "D"
+    label: "부적합"
+    condition: "score < 35 OR MUST failed >= 4"
+    color: "red"
+    action: "No-Go. 철회 또는 근본 재검토"
+
+# ============================================================
+# 3. MUST 항목 자동 실패 시 강등 규칙
+# ============================================================
+must_override:
+  description: >
+    MUST 항목 미통과 개수에 따라 점수와 무관하게 등급을 강등.
+    재무 MUST(D6-T1~T3) 중 1개라도 실패 시 최대 B등급으로 제한.
+  rules:
+    - failed_must_count: 1
+      if_dimension: "D6_irr"
+      max_grade: "B"
+    - failed_must_count: 2
+      max_grade: "C"
+    - failed_must_count: 3
+      max_grade: "C"
+    - failed_must_count: 4
+      max_grade: "D"
+    - failed_must_count_gte: 5
+      max_grade: "D"
+
+# ============================================================
+# 4. Notion 자동 기록 필드 매핑
+# ============================================================
+notion_field_map:
+  PE3_Grade:            "grade"              # S/A/B/C/D
+  PE3_Score:            "tda_score"          # 0~100 숫자
+  PE3_Failed_Must:      "failed_must_ids"    # [D6-T1, D7-T1, ...]
+  IRR_Result:           "irr_base"
+  IRR_Bear:             "irr_bear"
+  IRR_Entry_EV_Cap:     "irr_entry_ev_cap"
+  IRR_Exit_Sensitivity: "irr_exit_sensitivity_summary"
+  NSM_Metric:           "nsm_metric"
+  NSM_Target:           "nsm_target"
+  Blue_Ocean_Score:     "blue_ocean_score"
+  Vanity_Metric_Warning: "vanity_warning_text"
+  KPI_Phase1:           "kpi_phase1"
+  KPI_Phase2:           "kpi_phase2"
+  KPI_Phase3:           "kpi_phase3"
+  Go_No_Go_Trigger:     "go_no_go_trigger"
+  MECE_Status:          "✅ 완료"            # 판정 완료 시 자동 세팅
+
+# ============================================================
+# 5. Self-check (실행 전 수동 점검)
+# ============================================================
+self_check:
+  - "D6 irr_base, irr_bear, entry_ev, irr_entry_ev_cap 값이 모두 숫자로 입력되었는가?"
+  - "D7 blue_ocean_score가 0~10 사이 숫자인가?"
+  - "D7 nsm_metric이 허상 지표(DAU, 다운로드 수 등 단순 볼륨)가 아닌가?"
+  - "D8 kpi_phase1~3 및 go_no_go_trigger가 빈 문자열이 아닌가?"
+  - "target_irr 값이 Notion Target IRR 필드와 일치하는가?"
