@@ -1,0 +1,114 @@
+{
+  "meta": {
+    "version": "2.1",
+    "date": "2026-05-09",
+    "author": "Gilbert Kwak",
+    "description": "pe-graph KG v2.1 — HBM4 노드 클러스터 신규 반영 (P3 실행 결과)",
+    "parent_version": "v2.0",
+    "stats": {
+      "total_nodes": 42,
+      "total_edges": 60,
+      "new_nodes": 7,
+      "new_edges": 5
+    }
+  },
+  "delta": {
+    "new_nodes": [
+      {
+        "id": "HBM4-Core",
+        "label": "HBM4 Core",
+        "type": "SEMI_NODE",
+        "cluster": "HBM4",
+        "layer": "L3",
+        "attributes": {
+          "bandwidth": "1.2TB/s",
+          "process": "1c nm DRAM",
+          "stack_height": 16,
+          "status": "Star",
+          "bcg_matrix": "Star"
+        }
+      },
+      {
+        "id": "HBM4-TSV",
+        "label": "HBM4 TSV 기술",
+        "type": "TECH_NODE",
+        "cluster": "HBM4",
+        "layer": "L3",
+        "attributes": {
+          "via_pitch": "40μm",
+          "density": "ultra-high"
+        }
+      },
+      {
+        "id": "HBM4-DRAM-Cell",
+        "label": "HBM4 DRAM 셀",
+        "type": "SEMI_NODE",
+        "cluster": "HBM4",
+        "layer": "L3"
+      },
+      {
+        "id": "HBM4-BaseDie-Logic",
+        "label": "HBM4 베이스다이 로직",
+        "type": "SEMI_NODE",
+        "cluster": "HBM4",
+        "layer": "L3",
+        "attributes": {
+          "logic_node": "4nm",
+          "supplier": "TSMC"
+        }
+      },
+      {
+        "id": "HBM4-BW",
+        "label": "HBM4 1.2TB/s BW",
+        "type": "SPEC_NODE",
+        "cluster": "HBM4",
+        "layer": "L3"
+      },
+      {
+        "id": "SK-HBM4",
+        "label": "SK하이닉스 HBM4",
+        "type": "COMPANY_NODE",
+        "cluster": "HBM4",
+        "layer": "L2",
+        "attributes": {
+          "market_position": "#1",
+          "sample_delivery": "2026-Q1",
+          "mass_production": "2026-Q3"
+        }
+      },
+      {
+        "id": "NVIDIA-B300",
+        "label": "NVIDIA B300",
+        "type": "PRODUCT_NODE",
+        "cluster": "HBM4",
+        "layer": "L2",
+        "attributes": {
+          "hbm_type": "HBM4",
+          "launch": "2026-H2",
+          "hbm_stacks": 8
+        }
+      }
+    ],
+    "new_edges": [
+      { "source": "NVIDIA-GB200", "target": "HBM4-Core", "relation": "USES_NEXT_GEN", "weight": 0.9 },
+      { "source": "CoWoS", "target": "SK-HBM4", "relation": "PACKAGES", "weight": 0.85 },
+      { "source": "SK-HBM4", "target": "HBM4-Core", "relation": "MANUFACTURES", "weight": 1.0 },
+      { "source": "NVIDIA-B300", "target": "SK-HBM4", "relation": "SOURCES_FROM", "weight": 0.95 },
+      { "source": "HBM4-Core", "target": "HBM4-BW", "relation": "ACHIEVES", "weight": 1.0 }
+    ],
+    "updated_nodes": [
+      {
+        "id": "HBM3E",
+        "changes": {
+          "bcg_matrix": "Cash Cow",
+          "status": "Salvage",
+          "note": "HBM4 전환 가속에 따른 재분류 (v2.1)"
+        }
+      }
+    ]
+  },
+  "changelog": {
+    "v2.1": "HBM4 노드 클러스터 7종 신규, HBM3E Cash Cow 재분류, CON-02/03/04 v3.0 반영",
+    "v2.0": "pe-graph 초기 빌드 (CON-01~05 반영)"
+  }
+}
