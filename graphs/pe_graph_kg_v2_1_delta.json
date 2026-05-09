@@ -1,0 +1,30 @@
+{
+  "version": "2.1",
+  "generated_at": "2026-05-09T21:08:00+09:00",
+  "description": "pe-graph KG v2.1 delta — HBM4 노드 반영 재빌드",
+  "ref": "PE-IP T-09 / P3",
+  "nodes_added": [
+    { "id": "HBM4-Core",       "label": "HBM4 Core",              "domain": "SEMI", "category": "memory",      "status": "active",   "bcg": "Star" },
+    { "id": "HBM4-TSV",        "label": "HBM4 TSV (16-Hi)",       "domain": "SEMI", "category": "packaging",   "status": "active",   "bcg": "Star" },
+    { "id": "HBM4-DRAM",       "label": "HBM4 DRAM 셀",           "domain": "SEMI", "category": "memory",      "status": "active",   "bcg": "Star" },
+    { "id": "HBM4-BaseDie",    "label": "HBM4 베이스다이 로직",    "domain": "SEMI", "category": "logic",       "status": "active",   "bcg": "Star" },
+    { "id": "HBM4-BW",         "label": "HBM4 1.2TB/s BW",        "domain": "SEMI", "category": "performance", "status": "active",   "bcg": "Star" },
+    { "id": "SK-HBM4",         "label": "SK하이닉스 HBM4",         "domain": "SEMI", "category": "vendor",      "status": "active",   "bcg": "Star" },
+    { "id": "NVIDIA-B300",     "label": "NVIDIA B300 GPU",         "domain": "SEMI", "category": "customer",    "status": "active",   "bcg": "Star" }
+  ],
+  "nodes_updated": [
+    { "id": "HBM3E",           "label": "HBM3E",                  "domain": "SEMI", "category": "memory",      "status": "mature",   "bcg": "Cash Cow", "note": "Salvage/Cash Cow 재분류 (v2.1)" }
+  ],
+  "edges_added": [
+    { "source": "NVIDIA-GB200", "target": "HBM4-Core",  "relation": "requires",   "weight": 0.95 },
+    { "source": "NVIDIA-B300",  "target": "SK-HBM4",    "relation": "qualifies",  "weight": 0.90 },
+    { "source": "CoWoS",        "target": "SK-HBM4",    "relation": "integrates", "weight": 0.88 },
+    { "source": "HBM4-Core",   "target": "HBM4-TSV",   "relation": "contains",   "weight": 1.00 },
+    { "source": "HBM4-Core",   "target": "HBM4-DRAM",  "relation": "contains",   "weight": 1.00 },
+    { "source": "HBM4-Core",   "target": "HBM4-BaseDie","relation": "contains",   "weight": 1.00 },
+    { "source": "HBM4-Core",   "target": "HBM4-BW",    "relation": "achieves",   "weight": 0.98 }
+  ],
+  "con_refs_updated": ["CON-02 v3.0", "CON-03 v3.0", "CON-04 v3.0"],
+  "total_nodes_v2_1": 49,
+  "total_edges_v2_1": 67
+}
