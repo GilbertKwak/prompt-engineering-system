@@ -1,0 +1,100 @@
+# ============================================================
+# PE-7 Product Idea → MECE 자동분석 루프 — GitHub Actions
+# Version : 1.0 | Date: 2026-05-09
+# ============================================================
+
+name: "PE-7 | Product Idea → MECE 자동분석"
+
+on:
+  # 1) 스케줄: 매시간 정각 (KST 기준 +9h)
+  schedule:
+    - cron: "0 * * * *"
+
+  # 2) 수동 트리거
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry-run 모드 (API 미호출)"
+        required: false
+        default: "false"
+        type: boolean
+      record_id:
+        description: "특정 Notion 레코드 ID (선택)"
+        required: false
+        default: ""
+
+  # 3) Push 트리거 (PE-PROD 프롬프트 변경 시 재실행)
+  push:
+    paths:
+      - "prompts/PE-PROD/**"
+      - "config/pe7_product_mece_loop.yaml"
+
+jobs:
+  mece-analysis:
+    name: "MECE 자동분석 실행"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      NOTION_TOKEN    : ${{ secrets.NOTION_TOKEN }}
+      OPENAI_API_KEY  : ${{ secrets.OPENAI_API_KEY }}
+      GITHUB_TOKEN    : ${{ secrets.GITHUB_TOKEN }}
+      NOTION_DB_ID    : "e34f78c6-d1df-4575-8a2f-a45d716c593e"
+      GITHUB_REPO     : "GilbertKwak/prompt-engineering-system"
+      POLL_INTERVAL_SEC: "60"
+
+    steps:
+      - name: "📥 Checkout"
+        uses: actions/checkout@v4
+
+      - name: "🐍 Python 3.11 세팅"
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: "📦 의존성 설치"
+        run: pip install requests
+
+      - name: "🚀 PE-7 루프 실행"
+        run: |
+          DRY_RUN_FLAG=""
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            DRY_RUN_FLAG="--dry-run"
+          fi
+
+          RECORD_FLAG=""
+          if [ -n "${{ github.event.inputs.record_id }}" ]; then
+            RECORD_FLAG="--record-id ${{ github.event.inputs.record_id }}"
+          fi
+
+          python automation/pe7_product_mece_loop.py \
+            $DRY_RUN_FLAG \
+            $RECORD_FLAG \
+            --output pe7_results.json
+
+      - name: "📊 결과 요약 출력"
+        if: always()
+        run: |
+          if [ -f pe7_results.json ]; then
+            echo "## PE-7 실행 결과" >> $GITHUB_STEP_SUMMARY
+            python3 -c "
+import json, sys
+with open('pe7_results.json') as f:
+    data = json.load(f)
+if isinstance(data, dict): data = [data]
+for r in data:
+    status = '✅' if r.get('status')=='done' else '❌'
+    idea = r.get('idea', '?')
+    p = r.get('parsed', {})
+    print(f'| {status} | {idea} | PE-3: {p.get(\"pe3_score\",\"?\")} | IRR: {p.get(\"irr\",\"?\")}% |')
+" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: "💾 결과 아티팩트 저장"
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe7-mece-results-${{ github.run_id }}
+          path: pe7_results.json
+          retention-days: 30

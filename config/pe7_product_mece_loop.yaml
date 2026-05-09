@@ -1,0 +1,125 @@
+# ============================================================
+# PE-7 Product Idea → MECE 자동분석 루프 설정
+# Version : 1.0 | Date: 2026-05-09
+# GitHub  : GilbertKwak/prompt-engineering-system
+# ============================================================
+
+meta:
+  name        : PE-7 Product MECE Loop
+  version     : "1.0"
+  created     : "2026-05-09"
+  author      : Gilbert
+  description : |
+    Notion Product Ideas DB에 새 레코드(⏳ 대기중) 감지 시
+    PE-PROD-ORCH v1.0 프롬프트를 자동 실행하여 MECE 분석 초안 생성
+
+# ── 트리거 설정 ──────────────────────────────────────────────
+trigger:
+  type         : polling           # polling | webhook (추후 확장)
+  interval_sec : 60                # 폴링 주기 (초)
+  filter:
+    property   : "MECE Status"
+    value      : "⏳ 대기중"
+  sort:
+    property   : "Created"
+    direction  : ascending
+
+# ── Notion 연동 ──────────────────────────────────────────────
+notion:
+  database_id  : "e34f78c6-d1df-4575-8a2f-a45d716c593e"   # Product Ideas DB
+  hub_page_id  : "33955ed4-36f0-81cc-9f0b-d014d631aa7b"   # PE 허브 페이지
+  api_version  : "2022-06-28"
+  status_field : "MECE Status"
+  status_values:
+    pending    : "⏳ 대기중"
+    running    : "🔄 분석중"
+    done       : "✅ 완료"
+    error      : "❌ 오류"
+  output_fields:                   # 분석 완료 후 업데이트 필드
+    - PE3 Score
+    - IRR Result
+    - TAM
+    - Key Insight
+    - Notion Draft URL
+    - Cross Library
+
+# ── OpenAI 설정 ──────────────────────────────────────────────
+openai:
+  model        : gpt-4o
+  temperature  : 0.1
+  max_tokens   : 4000
+  timeout_sec  : 120
+  prompt_files:
+    orchestrator : prompts/PE-PROD/pe_prod_orch_v1.0.md
+    mece_frame   : prompts/PE-PROD/pe_prod_01_mece_framework.md
+    financial    : prompts/PE-PROD/pe_prod_04_financial_model.md
+
+# ── 기본값 설정 ──────────────────────────────────────────────
+defaults:
+  actor_type     : "대기업 신사업팀"
+  analysis_depth : "Standard"
+  target_irr     : "20%"
+  domain         : "범용"
+  region         : "글로벌"
+
+# ── 크로스 라이브러리 자동 연계 규칙 ──────────────────────────
+cross_library_rules:
+  - condition : "domain IN ['반도체', 'AI']"
+    trigger   : ["PE-SEMI", "PE-AI"]
+    reason    : "기술 특화 심층 검증 필요"
+  - condition : "irr_result < 15"
+    trigger   : ["PE-FIN"]
+    reason    : "Entry EV 재협상 근거 생성 (PE-FIN-06 BFA)"
+  - condition : "tam_value_B > 10"   # TAM > $10B
+    trigger   : ["PE-STRAT"]
+    reason    : "국가전략급 분석 스케일 적용"
+  - condition : "analysis_depth == 'Deep Dive'"
+    trigger   : ["PE-DD"]
+    reason    : "실사·밸류에이션 연계"
+
+# ── GitHub 연동 ──────────────────────────────────────────────
+github:
+  repo         : "GilbertKwak/prompt-engineering-system"
+  create_issue : true
+  labels       : ["PE-PROD", "auto-analysis"]
+  assignees    : ["GilbertKwak"]
+
+# ── 품질 게이트 (PE-3 자동검증) ──────────────────────────────
+quality_gates:
+  - id       : QG-1
+    name     : MECE 완료
+    check    : "Layer A~E 모두 포함"
+    min_score: 80
+  - id       : QG-2
+    name     : 시장 규모 수치화
+    check    : "TAM/SAM/SOM에 $ 또는 단위 수치"
+    min_score: 85
+  - id       : QG-3
+    name     : 재무 모델
+    check    : "IRR 역산 수식 + 3시나리오"
+    min_score: 88
+  - id       : QG-4
+    name     : PE-3 전체
+    check    : "5차원 품질 채점 ≥ 88점"
+    min_score: 88
+
+# ── 로깅 설정 ────────────────────────────────────────────────
+logging:
+  level      : INFO
+  file       : logs/pe7_mece_loop.log
+  max_bytes  : 10485760   # 10MB
+  backup_count: 5
+
+# ── 버전 이력 ────────────────────────────────────────────────
+changelog:
+  - version : "1.0"
+    date    : "2026-05-09"
+    changes :
+      - "🆕 PE-7 루프 v1.0 신규 생성"
+      - "Notion Product Ideas DB 연동 (e34f78c6)"
+      - "PE-PROD-ORCH v1.0 프롬프트 자동 실행"
+      - "OpenAI gpt-4o 호출 + 분석 초안 Notion 페이지 생성"
+      - "MECE Status 자동 업데이트 (대기중→분석중→완료/오류)"
+      - "크로스 라이브러리 자동 연계 규칙 4종"
+      - "GitHub Issue 자동 등록"
+      - "4개 Quality Gate (QG-1~4) 정의"
