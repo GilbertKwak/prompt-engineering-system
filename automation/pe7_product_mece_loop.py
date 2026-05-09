@@ -1,8 +1,19 @@
 #!/usr/bin/env python3
 """
 pe7_product_mece_loop.py — PE-7 Product Idea → MECE 자동분석 루프
-Version : 2.0 | Date: 2026-05-09
+Version : 2.1 | Date: 2026-05-09
 Author  : Gilbert
+
+Changelog v2.1:
+  [★ GATE-2] run_pe3_tda_qc() 2차 게이트 추가
+    - Pipeline: PROD QC (1차) → TDA QC (2차) 순차 실행
+    - TDA QC: pe3_tda_validator.validate() 동적 임포트
+    - process_record()에 Gate-2 블록 삽입 (Step 3.6)
+    - notion_update_status()에 tda_score / tda_grade / tda_failed_must 필드 추가
+    - GitHub Issue body에 TDA QC 요약 추가
+    - --tda-strict 플래그: TDA 점수 < 임계값 시 중단
+    - --tda-qc-only 플래그: TDA 단독 QC 모드
+    - --gate2-threshold 플래그: TDA 통과 기준점 (기본 80)
 
 Changelog v2.0:
   [★ CORE] D6/D7/D8 파싱 패턴 신규 추가
@@ -20,12 +31,13 @@ Changelog v1.1 (이전):
   - QC 점수 → Notion PE3 Score 자동 기록
   - --dry-run / --qc-only / --qc-strict 플래그
 
-Pipeline v2.0:
+Pipeline v2.1:
   Notion DB 폴링
     → '⏳ 대기중' 레코드 감지
     → PE-PROD-ORCH v2 프롬프트 조합 (9-Framework)
     → OpenAI API 호출 (gpt-4o)
-    → PE-3-PROD QC 자동 검증 (D1~D8)
+    → [Gate-1] PE-3-PROD QC 자동 검증 (D1~D8)       ← Step 3.5
+    → [Gate-2] PE-3-TDA QC 자동 검증 (기술실사)      ← Step 3.6 ★신규
     → D6/D7/D8 수치 파싱 & Notion 기록
     → 분석 초안 Notion 하위 페이지 생성
     → DB 레코드 업데이트 (전체 필드)
@@ -35,12 +47,15 @@ Usage:
   python pe7_product_mece_loop.py                          # 폴링 1회
   python pe7_product_mece_loop.py --watch                  # 60초 반복
   python pe7_product_mece_loop.py --dry-run                # API 미호출
-  python pe7_product_mece_loop.py --qc-only --file <f.md> # 로컬 QC
-  python pe7_product_mece_loop.py --qc-strict              # 88점 미만 중단
+  python pe7_product_mece_loop.py --qc-only --file <f.md> # 로컬 PROD QC
+  python pe7_product_mece_loop.py --tda-qc-only --file <f.md>  # 로컬 TDA QC
+  python pe7_product_mece_loop.py --qc-strict              # PROD 88점 미만 중단
+  python pe7_product_mece_loop.py --tda-strict             # TDA 임계값 미만 중단
+  python pe7_product_mece_loop.py --gate2-threshold 85     # TDA 통과 기준점 지정
   python pe7_product_mece_loop.py --record-id <id>         # 단건 처리
   python pe7_product_mece_loop.py --revalidate-all         # 전체 Notion QC 재검증
   python pe7_product_mece_loop.py --pe3-dashboard          # PE-3 점수 대시보드
-  python pe7_product_mece_loop.py --ab-test \              # v1 vs v2 A/B 비교
+  python pe7_product_mece_loop.py --ab-test \\              # v1 vs v2 A/B 비교
     --v1 pe_prod_orch_v1.md --v2 pe_prod_orch_v2.md
 
 Env vars required:
@@ -71,6 +86,16 @@ try:
 except ImportError:
     pass
 
+# ── PE-3-TDA QC 모듈 동적 임포트 ★ v2.1 신규 ────────────────────────────────
+_TDA_QC_AVAILABLE = False
+try:
+    _this_dir = Path(__file__).resolve().parent
+    sys.path.insert(0, str(_this_dir))
+    from pe3_tda_validator import validate as _tda_validate, load_checks as _tda_load_checks
+    _TDA_QC_AVAILABLE = True
+except ImportError:
+    pass
+
 
 # ── 환경변수 ─────────────────────────────────────────────────────────────────
 NOTION_TOKEN  = os.environ.get("NOTION_TOKEN", "")
@@ -88,7 +113,11 @@ NOTION_HEADERS = {
     "Content-Type": "application/json",
 }
 
-_CHECKLIST_YAML = Path(__file__).resolve().parent.parent / "config" / "pe3_product_checklist.yaml"
+_CHECKLIST_YAML     = Path(__file__).resolve().parent.parent / "config" / "pe3_product_checklist.yaml"
+_TDA_CHECKLIST_YAML = Path(__file__).resolve().parent.parent / "config" / "pe3_tda_checklist.yaml"
+
+# Gate-2 기본 통과 임계값 (--gate2-threshold 로 재정의 가능)
+_GATE2_DEFAULT_THRESHOLD = 80
 
 
 # ── MECE 분석 프롬프트 (PE-PROD-ORCH v2.0 · 9-Framework) ─────────────────────
@@ -186,7 +215,7 @@ PE-FIN 연동: Yes
 =========================================== """
 
 
-# ── PE-3-PROD QC ─────────────────────────────────────────────────────────────
+# ── Gate-1: PE-3-PROD QC ─────────────────────────────────────────────────────
 
 def run_pe3_qc(text: str, idea_name: str = "",
                strict: bool = False) -> dict:
@@ -208,7 +237,7 @@ def run_pe3_qc(text: str, idea_name: str = "",
 
     bar_filled = int(overall / 5) if overall else 0
     bar = "█" * bar_filled + "░" * (20 - bar_filled)
-    print(f"  🔍 [PE-3 QC] [{bar}] {overall:.1f}%  {grade}")
+    print(f"  🔍 [Gate-1 PROD QC] [{bar}] {overall:.1f}%  {grade}")
     if failed_must:
         print(f"  ⚠️  MUST 미충족 ({len(failed_must)}건):")
         for item in failed_must:
@@ -220,6 +249,55 @@ def run_pe3_qc(text: str, idea_name: str = "",
         raise ValueError(
             f"[QC-STRICT] PE-3 점수 {overall:.1f}% < 88% "
             f"— '{idea_name}' Notion 업데이트 중단"
+        )
+
+    return {"overall": overall, "grade": grade,
+            "failed_must": failed_must, "raw": result}
+
+
+# ── Gate-2: PE-3-TDA QC ★ v2.1 신규 ─────────────────────────────────────────
+
+def run_pe3_tda_qc(text: str, idea_name: str = "",
+                   strict: bool = False,
+                   threshold: int = _GATE2_DEFAULT_THRESHOLD) -> dict:
+    """
+    2차 게이트: 기술 실사(TDA) QC 검증.
+
+    pe3_tda_validator 모듈이 없으면 건너뜀(소프트 스킵).
+    strict=True 이고 overall < threshold 이면 ValueError 발생 → 파이프라인 중단.
+
+    반환: {overall, grade, failed_must, raw}
+    """
+    if not _TDA_QC_AVAILABLE:
+        print("  ⚠️  [Gate-2] pe3_tda_validator 미임포트 — TDA QC 건너뜀")
+        return {"overall": None, "grade": "N/A", "failed_must": [], "raw": {}}
+
+    yaml_path = str(_TDA_CHECKLIST_YAML) if _TDA_CHECKLIST_YAML.exists() else None
+    checks = _tda_load_checks(yaml_path)
+    result = _tda_validate(text, checks)
+    overall = result["overall"]
+    grade   = result["grade"]
+
+    failed_must = []
+    for d_id, dr in result.get("dimensions", {}).items():
+        for chk in dr.get("checks", []):
+            if chk["level"] == "MUST" and not chk["passed"]:
+                failed_must.append(f"{chk['id']}: {chk['name']}")
+
+    bar_filled = int(overall / 5) if overall else 0
+    bar = "█" * bar_filled + "░" * (20 - bar_filled)
+    print(f"  🔬 [Gate-2 TDA  QC] [{bar}] {overall:.1f}%  {grade}")
+    if failed_must:
+        print(f"  ⚠️  TDA MUST 미충족 ({len(failed_must)}건):")
+        for item in failed_must:
+            print(f"      ✘ {item}")
+    else:
+        print(f"  ✅ TDA 모든 MUST 항목 통과")
+
+    if strict and overall < threshold:
+        raise ValueError(
+            f"[TDA-STRICT] TDA 점수 {overall:.1f}% < {threshold}% "
+            f"— '{idea_name}' Gate-2 차단"
         )
 
     return {"overall": overall, "grade": grade,
@@ -289,8 +367,12 @@ def notion_update_status(
     kpi_phase2: str = None,
     kpi_phase3: str = None,
     go_no_go_trigger: str = None,
+    # ── Gate-2 TDA QC ★ v2.1 신규 ──
+    tda_score: float = None,
+    tda_grade: str = None,
+    tda_failed_must: list = None,
 ) -> None:
-    """레코드 상태 및 D6/D7/D8 분석 결과 필드 업데이트."""
+    """레코드 상태 및 D6/D7/D8 분석 결과 + TDA QC 결과 필드 업데이트."""
 
     def rt(val, limit=2000):
         """Notion rich_text 블록 생성 헬퍼."""
@@ -343,6 +425,14 @@ def notion_update_status(
         props["KPI Phase3"]             = rt(kpi_phase3)
     if go_no_go_trigger:
         props["Go No-Go Trigger"]       = rt(go_no_go_trigger)
+
+    # ── Gate-2 TDA QC 필드 ★ v2.1 신규 ──
+    if tda_score is not None:
+        props["TDA Score"]              = {"number": tda_score}
+    if tda_grade:
+        props["TDA Grade"]              = rt(tda_grade)
+    if tda_failed_must:
+        props["TDA Failed Must"]        = rt("\n".join(tda_failed_must))
 
     url = f"https://api.notion.com/v1/pages/{page_id}"
     resp = requests.patch(url, headers=NOTION_HEADERS,
@@ -481,19 +571,19 @@ def parse_analysis(text: str) -> dict:
         "key_insight":         None,
         "cross_libs":          [],
         # D6: IRR 역산 세부
-        "irr_entry_ev_cap":    None,   # Entry EV 상한선
-        "irr_bear":            None,   # Bear 시나리오 IRR
-        "irr_exit_sensitivity": None,  # Exit Multiple 감응도
+        "irr_entry_ev_cap":    None,
+        "irr_bear":            None,
+        "irr_exit_sensitivity": None,
         # D7: Blue Ocean & NSM
-        "nsm_metric":          None,   # North Star Metric 지표명
-        "nsm_target":          None,   # NSM 목표값
-        "blue_ocean_actions":  None,   # ERRC 요약
-        "vanity_metric_warning": None, # Vanity Metric 경고 항목
+        "nsm_metric":          None,
+        "nsm_target":          None,
+        "blue_ocean_actions":  None,
+        "vanity_metric_warning": None,
         # D8: KPI 로드맵
-        "kpi_phase1":          None,   # Phase 1 마일스톤
-        "kpi_phase2":          None,   # Phase 2 마일스톤
-        "kpi_phase3":          None,   # Phase 3 마일스톤
-        "go_no_go_trigger":    None,   # Go/No-Go 트리거
+        "kpi_phase1":          None,
+        "kpi_phase2":          None,
+        "kpi_phase3":          None,
+        "go_no_go_trigger":    None,
     }
 
     # ── D1~D5 파싱 (기존) ────────────────────────────────────────────────────
@@ -520,8 +610,7 @@ def parse_analysis(text: str) -> dict:
         if lib in text:
             result["cross_libs"].append(lib)
 
-    # ── D6: IRR 역산 세부 파싱 ★ 신규 ─────────────────────────────────────
-    # D6-1: Entry EV 상한선
+    # ── D6: IRR 역산 세부 파싱 ─────────────────────────────────────────────
     m = re.search(
         r"(?:Entry EV\s*상한선|IRR.*?Entry EV.*?상한)[^\d]*(\d[\d,\.]+)\s*억",
         text, re.IGNORECASE
@@ -529,7 +618,6 @@ def parse_analysis(text: str) -> dict:
     if m:
         result["irr_entry_ev_cap"] = f"{m.group(1).replace(',', '')}억원"
 
-    # D6-2: Bear IRR
     m = re.search(
         r"Bear\s*IRR[:\s]*([\d\.]+)%|Bear[^\n]*IRR[^\d]*([\d\.]+)%",
         text, re.IGNORECASE
@@ -538,7 +626,6 @@ def parse_analysis(text: str) -> dict:
         val = m.group(1) or m.group(2)
         result["irr_bear"] = float(val)
 
-    # D6-3: Exit Multiple 감응도
     m = re.search(
         r"Exit\s*Multiple[^\n]*±\s*1x[^\n]*([\+\-][\d\.]+%[^\n]*)",
         text, re.IGNORECASE
@@ -553,8 +640,7 @@ def parse_analysis(text: str) -> dict:
         if m:
             result["irr_exit_sensitivity"] = m.group(1).strip()
 
-    # ── D7: Blue Ocean & North Star Metric 파싱 ★ 신규 ────────────────────
-    # D7-1: North Star Metric 지표명
+    # ── D7: Blue Ocean & NSM 파싱 ──────────────────────────────────────────
     m = re.search(
         r"North\s*Star\s*Metric[:\s]+([^\|\n]+)(?:\|([^\|\n]+))?(?:\|([^\n]+))?",
         text, re.IGNORECASE
@@ -564,7 +650,6 @@ def parse_analysis(text: str) -> dict:
         if m.group(3):
             result["nsm_target"] = m.group(3).strip()
 
-    # D7-2: ERRC 4액션 한 줄 요약
     m = re.search(
         r"ERRC[:\s]+Eliminate\(([^)]+)\)[^R]*Reduce\(([^)]+)\)[^R]*Raise\(([^)]+)\)[^C]*Create\(([^)]+)\)",
         text, re.IGNORECASE | re.DOTALL
@@ -575,7 +660,6 @@ def parse_analysis(text: str) -> dict:
             f"| R:{m.group(3).strip()} | C:{m.group(4).strip()}"
         )
 
-    # D7-3: Vanity Metric 경고 항목
     m = re.search(
         r"Vanity\s*Metric\s*경고[:\s]+([^\n]+)",
         text, re.IGNORECASE
@@ -583,8 +667,7 @@ def parse_analysis(text: str) -> dict:
     if m:
         result["vanity_metric_warning"] = m.group(1).strip()
 
-    # ── D8: KPI 로드맵 파싱 ★ 신규 ──────────────────────────────────────────
-    # D8-1: Phase 1 마일스톤
+    # ── D8: KPI 로드맵 파싱 ──────────────────────────────────────────────────
     m = re.search(
         r"Phase\s*1[^:\n]*:[\s]*([^\n]+(?:\|[^\n]+)?)",
         text, re.IGNORECASE
@@ -592,7 +675,6 @@ def parse_analysis(text: str) -> dict:
     if m:
         result["kpi_phase1"] = m.group(1).strip()
 
-    # D8-2: Phase 2 마일스톤
     m = re.search(
         r"Phase\s*2[^:\n]*:[\s]*([^\n]+(?:\|[^\n]+)?)",
         text, re.IGNORECASE
@@ -600,7 +682,6 @@ def parse_analysis(text: str) -> dict:
     if m:
         result["kpi_phase2"] = m.group(1).strip()
 
-    # D8-3: Phase 3 마일스톤
     m = re.search(
         r"Phase\s*3[^:\n]*:[\s]*([^\n]+(?:\|[^\n]+)?)",
         text, re.IGNORECASE
@@ -608,7 +689,6 @@ def parse_analysis(text: str) -> dict:
     if m:
         result["kpi_phase3"] = m.group(1).strip()
 
-    # D8-4: Go/No-Go 트리거
     m = re.search(
         r"Go[/\\]?No[\-\s]?Go\s*트리거[:\s]+([^\n]+)",
         text, re.IGNORECASE
@@ -624,12 +704,14 @@ def parse_analysis(text: str) -> dict:
 def create_github_issue(idea_name: str, notion_url: str,
                         pe3_score: float, pe3_grade: str = "",
                         parsed: dict = None,
+                        tda_result: dict = None,
                         dry_run: bool = False) -> None:
     if not GITHUB_TOKEN or dry_run:
         return
     d6_summary = ""
     d7_summary = ""
     d8_summary = ""
+    tda_summary = ""
     if parsed:
         d6_summary = (
             f"\n- IRR (Base): {parsed.get('irr', 'N/A')}%  "
@@ -643,13 +725,23 @@ def create_github_issue(idea_name: str, notion_url: str,
             f"\n- KPI Phase1: {parsed.get('kpi_phase1', 'N/A')}"
             f"\n- Go/No-Go: {parsed.get('go_no_go_trigger', 'N/A')}"
         )
+    # ── Gate-2 TDA 요약 ★ v2.1 신규 ──
+    if tda_result and tda_result.get("overall") is not None:
+        tda_fm = tda_result.get("failed_must", [])
+        tda_summary = (
+            f"\n\n**Gate-2 TDA QC**: {tda_result['overall']:.1f}점  {tda_result.get('grade', '')}"
+        )
+        if tda_fm:
+            tda_summary += f"\n- TDA MUST 미충족: {', '.join(tda_fm[:3])}"
+
     body = (
-        f"**PE-PROD-ORCH v2.0 자동분석 완료**\n\n"
+        f"**PE-PROD-ORCH v2.1 자동분석 완료**\n\n"
         f"- 아이디어: {idea_name}\n"
-        f"- PE-3 점수: {pe3_score}/100  {pe3_grade}\n"
+        f"- Gate-1 PE-3 점수: {pe3_score}/100  {pe3_grade}\n"
         f"- Notion 초안: {notion_url}\n"
-        f"{d6_summary}{d7_summary}{d8_summary}\n\n"
-        f"자동 생성 by PE-7 루프 v2.0 ({datetime.now().strftime('%Y-%m-%d %H:%M KST')})"
+        f"{d6_summary}{d7_summary}{d8_summary}"
+        f"{tda_summary}\n\n"
+        f"자동 생성 by PE-7 루프 v2.1 ({datetime.now().strftime('%Y-%m-%d %H:%M KST')})"
     )
     owner, repo = GH_REPO.split("/")
     url = f"https://api.github.com/repos/{owner}/{repo}/issues"
@@ -667,7 +759,9 @@ def create_github_issue(idea_name: str, notion_url: str,
 # ── 레코드 단건 처리 ─────────────────────────────────────────────────────────
 
 def process_record(record: dict, dry_run: bool = False,
-                   qc_strict: bool = False) -> dict:
+                   qc_strict: bool = False,
+                   tda_strict: bool = False,
+                   gate2_threshold: int = _GATE2_DEFAULT_THRESHOLD) -> dict:
     props    = record["properties"]
     page_id  = record["id"]
     today    = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -701,7 +795,7 @@ def process_record(record: dict, dry_run: bool = False,
             notion_update_status(page_id, "❌ 오류")
         return {"idea": idea_name, "status": "error", "error": str(e)}
 
-    # Step 3.5) PE-3 QC
+    # ── Step 3.5) Gate-1: PE-3-PROD QC ──────────────────────────────────────
     qc_result = {"overall": None, "grade": "N/A", "failed_must": [], "raw": {}}
     try:
         qc_result = run_pe3_qc(analysis_text, idea_name=idea_name, strict=qc_strict)
@@ -715,14 +809,37 @@ def process_record(record: dict, dry_run: bool = False,
         return {"idea": idea_name, "status": "qc_fail",
                 "qc": qc_result, "error": str(qc_err)}
 
-    # Step 4) D1~D8 전 차원 파싱
+    # ── Step 3.6) Gate-2: PE-3-TDA QC ★ v2.1 신규 ──────────────────────────
+    tda_result = {"overall": None, "grade": "N/A", "failed_must": [], "raw": {}}
+    try:
+        tda_result = run_pe3_tda_qc(
+            analysis_text,
+            idea_name=idea_name,
+            strict=tda_strict,
+            threshold=gate2_threshold,
+        )
+    except ValueError as tda_err:
+        print(f"  🛑 {tda_err}")
+        if not dry_run:
+            notion_update_status(
+                page_id, "🔄 TDA 재검토 필요",
+                pe3_score=round(qc_result.get("overall") or 0, 1),
+                pe3_grade=qc_result.get("grade", ""),
+                tda_score=tda_result.get("overall"),
+                tda_grade=tda_result.get("grade", ""),
+                tda_failed_must=tda_result.get("failed_must", []),
+            )
+        return {"idea": idea_name, "status": "tda_fail",
+                "qc": qc_result, "tda": tda_result, "error": str(tda_err)}
+
+    # ── Step 4) D1~D8 전 차원 파싱 ──────────────────────────────────────────
     parsed = parse_analysis(analysis_text)
 
     # QC 실측 점수 우선
     if qc_result["overall"] is not None:
         parsed["pe3_score"] = round(qc_result["overall"], 1)
 
-    # Step 5) Notion 초안 페이지
+    # ── Step 5) Notion 초안 페이지 ──────────────────────────────────────────
     draft_url = ""
     if not dry_run:
         try:
@@ -735,7 +852,7 @@ def process_record(record: dict, dry_run: bool = False,
         except Exception as e:
             print(f"  ⚠️  초안 페이지 생성 실패: {e}")
 
-    # Step 6) Notion DB 전체 업데이트 (D6/D7/D8 포함)
+    # ── Step 6) Notion DB 전체 업데이트 (D6/D7/D8 + TDA 포함) ───────────────
     if not dry_run:
         notion_update_status(
             page_id, "✅ 완료",
@@ -758,21 +875,29 @@ def process_record(record: dict, dry_run: bool = False,
             kpi_phase2=parsed["kpi_phase2"],
             kpi_phase3=parsed["kpi_phase3"],
             go_no_go_trigger=parsed["go_no_go_trigger"],
+            # Gate-2 TDA 결과
+            tda_score=round(tda_result["overall"], 1) if tda_result["overall"] else None,
+            tda_grade=tda_result["grade"],
+            tda_failed_must=tda_result["failed_must"],
         )
 
-    # Step 7) GitHub Issue (D6~D8 요약 포함)
+    # ── Step 7) GitHub Issue (Gate-2 TDA 요약 포함) ──────────────────────────
     create_github_issue(idea_name, draft_url,
                         parsed["pe3_score"] or 0,
                         pe3_grade=qc_result["grade"],
                         parsed=parsed,
+                        tda_result=tda_result,
                         dry_run=dry_run)
 
-    print(f"  ✅ 완료 | PE-3: {parsed['pe3_score']} ({qc_result['grade']}) "
-          f"| IRR Base: {parsed['irr']}% Bear: {parsed['irr_bear']}% "
-          f"| EV 상한: {parsed['irr_entry_ev_cap']} "
-          f"| NSM: {parsed['nsm_metric']}")
+    print(
+        f"  ✅ 완료 | Gate-1 PE-3: {parsed['pe3_score']} ({qc_result['grade']}) "
+        f"| Gate-2 TDA: {tda_result['overall']} ({tda_result['grade']}) "
+        f"| IRR Base: {parsed['irr']}% Bear: {parsed['irr_bear']}% "
+        f"| EV 상한: {parsed['irr_entry_ev_cap']} "
+        f"| NSM: {parsed['nsm_metric']}"
+    )
     return {"idea": idea_name, "status": "done",
-            "parsed": parsed, "qc": qc_result}
+            "parsed": parsed, "qc": qc_result, "tda": tda_result}
 
 
 # ── --qc-only 모드 ────────────────────────────────────────────────────────────
@@ -801,13 +926,38 @@ def qc_only_mode(file_path: str, strict: bool = False) -> int:
     return 0 if (not strict or qc["overall"] >= 88) else 1
 
 
+# ── --tda-qc-only 모드 ★ v2.1 신규 ──────────────────────────────────────────
+
+def tda_qc_only_mode(file_path: str, strict: bool = False,
+                     threshold: int = _GATE2_DEFAULT_THRESHOLD) -> int:
+    """로컬 파일에 대해 TDA QC 단독 실행."""
+    if not _TDA_QC_AVAILABLE:
+        print("❌ pe3_tda_validator 모듈 없음")
+        return 1
+    content = Path(file_path).read_text(encoding="utf-8")
+    print(f"\n🔬 TDA QC-Only Mode — {Path(file_path).name}")
+    tda = run_pe3_tda_qc(content, idea_name=Path(file_path).stem,
+                          strict=strict, threshold=threshold)
+
+    print("\n  TDA 차원별 상세:")
+    sep = "─" * 56
+    print(f"  {sep}")
+    for d_id, dr in sorted(tda["raw"].get("dimensions", {}).items()):
+        bar = "█" * int(dr["pct"] / 5) + "░" * (20 - int(dr["pct"] / 5))
+        print(f"  {d_id} {dr['name']}")
+        print(f"  [{bar}] {dr['pct']}%")
+        for chk in dr.get("checks", []):
+            icon = "✔" if chk["passed"] else "✘"
+            print(f"    {icon} [{chk['level']:<6}] {chk['id']}: {chk['name']}")
+    print(f"  {sep}")
+    print(f"  Overall : {tda['overall']:.1f}%  {tda['grade']}")
+    print(f"  {sep}\n")
+    return 0 if (not strict or tda["overall"] >= threshold) else 1
+
+
 # ── --revalidate-all 모드 ─────────────────────────────────────────────────────
 
 def revalidate_all_mode(strict: bool = False) -> int:
-    """
-    Notion '✅ 완료' 레코드 전체를 대상으로
-    기존 초안 페이지 내용을 다시 QC 검증하고 PE3 Score 갱신.
-    """
     print("\n🔄 [revalidate-all] 전체 완료 레코드 QC 재검증 시작...")
     records = notion_query_all_completed()
     print(f"   대상 레코드: {len(records)}건")
@@ -819,8 +969,6 @@ def revalidate_all_mode(strict: bool = False) -> int:
             t["plain_text"] for t in props.get("Idea Name", {}).get("title", [])
         ) or page_id[:8]
 
-        # 기존 초안 URL에서 텍스트 재취득은 비용이 크므로
-        # Key Insight + TAM 텍스트를 이어 붙여 최소 QC 수행
         key_insight = "".join(
             t["plain_text"]
             for t in props.get("Key Insight", {}).get("rich_text", [])
@@ -851,38 +999,37 @@ def revalidate_all_mode(strict: bool = False) -> int:
 # ── --pe3-dashboard 모드 ──────────────────────────────────────────────────────
 
 def pe3_dashboard_mode() -> int:
-    """
-    Notion DB의 PE-3 점수 분포를 콘솔 대시보드로 출력.
-    """
     print("\n📊 [PE-3 Dashboard] Notion DB 점수 현황")
     records = notion_query_all_completed()
     scores = []
     for rec in records:
         props = rec["properties"]
         score = props.get("PE3 Score", {}).get("number")
+        tda_sc = props.get("TDA Score", {}).get("number")
         idea  = "".join(
             t["plain_text"] for t in props.get("Idea Name", {}).get("title", [])
         ) or rec["id"][:8]
-        scores.append((idea, score))
+        scores.append((idea, score, tda_sc))
 
     scores.sort(key=lambda x: (x[1] or 0), reverse=True)
-    sep = "─" * 60
+    sep = "─" * 72
     print(f"  {sep}")
-    print(f"  {'아이디어명':<30} {'PE-3':>6}  그래프")
+    print(f"  {'아이디어명':<28} {'PE-3':>6}  {'TDA':>6}  그래프")
     print(f"  {sep}")
-    for idea, sc in scores:
+    for idea, sc, tda_sc in scores:
         if sc is None:
             bar, label = "░" * 20, "  N/A"
         else:
             filled = int(sc / 5)
             bar    = "█" * filled + "░" * (20 - filled)
             label  = f" {sc:5.1f}"
-        print(f"  {idea[:30]:<30} {label}  [{bar}]")
+        tda_label = f"{tda_sc:5.1f}" if tda_sc is not None else "  N/A"
+        print(f"  {idea[:28]:<28} {label}  {tda_label}  [{bar}]")
     print(f"  {sep}")
-    valid = [s for _, s in scores if s is not None]
+    valid = [s for _, s, _ in scores if s is not None]
     if valid:
         avg = sum(valid) / len(valid)
-        print(f"  평균: {avg:.1f}  최고: {max(valid):.1f}  최저: {min(valid):.1f}  건수: {len(valid)}")
+        print(f"  PE-3 평균: {avg:.1f}  최고: {max(valid):.1f}  최저: {min(valid):.1f}  건수: {len(valid)}")
     print(f"  {sep}\n")
     return 0
 
@@ -890,10 +1037,6 @@ def pe3_dashboard_mode() -> int:
 # ── --ab-test 모드 ────────────────────────────────────────────────────────────
 
 def ab_test_mode(v1_path: str, v2_path: str, strict: bool = False) -> int:
-    """
-    동일 아이디어에 v1 vs v2 프롬프트를 각각 적용해
-    PE-3 QC 점수를 비교 출력 (API 미호출, 로컬 파일 기준).
-    """
     if not _QC_AVAILABLE:
         print("❌ pe3_product_validator 모듈 없음")
         return 1
@@ -933,7 +1076,9 @@ def ab_test_mode(v1_path: str, v2_path: str, strict: bool = False) -> int:
 # ── 메인 폴링 루프 ────────────────────────────────────────────────────────────
 
 def run_once(dry_run: bool = False, record_id: str = None,
-             qc_strict: bool = False) -> list:
+             qc_strict: bool = False,
+             tda_strict: bool = False,
+             gate2_threshold: int = _GATE2_DEFAULT_THRESHOLD) -> list:
     results = []
     if record_id:
         url  = f"https://api.notion.com/v1/pages/{record_id}"
@@ -949,7 +1094,9 @@ def run_once(dry_run: bool = False, record_id: str = None,
 
     print(f"[{datetime.now().strftime('%H:%M:%S')}] {len(records)}건 감지")
     for rec in records:
-        res = process_record(rec, dry_run=dry_run, qc_strict=qc_strict)
+        res = process_record(rec, dry_run=dry_run, qc_strict=qc_strict,
+                             tda_strict=tda_strict,
+                             gate2_threshold=gate2_threshold)
         results.append(res)
         time.sleep(2)
     return results
@@ -957,24 +1104,28 @@ def run_once(dry_run: bool = False, record_id: str = None,
 
 def main():
     parser = argparse.ArgumentParser(
-        description="PE-7 Product Idea → MECE 자동분석 루프 v2.0"
+        description="PE-7 Product Idea → MECE 자동분석 루프 v2.1"
     )
-    parser.add_argument("--watch",          action="store_true", help="반복 폴링 모드")
-    parser.add_argument("--dry-run",        action="store_true", help="API 미호출")
-    parser.add_argument("--qc-only",        action="store_true", help="로컬 파일 QC")
-    parser.add_argument("--file",           help="--qc-only / --ab-test v1 대상")
-    parser.add_argument("--qc-strict",      action="store_true", help="88점 미만 중단")
-    parser.add_argument("--record-id",      help="특정 Notion 페이지 ID")
-    parser.add_argument("--output",         help="결과 JSON 저장")
-    parser.add_argument("--revalidate-all", action="store_true",
+    parser.add_argument("--watch",              action="store_true", help="반복 폴링 모드")
+    parser.add_argument("--dry-run",            action="store_true", help="API 미호출")
+    parser.add_argument("--qc-only",            action="store_true", help="로컬 파일 PROD QC")
+    parser.add_argument("--tda-qc-only",        action="store_true", help="로컬 파일 TDA QC")  # ★ 신규
+    parser.add_argument("--file",               help="--qc-only / --tda-qc-only 대상 파일")
+    parser.add_argument("--qc-strict",          action="store_true", help="PROD 88점 미만 중단")
+    parser.add_argument("--tda-strict",         action="store_true", help="TDA 임계값 미만 중단")  # ★ 신규
+    parser.add_argument("--gate2-threshold",    type=int, default=_GATE2_DEFAULT_THRESHOLD,
+                        help=f"Gate-2 TDA 통과 기준점 (기본: {_GATE2_DEFAULT_THRESHOLD})")       # ★ 신규
+    parser.add_argument("--record-id",          help="특정 Notion 페이지 ID")
+    parser.add_argument("--output",             help="결과 JSON 저장")
+    parser.add_argument("--revalidate-all",     action="store_true",
                         help="Notion 완료 레코드 전체 QC 재검증")
-    parser.add_argument("--pe3-dashboard",  action="store_true",
-                        help="PE-3 점수 대시보드 출력")
-    parser.add_argument("--ab-test",        action="store_true",
+    parser.add_argument("--pe3-dashboard",      action="store_true",
+                        help="PE-3 + TDA 점수 대시보드 출력")
+    parser.add_argument("--ab-test",            action="store_true",
                         help="v1 vs v2 A/B 비교 (--v1 --v2 필요)")
-    parser.add_argument("--v1",             help="A/B 테스트 v1 파일 경로")
-    parser.add_argument("--v2",             help="A/B 테스트 v2 파일 경로")
-    parser.add_argument("--prompt-version", default="v2",
+    parser.add_argument("--v1",                 help="A/B 테스트 v1 파일 경로")
+    parser.add_argument("--v2",                 help="A/B 테스트 v2 파일 경로")
+    parser.add_argument("--prompt-version",     default="v2",
                         help="프롬프트 버전 태그 (기본: v2)")
     args = parser.parse_args()
 
@@ -984,6 +1135,13 @@ def main():
             print("❌ --qc-only 모드에는 --file 경로 필요")
             sys.exit(1)
         sys.exit(qc_only_mode(args.file, strict=args.qc_strict))
+
+    if args.tda_qc_only:                                        # ★ 신규
+        if not args.file:
+            print("❌ --tda-qc-only 모드에는 --file 경로 필요")
+            sys.exit(1)
+        sys.exit(tda_qc_only_mode(args.file, strict=args.tda_strict,
+                                   threshold=args.gate2_threshold))
 
     if args.revalidate_all:
         sys.exit(revalidate_all_mode(strict=args.qc_strict))
@@ -1002,14 +1160,18 @@ def main():
     if not OPENAI_KEY and not args.dry_run:
         print("❌ OPENAI_API_KEY 미설정"); sys.exit(1)
 
-    qc_status = "✅ 활성" if _QC_AVAILABLE else "⚠️ 미임포트"
-    print("🚀 PE-7 Product Idea → MECE 자동분석 루프 v2.0")
-    print(f"   DB ID          : {DB_ID}")
-    print(f"   Dry-Run        : {args.dry_run}")
-    print(f"   Watch          : {args.watch}")
-    print(f"   PE-3 QC        : {qc_status}")
-    print(f"   QC Strict      : {args.qc_strict}")
-    print(f"   Prompt Version : {args.prompt_version}")
+    gate2_avail = "✅ 활성" if _TDA_QC_AVAILABLE else "⚠️ 미임포트 (소프트 스킵)"
+    qc_status   = "✅ 활성" if _QC_AVAILABLE else "⚠️ 미임포트"
+    print("🚀 PE-7 Product Idea → MECE 자동분석 루프 v2.1")
+    print(f"   DB ID              : {DB_ID}")
+    print(f"   Dry-Run            : {args.dry_run}")
+    print(f"   Watch              : {args.watch}")
+    print(f"   Gate-1 PROD QC     : {qc_status}")
+    print(f"   Gate-2 TDA  QC     : {gate2_avail}")
+    print(f"   QC Strict          : {args.qc_strict}")
+    print(f"   TDA Strict         : {args.tda_strict}")
+    print(f"   Gate-2 Threshold   : {args.gate2_threshold}%")
+    print(f"   Prompt Version     : {args.prompt_version}")
 
     all_results = []
     try:
@@ -1017,14 +1179,18 @@ def main():
             while True:
                 results = run_once(dry_run=args.dry_run,
                                    record_id=args.record_id,
-                                   qc_strict=args.qc_strict)
+                                   qc_strict=args.qc_strict,
+                                   tda_strict=args.tda_strict,
+                                   gate2_threshold=args.gate2_threshold)
                 all_results.extend(results)
                 print(f"  ⏱  {POLL_INTERVAL}초 후 재폴링...")
                 time.sleep(POLL_INTERVAL)
         else:
             all_results = run_once(dry_run=args.dry_run,
                                    record_id=args.record_id,
-                                   qc_strict=args.qc_strict)
+                                   qc_strict=args.qc_strict,
+                                   tda_strict=args.tda_strict,
+                                   gate2_threshold=args.gate2_threshold)
     except KeyboardInterrupt:
         print("\n🛑 루프 중단")
 
@@ -1034,7 +1200,7 @@ def main():
         print(f"📄 결과 저장: {args.output}")
 
     failed = [r for r in all_results
-              if r.get("status") in ("error", "qc_fail")]
+              if r.get("status") in ("error", "qc_fail", "tda_fail")]
     sys.exit(1 if failed else 0)
 
 
