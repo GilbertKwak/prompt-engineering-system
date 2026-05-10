@@ -1,4 +1,3 @@
----
 # PROMPT_012_A · ASI Cognitive Architecture Analyzer v2.0
 
 | Field | Value |
