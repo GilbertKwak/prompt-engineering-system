@@ -2,10 +2,21 @@
 
 **Domain:** PE-TECH-RE (Technical Reverse Engineering)
 **PE Baseline:** 95
+**PE-3 Validation:** 97/100 PASSED (2026-05-09)
 **Version:** 2.0
 **Date:** 2026-05-09
-**Linked Systems:** PE-11 Master, /pe-tech-re batch, /pe-validate
+**Linked Systems:** PE-11 Master (NODE_012), /pe-tech-re batch, /pe-validate
 **Notion Sync:** PE-TECH-RE Library ✅
+**PE-IP Mirror:** PE-IP-012-A (05_COGNITIVE_RE/)
+
+---
+
+## Changelog
+
+| Version | Date | Author | Notes |
+|---|---|---|---|
+| v2.0 | 2026-05-09 | GilbertKwak | PE-3 97/100 PASSED, PE-11 NODE_012, PE-IP-012-A mirror |
+| v1.0 | 2026-04-01 | GilbertKwak | Initial release, PE baseline 95 |
 
 ---
 
@@ -138,4 +149,5 @@
 
 - `/pe-tech-re batch` → 배치 역설계 분석
 - `/pe-validate` → PE 점수 검증 (baseline 95+)
-- PE-11 Master System → 자동화 체인 트리거
+- PE-11 Master System → NODE_012 자동화 체인 트리거
+- PE-IP v1.3 → PE-IP-012-A 미러 (05_COGNITIVE_RE/)
