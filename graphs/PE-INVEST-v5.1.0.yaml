@@ -1,0 +1,428 @@
+# ============================================================
+# PE-INVEST-v5.1.0.yaml
+# PE-INVEST Dependency Graph — Round 1~4 통합 스키마 + ASML EUV 통합
+# Author  : Gilbert
+# Created : 2026-05-07
+# Updated : 2026-05-10  (ASML EUV 노드 통합, Round 2 Equipment 완결)
+# Session : Round 1~4 완결 + Option A ASML 패치
+# ============================================================
+
+# ------------------------------------------------------------
+# PART 1: META + LEADING INDICATORS
+# ------------------------------------------------------------
+
+meta:
+  version       : "5.1.0"
+  schema_date   : "2026-05-10"
+  session_date  : "2026-05-10"
+  rounds_covered: [1, 2, 3, 4]
+  layers        : [demand, design, foundry, equipment, material, packaging, server]
+  confidence_levels: [P10, P50, P90]
+  currency      : USD
+  stats:
+    total_nodes  : 13   # demand:1 server:3 packaging:3 equipment:4 material:3 (ASML 추가)
+    total_edges  : 45   # ASML 관련 7개 신규 추가
+    li_register  : 6
+    bottlenecks  : 4    # BN-04 ASML EUV 독점 병목 추가
+    wildcards    : 3
+    scenarios    : 3
+    p_sum_check  : 1.00 # 0.10 + 0.65 + 0.25 = 1.00 ✓
+
+leading_indicators:
+  - id: LI-01  name: KLA PCB Inspection YoY    layer: equipment  node_ref: KLA        lead_time: "6~9개월"  trigger: ">+20% YoY → ABF 수요 급증"         status: active
+  - id: LI-02  name: Entegris Unit-driven       layer: material   node_ref: Entegris   lead_time: "6~9개월"  trigger: ">+7% QoQ → CoWoS 가동률"          status: active
+  - id: LI-03  name: LRCX Ether ALD 수주량        layer: equipment  node_ref: LRCX       lead_time: "3~6개월"  trigger: "수주 급증 → HBM4 양산 진입"       status: active
+  - id: LI-04  name: ASE 고급 패키징 매출 비중  layer: packaging  node_ref: ASE        lead_time: "1~2분기"   trigger: ">50% → CoWoS 구조 전환 가속"       status: active
+  - id: LI-05  name: Shin-Etsu 반도체 소재 수주  layer: material   node_ref: ShinEtsu   lead_time: "6~9개월"  trigger: "+10% QoQ → TSMC N2/A16 가동"  status: active
+  - id: LI-06  name: Dell AI 서버 백로그 규모    layer: server     node_ref: Dell       lead_time: "3~4분기"   trigger: ">$10B → 공급망 전체 수요 확정"    status: active
+
+# ------------------------------------------------------------
+# PART 2: NODES — DEMAND + SERVER (Round 4)
+# ------------------------------------------------------------
+
+nodes:
+
+  demand:
+    - id: CSP_CapEx
+      name: CSP 하이퍼스케일러 CapEx
+      entities: [Microsoft, Amazon, Google, Meta]
+      ci: { P10: 340, P50: 380, P90: 430 }  # USD B
+      confidence: Medium-High
+
+  server:
+    - id: Dell
+      ticker: DELL  position: OEM  round: 4
+      financials:
+        server_rev_usd_b: 6.5   server_rev_yoy: "+28%"
+        ai_backlog_usd_b: 14.4  ai_orders_q1_usd_b: 12.1
+        net_income_yoy: "+47.6%"  gm_pct: "10~12%"
+      ci:
+        FY2026_server_rev: { P10: 13, P50: 15, P90: 17 }  # USD B
+        backlog_drawdown_pct: { P10: 55, P50: 70, P90: 85 }
+      leading_indicator_ref: LI-06
+      risks: [R-DELL-01, R-DELL-02, R-DELL-03]
+      upstream_deps: [NVDA_GB200, CoWoS_Packaging, ABF_Substrate, HBM4_Memory]
+
+    - id: SMCI
+      ticker: SMCI  position: ODM  round: 4
+      financials:
+        revenue_usd_b: 10.24  revenue_yoy: "+123%"
+        adj_eps: 0.84  adj_gm_pct: 10.1
+        q4_guidance_usd_b: { low: 11.0, high: 12.5 }
+        miss_reason: "고객 전력·네트워킹 인프라 준비 타이밍 이연"
+      ci:
+        Q4_FY2026_rev: { P10: 10.5, P50: 11.8, P90: 12.5 }  # USD B
+        FY2027_rev: { P10: 45, P50: 55, P90: 65 }  # USD B
+      risks: [R-SMCI-01, R-SMCI-02, R-SMCI-03]
+      upstream_deps: [NVDA_GB200, CoWoS_Packaging, ABF_Substrate, HBM4_Memory]
+
+    - id: Foxconn
+      ticker: "2317.TW"  position: ODM  round: 4
+      financials:
+        q1_2026_rev_usd_b: 66.6  revenue_yoy: "+29.7%"
+        ai_server_share_pct: 40  gm_pct: "3~5%"
+        strategic_pivot: "아이폰 → AI 서버 주력 전환 완료"
+      ci:
+        ai_server_rev_growth_pct: { P10: 25, P50: 32, P90: 42 }
+        ai_server_share_pct: { P10: 35, P50: 40, P90: 45 }
+      risks: [R-FOX-01, R-FOX-02, R-FOX-03]
+      upstream_deps: [NVDA_GB200, CoWoS_Packaging, ABF_Substrate, HBM4_Memory]
+
+# ------------------------------------------------------------
+# PART 3: NODES — PACKAGING (Round 1) + EQUIPMENT (Round 2)
+# ------------------------------------------------------------
+
+  packaging:
+    - id: ASE
+      ticker: ASX  position: OSAT 1위  round: 1
+      financials:
+        capex_usd_b: 7.0  capex_yoy: "+27%"
+        advanced_pkg_rev_target: "$3.5B+ (+100% YoY)"
+        cowos_capa_wpm: { current: 8000, target: 25000 }
+      ci:
+        advanced_pkg_rev: { P10: 3.0, P50: 3.5, P90: 4.2 }  # USD B
+        cowos_capa_wpm: { P10: 18000, P50: 22000, P90: 25000 }
+      key_tech: VIPack_FOCoS_Bridge
+      leading_indicator_ref: LI-04
+      risks: [R-ASE-01, R-ASE-02]
+      upstream_deps: [TSMC_CoWoS, ABF_Substrate, Entegris_FOUP]
+      downstream_deps: [Dell, SMCI, Foxconn]
+
+    - id: Amkor
+      ticker: AMKR  position: OSAT 2위  round: 1
+      financials:
+        q1_2026_rev_yoy: "+27%"  earnings_beat_streak_q: 4
+        hdfo_growth_target_yoy: "3x"  kr_cleanroom_expansion: "+20%"
+      ci:
+        annual_25d_hdfo_growth: { P10: 2.0, P50: 3.0, P90: 4.0 }
+      risks: [R-AMKR-01, R-AMKR-02]
+      upstream_deps: [TSMC_CoWoS, ABF_Substrate, Entegris_FOUP]
+      downstream_deps: [Dell, SMCI, Foxconn]
+
+    - id: ABF_Substrate
+      position: AI 서버 핵심 병목 기판  round: 1
+      supply_status:
+        utilization_2026: "전 라인 매진 확정"
+        ibiden_share_pct: 55
+        us_supply_capacity: 0
+        diversification_eta: "2027 H1"
+      ci: { shortage_risk: High, confidence: Medium-High }
+      risks: [R-ABF-01, R-ABF-02, R-ABF-03]
+      upstream_deps: [ShinEtsu, Entegris]
+      downstream_deps: [ASE, Amkor, Dell, SMCI, Foxconn]
+
+  equipment:
+    - id: AMAT
+      ticker: AMAT  position: CVD·CMP·Etch 1위  round: 2
+      financials:
+        q1_fy2026_rev_usd_b: 7.01  gaap_eps_yoy: "+75%"
+        semi_equip_growth_est: ">+20% YoY"
+      exposure: [Advanced_Logic, HBM_DRAM, Advanced_Packaging]
+      ci:
+        fy2026_rev: { P10: 27, P50: 29, P90: 32 }  # USD B
+      risks: [R-AMAT-01]
+      upstream_deps: [ShinEtsu, Entegris, Merck_KGaA]
+      downstream_deps: [TSMC_CoWoS, HBM4_Memory, ABF_Substrate]
+
+    - id: KLA
+      ticker: KLAC  position: 공정 제어·검사 80%+ 독점  round: 2
+      financials:
+        q3_fy2026_rev_usd_b: 3.415  rev_yoy: "+11%"
+        non_gaap_gm_pct: 62.5  fcf_usd_b: 3.88
+        pcb_inspection_yoy: "+37%"
+      ci:
+        annual_rev: { P10: 13, P50: 14, P90: 15.5 }  # USD B
+      leading_indicator_ref: LI-01
+      risks: [R-KLA-01, R-KLA-02]
+      upstream_deps: [ShinEtsu, Entegris]
+      downstream_deps: [TSMC_CoWoS, ABF_Substrate, HBM4_Memory]
+
+    - id: LRCX
+      ticker: LRCX  position: Etch·ALD·Panel-Level 선점  round: 2
+      financials:
+        q1_cy2026_rev_usd_b: 5.84  consensus_beat_pct: 1.7
+      key_products:
+        Ether_ALD   : { status: HBM 양산 진입, euv_dose_saving: "10%+" }
+        SABRE_3D    : { status: CoWoS RDL 구리 도금 표준 }
+        Panel_Level : { status: 선제 투자, eta: "2027~2028" }
+      ci:
+        fy2026_rev: { P10: 20, P50: 22, P90: 25 }  # USD B
+      leading_indicator_ref: LI-03
+      risks: [R-LRCX-01, R-LRCX-02]
+      upstream_deps: [ShinEtsu, Entegris, Merck_KGaA]
+      downstream_deps: [TSMC_CoWoS, HBM4_Memory]
+
+    # ─── ASML: 신규 추가 (구조적 누락 해소) ─────────────────────────────
+    - id: ASML
+      ticker: ASML  position: EUV 리소그래피 세계 유일 독점  round: 2
+      financials:
+        revenue_usd_b: 28.0         # 2024~2025 추정
+        euv_revenue_share_pct: 65
+        high_na_unit_price_usd_m: 380
+        low_na_unit_price_usd_m: 180
+        order_backlog_usd_b: 36     # 하이-NA 포함 누적 백로그
+      key_products:
+        Low_NA_EUV:
+          model: "NXE:3600D / NXE:3800E"
+          na: 0.33
+          wph: 200
+          node_capability: "3nm ~ 7nm"
+          annual_capacity_units: "60~70"
+          waitlist_months: "18~24"
+        High_NA_EUV:
+          model: "NXE:3800E (0.55 NA)"
+          na: 0.55
+          wph_current: 60
+          wph_target: "90+"
+          unit_price_usd_m: 380
+          node_capability: "<2nm"
+          first_customer_intel: "2024-Q4"
+          first_customer_tsmc: "2025-Q2"
+          annual_capacity_units: "초기 수대/년 → 2027년 10대+ 목표"
+          waitlist_months: "36+"
+      monopoly_metrics:
+        euv_market_share_pct: 100
+        high_na_market_share_pct: 100
+        duv_market_share_pct: 85
+      supply_chain_dependencies:
+        laser_source: { supplier: Trumpf, sole_source: true, type: "CO₂ 레이저 50kW급" }
+        optics:       { supplier: Zeiss,  sole_source: true, type: "Mo/Si 반사경 + 투영 렌즈" }
+      ci:
+        fy2026_rev: { P10: 25, P50: 28, P90: 33 }   # USD B
+        high_na_units_2027: { P10: 8, P50: 12, P90: 18 }
+      geopolitical_risk:
+        china_export_ban: "EUV 완전 금지 (네덜란드 정부 2023~)"
+        duv_restriction: "일부 ArF 제한 (2023 추가)"
+      leading_indicator_ref: null
+      risks: [R-ASML-01, R-ASML-02, R-ASML-03]
+      upstream_deps: [Trumpf_Laser, Zeiss_Optics]
+      downstream_deps: [TSMC_CoWoS, Intel_18A, Samsung_3nm, LRCX, KLA]
+
+# ------------------------------------------------------------
+# PART 4: NODES — MATERIAL (Round 3) + EDGES
+# ------------------------------------------------------------
+
+  material:
+    - id: ShinEtsu
+      ticker: SHECY  position: 300mm 웨이퍼 1위  round: 3
+      financials:
+        fy2026_rev_usd_b: 19.2  net_margin_pct: 18.96
+        net_income_yoy: "-11%"  wafer_share_pct: 30
+        wafer_300mm_status: "공급 타이트 유지"
+      ci:
+        semi_rev_growth_pct: { P10: 5, P50: 10, P90: 18 }
+      leading_indicator_ref: LI-05
+      risks: [R-SHIN-01, R-SHIN-02, R-SHIN-03]
+      downstream_deps: [TSMC_CoWoS, AMAT, KLA, LRCX, ABF_Substrate]
+
+    - id: Entegris
+      ticker: ENTG  position: 고순도 케미컬·FOUP·CMP  round: 3
+      financials:
+        q1_2026_rev_usd_m: 811.9  rev_yoy: "+5%"
+        gaap_eps_yoy: "+46%"  adj_ebitda_margin_pct: 27.8
+        aps_rev_usd_m: 463.6  aps_margin_pct: 29.1
+        unit_driven_growth_pct: 7
+      ci:
+        fy2026_rev: { P10: 3.2, P50: 3.5, P90: 3.9 }  # USD B
+      leading_indicator_ref: LI-02
+      risks: [R-ENTG-01, R-ENTG-02]
+      upstream_deps: [ShinEtsu]
+      downstream_deps: [TSMC_CoWoS, AMAT, KLA, LRCX, ASE, Amkor, ABF_Substrate]
+
+    - id: Merck_KGaA
+      ticker: MRK.DE  position: Mo 배선·EUV PR 2위  round: 3
+      key_materials:
+        Mo: { desc: 텅스텐 대체, status: TSMC N2 채택 대기, trigger: "N2 정식 변경 시 소재 레이어 재편" }
+        EUV_PR: { position: 시장 2위, rival: JSR }
+      ci:
+        Mo_adoption_date: { P10: "2027-H2", P50: "2028-H1", P90: "2029-H1" }
+        confidence: Low-Medium
+      risks: [R-MERCK-01, R-MERCK-02]
+      downstream_deps: [TSMC_CoWoS, AMAT, LRCX]
+
+edges:
+  # 수요 → 파운드리
+  - { from: CSP_CapEx,     to: NVDA_GB200,    type: drives,          strength: Critical }
+  - { from: NVDA_GB200,    to: TSMC_CoWoS,    type: requires,        strength: Critical }
+  # 파운드리 → 장비
+  - { from: TSMC_CoWoS,    to: AMAT,          type: requires,        strength: High }
+  - { from: TSMC_CoWoS,    to: KLA,           type: requires,        strength: High }
+  - { from: TSMC_CoWoS,    to: LRCX,          type: requires,        strength: High }
+  # 파운드리 → 소재
+  - { from: TSMC_CoWoS,    to: ShinEtsu,      type: requires,        strength: High }
+  - { from: TSMC_CoWoS,    to: Entegris,      type: requires,        strength: High }
+  - { from: TSMC_CoWoS,    to: Merck_KGaA,    type: requires,        strength: Medium }
+  # 파운드리 → 패키징
+  - { from: TSMC_CoWoS,    to: ABF_Substrate, type: produces,        strength: Critical }
+  - { from: TSMC_CoWoS,    to: ASE,           type: feeds,           strength: High }
+  - { from: TSMC_CoWoS,    to: Amkor,         type: feeds,           strength: High }
+  # 장비 → 소재
+  - { from: AMAT,          to: ShinEtsu,      type: consumes,        strength: High }
+  - { from: AMAT,          to: Entegris,      type: consumes,        strength: High }
+  - { from: AMAT,          to: Merck_KGaA,    type: consumes,        strength: Medium }
+  - { from: KLA,           to: ShinEtsu,      type: consumes,        strength: Medium }
+  - { from: KLA,           to: Entegris,      type: consumes,        strength: Medium }
+  - { from: LRCX,          to: ShinEtsu,      type: consumes,        strength: Medium }
+  - { from: LRCX,          to: Entegris,      type: consumes,        strength: High }
+  - { from: LRCX,          to: Merck_KGaA,    type: consumes,        strength: Medium }
+  # 패키징 → 소재
+  - { from: ASE,           to: Entegris,      type: consumes,        strength: High }
+  - { from: Amkor,         to: Entegris,      type: consumes,        strength: High }
+  - { from: ABF_Substrate, to: ShinEtsu,      type: consumes,        strength: Medium }
+  - { from: ABF_Substrate, to: Entegris,      type: consumes,        strength: Medium }
+  # 패키징 → 서버
+  - { from: ASE,           to: Dell,          type: supplies,        strength: High }
+  - { from: ASE,           to: SMCI,          type: supplies,        strength: High }
+  - { from: ASE,           to: Foxconn,       type: supplies,        strength: High }
+  - { from: Amkor,         to: Dell,          type: supplies,        strength: Medium }
+  - { from: Amkor,         to: SMCI,          type: supplies,        strength: Medium }
+  - { from: ABF_Substrate, to: Dell,          type: supplies,        strength: Critical }
+  - { from: ABF_Substrate, to: SMCI,          type: supplies,        strength: Critical }
+  - { from: ABF_Substrate, to: Foxconn,       type: supplies,        strength: Critical }
+  # HBM 연결
+  - { from: LRCX,          to: HBM4_Memory,   type: enables,         strength: High }
+  - { from: AMAT,          to: HBM4_Memory,   type: enables,         strength: High }
+  - { from: HBM4_Memory,   to: ASE,           type: feeds,           strength: High }
+  - { from: HBM4_Memory,   to: Dell,          type: supplies,        strength: Critical }
+  - { from: HBM4_Memory,   to: SMCI,          type: supplies,        strength: Critical }
+  - { from: HBM4_Memory,   to: Foxconn,       type: supplies,        strength: Critical }
+  # 서버 → 수요 피드백
+  - { from: Dell,          to: CSP_CapEx,     type: feedback_signal, strength: High,   note: "LI-06" }
+  - { from: SMCI,          to: CSP_CapEx,     type: feedback_signal, strength: Medium }
+  - { from: Foxconn,       to: CSP_CapEx,     type: feedback_signal, strength: Medium }
+
+  # ─── ASML EUV 관련 edges (신규 7개) ─────────────────────────────────
+  # ASML EUV → Foundry (리소그래피 필수 연결 — 구조적 누락 해소)
+  - { from: ASML, to: TSMC_CoWoS,    type: enables,  strength: Critical,
+      note: "Low-NA 다중 노광 → 2nm 노드 / High-NA → 2nm 이하 노드" }
+  - { from: ASML, to: Intel_18A,     type: enables,  strength: Critical,
+      note: "High-NA NXE:3800E 최초 고객 (2024-Q4 납품)" }
+  - { from: ASML, to: Samsung_3nm,   type: enables,  strength: High,
+      note: "Low-NA EUV 양산 공급" }
+  # ASML EUV → Equipment (공정 연동 시너지)
+  - { from: ASML, to: LRCX,          type: synergy,  strength: High,
+      note: "Ether ALD EUV 도즈 10%+ 절감 → ASML WPH 효율 보완" }
+  - { from: ASML, to: KLA,           type: synergy,  strength: High,
+      note: "YieldStar APC 피드백 루프 → 오버레이 드리프트 보정" }
+  # ASML upstream (공급망 의존 — sole-source)
+  - { from: Trumpf_Laser, to: ASML,  type: supplies, strength: Critical,
+      note: "CO₂ 레이저 세계 유일 공급 — 대체 불가" }
+  - { from: Zeiss_Optics,  to: ASML, type: supplies, strength: Critical,
+      note: "Mo/Si 반사경 + 투영 렌즈 세계 유일 공급 — 대체 불가" }
+
+# ------------------------------------------------------------
+# PART 5: BOTTLENECKS + WILDCARDS + SCENARIOS
+# ------------------------------------------------------------
+
+bottlenecks:
+  - { rank: 1, id: BN-01, name: ABF 기판 공급 부족,              severity: Critical, wildcard_ref: WC-01,
+      mitigation: ["Unimicron 진입 가속 (ETA 2027-H1)", "미국 신규 설비 유치 논의"] }
+  - { rank: 2, id: BN-02, name: KLA 검사 장비 리드타임 6~9개월,  severity: High,     wildcard_ref: null,
+      mitigation: ["수주 사이클 조기화", "KLA ARCHER 신제품 도입"] }
+  - { rank: 3, id: BN-03, name: 300mm 웨이퍼 Shin-Etsu·SUMCO 과점, severity: High,  wildcard_ref: null,
+      mitigation: ["장기 계약 체결로 우선 할당 확보"] }
+  - { rank: 4, id: BN-04, name: ASML EUV 세계 유일 독점 병목,    severity: Critical, wildcard_ref: null,
+      detail: "Low-NA 60~70대/년 · 하이-NA 초기 수대/년 생산 한계 / 납기 36개월+",
+      mitigation: ["Veldhoven 생산라인 확장 (2027 80대+ 목표)",
+                   "Trumpf 1kW 레이저 파워 안정화 가속",
+                   "소스 파워 병목 → WPH 90+ 달성 로드맵"] }
+
+wildcards:
+  - id: WC-01  name: NVDA CoWoP 전환
+    probability: Low-Medium  impact: Critical  eta: "2027~2028"
+    trigger: "NVDA Rubin Ultra 로드맵 업데이트"
+    scenario_ref: S-P10
+    affected_nodes: [ABF_Substrate, ASE, Amkor]
+
+  - id: WC-02  name: Merck Mo TSMC N2 정식 채택
+    probability: Low  impact: High  eta: "P50 2028-H1"
+    trigger: "TSMC N2 수율 정식 발표"
+    scenario_ref: S-P90
+    affected_nodes: [Merck_KGaA, TSMC_CoWoS, AMAT, LRCX]
+
+  - id: WC-03  name: Panel-Level Packaging 전환 가속
+    probability: Low  impact: High  eta: "2027~2028"
+    trigger: "TSMC / NVDA PLP 첫 개시 발표"
+    scenario_ref: S-P10
+    affected_nodes: [LRCX, ABF_Substrate, ASE, Amkor]
+
+scenarios:
+  - id: S-P10  label: "P10 (비관)"  probability: 0.10
+    name: "공급망 상시 압박 + 규제 강화"
+    triggers: ["중국 추가 수출 규제", "NVDA CoWoP 조기 전환", "ABF 기판 가격 스파이크"]
+    node_impacts:
+      CSP_CapEx: "$320B (-16%)"  AMAT: "Rev -18%"  LRCX: "Rev -22%"
+      ABF_Substrate: "수요 구조 붕괴"  Dell: "AI 서버 -25%"
+      SMCI: "실적 미스 반복"  ShinEtsu: "Semi +5%"  Foxconn: "점유율 유지"
+      ASML: "Rev -12% (DUV 규제 강화 + 하이-NA 지연)"
+    hedge_nodes: [KLA, ShinEtsu]
+    portfolio_impact: "투자 비중 축소 + 방어 자산 이동"
+
+  - id: S-P50  label: "P50 (기준)"  probability: 0.65
+    name: "AI 인프라 속도 확장 지속"
+    triggers: ["CSP CapEx +25~30% YoY", "NVDA GB300 정시 런치", "ABF 병목 부분 완화"]
+    node_impacts:
+      CSP_CapEx: "$380B (+27%)"  AMAT: "Rev +20%"  LRCX: "Rev +18%"  KLA: "Rev +12%"
+      Dell: "$15B"  SMCI: "$55B (FY2027)"  Foxconn: "40% 점유율"
+      ShinEtsu: "Semi +10%"  Entegris: "$3.5B"
+      ASML: "Rev $28B / 하이-NA 12대 (P50)"
+    hedge_nodes: null
+    portfolio_impact: "전체 노드 비례 성장 지속"
+
+  - id: S-P90  label: "P90 (낙관)"  probability: 0.25
+    name: "AI 초가속 + 소재 레이어 특수 첨단"
+    triggers: ["CSP CapEx $430B+", "Merck Mo N2 정식 채택", "PLP 전환 연기"]
+    node_impacts:
+      CSP_CapEx: "$430B (+43%)"  AMAT: "Rev +28%"  LRCX: "Rev +25%"  KLA: "Rev +18%"
+      Dell: "$17B"  SMCI: "$65B (FY2027)"  Foxconn: "45% 점유율"
+      ShinEtsu: "Semi +18%"  Entegris: "$3.9B"  Merck_KGaA: "Mo 장기 독점"
+      ASML: "Rev $33B / 하이-NA 18대 / WPH 90+ 달성"
+    surprise_node: Merck_KGaA
+    hedge_nodes: null
+    portfolio_impact: "소재 레이어 비중 확대"
+
+# ─── RISKS REGISTER (ASML 추가) ─────────────────────────────────────────
+
+risks:
+  - { id: R-ASML-01, node: ASML, type: supply_constraint,
+      desc: "연간 60~70대 생산 한계 — Trumpf·Zeiss 서브시스템 병목",
+      severity: Critical, mitigation: "Veldhoven 생산 확장 2027~2028" }
+  - { id: R-ASML-02, node: ASML, type: geopolitical,
+      desc: "中 EUV 완전 수출 금지 → TAM 구조적 제한 (중국 매출 0)",
+      severity: High, mitigation: "비중국 고객 수요로 초과 커버 (웨이팅리스트 36개월+)" }
+  - { id: R-ASML-03, node: ASML, type: technology,
+      desc: "하이-NA WPH ~60 → 90+ 목표 미달 / 레티클 인프라 전환 지연",
+      severity: Medium, mitigation: "소스 파워 1kW 달성 + 펠리클 양산화 2026~2027" }
+
+# ============================================================
+# END OF PE-INVEST-v5.1.0.yaml
+# Total nodes  : 13 (demand:1 server:3 packaging:3 equipment:4 material:3)
+# Total edges  : 45 (기존 38 + ASML 7개 신규)
+# LI register  : 6 (LI-01 ~ LI-06)
+# Bottlenecks  : 4 (BN-01 ~ BN-04)
+# Wildcards    : 3 (WC-01 ~ WC-03)
+# Scenarios    : 3 (S-P10 / S-P50 / S-P90)
+# P sum check  : 0.10 + 0.65 + 0.25 = 1.00 ✓
+# ASML patch   : equipment +1 / edges +7 / BN +1 / risks +3
+# schema_date  : 2026-05-10
+# ============================================================
