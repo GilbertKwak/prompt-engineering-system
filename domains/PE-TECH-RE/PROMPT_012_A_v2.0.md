@@ -1,24 +1,42 @@
-# PROMPT_012_A v2.0 — ASI Cognitive Architecture Reverse Engineer
+---
+# PROMPT_012_A · ASI Cognitive Architecture Analyzer v2.0
 
-**Domain:** PE-TECH-RE (Technical Reverse Engineering)
-**PE Baseline:** 95
-**PE-3 Validation:** 97/100 PASSED (2026-05-09)
-**Version:** 2.0
-**Date:** 2026-05-09
-**Linked Systems:** PE-11 Master (NODE_012), /pe-tech-re batch, /pe-validate
-**Notion Sync:** PE-TECH-RE Library ✅
-**PE-IP Mirror:** PE-IP-012-A (05_COGNITIVE_RE/)
+| Field | Value |
+|---|---|
+| **Prompt ID** | PROMPT_012_A |
+| **Version** | v2.0 |
+| **Domain** | PE-TECH-RE / PE-COGNITIVE |
+| **Created** | 2026-05-09 |
+| **PE-3 Score** | 97/100 ✅ PASSED |
+| **Status** | Active |
+| **Chain Position** | Pre-P1 Meta Layer |
+| **Parent Ecosystem** | PE-TECH-RE v1.0 / PE-11 Master / PE-IP v1.3 |
+| **PE-IP Mirror** | PE-IP-012-A |
+| **Notion Page** | PE-TECH-RE · Technical Reverse-Engineering Prompt Library v1.0 |
 
 ---
 
-## Changelog
+## 🔗 Chain Position
 
-| Version | Date | Author | Notes |
-|---|---|---|---|
-| v2.0 | 2026-05-09 | GilbertKwak | PE-3 97/100 PASSED, PE-11 NODE_012, PE-IP-012-A mirror |
-| v1.0 | 2026-04-01 | GilbertKwak | Initial release, PE baseline 95 |
+```
+[아티팩트 입력]
+      ↓
+┌─────────────────────────────────────┐
+│  PROMPT_012_A · ASI Cognitive        │  ← Meta Pre-Layer
+│  Architecture Analyzer v2.0          │
+│  → 12-Phase Protocol + 11 Agents     │
+│  → Cognitive Genome 추출             │
+│  → P-1 OPT 피딩 가능 (기술 분석)    │
+└───────────────┬─────────────────────┘
+                ↓
+         [P-1 OPT Technical Analyst]
+         [PE-DD Risk Register 연결]
+         [PE-11 Master NODE_012]
+```
 
 ---
+
+## 📄 Prompt Code
 
 ```xml
 <asi_cognitive_architecture_analyzer version="2.0" pe_baseline="95" domain="PE-TECH-RE">
@@ -36,7 +54,7 @@
     PHASE_01: Structural Cognition Mapping
     → Detect hierarchy depth, decomposition architecture, recursive organization
 
-    PHASE_02: Recursive Planning Reconstruction  
+    PHASE_02: Recursive Planning Reconstruction
     → Infer planning depth (shallow/medium/deep), task decomposition strategy,
       long-horizon reasoning chains, sequential refinement loops
 
@@ -69,7 +87,7 @@
       cognition flow → planning-control-feedback circuit
 
     PHASE_10: Intelligence Signature Detection
-    → Classify: GPT-style | Claude-style | Gemini-style | Codex | 
+    → Classify: GPT-style | Claude-style | Gemini-style | Codex |
       Deep Research | Autonomous Agent | Hybrid
 
     PHASE_11: Cognitive Genome Synthesis
@@ -106,7 +124,7 @@
   <output_format>
     ## 1. Cognitive System Identity
     ## 2. Primary Intelligence Objective
-    ## 3. Recursive Planning Architecture  
+    ## 3. Recursive Planning Architecture
     ## 4. Meta-Reasoning Framework
     ## 5. Objective Hierarchy System
     ## 6. Constraint Cognition System
@@ -121,7 +139,7 @@
   </output_format>
 
   <critical_behavior_rules>
-    NEVER: summarize | critique topic | explain semantics | 
+    NEVER: summarize | critique topic | explain semantics |
            produce educational commentary | surface-level analysis only
     ALWAYS: infer cognition | infer planning | infer hidden architectures |
             infer recursive workflows | output framework only
@@ -135,19 +153,112 @@
   </success_criteria>
 
 </asi_cognitive_architecture_analyzer>
+
+<context>
+[ARTIFACT_INPUT_HERE]
+</context>
+
+<execution_trigger>
+Analyze artifact at cognition level.
+Recover all hidden systems. Reconstruct complete Cognitive Architecture Framework.
+Output: framework only. No summaries. No commentary.
+</execution_trigger>
 ```
 
 ---
 
-## Usage
+## ⚡ Usage Commands
+
+```bash
+# 단일 아티팩트 인지 아키텍처 역설계
+/pe-cognitive analyze \
+  --artifact "[파일경로 또는 텍스트]" \
+  --depth deep \
+  --output cognitive-genome \
+  --store-notion "PE-TECH-RE PROMPT_012_A"
+
+# PE-TECH-RE P-1과 체인 연결 실행
+/pe-cognitive analyze \
+  --artifact "{{ARTIFACT}}" \
+  --chain-to P-1-OPT \
+  --bind-yaml "PE-INVEST-v5.1.0.yaml"
+
+# PE-3 점수 검증
+/pe-validate --prompt PROMPT_012_A \
+  --domain PE-COGNITIVE \
+  --target-score 95 \
+  --output score-report
+
+# 버전 업데이트
+/pe-cognitive update --version v2.1 \
+  --delta "{{CHANGE_DESCRIPTION}}"
+```
+
+---
+
+## ✅ PE-3 Validation Report
+
+| Dimension | Score | Notes |
+|---|---|---|
+| Role Clarity | 10/10 | ASI-level identity, 명확한 mission 정의 |
+| Task Decomposition | 10/10 | 12-phase sequential + recursive validation |
+| Output Structure | 10/10 | 14-section explicit format |
+| Anti-drift Control | 10/10 | NEVER/ALWAYS 이중 제어 레이어 |
+| Multi-agent Ecology | 9/10 | 11-agent 병렬 시뮬레이션 |
+| Generalization Test | 10/10 | 3-domain pass criteria 명시 |
+| Context Engineering | 9/10 | 5 directive anchors |
+| Grounding Policy | 10/10 | Evidence-based inference only |
+| Downstream Binding | 9/10 | P-1 / PE-DD / PE-11 연결 구조 |
+| Cognitive Genome | 10/10 | 5~7 step domain-agnostic 추출 |
+| **Total** | **97/100** | **✅ PE-3 95+ PASSED** |
+
+> Validation Date: 2026-05-09 | Validator: PE-3 Engine (Gilbert)
+
+---
+
+## 🔗 PE-11 Master Chain — NODE_012
 
 ```
-[ARTIFACT_INPUT_HERE] 위치에 분석 대상 아티팩트를 삽입 후 실행
+[PE-11 Master Orchestrator]
+         ↓
+┌────────────────────────────────────────────┐
+│  NODE_012 · ASI Cognitive Reverse Engineer  │  ← 신규 연결 (2026-05-09)
+│  Prompt   : PROMPT_012_A v2.0               │
+│  Domain   : PE-TECH-RE / PE-COGNITIVE       │
+│  Position : Pre-P1 Meta Layer               │
+│  Input    : Any Artifact                    │
+│  Output   : Cognitive Genome → P-1 Feed     │
+│  PE Score : 97/100                          │
+└────────────────┬───────────────────────────┘
+                 ↓
+    ┌────────────┼──────────────┐
+    ↓            ↓              ↓
+  P-1 OPT    PE-DD Risk    PE-IP v1.3
+  Technical  Register      Library
+  Analyst    (BN-01~03)    Mirror
 ```
 
-## Pipeline Integration
+---
 
-- `/pe-tech-re batch` → 배치 역설계 분석
-- `/pe-validate` → PE 점수 검증 (baseline 95+)
-- PE-11 Master System → NODE_012 자동화 체인 트리거
-- PE-IP v1.3 → PE-IP-012-A 미러 (05_COGNITIVE_RE/)
+## 📚 PE-IP v1.3 Mirror Registration
+
+| Field | Value |
+|---|---|
+| **IP ID** | PE-IP-012-A |
+| **Title** | ASI Cognitive Architecture Reverse Engineer |
+| **Source Prompt** | PROMPT_012_A v2.0 |
+| **Mirror Date** | 2026-05-09 |
+| **Library Version** | PE-IP v1.3 |
+| **Category** | Cognitive RE / Meta-Layer |
+| **PE Score** | 97/100 |
+| **Reuse Policy** | Full reuse across all PE domains |
+| **Tags** | `cognitive-genome` `reverse-engineer` `meta-layer` `multi-agent` `pe-tech-re` `pe-11` |
+
+---
+
+## 📊 Changelog
+
+| Version | Date | Changes |
+|---|---|---|
+| v1.0 | 2026-05-08 | 초안 생성 (Notion_012 기반) |
+| v2.0 | 2026-05-09 | PE-3 97/100, PE-11 NODE_012, PE-IP-012-A 등록, 12-phase 완전 명세, NEVER/ALWAYS 이중 제어 레이어 추가 |
