@@ -1,6 +1,6 @@
 # PE-DD · Strategic Due Diligence Prompt Library
 # GitHub SSOT: prompts/PE-DD/
-# 최초 생성: 2026-05-07 | 최종 업데이트: 2026-05-08 (Session C35)
+# 최초 생성: 2026-05-07 | 최종 업데이트: 2026-05-10 (Session C36)
 
 ---
 
@@ -21,7 +21,7 @@
 | OPT-DD-POLICY | opt_dd_policy_v1.1.md | 정책/규제/정부 실사 | **95** | v1.1 | ✅ Active |
 | OPT-DD-SEMI | opt_dd_semi_v1.1.md | 반도체/장비/수출규제 특화 실사 | **94** | v1.1 | ✅ Active |
 
-### 🟢 DD Domain Series (DD-009 ~ DD-024)
+### 🟢 DD Domain Series (DD-009 ~ DD-026)
 
 | ID | 파일 | 도메인 | PE-3 | 버전 | 상태 |
 |---|---|---|---|---|---|
@@ -40,9 +40,11 @@
 | DD-019 | dd_019_healthcare_medtech_v1.0.md | 헬스케어 / MedTech | 93 | v1.0 | ✅ Active |
 | DD-020 | dd_020_repe_v1.0.md | 부동산 PE / 대안투자 | 93 | v1.0 | ✅ Active |
 | DD-021 | dd_021_infra_pf_v1.0.md | 인프라 & 프로젝트 파이낸스 | 93 | v1.0 | ✅ Active |
-| **DD-022** | **dd_022_defense_aerospace_v1.0.md** | **방산 / 항공우주** | **93** | v1.0 | ✅ **Active** |
-| **DD-023** | **dd_023_cybersecurity_v1.0.md** | **사이버보안 / 정보보안** | **93** | v1.0 | ✅ **NEW** |
-| **DD-024** | **dd_024_private_credit_v1.0.md** | **프라이빗 크레딧 / 직접대출** | **93** | v1.0 | ✅ **NEW** |
+| **DD-022** | **dd_022_defense_aerospace_v1.0.md** | **방산 / 항공우주** | **93** | v1.0 | ✅ Active |
+| **DD-023** | **dd_023_cybersecurity_v1.0.md** | **사이버보안 / 정보보안** | **93** | v1.0 | ✅ Active |
+| **DD-024** | **dd_024_private_credit_v1.0.md** | **프라이빗 크레딧 / 직접대출** | **93** | v1.0 | ✅ Active |
+| **DD-025** | **dd_025_logistics_sc_v1.0.md** | **물류 / 공급망 관리 (Logistics/SC)** | **93** | v1.0 | ✅ **NEW** |
+| **DD-026** | **dd_026_space_satellite_v1.0_part1.md** + **part2.md** + **part3.md** | **우주 / 위성 (Space/Satellite)** | **93** | v1.0 | ✅ **NEW** |
 
 ### ⚙️ Engine Files
 
@@ -54,14 +56,14 @@
 
 ---
 
-## 📊 PE-3 점수 분포 현황 (2026-05-08 기준)
+## 📊 PE-3 점수 분포 현황 (2026-05-10 기준)
 
 | PE-3 구간 | 해당 프롬프트 | 비고 |
 |---|---|---|
 | **97** | DD-MASTER v2.1 | 최고점 |
 | **95** | OPT-DD-FIN v1.1, OPT-DD-POLICY v1.1 | Target 95 달성 |
 | **94** | DD-009-A, OPT-DD-SEMI v1.1 | |
-| **93** | OPT-DD v1.0, DD-009-B, DD-010~024 (14종) | 기본선 |
+| **93** | OPT-DD v1.0, DD-009-B, DD-010~026 (16종) | 기본선 |
 
 ---
 
@@ -78,9 +80,11 @@
 | Infra Class Classifier | DD-021 | PPP/Core/Greenfield 자동 분류 |
 | Climate Risk Quantifier | DD-021 | 물리적+전환리스크 0~10 정량화 |
 | Lender Matrix (5-tier) | DD-021 | IFI→에쿼티 5단계 대출자 매핑 |
-| Defense Contract Analyzer | **DD-022** | ITAR/EAR 통제품목 + FOCI 심사 자동화 |
-| Cyber Threat Matrix | **DD-023** | MITRE ATT&CK 프레임워크 기반 위협 매핑 |
-| Credit Stress Engine | **DD-024** | LTV/DSCR/PIK 구조 + 크레딧 스트레스 시뮬레이션 |
+| Defense Contract Analyzer | DD-022 | ITAR/EAR 통제품목 + FOCI 심사 자동화 |
+| Cyber Threat Matrix | DD-023 | MITRE ATT&CK 프레임워크 기반 위협 매핑 |
+| Credit Stress Engine | DD-024 | LTV/DSCR/PIK 구조 + 크레딧 스트레스 시뮬레이션 |
+| SC Resilience Scorer | **DD-025** | 공급망 탄력성 스코어링 + 단절 시나리오 시뮬레이션 |
+| Space Asset Valuation Engine | **DD-026** | 위성 자산 가치평가 + 궤도 리스크 정량화 |
 
 ---
 
@@ -92,7 +96,7 @@
 [PE-DD: 실사·검증 게이트]  ← 유일한 DD 레이어
   ├─ DD-MASTER v2.1 (오케스트레이터)
   ├─ OPT Layer: FIN / POLICY / SEMI (v1.1)
-  └─ DD-009~024 (도메인 16종)
+  └─ DD-009~026 (도메인 18종)
        ↓
 [PE-STRAT / PE-DEEP: 전략 분석]
        ↓
@@ -126,8 +130,10 @@
 | v2.2 | 2026-05-08 | 🔧 OPT Layer 전체 v1.1 업그레이드 — OPT-DD-FIN (PE-3: 95), OPT-DD-POLICY (PE-3: 95), OPT-DD-SEMI (92→94, ECCN분류기/Geo Risk 정량화/5중규제스크리닝 추가). OPT Layer 4종 완전체 달성 |
 | v2.3 | 2026-05-08 | 🏗️ DD-021 Infrastructure & Project Finance v1.0 신규 등록 — PF-DSCR Engine / Infra Class Classifier / Climate Risk Quantifier / Lender Matrix 5-tier 4개 전용 엔진 탑재. DD 시리즈 DD-009~021 총 13종 완성. 18,066 bytes. PE-3 Target: 93. Session C34 완료 |
 | v2.4 | 2026-05-08 | 🛡️ DD-022 Defense & Aerospace v1.0 신규 등록 — ITAR/EAR 통제품목 자동 분류, FOCI 심사 프레임워크, Defense Contract Analyzer 엔진 탑재. 22,570 bytes. PE-3: 93. DD 시리즈 14종 |
-| **v2.5** | **2026-05-08** | **🔐 DD-023 Cybersecurity v1.0 신규 등록 — MITRE ATT&CK 기반 Cyber Threat Matrix 엔진, 사이버보안 투자 리스크 프레임워크, Zero-Trust/SASE/XDR 아키텍처 실사 특화. 29,942 bytes. PE-3: 93. DD 시리즈 15종** |
-| **v2.6** | **2026-05-08** | **💳 DD-024 Private Credit v1.0 신규 등록 — Credit Stress Engine (LTV/DSCR/PIK 시뮬레이션), Unitranche/Mezzanine/Second Lien 구조 분석, 직접대출 포트폴리오 실사 특화. 35,109 bytes (최대 규모). PE-3: 93. DD 시리즈 16종 완성. Session C35** |
+| v2.5 | 2026-05-08 | 🔐 DD-023 Cybersecurity v1.0 신규 등록 — MITRE ATT&CK 기반 Cyber Threat Matrix 엔진, 사이버보안 투자 리스크 프레임워크, Zero-Trust/SASE/XDR 아키텍처 실사 특화. 29,942 bytes. PE-3: 93. DD 시리즈 15종 |
+| v2.6 | 2026-05-08 | 💳 DD-024 Private Credit v1.0 신규 등록 — Credit Stress Engine (LTV/DSCR/PIK 시뮬레이션), Unitranche/Mezzanine/Second Lien 구조 분석, 직접대출 포트폴리오 실사 특화. 35,109 bytes (최대 규모). PE-3: 93. DD 시리즈 16종 완성. Session C35 |
+| **v2.7** | **2026-05-10** | **🚚 DD-025 Logistics & Supply Chain v1.0 신규 등록 — SC Resilience Scorer, 공급망 단절 시나리오 시뮬레이션, 물류 네트워크 최적화 실사 특화. 42,443 bytes. PE-3: 93. DD 시리즈 17종** |
+| **v2.8** | **2026-05-10** | **🛰️ DD-026 Space & Satellite v1.0 신규 등록 — Space Asset Valuation Engine, 궤도 리스크 정량화, 위성 인프라 투자 실사 특화. 3-part 분할 파일 (15,236 + 10,848 + 16,597 = 42,681 bytes). PE-3: 93. DD 시리즈 18종 완성. Session C36** |
 
 ---
 
@@ -135,8 +141,8 @@
 
 - **DD-001~008**: 공백 (설계상 출발점 DD-009 확정)
 - **DD-009**: 반도체 특화 최초 도메인 (A/B 파생 포함)
-- **DD-010~024**: 순차 도메인 확장 (현재 총 16종 Active)
-- **DD-025~**: 미정 (Logistics/Supply Chain, Crypto/Digital Assets 후보)
+- **DD-010~026**: 순차 도메인 확장 (현재 총 18종 Active)
+- **DD-027~**: 미정 (Crypto/Digital Assets, AgriFood/Climate 후보)
 
 ---
 
@@ -147,4 +153,4 @@
 | DD-023 v1.0 | 93 (초안) | 95 | v1.1 심화 (Threat Intelligence 통합, CVE/CVSS 자동 스코어링 추가) |
 | DD-024 v1.0 | 93 (초안) | 95 | v1.1 심화 (Credit Stress 시나리오 확장, Covenant 분석 강화) |
 | OPT-DD v1.0 | 93 | 95 | v1.1 업그레이드 (범용 DD 강화) |
-| DD-025 | - | 93 | Logistics/Supply Chain 또는 Crypto/Digital Assets 신규 작성 |
+| DD-027 | - | 93 | Crypto/Digital Assets 또는 AgriFood/Climate 신규 작성 |
