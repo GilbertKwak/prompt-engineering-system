@@ -1,6 +1,6 @@
 # ============================================================
 # PE-7 Product Idea → MECE 자동분석 루프 — GitHub Actions
-# Version : 1.0 | Date: 2026-05-09
+# Version : 1.1 | Date: 2026-05-16  (fix: YAML L82 syntax error)
 # ============================================================
 
 name: "PE-7 | Product Idea → MECE 자동분석"
@@ -36,11 +36,11 @@ jobs:
     timeout-minutes: 30
 
     env:
-      NOTION_TOKEN    : ${{ secrets.NOTION_TOKEN }}
-      OPENAI_API_KEY  : ${{ secrets.OPENAI_API_KEY }}
-      GITHUB_TOKEN    : ${{ secrets.GITHUB_TOKEN }}
-      NOTION_DB_ID    : "e34f78c6-d1df-4575-8a2f-a45d716c593e"
-      GITHUB_REPO     : "GilbertKwak/prompt-engineering-system"
+      NOTION_TOKEN     : ${{ secrets.NOTION_TOKEN }}
+      OPENAI_API_KEY   : ${{ secrets.OPENAI_API_KEY }}
+      GITHUB_TOKEN     : ${{ secrets.GITHUB_TOKEN }}
+      NOTION_DB_ID     : "e34f78c6-d1df-4575-8a2f-a45d716c593e"
+      GITHUB_REPO      : "GilbertKwak/prompt-engineering-system"
       POLL_INTERVAL_SEC: "60"
 
     steps:
@@ -73,22 +73,20 @@ jobs:
             $RECORD_FLAG \
             --output pe7_results.json
 
+      # ── FIX v1.1 ──────────────────────────────────────────────────────────
+      # 기존: python3 -c "..." 인라인 코드에서 f-string 이중 이스케이프(\")
+      #       가 YAML 파서를 깨뜨려 L82 SyntaxError 발생
+      # 수정: 인라인 Python을 별도 헬퍼 스크립트(automation/pe7_summary.py)로
+      #       분리하여 따옴표 충돌 완전 제거
+      # ──────────────────────────────────────────────────────────────────────
       - name: "📊 결과 요약 출력"
         if: always()
         run: |
           if [ -f pe7_results.json ]; then
             echo "## PE-7 실행 결과" >> $GITHUB_STEP_SUMMARY
-            python3 -c "
-import json, sys
-with open('pe7_results.json') as f:
-    data = json.load(f)
-if isinstance(data, dict): data = [data]
-for r in data:
-    status = '✅' if r.get('status')=='done' else '❌'
-    idea = r.get('idea', '?')
-    p = r.get('parsed', {})
-    print(f'| {status} | {idea} | PE-3: {p.get(\"pe3_score\",\"?\")} | IRR: {p.get(\"irr\",\"?\")}% |')
-" >> $GITHUB_STEP_SUMMARY
+            echo "| 상태 | 아이디어 | PE-3 점수 | IRR |" >> $GITHUB_STEP_SUMMARY
+            echo "|------|---------|-----------|-----|" >> $GITHUB_STEP_SUMMARY
+            python automation/pe7_summary.py pe7_results.json >> $GITHUB_STEP_SUMMARY
           fi
 
       - name: "💾 결과 아티팩트 저장"
