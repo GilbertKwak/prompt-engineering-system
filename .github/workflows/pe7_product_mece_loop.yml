@@ -1,6 +1,6 @@
 # ============================================================
 # PE-7 Product Idea → MECE 자동분석 루프 — GitHub Actions
-# Version : 1.1 | Date: 2026-05-16  (fix: YAML L82 syntax error)
+# Version : 1.2 | Date: 2026-05-16  (fix: secrets validation + permissions)
 # ============================================================
 
 name: "PE-7 | Product Idea → MECE 자동분석"
@@ -29,6 +29,9 @@ on:
       - "prompts/PE-PROD/**"
       - "config/pe7_product_mece_loop.yaml"
 
+permissions:
+  contents: write
+
 jobs:
   mece-analysis:
     name: "MECE 자동분석 실행"
@@ -55,6 +58,31 @@ jobs:
 
       - name: "📦 의존성 설치"
         run: pip install requests
+
+      # ── SECRETS VALIDATION (v1.2 신규) ────────────────────────────────────
+      # 목적: API 호출 전 Secrets 주입 여부를 안전하게 검증
+      #       - 값 노출 없이 길이(char count)만 출력
+      #       - 미설정 시 exit 1 → 이후 step 진행 차단
+      # 검증 완료 후 이 step 삭제 가능
+      # ──────────────────────────────────────────────────────────────────────
+      - name: "🔐 Secrets 주입 확인"
+        run: |
+          if [ -z "$NOTION_TOKEN" ]; then
+            echo "❌ NOTION_TOKEN 미설정 — Settings > Secrets > Actions 에서 등록하세요"
+            exit 1
+          else
+            echo "✅ NOTION_TOKEN 주입 확인 (길이: ${#NOTION_TOKEN}자)"
+          fi
+          if [ -z "$OPENAI_API_KEY" ]; then
+            echo "❌ OPENAI_API_KEY 미설정 — Settings > Secrets > Actions 에서 등록하세요"
+            exit 1
+          else
+            echo "✅ OPENAI_API_KEY 주입 확인 (길이: ${#OPENAI_API_KEY}자)"
+          fi
+          echo "🔒 모든 필수 Secrets 정상 주입 확인 완료"
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
       - name: "🚀 PE-7 루프 실행"
         run: |
