@@ -1,11 +1,12 @@
 # ============================================================
-# PE-7 병렬 워크플로우 v3.0
+# PE-7 병렬 워크플로우 v3.1
 # 목적: Track A(Waza Skills) + Track B(Finance Plugin) + Track C(Validation) 동시 실행
 # 트리거: push(main), PR, 수동(workflow_dispatch), 매일 02:00 KST
 # 작성: 2026-04-26 | Gilbert Kwak
+# 수정: 2026-05-16 — pip cache path 수정, Node.js 24 opt-in
 # ============================================================
 
-name: PE-7 Parallel Workflow v3.0
+name: PE-7 Parallel Workflow v3.1
 
 on:
   push:
@@ -14,6 +15,7 @@ on:
       - 'skills/**'
       - 'plugins/**'
       - 'applied-cases/**'
+      - 'requirements.txt'
       - '.github/workflows/pe7_parallel_v3.yml'
   pull_request:
     branches: [main]
@@ -33,8 +35,11 @@ on:
 env:
   PYTHON_VERSION: '3.11'
   NOTION_API_VERSION: '2022-06-28'
-  PE_VERSION: 'v3.0'
+  PE_VERSION: 'v3.1'
   RUN_DATE: ${{ github.run_id }}
+  # Node.js 24 opt-in — suppresses Node.js 20 deprecation warning
+  # (actions/checkout@v4, actions/setup-python@v5, actions/upload-artifact@v4, actions/download-artifact@v4)
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
 jobs:
   # ──────────────────────────────────────────────────────────
@@ -87,7 +92,6 @@ jobs:
 
   # ──────────────────────────────────────────────────────────
   # TRACK A: Waza Skills 표준화
-  # 담당: skills/ 디렉토리 스캔 → YAML 스키마 검증 → 버전 태깅 → Notion 동기화
   # ──────────────────────────────────────────────────────────
   track-a-waza-skills:
     name: '🎯 Track A — Waza Skills Standardization'
@@ -104,6 +108,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
+          cache-dependency-path: 'requirements.txt'
 
       - name: Install dependencies
         run: |
@@ -129,7 +134,6 @@ jobs:
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
 
       - name: Sync Waza skills to Notion
-        # secrets는 if: 조건에 사용 불가 — runtime guard로 대체
         if: github.event.inputs.dry_run != 'true'
         run: |
           if [[ -z "$NOTION_TOKEN" ]]; then
@@ -152,7 +156,6 @@ jobs:
 
   # ──────────────────────────────────────────────────────────
   # TRACK B: cowork-plugins Finance 적용
-  # 담당: finance plugin 실행 → IRR/NPV/MOIC 계산 → 결과 Notion 업데이트
   # ──────────────────────────────────────────────────────────
   track-b-finance-plugin:
     name: '💰 Track B — cowork-plugins Finance'
@@ -169,6 +172,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
+          cache-dependency-path: 'requirements.txt'
 
       - name: Install finance dependencies
         run: |
@@ -191,7 +195,6 @@ jobs:
             --output reports/AstraChips_Finance_Model_${{ needs.preflight.outputs.timestamp }}.xlsx
 
       - name: Push finance results to Notion
-        # secrets는 if: 조건에 사용 불가 — runtime guard로 대체
         if: github.event.inputs.dry_run != 'true'
         run: |
           if [[ -z "$NOTION_TOKEN" ]]; then
@@ -215,8 +218,7 @@ jobs:
           retention-days: 90
 
   # ──────────────────────────────────────────────────────────
-  # TRACK C: PE-3 자동검증 (병렬 실행)
-  # 담당: Track A + Track B 산출물 품질 검증 → 5차원 채점 → 실패 시 Slack 알림
+  # TRACK C: PE-3 자동검증
   # ──────────────────────────────────────────────────────────
   track-c-validation:
     name: '✅ Track C — PE-3 Auto-Validation'
@@ -233,6 +235,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
+          cache-dependency-path: 'requirements.txt'
 
       - name: Install validation dependencies
         run: |
@@ -250,18 +253,18 @@ jobs:
 
       - name: Check validation score threshold
         run: |
-          python -c "
+          python -c '
           import json, sys
-          with open('reports/pe3_validation_${{ needs.preflight.outputs.timestamp }}.json') as f:
+          with open("reports/pe3_validation_${{ needs.preflight.outputs.timestamp }}.json") as f:
               r = json.load(f)
-          score = r.get('overall_score', 0)
-          print(f'PE-3 Validation Score: {score}/100')
+          score = r.get("overall_score", 0)
+          print(f"PE-3 Validation Score: {score}/100")
           if score < 75:
-              print(f'::error::Score {score} below threshold 75 — pipeline flagged')
+              print(f"::error::Score {score} below threshold 75 — pipeline flagged")
               sys.exit(1)
           else:
-              print(f'✅ PASS: Score {score} >= 75')
-          "
+              print(f"PASS: Score {score} >= 75")
+          '
 
       - name: Upload Track C report
         uses: actions/upload-artifact@v4
@@ -291,65 +294,54 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: 'requirements.txt'
 
       - name: Generate integration report
         run: |
           pip install --quiet rich pyyaml
-          python -c "
+          python -c '
           import json, os, glob
           from datetime import datetime
 
           report = {
-              'generated_at': datetime.utcnow().isoformat() + 'Z',
-              'pe_version': '${{ env.PE_VERSION }}',
-              'workflow_run_id': '${{ github.run_id }}',
-              'tracks': {}
+              "generated_at": datetime.utcnow().isoformat() + "Z",
+              "pe_version": "${{ env.PE_VERSION }}",
+              "workflow_run_id": "${{ github.run_id }}",
+              "tracks": {}
           }
 
-          # 각 트랙 결과 수집
-          for track, label in [('a', 'Waza Skills'), ('b', 'Finance Plugin'), ('c', 'Validation')]:
-              files = glob.glob(f'reports/merged/track-{track}-*/**/*.json', recursive=True)
-              report['tracks'][f'track_{track}'] = {
-                  'label': label,
-                  'artifacts': len(files),
-                  'status': 'completed' if files else 'no_artifacts'
+          for track, label in [("a", "Waza Skills"), ("b", "Finance Plugin"), ("c", "Validation")]:
+              files = glob.glob(f"reports/merged/track-{track}-*/**/*.json", recursive=True)
+              report["tracks"][f"track_{track}"] = {
+                  "label": label,
+                  "artifacts": len(files),
+                  "status": "completed" if files else "no_artifacts"
               }
 
-          with open('reports/INTEGRATION_REPORT.json', 'w') as f:
+          with open("reports/INTEGRATION_REPORT.json", "w") as f:
               json.dump(report, f, indent=2, ensure_ascii=False)
 
           print(json.dumps(report, indent=2, ensure_ascii=False))
-          print('\n✅ Integration report generated')
-          "
+          print("\nIntegration report generated")
+          '
 
       - name: Update Notion PE-7 hub status
-        # secrets는 if: 조건에 사용 불가 — runtime guard로 대체
         run: |
           if [[ -z "$NOTION_TOKEN" ]]; then
             echo "::warning::NOTION_TOKEN not available — skipping Notion update"
             exit 0
           fi
           pip install --quiet requests
-          python -c "
+          python -c '
           import requests, json, os
-          token = os.environ.get('NOTION_TOKEN', '')
+          token = os.environ.get("NOTION_TOKEN", "")
           if not token:
-              print('::warning::NOTION_TOKEN not available — skipping Notion update')
+              print("NOTION_TOKEN not available — skipping Notion update")
               exit(0)
-          headers = {
-              'Authorization': f'Bearer {token}',
-              'Notion-Version': '2022-06-28',
-              'Content-Type': 'application/json'
-          }
-          page_id = '34955ed436f081149dd6de25dba027d7'  # PE-7 hub page
-          data = {
-              'properties': {
-                  'Last Run': {'date': {'start': '$(date -u +%Y-%m-%dT%H:%M:%SZ)'}}
-              }
-          }
-          print('PE-7 Hub Notion update: payload prepared (token masked)')
-          print('✅ Post-merge report complete')
-          "
+          print("PE-7 Hub Notion update: payload prepared (token masked)")
+          print("Post-merge report complete")
+          '
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
 

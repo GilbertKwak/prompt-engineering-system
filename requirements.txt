@@ -1,0 +1,25 @@
+# PE-7 Parallel Workflow — shared Python dependencies
+# Covers Track A (Waza Skills), Track B (Finance Plugin), Track C (PE-3 Validation)
+# Last updated: 2026-05-16
+
+# Core
+numpy>=1.26
+pandas>=2.2
+scipy>=1.13
+
+# YAML / JSON / Schema
+pyyaml>=6.0
+jsonschema>=4.22
+
+# HTTP / Notion sync
+requests>=2.32
+python-dotenv>=1.0
+
+# CLI / Formatting
+rich>=13.7
+
+# Excel output (Track B)
+openpyxl>=3.1
+
+# Testing (Track C)
+pytest>=8.2
