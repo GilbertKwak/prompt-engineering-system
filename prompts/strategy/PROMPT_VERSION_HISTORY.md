@@ -1,73 +1,119 @@
-# PE-STRAT 프롬프트 버전 이력 (SSOT)
+# PE-STR 프롬프트 버전 이력 (SSOT)
 
 > **경로**: `prompts/strategy/`  
-> **최종 업데이트**: 2026-05-05  
-> **관리 원칙**: GitHub = SSOT · Notion PE-STRAT 섹션과 동기화
+> **최종 업데이트**: 2026-05-16  
+> **관리 원칙**: GitHub = SSOT · Notion PE-STR 페이지와 동기화
 
 ---
 
-## 📋 프롬프트 인덱스
+## 📋 프롬프트 인덱스 (v1.1 기준)
 
-| ID | 파일 | 유형 | Temp | PE-3 Before | PE-3 After | 버전 | 상태 |
-|---|---|---|---|---|---|---|---|
-| PE-STRAT-ORCH | `pe_strat_orchestrator_v3.0.md` | 메타 오케스트레이터 (7-Tool MoE+Bayesian+RL) | 0.1 / 0.0 | 68 | 96 | v3.0 | ✅ Active |
-| PE-STRAT-01 | `pe_strat_01_v2.0.md` | 범용 전략 AI 아키텍트 (Porter×Ng×Pearl · MoE · RL) | 0.1 / 0.0 | 71 | 93 | v2.0 | ✅ Active |
-| PE-STRAT-02 | `pe_strat_02_investment_v1.0.md` | 투자전략 전문가 Variant (MPT · VaR · Fama-French 5F) | 0.05 | — | 94 | v1.0 | ✅ Active |
+### 통합 마스터
+
+| ID | 파일 | 유형 | PE-3 목표 | 버전 | 상태 |
+|---|---|---|---|---|---|
+| PE-STR-MASTER | `pe_str_master_v1.0.md` | 9-Layer MECE 통합 마스터 | 95 | v1.0 | ✅ Active |
+
+### OPT-STR 경량화 세트
+
+| ID | 파일 | 역할 | PE-3 목표 | 버전 | 단축명령 | 상태 |
+|---|---|---|---|---|---|---|
+| OPT-STR-01 | `opt_str_01_mbb_gates_v2.0.md` | MBB+Gates 전략 마스터 | 97 | v2.0 | "전략분석" | ✅ Active |
+| OPT-STR-02 | `opt_str_02_kill_analysis_v2.0.md` | Kill Analysis | 95 | v2.0 | "탈락분석" | ✅ Active |
+| OPT-STR-03 | `opt_str_03_ai_deeptech_v2.0.md` | AI·딥테크 투자 전략 | 96 | v2.0 | "AI투자" | ✅ Active |
+| OPT-STR-04 | `opt_str_04_integrated_v1.0.md` | 통합 전략 프레임워크 | 95 | v1.0 | "통합전략" | ✅ Active |
+| OPT-STR-05 | `opt_str_05_moat_analysis_v1.0.md` | 경제적 해자(경제적해자) 분석 마스터 | 96 | v1.0 | "해자분석" | ✅ Active |
+
+### 라우터 & 이력 관리
+
+| ID | 파일 | 유형 | 버전 | 상태 |
+|---|---|---|---|---|
+| OPT-STR-ROUTER | `opt_str_router_v1.1.md` | 자동 라우팅 오케스트레이터 | v1.1 | ✅ Active |
+| 이력관리 | `PROMPT_VERSION_HISTORY.md` | 버전 SSOT | v2.0 | ✅ Active |
 
 ---
 
 ## 🔄 버전 변경 이력
 
-### v3.0 — 2026-05-05
-**변경 유형**: PE-STRAT-ORCH 메타 오케스트레이터 신규 등록
+### v2.0 — 2026-05-16 KST  ← 현재
+**변경 유형**: OPT-STR-05 해자분석 신규 등록 + ROUTER v1.1 라우팅 추가
 
-- **아키텍처**: Agent-as-Tools (7-Tool 병렬·순차 혼합)
-- **MoE 라우팅**: 6×6 매트릭스, Bayesian Laplace smoothing (α=1)
-- **실행 페이즈**: Phase 1 병렬 → Phase 2 순차 → Phase 3 순차 → Phase 4 검증
-- **RL 보상함수**: β(0.30)+γ(0.25)+δ(0.25)+ε(0.20) = 1.00
-- **PE-3 점수**: 68 → 96 (+28 pts)
-- **자동 저장**: GitHub sessions_log.json + Notion Sessions DB 연동
-- **크로스 링크**: PE-STRAT-01/02 · PE-1/PE-2/PE-3 · P-07 Recursive Decompose
+#### OPT-STR-05 v1.0 신규 등록
+- **프레임워크**: Morningstar 5-Moat × Porter 5-Forces × Hamilton-Helmer 7Powers
+- **해자 유형**: Network Effect / Switching Cost / Cost Advantage / Intangible Asset / Efficient Scale
+- **9-Layer 분석**: 해자 현황 스캔 → 원체분석 → 내구성 → 위협 → 확장성 → 재무증거 → 반도체AI특화 → MOAT-SCORE → 전략함의
+- **MOAT-SCORE**: Width(40) + Depth(30) + Reach(20) + 재무증거(10) = 100점 체계
+- **연계**: OPT-STR-01/02/03/04 순차 실행 통합 지원
+- **반도체 특화**: TSMC CoWoS/ASML EUV/CUDA 생태계/HBM 라인 명시
+- **PE-3 목표**: 96/100
+- **GitHub**: `prompts/strategy/opt_str_05_moat_analysis_v1.0.md`
+- **Notion**: https://www.notion.so/36255ed436f0811db316ece28518c05b
+- **단축명령**: "해자분석" | "경쟁우위" | "진입장벽" | "MOAT"
 
-**커밋**: `feat(PE-STRAT): Add orchestrator v3.0 — 7-Tool Agent-as-Tools, MoE 6x6 routing, PE-3 score 68→96 (2026-05-05)`
+#### OPT-STR-ROUTER v1.0 → v1.1 업데이트
+- **변경**: OPT-STR-05 해자분석 라우팅 노드 추가
+- **신규 라우팅 키워드**: 해자 / 경쟁우위 / 진입장벽 / MOAT / 해자분석 / 경제적해자
+- **복합 라우팅 추가**: "해자+투자" → STR-05→STR-03 / "해자+Kill" → STR-05→STR-02
+- **단축명령 추가**: "해자분석" / "경쟁우위" / "진입장벽" / "MOAT"
+- **GitHub**: `prompts/strategy/opt_str_router_v1.1.md`
 
----
-
-### v2.0 — 2026-05-05
-**변경 유형**: PE-STRAT-01 완전 최적화 업그레이드 + PE-STRAT-02 신규 등록
-
-#### PE-STRAT-01 v2.0 변경 내역
-- **역할 확장**: Porter 5-Forces + Ng 인과추론 + Pearl Causal DAG 완전 통합
-- **MoE 라우팅**: 6개 도메인 동적 가중치 시스템 도입
-  - market_research=0.25, risk_analysis=0.20, forecasting=0.20, new_business=0.15, investment=0.15, geopolitics=0.05
-- **RL 보상함수**: Causal_Depth(β=0.35) + Logical_Consistency(γ=0.25) + Actionability(δ=0.20) + Evidence_Quality(ε=0.20)
-- **확신도 등급**: HIGH/MEDIUM/LOW 3단계 기준 명시화
-- **8단계 워크플로우**: 입력분류→에이전트실행→검증→업데이트 체계 구축
-- **3-Engine 연계**: PE-1 자동개선 / PE-2 자동증식 / PE-3 자동검증 완전 연동
-- **PE-3 점수**: 71 → 93 (+22 pts)
-  - Clarity: 72 → 93
-  - Structure: 78 → 95
-  - Specificity: 65 → 92
-  - Actionability: 69 → 93
-  - Applicability: 74 → 92
-
-#### PE-STRAT-02 v1.0 신규 등록
-- **역할**: 글로벌 자산운용사 CIO + 헤지펀드 PM 역할 특화
-- **핵심 프레임워크**: Markowitz MPT · Sharpe/Sortino Ratio · VaR(99%) · Fama-French 5-Factor
-- **MoE 투자 가중치**: P(investment)=0.50 (투자 집중 특화)
-- **출력 산출물**: Portfolio Allocation Table + Risk Dashboard + Investment Memo
-- **Temperature**: 0.05 (포트폴리오 계산 정밀도 최우선)
-- **RL 보상함수**: Quantitative_Rigor(α=0.30) + Risk_Accuracy(β=0.25) + Return_Precision(γ=0.25) + Execution_Clarity(δ=0.20)
-- **PE-3 점수**: 94 (신규 등록)
-
-**커밋**: `feat(PE-STRAT): Register PE-STRAT-01 v2.0 + PE-STRAT-02 v1.0 — PE-3 93/94 (2026-05-05)`
+**코밋트**: `84b1d602` — feat: Add OPT-STR-05 Moat Analysis v1.0 + Update Router v1.1
 
 ---
 
-### v1.0 — 2026-05-05 (최초 생성)
-- PE-STRAT-01 v1.0 초안 등록
-- Porter 5-Forces 기반 기본 전략 프롬프트
-- PE-3 점수: 71/100
+### v1.2 — 2026-05-15 KST
+**변경 유형**: OPT-STR-02/03/ROUTER v1.0 신규 등록 + PE-STR 도메인 정식화
+
+#### OPT-STR-02 v2.0 신규
+- **프레임워크**: Kill Analysis (Reverse DCF + 탈락 기준 명문화)
+- **PE-3 목표**: 95/100
+- **단축명령**: "탈락분석" | "신사업타당성"
+
+#### OPT-STR-03 v2.0 신규
+- **프레임워크**: AI·딥테크 투자 전략 (반도체 HBM/CoWoS 특화)
+- **PE-3 목표**: 96/100
+- **단축명령**: "AI투자" | "반도체전략" | "HBM분석"
+
+#### OPT-STR-ROUTER v1.0 신규
+- **초기 라우팅**: OPT-STR-01/02/03 + PE-STR-MASTER 4노드
+- **단축명령**: 9개 커맨드 (전략분석/탈락분석/AI투자/반도체전략/HBM분석 등)
+
+**코밋트**: `f29f1f6d` — feat: Add OPT-STR-02/03/ROUTER v1.0 + SSOT sync
+
+---
+
+### v1.1 — 2026-05-15 KST
+**변경 유형**: OPT-STR-01 v2.0 등록 + OPT-STR-04 통합 프레임워크 신규
+
+#### OPT-STR-01 v2.0
+- **프레임워크**: MBB 콘설팅 (McKinsey MECE + BCG Matrix + Bain Value Chain) + Gates 차비학
+- **특화**: M&A 리드오카니제이션 / 포트폴리오 분류 / 시장진입 순서
+- **PE-3 목표**: 97/100
+
+#### OPT-STR-04 v1.0 신규
+- **프레임워크**: 통합 시나리오 플래닝 + 실행 로드맵
+- **PE-3 목표**: 95/100
+- **파일 크기**: 6.5KB (가장 큰 OPT-STR 파일)
+
+---
+
+### v1.0 — 2026-05-15 KST (추안 등록)
+- **PE-STR-MASTER v1.0** 추안 등록
+- 9-Layer MECE 통합 마스터 프롬프트 (17KB)
+- PE-3 목표: 95/100
+- README.md + PROMPT_VERSION_HISTORY.md v1.0 생성
+
+---
+
+### 구 이력 연속성 노트 (2026-05-05 이전)
+
+> 아래 항목들은 시스템 마이그레이션 이전(PE-STRAT 시대)의 기록이며, 현 PE-STR SSOT와는 도메인 체계가 다릅니다. 참고용으로 보존.
+
+| ID | 파일 | PE-3 Before | PE-3 After | 버전 |
+|---|---|---|---|---|
+| PE-STRAT-ORCH | `pe_strat_orchestrator_v3.0.md` | 68 | 96 | v3.0 |
+| PE-STRAT-01 | `pe_strat_01_v2.0.md` | 71 | 93 | v2.0 |
+| PE-STRAT-02 | `pe_strat_02_investment_v1.0.md` | — | 94 | v1.0 |
 
 ---
 
@@ -75,23 +121,26 @@
 
 | 시스템 | 연결 경로 |
 |---|---|
-| Notion PE Hub | `프롬프트 엔지니어링 시스템 허브 v2.0` → PE-STRAT 섹션 |
+| Notion PE-STR Hub | https://www.notion.so/36155ed436f0811c8b5dca10d7317b8d |
+| Notion OPT-STR-01 | https://www.notion.so/36155ed436f08132b8aff0e96ad389cd |
+| Notion OPT-STR-04 | https://www.notion.so/36155ed436f0813db601cd7924a9655e |
+| Notion OPT-STR-05 | https://www.notion.so/36255ed436f0811db316ece28518c05b |
 | PE-1 자동개선 | 입력 최적화 루프 적용 |
 | PE-2 자동증식 | 도메인별 변형 버전 생성 |
-| PE-3 자동검증 | 5차원 품질 채점 (목표 90+) |
-| PE-10 멀티에이전트 | P-07 Recursive Decompose 연계 |
-| master-agent-v4.0b | 분석 시스템 v4.0 연동 |
-| multi-agent-system-v3-hybrid | MoE 라우팅 실행 환경 |
+| PE-3 자동검증 | 5차원 품질 체점 (목표 93+) |
+| PE-SEMI 도메인 | OPT-STR-03/05 연계 (반도체 해자) |
+| PE-DD 도메인 | OPT-STR-02/05 연계 (Kill+해자 향상) |
+| PE-FIN 도메인 | OPT-STR-05 L6 연계 (ROIC/WACC 해자증거) |
 
 ---
 
-## ⚠️ 오류 예방 체크리스트 (PE-STRAT 전용)
+## ⚠️ 오류 예방 체크리스트 (PE-STR 전용)
 
 | # | 검증 항목 | 기준 | 담당 엔진 |
 |---|---|---|---|
-| 1 | MoE 가중치 합산 = 1.00 | Σ weights = 1.00 ± 0.001 | PE-3 수식 검증 |
-| 2 | RL 보상함수 계수 합산 = 1.00 | α+β+γ+δ = 1.00 | PE-3 수식 검증 |
-| 3 | Temperature 범위 | 0.0 ≤ T ≤ 0.3 (전략 도메인) | PE-1 파라미터 검증 |
-| 4 | Pearl DAG 노드 최소 개수 | ≥ 5개 노드 | PE-3 구조 검증 |
-| 5 | 출력 산출물 명시 여부 | 3개 이상 구체적 산출물 기술 | PE-3 완전성 검증 |
-| 6 | PE Hub Notion 동기화 | 등록 후 24시간 이내 | 수동 확인 |
+| 1 | SSOT 정합성 | GitHub SHA × Notion PageID 실제 확인 | 수동 확인 |
+| 2 | 라우터 코버리지 | 전체 OPT-STR ID 랠답 | ROUTER 체크 |
+| 3 | PE-3 점수 미달 발생시 | PE-1 자동개선 루프 | PE-1 엔진 |
+| 4 | 단축명령 중복 없음 | 키워드 독점성 확인 | 수동 확인 |
+| 5 | Notion 동기화 | 등록 후 24시간 이내 | 수동 확인 |
+| 6 | Temperature 범위 | 0.0 ≤ T ≤ 0.3 (전략 도메인) | PE-1 파라미터 검증 |
