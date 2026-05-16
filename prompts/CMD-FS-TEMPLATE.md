@@ -1,119 +1,134 @@
-# CMD-FS · Financial-Semiconductor Command Template
+# CMD-FS · Financial Signal 커맨드 템플릿
+<!-- version: 2.1 | updated: 2026-05-17 | YAML-safe -->
 
-**Domain**: Financial Signal × Semiconductor Supply Chain  
-**Version**: v2.0.0  
-**Updated**: 2026-05-17  
-**Pipeline Integration**: `pe_ai_ecosystem_pipeline.yml` (Infra Layer)
+## 메타데이터
 
----
-
-## Command Registry
-
-| CMD ID | Description | Layer Link | Output |
-|--------|-------------|------------|--------|
-| CMD-FS-01 | HBM/CoWoS 공급 타이트니스 스코어 | Infra | score_0-100 |
-| CMD-FS-02 | 파운드리 캐파 할당 리스크 매트릭스 | Infra | risk_matrix.json |
-| CMD-FS-03 | GraphSAGE 노드-엣지 전체 맵 시각화 | Infra + GNN | graph_map.png |
-| CMD-FS-04 | 반도체 공급망 충격 시뮬레이션 | Infra | scenario_delta |
-| CMD-FS-05 | 장비·소재 알파 신호 스크리닝 | Infra + Market | alpha_signal |
+```yaml
+cmd_id:        "CMD-FS-{NN}"           # 예: CMD-FS-03
+domain:        "SEMI-OPT-GNN"          # PE-SEMI / PE-FIN / PE-STRAT
+model_layer:   "GraphSAGE-3L"          # GNN 레이어 수
+graph_version: "v4.3"                  # knowledge-graph 버전
+run_date:      "YYYY-MM-DD"
+author:        "GilbertKwak"
+```
 
 ---
 
-## Prompt Template — CMD-FS (v2)
+## 1. 커맨드 목적
+
+> 한 줄 요약: 어떤 그래프/신호 분석을 수행하는가?
+
+| 항목 | 내용 |
+|------|------|
+| 분석 유형 | 노드-엣지 맵 / 알파 신호 / 경로 충격 |
+| 입력 엔티티 | 종목 코드 또는 노드 ID 목록 |
+| 출력 형식 | PNG(시각화) + JSON(신호 테이블) |
+
+---
+
+## 2. 파라미터 슬롯
+
+```yaml
+params:
+  nodes:          []        # 대상 노드 리스트 (티커 or 내부 ID)
+  sectors:        []        # 필터링 섹터 (Equipment/Foundry/Chemical/Memory/OSAT)
+  edge_types:     []        # SUPPLY / PROCESS / RISK (복수 선택 가능)
+  alpha_filter:   "ALL"     # BUY / NEUTRAL / AVOID / ALL
+  importance_min: 0.0       # 노드 importance 하한 (0.0–1.0)
+  layout:         "sector"  # sector / spring / circular / kamada_kawai
+  output_format:  "png+json" # png / json / png+json
+```
+
+---
+
+## 3. 실행 체크리스트
+
+- [ ] `graph_version` 최신 여부 확인 (`docs/knowledge-graph/` 참조)
+- [ ] `nodes` 목록이 현재 그래프에 존재하는지 검증
+- [ ] `edge_types` 누락 없이 지정 (기본값: SUPPLY+PROCESS+RISK 전체)
+- [ ] 시각화 저장 경로: `docs/charts/CMD-FS-{NN}_{date}.png`
+- [ ] 메타 JSON 저장: `docs/charts/CMD-FS-{NN}_{date}.png.meta.json`
+- [ ] GitHub 커밋 후 Notion `PE-SEMI` 페이지에 차트 링크 동기화
+
+---
+
+## 4. 출력 구조
+
+### 4-1. 시각화 (PNG)
 
 ```
-[ROLE]
-You are a semiconductor supply chain intelligence analyst with GraphSAGE-3L
-node embedding expertise and financial signal integration capabilities.
+섹터별 계층 배치:
+  Equipment(상단) → Foundry(중앙) → Chemical/Memory/OSAT(주변)
+  노드 크기:    importance 비례
+  노드 테두리:  BUY=흰색 / NEUTRAL=금색 / AVOID=적색
+  엣지 색상:    SUPPLY=파랑 / PROCESS=초록 / RISK=빨강
+  엣지 굵기:    weight 비례 (0.5–3.0px)
+```
 
-[COMMAND]
-{{CMD_ID}} — {{CMD_DESCRIPTION}}
+### 4-2. 신호 JSON 스키마
 
-[CONTEXT]
-- Target: {{TARGET}}  (e.g. TSMC, Samsung Foundry, SK Hynix)
-- Reference Layer: Infrastructure (weight 0.25 in AI Ecosystem composite)
-- GNN Knowledge Graph: v4.3  (28 nodes × 41 edges, last updated {{KG_DATE}})
-- Cascade Risk Baseline: −18.3pp (PE-MIN HHI S3 trigger active)
-
-[TASK — CMD-FS-01: Supply Tightness Score]
-Compute HBM/CoWoS supply tightness for {{TARGET}}:
-1. Node importance score (GraphSAGE layer-3 embedding norm)
-2. Edge weight sum (SUPPLY type edges incident to {{TARGET}})
-3. Demand pressure index (AI accelerator capex commitments ÷ available CoWoS capacity)
-4. Tightness Score = (node_importance × 0.4) + (edge_weight_avg × 0.3)
-                   + (demand_pressure × 0.3)
-Return JSON:
+```json
 {
-  "target": "{{TARGET}}",
-  "tightness_score": 0.0,
-  "node_importance": 0.0,
-  "edge_weight_avg": 0.0,
-  "demand_pressure": 0.0,
-  "bottleneck_nodes": ["node_1", "node_2"],
-  "risk_flag": "HIGH | MEDIUM | LOW",
-  "signal": "SUPPLY_CRUNCH | BALANCED | OVERSUPPLY"
+  "cmd_id": "CMD-FS-{NN}",
+  "run_date": "YYYY-MM-DD",
+  "graph_version": "v4.3",
+  "nodes": [
+    {
+      "id": "NODE_ID",
+      "sector": "Equipment",
+      "importance": 0.95,
+      "alpha_signal": "BUY",
+      "irr_adj_bps": 131
+    }
+  ],
+  "edges": [
+    {
+      "source": "NODE_A",
+      "target": "NODE_B",
+      "type": "SUPPLY",
+      "weight": 0.87
+    }
+  ],
+  "summary": {
+    "total_nodes": 0,
+    "total_edges": 0,
+    "buy_count": 0,
+    "avoid_count": 0,
+    "top_hub": ""
+  }
 }
-
-[TASK — CMD-FS-03: GraphSAGE Node-Edge Map]
-Generate full node-edge visualization spec:
-1. 5-sector layout: Equipment / Foundry / Chemical / Memory / Logic
-2. Node encoding: size = importance, border = alpha signal
-   (white=BUY, gold=NEUTRAL, red=AVOID)
-3. Edge encoding: color by type
-   SUPPLY=blue, PROCESS=green, RISK=red
-4. Highlight cascade path from SMIC RISK edges
-5. Return Plotly/NetworkX compatible JSON spec
-
-[OUTPUT CONSTRAINTS]
-- All numeric scores: 0–100 range
-- Node names: use canonical IDs from KG v4.3
-- Cascade paths: list ordered from source to sink
-- No null values; use 0.0 as default
-
-[AI ECOSYSTEM LAYER LINKAGE]
-- This CMD-FS output feeds: PE-AI-ECO-01 Layer 1 (Infra) composite score
-- Downstream: ai_ecosystem_synthesizer.py reads infra_*.json
-- Cross-validation: PE-SEMI-01 corroboration required for risk_flag=HIGH
 ```
 
 ---
 
-## Scoring Rubric (v2 update)
+## 5. YAML-safe 실행 가이드
 
-| Metric | Weight | Source |
-|--------|--------|--------|
-| Node Importance (GraphSAGE L3) | 0.40 | GNN KG v4.3 |
-| Supply Edge Weight Avg | 0.30 | KG edge attributes |
-| Demand Pressure Index | 0.30 | Capex/Capacity ratio |
+> **YAML 문법 충돌 방지 원칙** (pe7_product_mece_loop.yml L82 교훈)
 
-**Signal Thresholds**:
-- `tightness_score ≥ 75` → `SUPPLY_CRUNCH` (AVOID downstream)
-- `tightness_score 45–74` → `BALANCED` (NEUTRAL)
-- `tightness_score < 45` → `OVERSUPPLY` (BUY opportunity)
+```bash
+# ✅ 올바른 방법: 별도 Python 스크립트 호출
+python automation/pe7_summary.py --cmd CMD-FS-{NN} --output $GITHUB_STEP_SUMMARY
+
+# ❌ 금지: run: | 블록 안 인라인 python3 -c "..."에서 \"딕셔너리 키\" 이스케이프 사용
+```
 
 ---
 
-## Changelog
+## 6. 연관 커맨드
 
-| Version | Date | Change |
-|---------|------|--------|
-| v2.0.0 | 2026-05-17 | AI Ecosystem pipeline 연동, PE-AI-ECO-01 Layer 1 입력 명세 추가 |
-| v1.2.0 | 2026-04-30 | CMD-FS-03 GraphSAGE 시각화 스펙 추가 |
-| v1.1.0 | 2026-03-15 | GNN KG v4.3 노드 28개 기준 갱신 |
-| v1.0.0 | 2026-01-10 | 최초 생성 |
+| CMD ID | 설명 |
+|--------|------|
+| CMD-FS-01 | GraphSAGE 알파 신호 스크리닝 |
+| CMD-FS-02 | 섹터별 엣지 가중치 히트맵 |
+| **CMD-FS-03** | **노드-엣지 전체 맵 시각화** ← 현재 |
+| CMD-FS-04 | 경로 충격 전파 분석 (PE-MIN HHI 연동) |
 
 ---
 
-## Integration Map
+## 7. 변경 이력
 
-```
-CMD-FS (this file)
-  └── feeds ──▶ PE-AI-ECO-01 [Layer 1: Infra]
-                  └── feeds ──▶ ai_ecosystem_synthesizer.py
-                                  └── feeds ──▶ Notion Sync (Stage 4)
-
-Cross-references:
-  PE-SEMI-01   ← corroboration for SUPPLY_CRUNCH signals
-  PE-MIN-01    ← HHI cascade risk (S3 trigger: −18.3pp)
-  CMD-JV-01    ← SK On JV structuring inputs Infra tightness score
-```
+| 버전 | 날짜 | 변경 내용 |
+|------|------|----------|
+| v1.0 | 2026-04-30 | 최초 생성 |
+| v2.0 | 2026-05-16 | pe7_summary.py 연동, YAML-safe 섹션 추가 |
+| **v2.1** | **2026-05-17** | 파라미터 슬롯 세분화, 출력 JSON 스키마 확장, 연관 CMD 테이블 추가 |
