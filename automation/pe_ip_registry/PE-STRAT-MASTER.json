@@ -1,0 +1,35 @@
+{
+  "pe_ip_id": "PE-STRAT-MASTER",
+  "version": "v10.0",
+  "status": "Active",
+  "category": "PE-STRAT",
+  "parent": "PE-IP > T-09",
+  "created": "2026-05-16",
+  "pe3_threshold": 93,
+  "pe3_score": null,
+  "notion_page_id": "36255ed436f081a0b132d7dfb5e35d30",
+  "notion_url": "https://www.notion.so/36255ed436f081a0b132d7dfb5e35d30",
+  "github_path": "prompts/PE-STRAT/PE-STRAT-MASTER_v10.0.md",
+  "chain_registry": [
+    "CHAIN-01", "CHAIN-02", "CHAIN-03", "CHAIN-04",
+    "CHAIN-05", "CHAIN-06", "CHAIN-07", "CHAIN-08",
+    "CHAIN-09", "CHAIN-10", "CHAIN-11", "CHAIN-12"
+  ],
+  "downstream_binding": [
+    "PE-DD", "PE-FIN", "PE-CON", "PE-INV",
+    "PE-SEMI", "PE-DC", "PE-TECH-RE", "PE-PAT",
+    "PE-MFG", "PE-BOARD", "PE-7", "PE-OPT"
+  ],
+  "validation": {
+    "sv_01": "PE-3 총점 < 93 → 자동재생성 (max 2회)",
+    "sv_02": "PE-3 < 95 → PE-OPT 자동트리거",
+    "sv_03": "CHAIN 커버리지 < 80% → 누락 체인 강제 실행",
+    "sv_04": "바인딩 오류 → PE-IP 인덱서 재동기화",
+    "sv_05": "출력 구조 불완전 → CHAIN-12 재실행"
+  },
+  "changelog": [
+    {"version": "v10.0", "date": "2026-05-16", "note": "CHAIN-10~12 신규 추가, GNN 연동 강화, PE-SEMI/PE-DC 바인딩"},
+    {"version": "v9.0",  "date": "2026-04-28", "note": "CHAIN-07~09 추가, ESG 모듈 통합"},
+    {"version": "v8.0",  "date": "2026-03-15", "note": "초기 마스터 통합본"}
+  ]
+}
