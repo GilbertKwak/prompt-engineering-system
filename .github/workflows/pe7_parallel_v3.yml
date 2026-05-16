@@ -129,8 +129,13 @@ jobs:
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
 
       - name: Sync Waza skills to Notion
-        if: github.event.inputs.dry_run != 'true' && secrets.NOTION_TOKEN != ''
+        # secrets는 if: 조건에 사용 불가 — runtime guard로 대체
+        if: github.event.inputs.dry_run != 'true'
         run: |
+          if [[ -z "$NOTION_TOKEN" ]]; then
+            echo "::warning::NOTION_TOKEN not set — skipping Notion sync"
+            exit 0
+          fi
           python skills/waza_notion_sync.py \
             --skills-dir skills/ \
             --notion-db-id "${{ secrets.NOTION_SKILLS_DB_ID }}"
@@ -186,8 +191,13 @@ jobs:
             --output reports/AstraChips_Finance_Model_${{ needs.preflight.outputs.timestamp }}.xlsx
 
       - name: Push finance results to Notion
-        if: github.event.inputs.dry_run != 'true' && secrets.NOTION_TOKEN != ''
+        # secrets는 if: 조건에 사용 불가 — runtime guard로 대체
+        if: github.event.inputs.dry_run != 'true'
         run: |
+          if [[ -z "$NOTION_TOKEN" ]]; then
+            echo "::warning::NOTION_TOKEN not set — skipping Notion update"
+            exit 0
+          fi
           python plugins/finance/finance_notion_updater.py \
             --results reports/finance_output_${{ needs.preflight.outputs.timestamp }}.json \
             --notion-page-id "${{ secrets.NOTION_FINANCE_PAGE_ID }}"
@@ -288,14 +298,14 @@ jobs:
           python -c "
           import json, os, glob
           from datetime import datetime
-          
+
           report = {
               'generated_at': datetime.utcnow().isoformat() + 'Z',
               'pe_version': '${{ env.PE_VERSION }}',
               'workflow_run_id': '${{ github.run_id }}',
               'tracks': {}
           }
-          
+
           # 각 트랙 결과 수집
           for track, label in [('a', 'Waza Skills'), ('b', 'Finance Plugin'), ('c', 'Validation')]:
               files = glob.glob(f'reports/merged/track-{track}-*/**/*.json', recursive=True)
@@ -304,17 +314,21 @@ jobs:
                   'artifacts': len(files),
                   'status': 'completed' if files else 'no_artifacts'
               }
-          
+
           with open('reports/INTEGRATION_REPORT.json', 'w') as f:
               json.dump(report, f, indent=2, ensure_ascii=False)
-          
+
           print(json.dumps(report, indent=2, ensure_ascii=False))
           print('\n✅ Integration report generated')
           "
 
       - name: Update Notion PE-7 hub status
-        if: secrets.NOTION_TOKEN != ''
+        # secrets는 if: 조건에 사용 불가 — runtime guard로 대체
         run: |
+          if [[ -z "$NOTION_TOKEN" ]]; then
+            echo "::warning::NOTION_TOKEN not available — skipping Notion update"
+            exit 0
+          fi
           pip install --quiet requests
           python -c "
           import requests, json, os
