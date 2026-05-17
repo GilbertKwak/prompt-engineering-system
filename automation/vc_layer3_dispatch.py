@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """PE-VC-03 Layer 3 deep-analysis dispatcher.
 
+P3 업데이트: 하드코딩된 LAYER3_MODULE_MAP 제거,
+         vc_layer_router.preprocess_gate + layer3_dispatch 실제 로직으로 교체.
+P4 지원: force=true 시 쿼리에 [DEEP] 플래그 주입 → vc_layer_router 내부 키워드에서
+          check_layer3_escalation이 자동 모듈 배팅.
+
 Usage:
     python3 automation/vc_layer3_dispatch.py \
         --query <query> --domain <domain> --force <true|false> --output l3_result.json
@@ -8,59 +13,66 @@ Usage:
 import argparse
 import json
 import sys
+import os
 from datetime import datetime, timezone
 
-LAYER3_MODULE_MAP = {
-    "PE-AI-ECO": [
-        {"id": "L3-AI-01", "description": "AI \uc5d0\ucf54\uc2dc\uc2a4\ud15c \uacbd\uc7c1 \uc9c0\ub3c4 \uc2ec\uce35 \ub9e4\ud551"},
-        {"id": "L3-AI-02", "description": "LLM \uc778\ud504\ub77c \uac00\uce58\uc0ac\uc2ac \uc548\uc815\uc131 \uc2a4\ucf54\uc5b4\ub9c1"},
-        {"id": "L3-AI-03", "description": "\uc804\ub825/\ub370\uc774\ud130\uc13c\ud130 \uc758\uc874\ub3c4 GNN \ubd84\uc11d"},
-    ],
-    "PE-SEMI": [
-        {"id": "L3-SEMI-01", "description": "\uc804\uacf5\uc815 \ubcd1\ubaa9 \ub178\ub4dc GraphSAGE \uc2e0\ud638"},
-        {"id": "L3-SEMI-02", "description": "HBM/CoWoS \uc218\uae09 \uc5fc\ub824 \uc218\uc900 \uc815\ub7c9 \ud655\uc778"},
-        {"id": "L3-SEMI-03", "description": "\ubbf8\uc911 \uc7a5\ube44 \uade0\ud615 \ucc28\uc775 \ucda9\uaca9 \uc2dc\ubbac"},
-    ],
-    "PE-DD": [
-        {"id": "L3-DD-01", "description": "DD \uc704\ud5d8 \ucda9 \ubca4\uce58\ub9c8\ud0a4 \ud321 \uc2e4\uc0ac"},
-        {"id": "L3-DD-02", "description": "\uc7ac\ubb34 \ubaa8\ub378 DCF/\uba40\ud2f0\ud50c \uac00\uc2dc\ud654"},
-        {"id": "L3-DD-03", "description": "\ubc95\ubb34/\uaddc\uc81c \ub9ac\uc2a4\ud06c \ud50c\ub798\uadf8 \ud0d0\uc9c0"},
-    ],
-}
+# automation/ 파일이 저장소 루트에서 실행될 수 있으므로 sys.path 보저
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+if SCRIPT_DIR not in sys.path:
+    sys.path.insert(0, SCRIPT_DIR)
+
+from vc_layer_router import preprocess_gate, layer3_dispatch
 
 
-def dispatch(query: str, domain: str, force: bool) -> dict:
-    modules = LAYER3_MODULE_MAP.get(domain, [])
-    if not modules:
-        print(f"[WARN] No Layer 3 modules registered for domain: {domain}", file=sys.stderr)
-
+def run(query: str, domain: str, force: bool) -> dict:
+    """P4: force=true 시 [DEEP] 플래그 주입으로 vc_layer_router의
+    check_layer3_escalation을 강제 트리거."""
     if force:
-        query = query + " [DEEP]"
+        query = query.rstrip() + " [DEEP]"
 
-    return {
-        "domain": domain,
-        "query": query,
-        "force_layer3": force,
-        "status": "dispatched",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "modules": modules,
-    }
+    packet = preprocess_gate(query, domain, verbose=False)
+
+    # force=true인 경우 layer3_escalate를 강제 True로 덜우르고
+    # 해당 도메인 모듈 전체를 modules_to_run에 인가
+    if force and not packet.layer3_escalate:
+        packet.layer3_escalate = True
+        # 도메인 모듈 전체 주입
+        full_module_map = {
+            "PE-AI-ECO": ["A-1", "A-2", "A-3"],
+            "PE-SEMI":   ["B-1", "B-2", "B-3"],
+            "PE-DD":     ["C-1", "C-2", "C-3", "C-4"],
+        }
+        packet.layer3_modules = full_module_map.get(domain, [])
+
+    result = layer3_dispatch(packet)
+
+    # layer3_dispatch가 SKIP을 리턴하는 경우(도메인 불일치 등) 경고 출력
+    if result.get("status") == "SKIP":
+        print(f"[WARN] Layer 3 SKIP: {result.get('reason')}", file=sys.stderr)
+
+    # 모든 컠담 timestamp 통일
+    result["timestamp"] = datetime.now(timezone.utc).isoformat()
+    result["force_layer3"] = force
+    result["domain"] = domain
+
+    return result
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--query", required=True)
-    parser.add_argument("--domain", required=True)
-    parser.add_argument("--force", default="false")
-    parser.add_argument("--output", default="l3_result.json")
+    parser = argparse.ArgumentParser(description="PE-VC-03 Layer 3 Dispatcher")
+    parser.add_argument("--query",  required=True,  help="분석 쿼리")
+    parser.add_argument("--domain", required=True,  help="대상 도메인 (PE-SEMI 등)")
+    parser.add_argument("--force",  default="false", help="Layer 3 강제 실행 (true/false)")
+    parser.add_argument("--output", default="l3_result.json", help="출력 JSON 경로")
     args = parser.parse_args()
 
     force = args.force.lower() in ("true", "1", "yes")
-    result = dispatch(args.query, args.domain, force)
+    result = run(args.query, args.domain, force)
 
     print(json.dumps(result, ensure_ascii=False, indent=2))
-    with open(args.output, "w") as f:
+    with open(args.output, "w", encoding="utf-8") as f:
         json.dump(result, f, ensure_ascii=False, indent=2)
+    print(f"[OK] Layer 3 result saved to {args.output}", file=sys.stderr)
 
 
 if __name__ == "__main__":
