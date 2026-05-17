@@ -32,6 +32,8 @@ on:
         default: false
 
 env:
+  # TODO(P5): 2026-06-02 Node.js 24 공식 기본값 전환 이후 상단 줄 제거
+  # 제거 후 actions/checkout, actions/setup-python 최신 버전 pin도 확인
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
