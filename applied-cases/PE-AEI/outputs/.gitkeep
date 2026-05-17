@@ -1,0 +1,14 @@
+# PE-AEI 출력 디렉토리
+
+이 디렉토리는 PE-AEI 에이전트 실행 결과물을 저장합니다.
+
+## 하위 디렉토리 구조
+
+```
+outputs/
+  ├─ ecosystem-maps/    ← P21 EcoMapper 출력
+  ├─ trend-reports/     ← P22 TrendRadar 출력
+  ├─ funding-tracker/   ← P23 FundingTracker 출력
+  ├─ policy-alerts/     ← P24 PolicyWatcher 출력
+  └─ aei-reports/       ← P25 EcoSynthesizer 통합 리포트
+```
