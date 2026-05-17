@@ -1,0 +1,171 @@
+name: VC Layer Strategy Apply (PE-VC-02/03)
+
+on:
+  workflow_dispatch:
+    inputs:
+      query:
+        description: '분석 쿼리 (한국어/영어)'
+        required: true
+        type: string
+      domain:
+        description: '대상 도메인'
+        required: true
+        type: choice
+        options:
+          - PE-AI-ECO
+          - PE-SEMI
+          - PE-DD
+          - PE-FIN
+          - PE-STRAT
+          - PE-MIN
+          - PE-PROD
+          - PE-NBD
+          - PE-DC
+          - PE-SAT
+          - PE-TDA
+          - PE-THERM
+          - PE-PWR
+      force_layer3:
+        description: 'Layer 3 강제 실행 (3종 도메인 한정)'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  layer2-preprocess:
+    name: Layer 2 — 전처리 게이트 (PE-VC-02)
+    runs-on: ubuntu-latest
+    outputs:
+      intent_class: ${{ steps.route.outputs.intent_class }}
+      layer3_required: ${{ steps.route.outputs.layer3_required }}
+      routing_packet: ${{ steps.route.outputs.routing_packet }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run PE-VC-02 Preprocessing Gate
+        id: route
+        run: |
+          python automation/vc_layer_router.py \
+            '${{ inputs.query }}' \
+            '${{ inputs.domain }}' \
+            --verbose > routing_packet.txt 2>&1
+
+          # intent_class 추출
+          INTENT=$(grep 'intent_class:' routing_packet.txt | awk '{print $2}' | tr -d '"')
+          echo "intent_class=$INTENT" >> $GITHUB_OUTPUT
+
+          # layer3 에스컬레이션 여부
+          L3=$(grep 'layer3_escalate:' routing_packet.txt | awk '{print $2}' | tr -d '"')
+          if [ '${{ inputs.force_layer3 }}' = 'true' ]; then
+            L3='True'
+          fi
+          echo "layer3_required=$L3" >> $GITHUB_OUTPUT
+
+          # 패킷 내용 저장
+          PACKET=$(cat routing_packet.txt | base64 -w 0)
+          echo "routing_packet=$PACKET" >> $GITHUB_OUTPUT
+
+      - name: Layer 2 Summary
+        run: |
+          python3 - <<'PYEOF'
+          import subprocess, sys
+
+          content = open('routing_packet.txt').read()
+          lines = content.strip().split('\n')
+
+          summary = '## 🔵 PE-VC-02 Layer 2 전처리 결과\n\n'
+          summary += '| 항목 | 값 |\n|------|-----|\n'
+
+          for line in lines:
+            if ':' in line and not line.startswith('#'):
+              key, _, val = line.partition(':')
+              summary += f'| {key.strip()} | {val.strip()} |\n'
+
+          print(summary)
+          with open("$GITHUB_STEP_SUMMARY", "a") as f:
+            f.write(summary)
+          PYEOF
+
+  layer3-deep-analysis:
+    name: Layer 3 — 심층 분석 (PE-VC-03, 3종 한정)
+    runs-on: ubuntu-latest
+    needs: layer2-preprocess
+    if: |
+      needs.layer2-preprocess.outputs.layer3_required == 'True' &&
+      (inputs.domain == 'PE-AI-ECO' || inputs.domain == 'PE-SEMI' || inputs.domain == 'PE-DD')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Dispatch Layer 3 Modules
+        id: l3_dispatch
+        run: |
+          python3 - <<'PYEOF'
+          import json, sys
+          sys.path.insert(0, 'automation')
+          from vc_layer_router import preprocess_gate, layer3_dispatch
+
+          query = '${{ inputs.query }}'
+          domain = '${{ inputs.domain }}'
+          force = '${{ inputs.force_layer3 }}' == 'true'
+
+          if force:
+            query = query + ' [DEEP]'
+
+          packet = preprocess_gate(query, domain)
+          l3_result = layer3_dispatch(packet)
+
+          print(json.dumps(l3_result, ensure_ascii=False, indent=2))
+
+          with open('l3_result.json', 'w') as f:
+            json.dump(l3_result, f, ensure_ascii=False, indent=2)
+          PYEOF
+
+      - name: Layer 3 Summary
+        run: |
+          python3 - <<'PYEOF'
+          import json
+
+          with open('l3_result.json') as f:
+            data = json.load(f)
+
+          domain = data.get('domain', 'N/A')
+          modules = data.get('modules', [])
+          status = data.get('status', 'N/A')
+
+          lines = ['## 🔴 PE-VC-03 Layer 3 심층 분석 명세\n']
+          lines.append(f'**도메인**: {domain}  ')
+          lines.append(f'**상태**: {status}  ')
+          lines.append(f'**타임스탬프**: {data.get("timestamp", "")}\n')
+          lines.append('### 실행 모듈')
+          lines.append('| 모듈 ID | 설명 |')
+          lines.append('|---------|------|')
+          for m in modules:
+            lines.append(f'| {m["id"]} | {m["description"]} |')
+
+          summary = '\n'.join(lines) + '\n'
+          print(summary)
+
+          with open("$GITHUB_STEP_SUMMARY", "a") as f:
+            f.write(summary)
+          PYEOF
+
+      - name: Upload L3 Result
+        uses: actions/upload-artifact@v4
+        with:
+          name: layer3-result-${{ inputs.domain }}
+          path: l3_result.json
+          retention-days: 30
