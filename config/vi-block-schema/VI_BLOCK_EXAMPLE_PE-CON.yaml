@@ -1,0 +1,144 @@
+# =============================================================================
+# VI-BLOCK 예시 인스턴스 — PE-CON 도메인 (M&A 실사 분석)
+# Schema: vi-block-schema/v1.0
+# =============================================================================
+
+$schema: "vi-block-schema/v1.0"
+
+# 1. 블록 식별자
+block_id: "PE-CON-B001"
+block_name: "M&A 실사 대상 기업 재무 분석 블록"
+block_type: FUNCTION
+
+# 2. 도메인 분류
+domain:
+  primary: PE-CON
+  secondary: "M&A Due Diligence"
+  cross_domain: false
+
+# 3. VE 기능 분석
+ve_analysis:
+  fast_level: HOW
+  primary_function: "대상 기업의 재무 건전성과 숨겨진 리스크를 다층적으로 분석한다"
+  secondary_functions:
+    - "산업 벤치마크 대비 재무지표 상대 평가"
+    - "EBITDA 조정 항목 식별 및 정상화"
+    - "부채 구조 및 우발 채무 위험 평가"
+  function_class: BASIC
+  value_ratio: 1.8
+
+# 4. 적용 대상
+application_scope:
+  target_types: [PROMPT, REPORT]
+  report_stages: [DRAFT, IN_PROGRESS, REVIEW]
+  applicable_domains: [PE-CON, PE-FIN]
+  priority: P1_HIGH
+
+# 5. 최적화 명세
+optimization:
+  waste_elements:
+    - waste_type: REDUNDANCY
+      description: "동일 재무 데이터를 3개 섹션에 중복 삽입하던 구조"
+      elimination_method: "중앙 데이터 테이블 1회 작성 후 섹션별 참조"
+    - waste_type: COGNITIVE_LOAD
+      description: "비전문가 배경 설명 과다 포함"
+      elimination_method: "도메인 전문가 수준 전제, 용어 설명 제거"
+  value_enhancers:
+    - enhancement_type: PRECISION
+      description: "재무 이상치 자동 플래그 조건 추가"
+      expected_gain: "실사 오류율 40% 감소 예상"
+    - enhancement_type: REUSABILITY
+      description: "PE-FIN 도메인 보고서에도 동일 블록 재사용"
+      expected_gain: "프롬프트 작성 시간 60% 단축"
+  alternatives:
+    - alt_id: "PE-CON-B001-A"
+      description: "간소화 버전 (1페이지 요약 특화)"
+      cost_delta: -0.4
+      value_delta: -0.2
+      recommended: false
+    - alt_id: "PE-CON-B001-B"
+      description: "자동화 강화 버전 (3-Engine 연계)"
+      cost_delta: 0.1
+      value_delta: 0.5
+      recommended: true
+
+# 6. 프롬프트 블록 명세
+prompt_spec:
+  instruction_template: |
+    ## [PE-CON 실사 재무분석]
+    대상 기업: {{COMPANY_NAME}}
+    분석 깊이: {{DEPTH_LEVEL}} (1~5 중 선택)
+    기준연도: {{BASE_YEAR}}
+
+    다음 항목을 순서대로 분석하라:
+    1. 핵심 재무지표 (Revenue, EBITDA, FCF, Net Debt) — 3개년 추세
+    2. 조정 EBITDA 산출 및 One-off 항목 식별
+    3. 업계 벤치마크 대비 수익성 갭 분석
+    4. 부채 만기 구조 및 리파이낸싱 리스크
+    5. 우발 채무 및 Off-balance 항목 스캔
+    6. RED FLAG 3가지 이내로 요약
+
+    출력 형식: 구조화 마크다운 + 핵심 수치 테이블 필수
+  token_budget:
+    target: 800
+    max: 1200
+    optimization_rule: "배경 설명 제거, 수치 중심 작성, 테이블로 압축"
+  chain_position: USER
+  dependencies: []
+  conflicts: []
+
+# 7. 보고서 섹션 명세
+report_spec:
+  section_mapping:
+    - section_id: "Ch.3"
+      section_name: "재무 실사 결과"
+      block_role: GENERATOR
+      auto_apply: true
+    - section_id: "Ch.7"
+      section_name: "투자 위험 요소"
+      block_role: REVIEWER
+      auto_apply: false
+  output_format:
+    structure: HYBRID
+    depth_level: 3
+    language: [KO, BILINGUAL]
+    citation_required: true
+
+# 8. 자동화 연계
+automation_integration:
+  notion_sync:
+    enabled: true
+    database_target: "PE-CON 보고서 DB"
+    property_mapping:
+      block_name: "블록명"
+      priority: "우선순위"
+      status: "상태"
+  github_sync:
+    enabled: true
+    repo: "prompt-engineering-system"
+    path: "config/vi-block-schema/instances/PE-CON/"
+    auto_commit: false
+  three_engine:
+    auto_refinement: true
+    auto_proliferation: false
+    auto_validation: true
+
+# 9. 검증 규칙 (인스턴스 오버라이드)
+validation_rules:
+  ve_score_threshold:
+    min_value_ratio: 1.0
+    target_value_ratio: 2.0
+
+# 10. 메타데이터
+metadata:
+  version: "1.0.0"
+  status: ACTIVE
+  author: "Gilbert Kwak"
+  created_at: "2026-05-17"
+  updated_at: "2026-05-17"
+  tags: [PE-CON, M&A, due-diligence, financial-analysis, VE-v1]
+  related_blocks: []
+  changelog:
+    - version: "1.0.0"
+      date: "2026-05-17"
+      summary: "VI-BLOCK 스키마 v1.0 기반 최초 생성"

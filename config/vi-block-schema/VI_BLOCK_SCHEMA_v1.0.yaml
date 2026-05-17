@@ -1,0 +1,374 @@
+# =============================================================================
+# VI-BLOCK YAML SCHEMA v1.0
+# Value Intelligence Block — 프롬프트 & 보고서 범용 최적화 표준
+# Author: Gilbert Kwak | Repo: prompt-engineering-system
+# Created: 2026-05-17 | Status: ACTIVE
+# =============================================================================
+# PURPOSE:
+#   모든 프롬프트(PE-CON, PE-FIN, PE-IP 등) 및 작성 중인 보고서에
+#   공통으로 적용할 수 있는 Value Intelligence Block 구조 정의.
+#   VE(Value Engineering) v1.0 원칙: 기능 유지·강화 + 비용(시간·중복·인지부하) 제거
+# =============================================================================
+
+$schema: "vi-block-schema/v1.0"
+$version: "1.0.0"
+$created: "2026-05-17"
+$updated: "2026-05-17"
+
+# ─── 1. 블록 식별자 ───────────────────────────────────────────────────────────
+block_id:
+  type: string
+  pattern: "^[A-Z]{2,6}-[A-Z0-9]{3,8}-B[0-9]{3}$"   # 예: PE-CON-B001, FU-HBM-B012
+  required: true
+  description: "도메인코드-주제코드-블록번호 형식"
+
+block_name:
+  type: string
+  max_length: 80
+  required: true
+
+block_type:
+  type: enum
+  values:
+    - CONTEXT       # 배경·맥락 설정 블록
+    - FUNCTION      # 핵심 기능 수행 블록
+    - CONSTRAINT    # 제약·조건 블록
+    - OUTPUT        # 출력 형식 지정 블록
+    - VALIDATION    # 검증·품질 체크 블록
+    - META          # 메타데이터·관리 블록
+  required: true
+
+# ─── 2. 도메인 분류 ───────────────────────────────────────────────────────────
+domain:
+  primary:
+    type: enum
+    values: [PE-CON, PE-FIN, PE-IP, PE-SEMI, PE-MIN, PE-INV, FU-SERIES, GLOBAL-SEMI, ASTRA]
+    required: true
+  secondary:
+    type: string
+    required: false
+    description: "세부 하위 도메인 (예: M&A, HBM, TIM, Supply-Chain)"
+  cross_domain:
+    type: boolean
+    default: false
+    description: "복수 도메인에 공통 적용 가능 여부"
+
+# ─── 3. VE 기능 분석 (Value Engineering) ────────────────────────────────────
+ve_analysis:
+  # FAST 다이어그램 연계
+  fast_level:
+    type: enum
+    values: [WHY, WHAT, HOW, HOW-MUCH]
+    required: true
+    description: "FAST 계층에서 이 블록의 위치"
+
+  primary_function:
+    type: string
+    max_length: 120
+    required: true
+    description: "이 블록이 수행하는 핵심 기능 (동사+목적어 형식)"
+    example: "공급망 리스크 다중 시나리오를 분석한다"
+
+  secondary_functions:
+    type: array
+    items:
+      type: string
+      max_length: 100
+    max_items: 5
+    required: false
+
+  # 가치 분류
+  function_class:
+    type: enum
+    values:
+      - BASIC          # 필수 기능 (제거 불가)
+      - SECONDARY      # 보조 기능 (최적화 대상)
+      - UNNECESSARY    # 불필요 기능 (제거 대상)
+      - ESTEEM         # 사용자 만족·신뢰 기능
+    required: true
+
+  value_ratio:
+    type: number
+    min: 0.0
+    max: 5.0
+    description: "가치/비용 비율 (>1.0 = 개선 필요, >2.0 = 우선 개선)"
+    required: false
+
+# ─── 4. 적용 대상 정의 ────────────────────────────────────────────────────────
+application_scope:
+  target_types:
+    type: array
+    items:
+      type: enum
+      values: [PROMPT, REPORT, TEMPLATE, WORKFLOW, AUTOMATION]
+    required: true
+
+  report_stages:
+    type: array
+    items:
+      type: enum
+      values: [DRAFT, IN_PROGRESS, REVIEW, COMPLETED]
+    required: false
+    description: "적용 가능한 보고서 진행 단계"
+
+  applicable_domains:
+    type: array
+    items:
+      type: string
+    required: true
+    description: "이 블록이 적용 가능한 도메인 목록"
+
+  priority:
+    type: enum
+    values: [P0_CRITICAL, P1_HIGH, P2_MEDIUM, P3_LOW]
+    required: true
+
+# ─── 5. 최적화 명세 ───────────────────────────────────────────────────────────
+optimization:
+  # 제거 대상 (낭비 요소)
+  waste_elements:
+    type: array
+    items:
+      type: object
+      properties:
+        waste_type:
+          type: enum
+          values:
+            - REDUNDANCY      # 중복
+            - OVER_SPEC       # 과잉 품질
+            - UNNECESSARY_STEP # 불필요 단계
+            - COGNITIVE_LOAD  # 인지 부하
+            - CONTEXT_BLOAT   # 컨텍스트 낭비
+        description:
+          type: string
+        elimination_method:
+          type: string
+
+  # 강화 대상 (가치 증대 요소)
+  value_enhancers:
+    type: array
+    items:
+      type: object
+      properties:
+        enhancement_type:
+          type: enum
+          values:
+            - PRECISION        # 정밀도 향상
+            - REUSABILITY      # 재사용성 향상
+            - AUTOMATION       # 자동화 연계
+            - CROSS_DOMAIN     # 범도메인 적용
+            - OUTPUT_QUALITY   # 산출물 품질 향상
+        description:
+          type: string
+        expected_gain:
+          type: string
+
+  # 대체 방안
+  alternatives:
+    type: array
+    items:
+      type: object
+      properties:
+        alt_id:
+          type: string
+        description:
+          type: string
+        cost_delta:
+          type: number
+          description: "기준 대비 비용 변화율 (-0.3 = 30% 절감)"
+        value_delta:
+          type: number
+          description: "기준 대비 가치 변화율"
+        recommended:
+          type: boolean
+
+# ─── 6. 프롬프트 블록 명세 ────────────────────────────────────────────────────
+prompt_spec:
+  # 이 섹션은 block_type이 CONTEXT/FUNCTION/CONSTRAINT/OUTPUT일 때 필수
+  applicable_when: [CONTEXT, FUNCTION, CONSTRAINT, OUTPUT]
+
+  instruction_template:
+    type: string
+    description: "실제 프롬프트에 삽입될 지시문 템플릿"
+    placeholders_allowed: true   # {{DOMAIN}}, {{TOPIC}}, {{DEPTH}} 등 허용
+
+  token_budget:
+    target:
+      type: integer
+      description: "목표 토큰 수"
+    max:
+      type: integer
+      description: "최대 허용 토큰 수"
+    optimization_rule:
+      type: string
+      description: "토큰 최적화 규칙"
+
+  chain_position:
+    type: enum
+    values: [SYSTEM, PRE_USER, USER, POST_USER, SUFFIX]
+    description: "프롬프트 체인에서 이 블록의 위치"
+
+  dependencies:
+    type: array
+    items:
+      type: string
+      pattern: "^[A-Z]{2,6}-[A-Z0-9]{3,8}-B[0-9]{3}$"
+    description: "선행 필요 블록 ID 목록"
+
+  conflicts:
+    type: array
+    items:
+      type: string
+    description: "동시 사용 불가 블록 ID 목록"
+
+# ─── 7. 보고서 섹션 명세 ──────────────────────────────────────────────────────
+report_spec:
+  # 이 섹션은 target_types에 REPORT가 포함될 때 활성화
+  applicable_when_target: REPORT
+
+  section_mapping:
+    type: array
+    items:
+      type: object
+      properties:
+        section_id:
+          type: string
+          description: "Ch.1, Sec.2-3 형식"
+        section_name:
+          type: string
+        block_role:
+          type: enum
+          values: [GENERATOR, REVIEWER, FORMATTER, VALIDATOR]
+        auto_apply:
+          type: boolean
+          default: false
+
+  output_format:
+    type: object
+    properties:
+      structure:
+        type: enum
+        values: [NARRATIVE, TABLE, MATRIX, HYBRID, VISUAL]
+      depth_level:
+        type: integer
+        min: 1
+        max: 5
+        description: "1=개요, 3=표준, 5=심층분석"
+      language:
+        type: array
+        items:
+          type: enum
+          values: [KO, EN, BILINGUAL]
+      citation_required:
+        type: boolean
+        default: true
+
+# ─── 8. 자동화 연계 ───────────────────────────────────────────────────────────
+automation_integration:
+  notion_sync:
+    enabled:
+      type: boolean
+      default: false
+    database_target:
+      type: string
+      description: "Notion 데이터베이스 이름 또는 ID"
+    property_mapping:
+      type: object
+      description: "YAML 필드 → Notion 속성 매핑"
+
+  github_sync:
+    enabled:
+      type: boolean
+      default: true
+    repo:
+      type: string
+    path:
+      type: string
+    auto_commit:
+      type: boolean
+      default: false
+
+  three_engine:
+    auto_refinement:
+      type: boolean
+      default: false
+      description: "자동개선 엔진 연계"
+    auto_proliferation:
+      type: boolean
+      default: false
+      description: "자동증식 엔진 연계"
+    auto_validation:
+      type: boolean
+      default: true
+      description: "자동검증 엔진 연계"
+
+# ─── 9. 검증 규칙 ─────────────────────────────────────────────────────────────
+validation_rules:
+  required_fields_check:
+    enabled: true
+    fail_on_missing: true
+
+  function_completeness:
+    min_primary_functions: 1
+    max_secondary_functions: 5
+
+  ve_score_threshold:
+    min_value_ratio: 0.8   # 이 이하면 재설계 권고
+    target_value_ratio: 1.5
+
+  consistency_checks:
+    - "domain.primary와 application_scope.applicable_domains 일치 여부"
+    - "block_type과 prompt_spec/report_spec 활성화 조건 일치 여부"
+    - "dependencies 블록 존재 여부"
+
+# ─── 10. 메타데이터 ───────────────────────────────────────────────────────────
+metadata:
+  version:
+    type: string
+    pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    required: true
+
+  status:
+    type: enum
+    values: [DRAFT, ACTIVE, DEPRECATED, ARCHIVED]
+    required: true
+
+  author:
+    type: string
+    required: true
+
+  created_at:
+    type: string
+    format: date   # YYYY-MM-DD
+    required: true
+
+  updated_at:
+    type: string
+    format: date
+    required: true
+
+  tags:
+    type: array
+    items:
+      type: string
+    max_items: 10
+
+  related_blocks:
+    type: array
+    items:
+      type: string
+      pattern: "^[A-Z]{2,6}-[A-Z0-9]{3,8}-B[0-9]{3}$"
+
+  changelog:
+    type: array
+    items:
+      type: object
+      properties:
+        version:
+          type: string
+        date:
+          type: string
+          format: date
+        summary:
+          type: string
+          max_length: 200

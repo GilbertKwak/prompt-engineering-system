@@ -1,0 +1,150 @@
+# =============================================================================
+# VI-BLOCK 예시 인스턴스 — 보고서 범용 출력 표준 블록
+# 적용 대상: 전 도메인 보고서 (진행 중·미착수 포함)
+# Schema: vi-block-schema/v1.0
+# =============================================================================
+
+$schema: "vi-block-schema/v1.0"
+
+# 1. 식별자
+block_id: "GLOBAL-STD-B001"
+block_name: "전 도메인 보고서 공통 출력 표준 블록"
+block_type: OUTPUT
+
+# 2. 도메인
+domain:
+  primary: PE-SEMI
+  secondary: "Report Output Standard"
+  cross_domain: true   # 모든 도메인 공통 적용
+
+# 3. VE 분석
+ve_analysis:
+  fast_level: HOW
+  primary_function: "모든 보고서의 출력 형식을 표준화하여 품질 일관성을 확보한다"
+  secondary_functions:
+    - "Notion 자동 동기화 호환 마크다운 형식 보장"
+    - "GitHub SSOT 버전 관리 연계 메타블록 포함"
+    - "3-Engine 검증 통과 기준 명시"
+  function_class: BASIC
+  value_ratio: 2.1
+
+# 4. 적용 대상
+application_scope:
+  target_types: [REPORT, TEMPLATE]
+  report_stages: [DRAFT, IN_PROGRESS, REVIEW, COMPLETED]
+  applicable_domains:
+    - PE-CON
+    - PE-FIN
+    - PE-IP
+    - PE-SEMI
+    - PE-MIN
+    - PE-INV
+    - FU-SERIES
+    - GLOBAL-SEMI
+    - ASTRA
+  priority: P0_CRITICAL
+
+# 5. 최적화
+optimization:
+  waste_elements:
+    - waste_type: REDUNDANCY
+      description: "도메인별로 각기 다른 출력 형식 사용으로 통합 관리 불가"
+      elimination_method: "단일 표준 블록 정의 후 모든 도메인에 상속 적용"
+    - waste_type: OVER_SPEC
+      description: "일부 보고서에 과도한 수식·참고문헌 형식 요구"
+      elimination_method: "기본값 HYBRID, 필요 시 오버라이드"
+  value_enhancers:
+    - enhancement_type: REUSABILITY
+      description: "50개 보고서 전체에 동일 블록 재사용 가능"
+      expected_gain: "형식 통일로 Notion 뷰 생성 시간 80% 단축"
+    - enhancement_type: OUTPUT_QUALITY
+      description: "인용 필수 조건으로 보고서 신뢰도 향상"
+      expected_gain: "외부 공유 가능 품질 달성"
+
+# 6. 프롬프트 명세
+prompt_spec:
+  instruction_template: |
+    ## [출력 형식 표준]
+    다음 규칙을 엄수하여 보고서를 작성하라:
+
+    ### 구조 규칙
+    - 최상위 헤딩(H1): 보고서 제목만 사용
+    - H2: 주요 챕터 (1~8개)
+    - H3: 소섹션, H4: 세부 항목
+    - 최대 헤딩 깊이: 4단계
+
+    ### 필수 포함 요소
+    1. **Executive Summary** (300자 이내) — 최상단 위치
+    2. **핵심 수치 테이블** — 각 분석 섹션에 1개 이상
+    3. **Key Findings** (불릿 3~5개) — 각 챕터 말미
+    4. **메타 블록** — 문서 최하단:
+       ```
+       ---
+       보고서ID: [ID]
+       버전: [v0.x]
+       작성일: [YYYY-MM-DD]
+       상태: [초안/진행중/완료]
+       다음 작업: [구체적 액션]
+       ```
+
+    ### 언어 규칙
+    - 기본: 한국어
+    - 기술 용어: 영문 병기 (예: 열관리(Thermal Management))
+    - 수치: 단위 필수 표기
+
+    ### 금지 사항
+    - 동일 내용 2회 이상 반복 ❌
+    - 불확실한 수치 추정 없이 제시 ❌
+    - 5줄 이상 연속 산문 (테이블·불릿으로 대체) ❌
+  token_budget:
+    target: 400
+    max: 600
+    optimization_rule: "형식 지시만 포함, 내용 생성 없음"
+  chain_position: SUFFIX
+  dependencies: []
+  conflicts: []
+
+# 7. 보고서 섹션
+report_spec:
+  section_mapping:
+    - section_id: "ALL"
+      section_name: "전 섹션 공통 적용"
+      block_role: FORMATTER
+      auto_apply: true
+  output_format:
+    structure: HYBRID
+    depth_level: 3
+    language: [KO, BILINGUAL]
+    citation_required: true
+
+# 8. 자동화
+automation_integration:
+  notion_sync:
+    enabled: true
+    database_target: "전체 보고서 마스터 DB"
+    property_mapping:
+      block_name: "표준 블록"
+      status: "적용 상태"
+  github_sync:
+    enabled: true
+    repo: "prompt-engineering-system"
+    path: "config/vi-block-schema/"
+    auto_commit: false
+  three_engine:
+    auto_refinement: false
+    auto_proliferation: false
+    auto_validation: true
+
+# 10. 메타데이터
+metadata:
+  version: "1.0.0"
+  status: ACTIVE
+  author: "Gilbert Kwak"
+  created_at: "2026-05-17"
+  updated_at: "2026-05-17"
+  tags: [global-standard, output-format, all-domains, VE-v1, report]
+  related_blocks: []
+  changelog:
+    - version: "1.0.0"
+      date: "2026-05-17"
+      summary: "전 도메인 보고서 공통 출력 표준 블록 최초 정의"
