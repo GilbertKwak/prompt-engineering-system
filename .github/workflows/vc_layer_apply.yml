@@ -74,24 +74,7 @@ jobs:
 
       - name: Layer 2 Summary
         run: |
-          python3 - <<'PYEOF'
-          import subprocess, sys
-
-          content = open('routing_packet.txt').read()
-          lines = content.strip().split('\n')
-
-          summary = '## 🔵 PE-VC-02 Layer 2 전처리 결과\n\n'
-          summary += '| 항목 | 값 |\n|------|-----|\n'
-
-          for line in lines:
-            if ':' in line and not line.startswith('#'):
-              key, _, val = line.partition(':')
-              summary += f'| {key.strip()} | {val.strip()} |\n'
-
-          print(summary)
-          with open("$GITHUB_STEP_SUMMARY", "a") as f:
-            f.write(summary)
-          PYEOF
+          python3 automation/vc_layer2_summary.py routing_packet.txt >> "$GITHUB_STEP_SUMMARY"
 
   layer3-deep-analysis:
     name: Layer 3 — 심층 분석 (PE-VC-03, 3종 한정)
@@ -112,56 +95,20 @@ jobs:
 
       - name: Dispatch Layer 3 Modules
         id: l3_dispatch
+        env:
+          VC_QUERY: ${{ inputs.query }}
+          VC_DOMAIN: ${{ inputs.domain }}
+          VC_FORCE: ${{ inputs.force_layer3 }}
         run: |
-          python3 - <<'PYEOF'
-          import json, sys
-          sys.path.insert(0, 'automation')
-          from vc_layer_router import preprocess_gate, layer3_dispatch
-
-          query = '${{ inputs.query }}'
-          domain = '${{ inputs.domain }}'
-          force = '${{ inputs.force_layer3 }}' == 'true'
-
-          if force:
-            query = query + ' [DEEP]'
-
-          packet = preprocess_gate(query, domain)
-          l3_result = layer3_dispatch(packet)
-
-          print(json.dumps(l3_result, ensure_ascii=False, indent=2))
-
-          with open('l3_result.json', 'w') as f:
-            json.dump(l3_result, f, ensure_ascii=False, indent=2)
-          PYEOF
+          python3 automation/vc_layer3_dispatch.py \
+            --query "$VC_QUERY" \
+            --domain "$VC_DOMAIN" \
+            --force "$VC_FORCE" \
+            --output l3_result.json
 
       - name: Layer 3 Summary
         run: |
-          python3 - <<'PYEOF'
-          import json
-
-          with open('l3_result.json') as f:
-            data = json.load(f)
-
-          domain = data.get('domain', 'N/A')
-          modules = data.get('modules', [])
-          status = data.get('status', 'N/A')
-
-          lines = ['## 🔴 PE-VC-03 Layer 3 심층 분석 명세\n']
-          lines.append(f'**도메인**: {domain}  ')
-          lines.append(f'**상태**: {status}  ')
-          lines.append(f'**타임스탬프**: {data.get("timestamp", "")}\n')
-          lines.append('### 실행 모듈')
-          lines.append('| 모듈 ID | 설명 |')
-          lines.append('|---------|------|')
-          for m in modules:
-            lines.append(f'| {m["id"]} | {m["description"]} |')
-
-          summary = '\n'.join(lines) + '\n'
-          print(summary)
-
-          with open("$GITHUB_STEP_SUMMARY", "a") as f:
-            f.write(summary)
-          PYEOF
+          python3 automation/vc_layer3_summary.py l3_result.json >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload L3 Result
         uses: actions/upload-artifact@v4
