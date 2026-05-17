@@ -31,6 +31,9 @@ on:
         type: boolean
         default: false
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   layer2-preprocess:
     name: Layer 2 — 전처리 게이트 (PE-VC-02)
@@ -51,26 +54,32 @@ jobs:
 
       - name: Run PE-VC-02 Preprocessing Gate
         id: route
+        env:
+          VC_QUERY: ${{ inputs.query }}
+          VC_DOMAIN: ${{ inputs.domain }}
+          VC_FORCE: ${{ inputs.force_layer3 }}
         run: |
           python automation/vc_layer_router.py \
-            '${{ inputs.query }}' \
-            '${{ inputs.domain }}' \
+            "$VC_QUERY" \
+            "$VC_DOMAIN" \
             --verbose > routing_packet.txt 2>&1
 
-          # intent_class 추출
-          INTENT=$(grep 'intent_class:' routing_packet.txt | awk '{print $2}' | tr -d '"')
-          echo "intent_class=$INTENT" >> $GITHUB_OUTPUT
+          # intent_class 추출 (단일행)
+          INTENT=$(grep 'intent_class:' routing_packet.txt | awk '{print $2}' | tr -d '"' | head -1)
+          echo "intent_class=${INTENT:-UNKNOWN}" >> "$GITHUB_OUTPUT"
 
-          # layer3 에스컬레이션 여부
-          L3=$(grep 'layer3_escalate:' routing_packet.txt | awk '{print $2}' | tr -d '"')
-          if [ '${{ inputs.force_layer3 }}' = 'true' ]; then
+          # layer3 에스콜레이션 여부 (단일행)
+          L3=$(grep 'layer3_escalate:' routing_packet.txt | awk '{print $2}' | tr -d '"' | head -1)
+          if [ "$VC_FORCE" = 'true' ]; then
             L3='True'
           fi
-          echo "layer3_required=$L3" >> $GITHUB_OUTPUT
+          echo "layer3_required=${L3:-False}" >> "$GITHUB_OUTPUT"
 
-          # 패킷 내용 저장
-          PACKET=$(cat routing_packet.txt | base64 -w 0)
-          echo "routing_packet=$PACKET" >> $GITHUB_OUTPUT
+          # 패킷 내용 저장 — multiline delimiter 형식
+          DELIM="PACKET_EOF_$(uuidgen | tr -d '-')"
+          echo "routing_packet<<${DELIM}" >> "$GITHUB_OUTPUT"
+          cat routing_packet.txt >> "$GITHUB_OUTPUT"
+          echo "${DELIM}" >> "$GITHUB_OUTPUT"
 
       - name: Layer 2 Summary
         run: |
