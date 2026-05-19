@@ -1,21 +1,18 @@
 #!/usr/bin/env python3
 """
-kg_delta_generator.py — Knowledge Graph Delta Generator v2
+kg_delta_generator.py — Knowledge Graph Delta Generator v3
 AI Intel Weekly pipeline: Step 3
 
-Inputs : output/ai_intel/*.json  (intel files)
-         ew_report.json          (EW signals from step 2)
-Outputs: knowledge_graph_vX.Y_delta.json
+New in v3:
+  - Entity deduplication: merges duplicate nodes by canonical name mapping
+  - Relation confidence scoring: frequency + sentiment → confidence 0.0-1.0
+  - Semantic versioning changelog: auto-generates CHANGELOG entry
+  - JSON-LD compatible output: @context, @type, @id fields added
+  - EW signal → typed relation mapping (expanded 15 signal types)
+  - Source attribution: each node/edge tracks source_file + week
 
-KG Node types  : COMPANY / MODEL / TECHNOLOGY / CONCEPT / REGULATION / PERSON
-KG Edge types  : DEVELOPS / COMPETES / ENABLES / REGULATES / THREATENS / LEADS
-                 ACQUIRES / PARTNERS / BENCHMARKS / EW_<TAG>
-
-Delta logic:
-  - Extract entities from intel key_facts + summary
-  - Generate edges from co-occurrence + explicit relation phrases
-  - Detect conflicts with previous version patterns
-  - Output versioned delta JSON ready for Notion KG DB import
+Inputs : output/ai_intel/*.json, ew_report.json
+Outputs: knowledge_graph_v{next}.json, kg_changelog.md (append)
 """
 
 import argparse
@@ -29,198 +26,145 @@ from typing import Any
 
 # ── Entity Extraction Config ──────────────────────────────────────────────────
 
-ENTITY_PATTERNS: dict[str, list[str]] = {
-    "COMPANY": [
-        "OpenAI", "Anthropic", "Google DeepMind", "Google", "Microsoft", "Meta",
-        "Amazon", "Apple", "NVIDIA", "AMD", "Intel", "TSMC", "Samsung",
-        "SK Hynix", "Micron", "ASML", "Mistral", "Cohere", "AI21 Labs",
-        "Stability AI", "Inflection", "xAI", "Baidu", "Alibaba", "Tencent",
-        "Huawei", "ByteDance", "Arm", "Qualcomm",
-    ],
-    "MODEL": [
-        "GPT-5", "GPT-4o", "GPT-4", "Claude 4", "Claude 3.7", "Claude 3.5",
-        "Gemini 2.5", "Gemini 2.0", "Gemini 1.5", "Llama 4", "Llama 3",
-        "Mistral Large", "Mixtral", "Grok 3", "Grok 2", "DeepSeek V3",
-        "DeepSeek R2", "Qwen 3", "Command R+", "Phi-4",
-    ],
-    "TECHNOLOGY": [
-        "RAG", "MoE", "MoE architecture", "LoRA", "QLoRA", "RLHF", "DPO",
-        "speculative decoding", "flash attention", "quantization",
-        "HBM3e", "HBM4", "CoWoS", "SoW", "NVLink", "InfiniBand",
-        "H100", "H200", "B200", "GB200", "MI300X", "Gaudi 3",
-        "multi-agent", "agentic AI", "tool use", "function calling",
-        "long context", "computer use", "code interpreter",
-    ],
-    "CONCEPT": [
-        "inference scaling", "test-time compute", "chain-of-thought",
-        "in-context learning", "few-shot", "zero-shot", "fine-tuning",
-        "model distillation", "model pruning", "knowledge distillation",
-        "AI safety", "alignment", "constitutional AI", "red-teaming",
-        "enterprise AI", "AI governance", "responsible AI",
-    ],
-    "REGULATION": [
-        "EU AI Act", "AI Safety Act", "CHIPS Act", "Export Control",
-        "BIS Rule", "EAR regulation", "ITAR", "NSF AI",
-        "Senate AI", "House AI bill", "G7 AI", "UN AI resolution",
-    ],
+# Canonical name → aliases mapping for deduplication
+ENTITY_CANONICAL: dict[str, list[str]] = {
+    "NVIDIA":       ["nvidia", "nvda"],
+    "Google":       ["google", "alphabet", "deepmind", "google deepmind"],
+    "Microsoft":    ["microsoft", "msft", "azure"],
+    "OpenAI":       ["openai", "open ai", "chatgpt"],
+    "Anthropic":    ["anthropic", "claude"],
+    "Meta":         ["meta", "meta ai", "llama", "meta platforms"],
+    "Amazon":       ["amazon", "aws", "amazon web services"],
+    "TSMC":         ["tsmc", "taiwan semiconductor"],
+    "Samsung":      ["samsung", "samsung electronics", "hbm samsung"],
+    "SK Hynix":     ["sk hynix", "hynix"],
+    "Huawei":       ["huawei"],
+    "DeepSeek":     ["deepseek", "deep seek"],
+    "Mistral":      ["mistral", "mistral ai"],
+    "LangChain":    ["langchain", "lang chain"],
+    "HuggingFace":  ["hugging face", "huggingface"],
+    "Perplexity":   ["perplexity", "perplexity ai"],
+    "xAI":          ["xai", "grok", "elon musk ai"],
+    "Cohere":       ["cohere"],
+    "Databricks":   ["databricks", "mosaic ml"],
+    "AMD":          ["amd", "advanced micro devices", "instinct"],
+    "Intel":        ["intel", "intel ai", "gaudi"],
+    "EU AI Act":    ["eu ai act", "european ai regulation", "eu regulation"],
+    "RAG":          ["rag", "retrieval augmented generation", "retrieval-augmented"],
+    "HBM":          ["hbm", "high bandwidth memory"],
+    "GPT-4":        ["gpt-4", "gpt4", "o1", "o3", "o4"],
+    "Gemini":       ["gemini", "gemini ultra", "gemini pro"],
 }
 
-RELATION_PHRASES: list[dict] = [
-    {"pattern": r"(\w[\w\s]+)\s+acquir(?:es|ed|ing)\s+([\w\s]+)",        "edge": "ACQUIRES"},
-    {"pattern": r"(\w[\w\s]+)\s+partner(?:s|ed|ing)\s+with\s+([\w\s]+)",  "edge": "PARTNERS"},
-    {"pattern": r"(\w[\w\s]+)\s+(?:beats?|surpass(?:es|ed)|outperform(?:s|ed))\s+([\w\s]+)",  "edge": "BENCHMARKS"},
-    {"pattern": r"(\w[\w\s]+)\s+(?:threaten|disrupt|replac)(?:es|ed|ing)\s+([\w\s]+)",       "edge": "THREATENS"},
-    {"pattern": r"(\w[\w\s]+)\s+(?:enables?|powers?|supports?)\s+([\w\s]+)",                 "edge": "ENABLES"},
-    {"pattern": r"(\w[\w\s]+)\s+(?:competes?|rival(?:s|ed))\s+with\s+([\w\s]+)",             "edge": "COMPETES"},
-    {"pattern": r"(\w[\w\s]+)\s+(?:develops?|release[sd]?|launch(?:es|ed))\s+([\w\s]+)",     "edge": "DEVELOPS"},
-    {"pattern": r"(\w[\w\s]+)\s+(?:leads?|lead(?:s|ing))\s+(?:in|on)\s+([\w\s]+)",          "edge": "LEADS"},
-]
+# Entity type classification
+ENTITY_TYPES: dict[str, str] = {
+    "NVIDIA": "Company",     "Google": "Company",      "Microsoft": "Company",
+    "OpenAI": "Company",     "Anthropic": "Company",   "Meta": "Company",
+    "Amazon": "Company",     "TSMC": "Company",        "Samsung": "Company",
+    "SK Hynix": "Company",   "Huawei": "Company",      "DeepSeek": "Company",
+    "Mistral": "Company",    "LangChain": "Framework", "HuggingFace": "Platform",
+    "Perplexity": "Company", "xAI": "Company",         "Cohere": "Company",
+    "Databricks": "Company", "AMD": "Company",          "Intel": "Company",
+    "EU AI Act": "Regulation", "RAG": "Technology",    "HBM": "Technology",
+    "GPT-4": "Model",        "Gemini": "Model",
+}
 
-EW_EDGE_MAP: dict[str, str] = {
-    "EW_EXPORT_CONTROL":     "REGULATES",
-    "EW_CAPABILITY_JUMP":    "ENABLES",
-    "EW_STRATEGIC_ALLIANCE": "PARTNERS",
-    "EW_REGULATORY":         "REGULATES",
-    "EW_OPENSOURCE_PARITY":  "BENCHMARKS",
-    "EW_RAG_MIGRATION":      "THREATENS",
-    "EW_HW_SUPPLY":          "THREATENS",
-    "EW_AGENT_AUTONOMY":     "ENABLES",
-    "EW_CROSS_DOMAIN":       "ENABLES",
+# EW signal → KG edge type
+EW_EDGE_TYPES: dict[str, dict] = {
+    "EW_EXPORT_CONTROL":       {"relation": "RESTRICTED_BY",     "weight": 3.0},
+    "EW_CAPABILITY_JUMP":      {"relation": "OUTPERFORMS",       "weight": 2.5},
+    "EW_STRATEGIC_ALLIANCE":   {"relation": "PARTNERED_WITH",    "weight": 2.5},
+    "EW_REGULATORY":           {"relation": "REGULATED_BY",      "weight": 2.0},
+    "EW_OPENSOURCE_PARITY":    {"relation": "COMPETES_WITH",     "weight": 2.0},
+    "EW_RAG_MIGRATION":        {"relation": "DISRUPTS",          "weight": 1.5},
+    "EW_HW_SUPPLY":            {"relation": "SUPPLY_CONSTRAINED","weight": 2.5},
+    "EW_AGENT_AUTONOMY":       {"relation": "ENABLES",           "weight": 2.0},
+    "EW_REASONING_SHIFT":      {"relation": "EVOLVES_FROM",      "weight": 1.5},
+    "EW_CHINA_MODEL_PARITY":   {"relation": "COMPETES_WITH",     "weight": 2.5},
+    "EW_CROSS_DOMAIN":         {"relation": "CROSS_IMPACTS",     "weight": 1.5},
+    "EW_VELOCITY_SPIKE":       {"relation": "ACCELERATES",       "weight": 1.0},
+    "EW_NEGATIVE_SENTIMENT":   {"relation": "RISK_FACTOR",       "weight": 1.0},
+    "EW_REGULATORY":           {"relation": "REGULATED_BY",      "weight": 2.0},
+    "EW_HW_SUPPLY":            {"relation": "SUPPLY_CONSTRAINED", "weight": 2.5},
 }
 
 
-# ── Entity Extraction ─────────────────────────────────────────────────────────
+# ── Helpers ───────────────────────────────────────────────────────────────────
 
-def extract_entities(text: str) -> list[dict]:
-    """Find all known entities in text, return deduplicated node list."""
-    found: dict[str, dict] = {}
-    text_lower = text.lower()
-    for node_type, names in ENTITY_PATTERNS.items():
-        for name in names:
-            if name.lower() in text_lower:
-                key = name.lower()
-                if key not in found:
-                    found[key] = {
-                        "id":    name.replace(" ", "_").upper(),
-                        "label": name,
-                        "type":  node_type,
-                    }
-    return list(found.values())
+def _canonical(name: str) -> str:
+    """Return canonical entity name from alias lookup."""
+    lower = name.lower().strip()
+    for canon, aliases in ENTITY_CANONICAL.items():
+        if lower == canon.lower() or lower in aliases:
+            return canon
+    return name.strip().title()
 
 
-def extract_edges_from_relations(text: str, known_entities: set[str]) -> list[dict]:
-    """Match relation phrases and return edges between known entities."""
-    edges = []
-    for rp in RELATION_PHRASES:
-        for m in re.finditer(rp["pattern"], text, re.IGNORECASE):
-            src_raw = m.group(1).strip()
-            tgt_raw = m.group(2).strip()
-            # fuzzy match to known entity labels
-            src = _fuzzy_entity(src_raw, known_entities)
-            tgt = _fuzzy_entity(tgt_raw, known_entities)
-            if src and tgt and src != tgt:
-                edges.append({
-                    "source":   src.replace(" ", "_").upper(),
-                    "target":   tgt.replace(" ", "_").upper(),
-                    "relation": rp["edge"],
-                    "context":  m.group(0)[:120],
-                })
-    return edges
+def _extract_entities_from_text(text: str) -> list[str]:
+    """Extract entity mentions from free text."""
+    found: list[str] = []
+    lower = text.lower()
+    for canon, aliases in ENTITY_CANONICAL.items():
+        check = [canon.lower()] + aliases
+        if any(a in lower for a in check):
+            found.append(canon)
+    return list(dict.fromkeys(found))  # preserve order, dedup
 
 
-def _fuzzy_entity(raw: str, known: set[str]) -> str | None:
-    raw_lower = raw.lower()
-    for name in known:
-        if name.lower() in raw_lower or raw_lower in name.lower():
-            return name
-    return None
+def _text_body(data: dict) -> str:
+    parts = []
+    for field in ("summary", "analysis", "key_facts", "recommendations", "insights"):
+        val = data.get(field, "")
+        if isinstance(val, list):
+            parts.extend(str(v) for v in val)
+        elif isinstance(val, str):
+            parts.append(val)
+    return " ".join(parts)
 
 
-def cooccurrence_edges(entities: list[dict], domain: str) -> list[dict]:
-    """Generate COMPETES / DEVELOPS edges for co-occurring entities in same domain."""
-    edges = []
-    companies = [e for e in entities if e["type"] == "COMPANY"]
-    models    = [e for e in entities if e["type"] == "MODEL"]
-    techs     = [e for e in entities if e["type"] == "TECHNOLOGY"]
-
-    # Company → Model (DEVELOPS)
-    for c in companies:
-        for m in models:
-            edges.append({
-                "source":   c["id"],
-                "target":   m["id"],
-                "relation": "DEVELOPS",
-                "context":  f"Co-occurrence in {domain}",
-            })
-
-    # Company ↔ Company (COMPETES) — limit to first 3 pairs
-    for i, c1 in enumerate(companies[:4]):
-        for c2 in companies[i+1:4]:
-            edges.append({
-                "source":   c1["id"],
-                "target":   c2["id"],
-                "relation": "COMPETES",
-                "context":  f"Co-occurrence in {domain}",
-            })
-
-    # Technology → Concept (ENABLES)
-    for t in techs[:3]:
-        for e in entities:
-            if e["type"] == "CONCEPT":
-                edges.append({
-                    "source":   t["id"],
-                    "target":   e["id"],
-                    "relation": "ENABLES",
-                    "context":  f"Co-occurrence in {domain}",
-                })
-                break  # one per tech
-
-    return edges
+def _relation_confidence(freq: int, sentiment_negative: bool) -> float:
+    """Compute confidence score 0.0–1.0 based on frequency and sentiment."""
+    base = min(0.4 + freq * 0.1, 0.9)
+    if sentiment_negative:
+        base = min(base + 0.1, 1.0)  # negative events are more notable
+    return round(base, 2)
 
 
-def ew_edges(ew_signals: list[str], all_entities: list[dict]) -> list[dict]:
-    """Inject EW-tagged edges into KG for triggered signals."""
-    edges = []
-    entity_ids = [e["id"] for e in all_entities]
-    if len(entity_ids) < 2:
-        return edges
-    src, tgt = entity_ids[0], entity_ids[1]
-    for tag in ew_signals:
-        rel = EW_EDGE_MAP.get(tag, "ENABLES")
-        edges.append({
-            "source":   src,
-            "target":   tgt,
-            "relation": rel,
-            "context":  f"EW signal: {tag}",
-            "ew_tag":   tag,
-        })
-    return edges
+def _load_intel_files(intel_dir: Path) -> list[dict]:
+    files = sorted(intel_dir.glob("*.json"))
+    files = [f for f in files if not f.name.startswith("ew_report")]
+    results = []
+    for jf in files:
+        try:
+            with open(jf, encoding="utf-8") as f:
+                data = json.load(f)
+            data["_source_file"] = jf.name
+            results.append(data)
+        except Exception as e:
+            print(f"[KG] Skip {jf.name}: {e}", file=sys.stderr)
+    return results
 
 
-def detect_conflicts(new_edges: list[dict]) -> list[dict]:
-    """Detect contradictory edges (e.g. A COMPETES B and A PARTNERS B)."""
-    conflicts = []
-    pair_relations: dict[tuple, list[str]] = {}
-    for e in new_edges:
-        key = (min(e["source"], e["target"]), max(e["source"], e["target"]))
-        pair_relations.setdefault(key, []).append(e["relation"])
-    for pair, rels in pair_relations.items():
-        if "COMPETES" in rels and "PARTNERS" in rels:
-            conflicts.append({
-                "pair":      list(pair),
-                "relations": rels,
-                "note":      "Coopetition: competitors also partnering",
-            })
-        if "ACQUIRES" in rels and "COMPETES" in rels:
-            conflicts.append({
-                "pair":      list(pair),
-                "relations": rels,
-                "note":      "M&A target was previously competitor",
-            })
-    return conflicts
+def _load_ew_report(intel_dir: Path) -> dict:
+    fp = intel_dir / "ew_report.json"
+    if fp.exists():
+        try:
+            with open(fp, encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {"ew_triggered": False, "severity": "NONE", "signal_tags": [], "signals": []}
 
 
-# ── Main Delta Generation ──────────────────────────────────────────────────────
+def _node_id(name: str) -> str:
+    return "ent:" + re.sub(r"[^a-z0-9]", "_", name.lower()).strip("_")
+
+
+def _edge_id(src: str, tgt: str, rel: str, week: str) -> str:
+    return f"edge:{_node_id(src)}_{rel.lower()}_{_node_id(tgt)}_{week}"
+
+
+# ── Core Generator ────────────────────────────────────────────────────────────
 
 def generate_delta(
     intel_dir: str,
@@ -228,136 +172,230 @@ def generate_delta(
     next_version: str,
     week: str,
     run_date: str,
-    ew_signals: list[str],
+    ew_signals_str: str,
+    output_path: str,
 ) -> dict:
     intel_path = Path(intel_dir)
-    all_nodes: dict[str, dict] = {}
-    all_edges: list[dict] = []
-    domain_summaries: dict[str, str] = {}
+    intel_files = _load_intel_files(intel_path)
+    ew_report   = _load_ew_report(intel_path)
 
-    json_files = sorted(intel_path.glob("*.json"))
-    for jf in json_files:
-        if jf.name == "ew_report.json":
+    ew_signal_tags = ew_signals_str.split(",") if ew_signals_str.strip() else []
+    ew_signal_tags += ew_report.get("signal_tags", [])
+    ew_signal_tags  = list(dict.fromkeys(t for t in ew_signal_tags if t))
+
+    # ── Build nodes ──────────────────────────────────────────────────────────
+    node_freq: dict[str, int]  = {}
+    node_sources: dict[str, list[str]] = {}
+
+    for data in intel_files:
+        text = _text_body(data)
+        entities = _extract_entities_from_text(text)
+        src_file = data.get("_source_file", "unknown")
+        for ent in entities:
+            canon = _canonical(ent)
+            node_freq[canon] = node_freq.get(canon, 0) + 1
+            node_sources.setdefault(canon, []).append(src_file)
+
+    nodes: list[dict] = []
+    for name, freq in node_freq.items():
+        nodes.append({
+            "@id":          _node_id(name),
+            "@type":        ENTITY_TYPES.get(name, "Entity"),
+            "name":         name,
+            "mention_freq": freq,
+            "sources":      list(dict.fromkeys(node_sources[name])),
+            "week":         week,
+            "added_in":     next_version,
+        })
+    nodes.sort(key=lambda x: -x["mention_freq"])
+
+    # ── Build edges from co-occurrence ───────────────────────────────────────
+    edges: list[dict] = []
+    edge_set: set[str] = set()
+
+    for data in intel_files:
+        text = _text_body(data)
+        entities = _extract_entities_from_text(text)
+        src_file = data.get("_source_file", "unknown")
+        negative = bool(re.search(
+            r"crisis|ban|restrict|shortage|failure|setback", text, re.IGNORECASE
+        ))
+        for i, e1 in enumerate(entities):
+            for e2 in entities[i+1:]:
+                c1, c2 = _canonical(e1), _canonical(e2)
+                if c1 == c2:
+                    continue
+                eid = _edge_id(c1, c2, "CO_MENTIONED", week)
+                if eid in edge_set:
+                    # Bump frequency on existing edge
+                    for edge in edges:
+                        if edge["@id"] == eid:
+                            edge["frequency"] = edge.get("frequency", 1) + 1
+                            edge["confidence"] = _relation_confidence(
+                                edge["frequency"], negative
+                            )
+                    continue
+                edge_set.add(eid)
+                edges.append({
+                    "@id":        eid,
+                    "@type":      "Relation",
+                    "source":     _node_id(c1),
+                    "target":     _node_id(c2),
+                    "relation":   "CO_MENTIONED",
+                    "confidence": _relation_confidence(1, negative),
+                    "frequency":  1,
+                    "week":       week,
+                    "source_file": src_file,
+                    "added_in":   next_version,
+                })
+
+    # ── EW signal edges ───────────────────────────────────────────────────────
+    for sig_tag in ew_signal_tags:
+        cfg = EW_EDGE_TYPES.get(sig_tag)
+        if not cfg:
             continue
-        try:
-            with open(jf, encoding="utf-8") as f:
-                data = json.load(f)
-        except (json.JSONDecodeError, OSError) as e:
-            print(f"[KG] Skip {jf.name}: {e}", file=sys.stderr)
-            continue
+        # Find signals from ew_report to get specific entities
+        for sig in ew_report.get("signals", []):
+            if sig.get("tag") != sig_tag:
+                continue
+            # Try to attach to domain-level entities
+            domain = sig.get("domain", "")
+            domain_entities = _extract_entities_from_text(domain)
+            if len(domain_entities) < 2:
+                continue
+            c1, c2 = _canonical(domain_entities[0]), _canonical(domain_entities[-1])
+            if c1 == c2:
+                continue
+            eid = _edge_id(c1, c2, cfg["relation"], week)
+            if eid not in edge_set:
+                edge_set.add(eid)
+                edges.append({
+                    "@id":        eid,
+                    "@type":      "EWRelation",
+                    "source":     _node_id(c1),
+                    "target":     _node_id(c2),
+                    "relation":   cfg["relation"],
+                    "ew_tag":     sig_tag,
+                    "weight":     cfg["weight"],
+                    "confidence": min(cfg["weight"] / 3.0, 1.0),
+                    "week":       week,
+                    "added_in":   next_version,
+                })
 
-        domain = data.get("domain", jf.stem)
-        parts  = []
-        for field in ("summary", "analysis", "key_facts", "recommendations"):
-            val = data.get(field, "")
-            if isinstance(val, list):
-                parts.extend(str(v) for v in val)
-            elif val:
-                parts.append(str(val))
-        text = " ".join(parts)
-
-        # Extract entities
-        entities = extract_entities(text)
-        for e in entities:
-            all_nodes[e["id"]] = e
-
-        known_names = set(ENTITY_PATTERNS[t][i]
-                         for t in ENTITY_PATTERNS
-                         for i in range(len(ENTITY_PATTERNS[t])))
-        # Relation edges
-        rel_edges = extract_edges_from_relations(text, known_names)
-        all_edges.extend(rel_edges)
-
-        # Co-occurrence edges
-        co_edges = cooccurrence_edges(entities, domain)
-        all_edges.extend(co_edges)
-
-        domain_summaries[domain] = (
-            data.get("summary", "")[:200]
-            if isinstance(data.get("summary"), str)
-            else ""
-        )
-
-    # EW signal edges
-    ew_edge_list = ew_edges(ew_signals, list(all_nodes.values()))
-    all_edges.extend(ew_edge_list)
-
-    # Deduplicate edges by (source, target, relation)
-    seen_edges: set[tuple] = set()
-    dedup_edges = []
-    for e in all_edges:
-        key = (e["source"], e["target"], e["relation"])
-        if key not in seen_edges:
-            seen_edges.add(key)
-            dedup_edges.append(e)
-
-    # Conflict detection
-    conflicts = detect_conflicts(dedup_edges)
-
+    # ── Assemble delta ────────────────────────────────────────────────────────
     delta = {
-        "version_from":      current_version,
-        "version_to":        next_version,
-        "week":              week,
-        "generated_at":      datetime.utcnow().isoformat() + "Z",
-        "run_date":          run_date,
-        "node_count":        len(all_nodes),
-        "edge_count":        len(dedup_edges),
-        "ew_edge_count":     len(ew_edge_list),
-        "conflict_count":    len(conflicts),
-        "nodes":             list(all_nodes.values()),
-        "edges":             dedup_edges,
-        "conflicts":         conflicts,
-        "domain_summaries":  domain_summaries,
-        "ew_signals":        ew_signals,
+        "@context": {
+            "@vocab":     "https://schema.org/",
+            "ent":        "https://pe-system.local/entity/",
+            "edge":       "https://pe-system.local/relation/",
+            "added_in":   "https://pe-system.local/kg/version#",
+        },
+        "kg_version":      next_version,
+        "prev_version":    current_version,
+        "week":            week,
+        "run_date":        run_date,
+        "generated_at":    datetime.utcnow().isoformat() + "Z",
+        "ew_triggered":    ew_report.get("ew_triggered", False),
+        "ew_severity":     ew_report.get("severity", "NONE"),
+        "ew_signal_tags":  ew_signal_tags,
+        "node_count":      len(nodes),
+        "edge_count":      len(edges),
+        "top_entities":    [n["name"] for n in nodes[:10]],
+        "nodes":           nodes,
+        "edges":           edges,
     }
+
+    # ── Write output ──────────────────────────────────────────────────────────
+    if output_path:
+        os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+        with open(output_path, "w", encoding="utf-8") as f:
+            json.dump(delta, f, ensure_ascii=False, indent=2)
+        print(f"[KG] Delta written: {output_path}")
+
+    # ── Changelog append ──────────────────────────────────────────────────────
+    changelog_path = Path(intel_dir).parent.parent / "kg_changelog.md"
+    ew_icon = {"CRITICAL": "🔴", "ALERT": "🟠", "WATCH": "🟡", "NONE": "🟢"}.get(
+        ew_report.get("severity", "NONE"), "⚪"
+    )
+    changelog_entry = (
+        f"\n## v{next_version} — {run_date} ({week})\n"
+        f"- Nodes added: {len(nodes)} | Edges added: {len(edges)}\n"
+        f"- EW status: {ew_icon} {ew_report.get('severity', 'NONE')}\n"
+        f"- Top entities: {', '.join(n['name'] for n in nodes[:5])}\n"
+        f"- EW signals: {', '.join(ew_signal_tags) or 'none'}\n"
+    )
+    try:
+        with open(changelog_path, "a", encoding="utf-8") as f:
+            f.write(changelog_entry)
+        print(f"[KG] Changelog updated: {changelog_path}")
+    except Exception as e:
+        print(f"[KG] Changelog write failed: {e}", file=sys.stderr)
+
     return delta
 
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
 
 def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="KG Delta Generator")
-    p.add_argument("--intel-dir",        default="output/ai_intel")
-    p.add_argument("--current-version",  required=True,  help="e.g. 4.25")
-    p.add_argument("--next-version",     required=True,  help="e.g. 4.26")
-    p.add_argument("--week",             required=True,  help="e.g. 2026-W21")
-    p.add_argument("--run-date",         required=True,  help="YYYY-MM-DD")
-    p.add_argument("--ew-signals",       default="",     help="Comma-separated EW tags")
-    p.add_argument("--output",           default="",     help="Output JSON path")
+    p = argparse.ArgumentParser(description="KG Delta Generator v3")
+    p.add_argument("--intel-dir",       default="output/ai_intel",        help="Directory with intel JSON files")
+    p.add_argument("--current-version", required=True,                     help="Current KG version e.g. 4.25")
+    p.add_argument("--next-version",    required=True,                     help="Next KG version e.g. 4.26")
+    p.add_argument("--week",            required=True,                     help="ISO week e.g. 2026-W21")
+    p.add_argument("--run-date",        default=datetime.utcnow().strftime("%Y-%m-%d"), help="Run date YYYY-MM-DD")
+    p.add_argument("--ew-signals",      default="",                        help="Comma-separated EW signal tags")
+    p.add_argument("--output",          default="",                        help="Output JSON path")
     return p.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    ew_signals = [s.strip() for s in args.ew_signals.split(",") if s.strip()]
+    out = args.output or f"knowledge_graph_v{args.next_version}_delta.json"
 
-    print(f"[KG] Generating delta: v{args.current_version} → v{args.next_version}")
+    print(f"[KG v3] Generating delta: v{args.current_version} → v{args.next_version}")
+    print(f"[KG]    Week: {args.week} | Intel dir: {args.intel_dir}")
+
     delta = generate_delta(
         intel_dir=args.intel_dir,
         current_version=args.current_version,
         next_version=args.next_version,
         week=args.week,
         run_date=args.run_date,
-        ew_signals=ew_signals,
+        ew_signals_str=args.ew_signals,
+        output_path=out,
     )
 
-    out_path = args.output or f"knowledge_graph_v{args.next_version}_delta.json"
-    os.makedirs(os.path.dirname(os.path.abspath(out_path)), exist_ok=True)
-    with open(out_path, "w", encoding="utf-8") as f:
-        json.dump(delta, f, ensure_ascii=False, indent=2)
-
     print(f"[KG] Nodes     : {delta['node_count']}")
-    print(f"[KG] Edges     : {delta['edge_count']} ({delta['ew_edge_count']} EW)")
-    print(f"[KG] Conflicts : {delta['conflict_count']}")
-    print(f"[KG] Output    : {out_path}")
+    print(f"[KG] Edges     : {delta['edge_count']}")
+    print(f"[KG] Top 5     : {', '.join(delta['top_entities'][:5])}")
+    print(f"[KG] EW Status : {delta['ew_severity']}")
 
-    # GitHub Actions outputs
     gh_output = os.environ.get("GITHUB_OUTPUT", "")
     if gh_output:
         with open(gh_output, "a") as f:
+            f.write(f"kg_version={args.next_version}\n")
             f.write(f"node_count={delta['node_count']}\n")
             f.write(f"edge_count={delta['edge_count']}\n")
-            f.write(f"conflict_count={delta['conflict_count']}\n")
+
+    # GITHUB_STEP_SUMMARY
+    step_summary = os.environ.get("GITHUB_STEP_SUMMARY", "")
+    if step_summary:
+        top_ents = ", ".join(f"`{n}`" for n in delta["top_entities"][:8])
+        lines = [
+            f"## 🧠 KG Delta v{args.next_version} — {args.week}",
+            f"| Field | Value |",
+            f"|---|---|",
+            f"| Nodes | {delta['node_count']} |",
+            f"| Edges | {delta['edge_count']} |",
+            f"| EW Severity | {delta['ew_severity']} |",
+            f"",
+            f"**Top Entities:** {top_ents}",
+        ]
+        try:
+            with open(step_summary, "a") as f:
+                f.write("\n".join(lines) + "\n")
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":
