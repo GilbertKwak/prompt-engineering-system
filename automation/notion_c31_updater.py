@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """
-automation/notion_c31_updater.py
-Notion C-31 EW 레지스트리 자동 업데이트기
+notion_c31_updater.py — Section A, Step 4
+Notion Blocks API로 C-31 인텔 리포트 페이지 업데이트
+50블록 배치, EW 심각도별 callout 색상, 기존 내용 보존
 
-Usage (workflow에서 호출되는 방식 — 정확한 인터페이스):
-  python automation/notion_c31_updater.py \
+Usage:
+  python notion_c31_updater.py \
     --page-id 34a55ed436f0814d9cffe6a2f0816e29 \
     --week 2026-W21 \
-    --run-date 2026-05-19 \
+    --run-date 2026-05-20 \
     --ew-triggered false \
     --ew-count 0 \
     --ew-signals "" \
@@ -21,253 +22,313 @@ Usage (workflow에서 호출되는 방식 — 정확한 인터페이스):
 import argparse
 import json
 import os
+import sys
 import time
+import logging
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Optional
 
-import requests
+try:
+    import requests
+except ImportError:
+    print("[ERROR] requests not installed: pip install requests")
+    sys.exit(1)
 
-# ──────────────────────────────────────────
-# Notion API Config
-# ──────────────────────────────────────────
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)],
+)
+log = logging.getLogger("notion_c31_updater")
+
 NOTION_API_BASE = "https://api.notion.com/v1"
 NOTION_VERSION = "2022-06-28"
-BATCH_SIZE = 50  # Notion API 최대 블록 수
+BATCH_SIZE = 50  # Notion API max blocks per append call
+RATELIMIT_DELAY = 0.35  # seconds between batch calls
 
-# EW 심각도 → callout 색상 매핑
-SEVERITY_COLOR = {
-    "HIGH": "red",
-    "MEDIUM": "yellow",
-    "LOW": "blue",
-    "NONE": "green",
+# EW severity → Notion callout color mapping
+EW_COLOR_MAP = {
+    "CRITICAL": "red_background",
+    "HIGH": "orange_background",
+    "MEDIUM": "yellow_background",
+    "LOW": "blue_background",
+    "NONE": "green_background",
+}
+
+EW_ICON_MAP = {
+    "CRITICAL": "🚨",
+    "HIGH": "⚠️",
+    "MEDIUM": "📋",
+    "LOW": "ℹ️",
+    "NONE": "✅",
 }
 
 
-def get_headers(api_key: str) -> dict:
+# ─── Notion API Helpers ───────────────────────────────────────────────────────
+def get_headers() -> dict:
+    token = os.environ.get("NOTION_API_KEY", "")
+    if not token:
+        log.error("NOTION_API_KEY env var not set")
+        sys.exit(1)
     return {
-        "Authorization": f"Bearer {api_key}",
-        "Notion-Version": NOTION_VERSION,
+        "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
+        "Notion-Version": NOTION_VERSION,
     }
 
 
-def append_blocks(page_id: str, blocks: list, api_key: str) -> bool:
-    """Notion blocks append (배치 처리, 최대 BATCH_SIZE)"""
-    headers = get_headers(api_key)
+def append_blocks(page_id: str, blocks: list[dict]) -> bool:
+    """Append blocks in batches of BATCH_SIZE."""
+    headers = get_headers()
     url = f"{NOTION_API_BASE}/blocks/{page_id}/children"
+    total = len(blocks)
+    success = True
 
-    for i in range(0, len(blocks), BATCH_SIZE):
-        batch = blocks[i:i + BATCH_SIZE]
-        resp = requests.patch(url, headers=headers, json={"children": batch}, timeout=30)
-        if not resp.ok:
-            print(f"  [ERROR] Notion API 오류 {resp.status_code}: {resp.text[:200]}")
-            return False
-        if i + BATCH_SIZE < len(blocks):
-            time.sleep(0.3)  # API rate limit 방지
+    for i in range(0, total, BATCH_SIZE):
+        batch = blocks[i : i + BATCH_SIZE]
+        log.info(f"  Appending blocks {i+1}–{min(i+BATCH_SIZE, total)}/{total}")
+        try:
+            resp = requests.patch(
+                url, headers=headers,
+                json={"children": batch}, timeout=30
+            )
+            if resp.status_code == 429:
+                retry_after = int(resp.headers.get("Retry-After", 10))
+                log.warning(f"  Rate limited. Waiting {retry_after}s...")
+                time.sleep(retry_after)
+                resp = requests.patch(
+                    url, headers=headers,
+                    json={"children": batch}, timeout=30
+                )
+            resp.raise_for_status()
+            time.sleep(RATELIMIT_DELAY)
+        except requests.exceptions.RequestException as e:
+            log.error(f"  Failed to append blocks {i}–{i+BATCH_SIZE}: {e}")
+            success = False
 
-    return True
+    return success
 
 
-def build_divider() -> dict:
+# ─── Block Builders ───────────────────────────────────────────────────────────
+def divider() -> dict:
     return {"object": "block", "type": "divider", "divider": {}}
 
 
-def build_heading2(text: str) -> dict:
+def heading2(text: str) -> dict:
     return {
         "object": "block",
         "type": "heading_2",
         "heading_2": {
-            "rich_text": [{"type": "text", "text": {"content": text}}]
+            "rich_text": [{"type": "text", "text": {"content": text[:200]}}]
         },
     }
 
 
-def build_heading3(text: str) -> dict:
+def heading3(text: str) -> dict:
     return {
         "object": "block",
         "type": "heading_3",
         "heading_3": {
-            "rich_text": [{"type": "text", "text": {"content": text}}]
+            "rich_text": [{"type": "text", "text": {"content": text[:200]}}]
         },
     }
 
 
-def build_paragraph(text: str, bold: bool = False) -> dict:
-    rich = {
-        "type": "text",
-        "text": {"content": text},
-        "annotations": {"bold": bold},
-    }
+def paragraph(text: str, bold: bool = False) -> dict:
+    content = text[:2000]  # Notion text limit
     return {
         "object": "block",
         "type": "paragraph",
-        "paragraph": {"rich_text": [rich]},
-    }
-
-
-def build_callout(text: str, emoji: str, color: str) -> dict:
-    return {
-        "object": "block",
-        "type": "callout",
-        "callout": {
-            "rich_text": [{"type": "text", "text": {"content": text}}],
-            "icon": {"type": "emoji", "emoji": emoji},
-            "color": f"{color}_background",
+        "paragraph": {
+            "rich_text": [{
+                "type": "text",
+                "text": {"content": content},
+                "annotations": {"bold": bold},
+            }]
         },
     }
 
 
-def build_bulleted_item(text: str) -> dict:
+def bulleted_item(text: str) -> dict:
     return {
         "object": "block",
         "type": "bulleted_list_item",
         "bulleted_list_item": {
-            "rich_text": [{"type": "text", "text": {"content": text}}]
+            "rich_text": [{"type": "text", "text": {"content": text[:2000]}}]
         },
     }
 
 
-def build_code_block(code: str, language: str = "json") -> dict:
+def callout(text: str, icon: str, color: str) -> dict:
     return {
         "object": "block",
-        "type": "code",
-        "code": {
-            "rich_text": [{"type": "text", "text": {"content": code}}],
-            "language": language,
+        "type": "callout",
+        "callout": {
+            "rich_text": [{"type": "text", "text": {"content": text[:2000]}}],
+            "icon": {"type": "emoji", "emoji": icon},
+            "color": color,
         },
     }
 
 
-def load_intel_summary(intel_dir: str) -> dict:
-    """인텔 파일에서 도메인별 요약 추출"""
-    summary = {}
-    dir_path = Path(intel_dir)
-    for f in sorted(dir_path.glob("intel_*.json")):
-        try:
-            data = json.loads(f.read_text(encoding="utf-8"))
-            domain = data.get("domain", f.stem)
-            summary[domain] = {
-                "model": data.get("model"),
-                "key_facts": data.get("key_facts", [])[:3],
-                "metrics": data.get("metrics", {}),
-                "query_count": data.get("query_count", 0),
-            }
-        except Exception:
-            pass
-    return summary
+def toggle(title: str, children: list[dict]) -> dict:
+    return {
+        "object": "block",
+        "type": "toggle",
+        "toggle": {
+            "rich_text": [{"type": "text", "text": {"content": title[:200]}}],
+            "children": children[:99],  # Notion child block limit
+        },
+    }
 
 
-def build_weekly_update_blocks(
-    week: str,
-    run_date: str,
-    ew_triggered: bool,
-    ew_count: int,
-    ew_signals: list[str],
-    ew_severity: str,
-    kg_version: str,
-    node_count: int,
-    edge_count: int,
-    intel_dir: str,
-) -> list[dict]:
-    """Notion에 추가할 블록 목록 생성"""
-    blocks = []
-    intel_summary = load_intel_summary(intel_dir)
-    ew_color = SEVERITY_COLOR.get(ew_severity, "green")
-    ew_emoji = "🔴" if ew_triggered else "🟢"
-    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+# ─── Report Block Assembly ────────────────────────────────────────────────────
+def build_header_blocks(args, run_ts: str) -> list[dict]:
+    ew_flag = args.ew_triggered.lower() == "true"
+    severity = args.ew_severity.upper()
+    icon = EW_ICON_MAP.get(severity, "📋")
+    color = EW_COLOR_MAP.get(severity, "green_background")
 
-    # 구분선 + 주간 헤더
-    blocks.append(build_divider())
-    blocks.append(build_heading2(f"📊 AI Intel Weekly — {week}"))
-    blocks.append(build_paragraph(f"실행: {timestamp} | Run Date: {run_date}"))
+    ew_status = (
+        f"EW TRIGGERED: {args.ew_count} domain(s) — {args.ew_signals}"
+        if ew_flag else "EW CLEAR — No early warning signals"
+    )
 
-    # EW 상태 callout
-    if ew_triggered:
-        ew_text = (
-            f"EW 발동 — {ew_count}개 신호 | 심각도: {ew_severity}\n"
-            f"신호: {', '.join(ew_signals) if ew_signals else '없음'}"
+    return [
+        divider(),
+        heading2(f"🤖 AI Intel Weekly — {args.week}"),
+        paragraph(f"Generated: {run_ts} | KG v{args.kg_version} | Week {args.week}"),
+        callout(ew_status, icon, color),
+        paragraph(
+            f"KG Update: v{args.kg_version} | "
+            f"Nodes: +{args.node_count} | Edges: +{args.edge_count}",
+            bold=True,
+        ),
+    ]
+
+
+def build_domain_blocks(domain: str, domain_data: dict) -> list[dict]:
+    blocks = [heading3(f"📂 {domain.replace('_', ' ').title()}")]
+
+    # Signals (top 5)
+    signals = domain_data.get("signals", [])[:5]
+    if signals:
+        for sig in signals:
+            sig_text = (
+                f"[{sig.get('significance', '?')}] "
+                f"{sig.get('title', 'Untitled')} — "
+                f"{sig.get('summary', '')[:100]}"
+            )
+            blocks.append(bulleted_item(sig_text))
+
+    # Key facts (top 3)
+    facts = domain_data.get("key_facts", [])[:3]
+    if facts:
+        blocks.append(paragraph("Key facts:", bold=True))
+        for fact in facts:
+            blocks.append(bulleted_item(str(fact)[:200]))
+
+    # EW indicator
+    ew = domain_data.get("ew_indicators", {})
+    if ew.get("detected"):
+        reasons = ew.get("reasons", []) or [ew.get("reason", "EW detected")]
+        blocks.append(
+            callout(
+                f"EW: {'; '.join(str(r) for r in reasons[:3])}",
+                "⚠️", "orange_background"
+            )
         )
-        blocks.append(build_callout(ew_text, ew_emoji, ew_color))
-    else:
-        blocks.append(build_callout(
-            f"EW 미발동 — 정상 범위 | 심각도: {ew_severity}",
-            ew_emoji, ew_color
-        ))
-
-    # KG Delta 요약
-    blocks.append(build_heading3("🧠 Knowledge Graph Delta"))
-    blocks.append(build_bulleted_item(f"버전: v{kg_version}"))
-    blocks.append(build_bulleted_item(f"신규 노드: {node_count}개"))
-    blocks.append(build_bulleted_item(f"신규 엣지: {edge_count}개"))
-
-    # 도메인 인텔 요약
-    if intel_summary:
-        blocks.append(build_heading3("📡 도메인별 인텔 요약"))
-        for domain, info in intel_summary.items():
-            blocks.append(build_paragraph(f"▶ {domain} (모델: {info['model']})", bold=True))
-            for fact in info.get("key_facts", []):
-                if fact:
-                    blocks.append(build_bulleted_item(str(fact)[:200]))
-            if info.get("metrics"):
-                metrics_str = json.dumps(info["metrics"], ensure_ascii=False)
-                blocks.append(build_code_block(metrics_str, "json"))
-
-    # EW 신호 상세 (발동 시)
-    if ew_triggered and ew_signals:
-        blocks.append(build_heading3("⚠️ EW 신호 상세"))
-        for signal in ew_signals:
-            blocks.append(build_bulleted_item(f"{signal}"))
 
     return blocks
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Notion C-31 EW 레지스트리 업데이터")
-    parser.add_argument("--page-id", required=True, help="Notion 페이지 ID")
-    parser.add_argument("--week", required=True, help="주간 레이블 (예: 2026-W21)")
-    parser.add_argument("--run-date", required=True, help="실행 날짜 (YYYY-MM-DD)")
-    parser.add_argument("--ew-triggered", required=True, help="EW 발동 여부 (true/false)")
-    parser.add_argument("--ew-count", type=int, default=0, help="EW 신호 수")
-    parser.add_argument("--ew-signals", default="", help="EW 신호 목록 (콤마 구분)")
-    parser.add_argument("--ew-severity", default="NONE", help="EW 최대 심각도")
-    parser.add_argument("--kg-version", required=True, help="KG 버전 (예: 4.26)")
-    parser.add_argument("--node-count", type=int, default=0, help="신규 노드 수")
-    parser.add_argument("--edge-count", type=int, default=0, help="신규 엣지 수")
-    parser.add_argument("--intel-dir", default="output/ai_intel", help="인텔 파일 디렉토리")
-    args = parser.parse_args()
+def build_all_blocks(args, intel_dir: Path, run_ts: str) -> list[dict]:
+    blocks = build_header_blocks(args, run_ts)
+    blocks.append(divider())
+    blocks.append(heading3("📊 Domain Intelligence"))
 
-    api_key = os.environ.get("NOTION_API_KEY")
-    if not api_key:
-        raise EnvironmentError("NOTION_API_KEY 환경변수가 설정되지 않았습니다.")
+    # Load intel files and build per-domain blocks
+    intel_files = list(intel_dir.glob("intel_*.json"))
+    processed = 0
 
-    ew_triggered = args.ew_triggered.lower() in ("true", "1", "yes")
-    ew_signals = [s.strip() for s in args.ew_signals.split(",") if s.strip()]
+    for f in intel_files:
+        try:
+            with open(f, encoding="utf-8") as fp:
+                data = json.load(fp)
 
-    print(f"\n[INFO] Notion C-31 업데이트 시작")
-    print(f"  Page ID: {args.page_id}")
-    print(f"  Week: {args.week} | EW: {ew_triggered} | KG: v{args.kg_version}")
+            if "domains" in data:
+                for domain, domain_data in data["domains"].items():
+                    blocks.extend(build_domain_blocks(domain, domain_data))
+                    processed += 1
+            else:
+                domain = data.get("domain", f.stem)
+                blocks.extend(build_domain_blocks(domain, data))
+                processed += 1
 
-    blocks = build_weekly_update_blocks(
-        week=args.week,
-        run_date=args.run_date,
-        ew_triggered=ew_triggered,
-        ew_count=args.ew_count,
-        ew_signals=ew_signals,
-        ew_severity=args.ew_severity,
-        kg_version=args.kg_version,
-        node_count=args.node_count,
-        edge_count=args.edge_count,
-        intel_dir=args.intel_dir,
+        except (json.JSONDecodeError, KeyError) as e:
+            log.error(f"  Skipping {f.name}: {e}")
+
+    if processed == 0:
+        blocks.append(
+            callout("No intel data files found in input directory.", "⚠️", "yellow_background")
+        )
+
+    # Footer
+    blocks.append(divider())
+    blocks.append(
+        paragraph(
+            f"Section A pipeline complete — {processed} domain(s) processed. "
+            f"Next run: automated via GitHub Actions."
+        )
     )
 
-    print(f"  생성된 블록: {len(blocks)}개")
+    return blocks
 
-    success = append_blocks(args.page_id, blocks, api_key)
+
+# ─── Main ─────────────────────────────────────────────────────────────────────
+def main():
+    parser = argparse.ArgumentParser(description="Notion C-31 Updater — Section A Step 4")
+    parser.add_argument("--page-id", required=True, help="Notion page ID")
+    parser.add_argument("--week", required=True, help="ISO week e.g. 2026-W21")
+    parser.add_argument("--run-date", required=True, help="Run date YYYY-MM-DD")
+    parser.add_argument("--ew-triggered", default="false",
+                        help="'true' or 'false'")
+    parser.add_argument("--ew-count", type=int, default=0,
+                        help="Number of EW-triggered domains")
+    parser.add_argument("--ew-signals", default="",
+                        help="Comma-separated EW domain names")
+    parser.add_argument("--ew-severity", default="NONE",
+                        choices=["NONE", "LOW", "MEDIUM", "HIGH", "CRITICAL"],
+                        help="Overall EW severity")
+    parser.add_argument("--kg-version", required=True,
+                        help="New KG version e.g. 4.26")
+    parser.add_argument("--node-count", type=int, default=0,
+                        help="Number of new KG nodes")
+    parser.add_argument("--edge-count", type=int, default=0,
+                        help="Number of new KG edges")
+    parser.add_argument("--intel-dir", required=True,
+                        help="Directory with intel JSON files")
+    args = parser.parse_args()
+
+    run_ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    intel_dir = Path(args.intel_dir)
+
+    log.info(
+        f"Notion C-31 Update | page={args.page_id[:8]}... | "
+        f"week={args.week} | EW={args.ew_triggered} | severity={args.ew_severity}"
+    )
+
+    blocks = build_all_blocks(args, intel_dir, run_ts)
+    log.info(f"Total blocks to append: {len(blocks)}")
+
+    success = append_blocks(args.page_id, blocks)
+
     if success:
-        print(f"[OK] Notion C-31 업데이트 완료")
+        log.info(f"\n✅ Notion C-31 updated successfully — {len(blocks)} blocks appended")
     else:
-        print(f"[ERROR] Notion 업데이트 실패")
-        raise SystemExit(1)
+        log.error("\n❌ Some blocks failed to append — check logs above")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

@@ -1,44 +1,133 @@
 #!/usr/bin/env python3
 """
-automation/ai_intel_collector.py
-Perplexity sonar/sonar-pro API 기반 AI 인텔리전스 주간 수집기
+ai_intel_collector.py — Section A, Step 1
+Perplexity sonar/sonar-pro API 기반 AI 도메인별 인텔 수집기
 
 Usage:
-  python automation/ai_intel_collector.py \
+  python ai_intel_collector.py \
     --domain enterprise_deployment \
     --week 2026-W21 \
     --scope standard \
-    --queries "query1" "query2" \
+    --queries "enterprise AI adoption" \
     --output output/ai_intel/intel_enterprise.json
 """
 
 import argparse
 import json
 import os
-import re
+import sys
 import time
+import logging
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Optional
 
-import requests
+try:
+    import requests
+except ImportError:
+    print("[ERROR] requests not installed: pip install requests")
+    sys.exit(1)
 
-# ──────────────────────────────────────────
-# Config
-# ──────────────────────────────────────────
-PERPLEXITY_API_URL = "https://api.perplexity.ai/chat/completions"
+# ─── Logging ───────────────────────────────────────────────────────────────
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)],
+)
+log = logging.getLogger("ai_intel_collector")
 
-MODEL_MAP = {
-    "standard": "sonar",
-    "deep": "sonar-pro",
-    "emergency": "sonar-pro",
+# ─── Constants ──────────────────────────────────────────────────────────────
+API_URL = "https://api.perplexity.ai/chat/completions"
+MODEL_STANDARD = "sonar"
+MODEL_DEEP = "sonar-pro"
+MAX_RETRIES = 3
+RETRY_BASE_DELAY = 5  # seconds, exponential backoff
+
+DOMAINS = [
+    "enterprise_deployment",
+    "model_architecture",
+    "regulatory_policy",
+    "investment_funding",
+    "open_source",
+    "hardware_infrastructure",
+    "safety_alignment",
+]
+
+DEFAULT_QUERIES = {
+    "enterprise_deployment": [
+        "enterprise AI deployment adoption trends 2026",
+        "Fortune 500 AI implementation ROI case studies",
+        "AI integration barriers enterprise software",
+    ],
+    "model_architecture": [
+        "new LLM model releases architecture improvements 2026",
+        "multimodal AI model capabilities benchmarks",
+        "reasoning model performance comparisons",
+    ],
+    "regulatory_policy": [
+        "AI regulation policy EU US China 2026",
+        "AI governance framework enterprise compliance",
+        "AI liability legislation updates",
+    ],
+    "investment_funding": [
+        "AI startup funding rounds investments 2026",
+        "AI infrastructure venture capital trends",
+        "enterprise AI M&A activity",
+    ],
+    "open_source": [
+        "open source AI model releases 2026",
+        "Hugging Face Meta AI open models updates",
+        "open source LLM enterprise adoption",
+    ],
+    "hardware_infrastructure": [
+        "AI chip GPU supply demand 2026 NVIDIA AMD",
+        "AI data center infrastructure investment",
+        "edge AI hardware deployment",
+    ],
+    "safety_alignment": [
+        "AI safety alignment research 2026",
+        "LLM hallucination reduction techniques",
+        "responsible AI governance practices",
+    ],
 }
 
-MAX_RETRIES = 3
-RETRY_BASE_DELAY = 5  # seconds
+
+# ─── Core Functions ─────────────────────────────────────────────────────────
+def get_api_key() -> str:
+    key = os.environ.get("PERPLEXITY_API_KEY", "")
+    if not key:
+        log.error("PERPLEXITY_API_KEY env var not set")
+        sys.exit(1)
+    return key
 
 
-def call_perplexity(query: str, model: str, api_key: str) -> dict:
-    """Perplexity API 단일 쿼리 호출 (지수 백오프 재시도)"""
+def select_model(scope: str) -> str:
+    """scope: standard → sonar, deep/emergency → sonar-pro"""
+    if scope in ("deep", "emergency"):
+        log.info(f"Scope '{scope}' → escalating to {MODEL_DEEP}")
+        return MODEL_DEEP
+    return MODEL_STANDARD
+
+
+def build_system_prompt(domain: str, week: str) -> str:
+    return (
+        f"You are an AI industry intelligence analyst. "
+        f"Week: {week}. Domain focus: {domain.replace('_', ' ')}. "
+        f"Respond ONLY with a JSON object matching this schema:\n"
+        f"{{\"domain\": str, \"week\": str, \"collected_at\": str (ISO8601), "
+        f"\"signals\": [{{\"title\": str, \"summary\": str (≤120 chars), "
+        f"\"significance\": \"HIGH\" | \"MEDIUM\" | \"LOW\", "
+        f"\"source_hint\": str, \"tags\": [str]}}], "
+        f"\"key_facts\": [str], \"metrics\": {{str: str}}, "
+        f"\"ew_indicators\": {{\"detected\": bool, \"reason\": str}}}}\n"
+        f"Do not include markdown fences or extra text."
+    )
+
+
+def call_perplexity(
+    api_key: str, model: str, system_prompt: str, user_query: str
+) -> Optional[dict]:
+    """Single API call with exponential backoff retry."""
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
@@ -46,210 +135,184 @@ def call_perplexity(query: str, model: str, api_key: str) -> dict:
     payload = {
         "model": model,
         "messages": [
-            {
-                "role": "system",
-                "content": (
-                    "You are an AI industry intelligence analyst. "
-                    "Provide structured, factual, quantified insights in JSON format. "
-                    "Focus on metrics, adoption rates, market data, and specific company actions. "
-                    "Always include numeric values where available."
-                ),
-            },
-            {"role": "user", "content": query},
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_query},
         ],
-        "max_tokens": 2000,
         "temperature": 0.2,
-        "return_citations": True,
+        "max_tokens": 2048,
     }
 
-    for attempt in range(MAX_RETRIES):
+    for attempt in range(1, MAX_RETRIES + 1):
         try:
-            resp = requests.post(
-                PERPLEXITY_API_URL,
-                headers=headers,
-                json=payload,
-                timeout=60,
-            )
-            if resp.status_code == 429:  # Rate limit
-                delay = RETRY_BASE_DELAY * (2 ** attempt)
-                print(f"  [WARN] Rate limited. Waiting {delay}s... (attempt {attempt+1}/{MAX_RETRIES})")
+            log.info(f"  API call attempt {attempt}/{MAX_RETRIES} [model={model}]")
+            resp = requests.post(API_URL, headers=headers, json=payload, timeout=60)
+
+            if resp.status_code == 429:
+                delay = RETRY_BASE_DELAY * (2 ** (attempt - 1))
+                log.warning(f"  Rate limit (429). Retrying in {delay}s...")
                 time.sleep(delay)
                 continue
+
             resp.raise_for_status()
-            data = resp.json()
-            content = data["choices"][0]["message"]["content"]
-            citations = data.get("citations", [])
-            return {"content": content, "citations": citations, "model": model}
+            raw = resp.json()["choices"][0]["message"]["content"]
+            return parse_json_response(raw)
+
+        except requests.exceptions.Timeout:
+            log.warning(f"  Timeout on attempt {attempt}")
+            if attempt < MAX_RETRIES:
+                time.sleep(RETRY_BASE_DELAY)
         except requests.exceptions.RequestException as e:
-            if attempt == MAX_RETRIES - 1:
-                raise
-            delay = RETRY_BASE_DELAY * (2 ** attempt)
-            print(f"  [WARN] Request failed: {e}. Retrying in {delay}s...")
-            time.sleep(delay)
+            log.error(f"  Request error: {e}")
+            if attempt < MAX_RETRIES:
+                time.sleep(RETRY_BASE_DELAY)
 
-    return {"content": "", "citations": [], "model": model}
-
-
-def parse_json_from_content(content: str) -> dict:
-    """LLM 응답에서 JSON 블록 자동 파싱 (3단계 폴백)"""
-    # 1순위: ```json ... ``` 블록
-    match = re.search(r"```json\s*([\s\S]*?)```", content)
-    if match:
-        try:
-            return json.loads(match.group(1).strip())
-        except json.JSONDecodeError:
-            pass
-
-    # 2순위: 중괄호 블록
-    match = re.search(r"(\{[\s\S]*\})", content)
-    if match:
-        try:
-            return json.loads(match.group(1).strip())
-        except json.JSONDecodeError:
-            pass
-
-    # 3순위: raw 텍스트를 구조화
-    return {"raw_text": content, "parsed": False}
+    log.error("  Max retries exceeded")
+    return None
 
 
-def extract_metrics(parsed: dict) -> dict:
-    """파싱된 응답에서 수치 메트릭 추출"""
-    metrics = {}
-    metric_keys = [
-        "enterprise_adoption_rate",
-        "oss_rag_migration_rate",
-        "new_model_releases_per_week",
-        "ai_consulting_market_disruption",
-        "container_ml_adoption",
-        "multi_agent_orchestration_adoption",
-    ]
-
-    def _find_value(d: dict, keys: list) -> float | None:
-        """중첩 딕셔너리에서 유사 키 매칭으로 값 추출"""
-        for k in keys:
-            if k in d:
-                val = d[k]
-                if isinstance(val, (int, float)):
-                    return float(val)
-                if isinstance(val, str):
-                    nums = re.findall(r"[\d.]+", val)
-                    if nums:
-                        return float(nums[0])
-            # 유사 키 매칭 (부분 문자열)
-            for dk in d:
-                if k.replace("_", " ") in dk.replace("_", " "):
-                    val = d[dk]
-                    if isinstance(val, (int, float)):
-                        return float(val)
-        return None
-
-    for key in metric_keys:
-        val = _find_value(parsed, [key])
-        if val is not None:
-            metrics[key] = val
-
-    return metrics
+def parse_json_response(raw: str) -> Optional[dict]:
+    """Extract JSON from LLM response, handling markdown fences."""
+    raw = raw.strip()
+    # Strip markdown fences
+    if raw.startswith("```"):
+        lines = raw.split("\n")
+        start = 1 if lines[0].startswith("```") else 0
+        end = len(lines)
+        for i in range(len(lines) - 1, 0, -1):
+            if lines[i].strip() == "```":
+                end = i
+                break
+        raw = "\n".join(lines[start:end])
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        # Try to extract first JSON object
+        start = raw.find("{")
+        end = raw.rfind("}")
+        if start != -1 and end != -1:
+            try:
+                return json.loads(raw[start : end + 1])
+            except json.JSONDecodeError:
+                pass
+    log.warning("  Could not parse JSON from response")
+    return None
 
 
-def collect_domain_intel(
+def merge_signals(results: list[dict]) -> dict:
+    """Merge multiple query results into a single domain intel object."""
+    merged = {
+        "signals": [],
+        "key_facts": [],
+        "metrics": {},
+        "ew_indicators": {"detected": False, "reasons": []},
+    }
+    for r in results:
+        if not r:
+            continue
+        merged["signals"].extend(r.get("signals", []))
+        merged["key_facts"].extend(r.get("key_facts", []))
+        merged["metrics"].update(r.get("metrics", {}))
+        ew = r.get("ew_indicators", {})
+        if ew.get("detected"):
+            merged["ew_indicators"]["detected"] = True
+            if ew.get("reason"):
+                merged["ew_indicators"]["reasons"].append(ew["reason"])
+
+    # Deduplicate key_facts
+    merged["key_facts"] = list(dict.fromkeys(merged["key_facts"]))
+    return merged
+
+
+def collect_domain(
     domain: str,
     week: str,
     scope: str,
     queries: list[str],
     api_key: str,
 ) -> dict:
-    """도메인별 인텔리전스 수집 메인 로직"""
-    model = MODEL_MAP.get(scope, "sonar")
-    print(f"\n[INFO] Domain: {domain} | Week: {week} | Model: {model}")
-    print(f"[INFO] Queries: {len(queries)}개")
+    model = select_model(scope)
+    system_prompt = build_system_prompt(domain, week)
+    log.info(f"Collecting domain: {domain} | week: {week} | model: {model}")
 
     results = []
-    all_metrics = {}
-    all_key_facts = []
-    all_citations = []
+    for q in queries:
+        log.info(f"  Query: {q[:80]}")
+        result = call_perplexity(api_key, model, system_prompt, q)
+        if result:
+            results.append(result)
+        time.sleep(1)  # Polite delay between queries
 
-    for i, query in enumerate(queries, 1):
-        print(f"  [{i}/{len(queries)}] Query: {query[:60]}...")
-        try:
-            raw = call_perplexity(query, model, api_key)
-            parsed = parse_json_from_content(raw["content"])
-            metrics = extract_metrics(parsed)
-            all_metrics.update(metrics)
-
-            # key_facts 추출
-            key_facts = parsed.get("key_facts", [])
-            if isinstance(key_facts, list):
-                all_key_facts.extend(key_facts)
-            elif parsed.get("raw_text"):
-                # raw 텍스트에서 bullet 포인트 추출
-                bullets = re.findall(r"[-•*]\s+(.+)", parsed.get("raw_text", ""))
-                all_key_facts.extend(bullets[:5])
-
-            all_citations.extend(raw.get("citations", []))
-
-            results.append({
-                "query": query,
-                "content_raw": raw["content"],
-                "content_parsed": parsed,
-                "metrics": metrics,
-                "citations": raw.get("citations", []),
-            })
-
-            # Rate limit 방지 (표준 0.5초, emergency 즉시)
-            if scope != "emergency":
-                time.sleep(0.5)
-
-        except Exception as e:
-            print(f"  [ERROR] Query failed: {e}")
-            results.append({"query": query, "error": str(e)})
-
+    merged = merge_signals(results)
     output = {
         "domain": domain,
         "week": week,
         "scope": scope,
-        "model": model,
+        "model_used": model,
         "collected_at": datetime.now(timezone.utc).isoformat(),
         "query_count": len(queries),
-        "metrics": all_metrics,
-        "key_facts": all_key_facts[:20],  # 최대 20개
-        "citations": list(set(all_citations))[:30],  # 중복 제거, 최대 30개
-        "query_results": results,
+        "success_count": len([r for r in results if r]),
+        **merged,
     }
-
-    print(f"[OK] 수집 완료: metrics={len(all_metrics)}, key_facts={len(all_key_facts)}, citations={len(all_citations)}")
     return output
 
 
+# ─── Main ────────────────────────────────────────────────────────────────────
 def main():
-    parser = argparse.ArgumentParser(description="AI Intel Collector — Perplexity API 기반")
-    parser.add_argument("--domain", required=True, help="수집 도메인 식별자")
-    parser.add_argument("--week", required=True, help="주간 레이블 (예: 2026-W21)")
-    parser.add_argument(
-        "--scope",
-        choices=["standard", "deep", "emergency"],
-        default="standard",
-        help="수집 범위 및 모델 선택",
-    )
-    parser.add_argument("--queries", nargs="+", required=True, help="수집 쿼리 목록")
-    parser.add_argument("--output", required=True, help="출력 JSON 파일 경로")
+    parser = argparse.ArgumentParser(description="AI Intel Collector — Section A Step 1")
+    parser.add_argument("--domain", required=True, choices=DOMAINS + ["all"],
+                        help="Domain to collect or 'all'")
+    parser.add_argument("--week", required=True, help="ISO week e.g. 2026-W21")
+    parser.add_argument("--scope", default="standard",
+                        choices=["standard", "deep", "emergency"],
+                        help="Collection scope (affects model selection)")
+    parser.add_argument("--queries", nargs="+",
+                        help="Custom query strings (overrides defaults)")
+    parser.add_argument("--output", required=True,
+                        help="Output JSON file path")
     args = parser.parse_args()
 
-    api_key = os.environ.get("PERPLEXITY_API_KEY")
-    if not api_key:
-        raise EnvironmentError("PERPLEXITY_API_KEY 환경변수가 설정되지 않았습니다.")
+    api_key = get_api_key()
+    Path(args.output).parent.mkdir(parents=True, exist_ok=True)
 
-    result = collect_domain_intel(
-        domain=args.domain,
-        week=args.week,
-        scope=args.scope,
-        queries=args.queries,
-        api_key=api_key,
+    domains_to_run = DOMAINS if args.domain == "all" else [args.domain]
+    all_results = {}
+
+    for domain in domains_to_run:
+        queries = args.queries if args.queries else DEFAULT_QUERIES.get(domain, [])
+        if not queries:
+            log.warning(f"No queries for domain: {domain}, skipping")
+            continue
+        result = collect_domain(domain, args.week, args.scope, queries, api_key)
+        all_results[domain] = result
+        log.info(
+            f"  ✓ {domain}: {result['success_count']}/{result['query_count']} queries OK, "
+            f"{len(result['signals'])} signals, EW={result['ew_indicators']['detected']}"
+        )
+
+    # Write output
+    if args.domain == "all":
+        output_data = {
+            "week": args.week,
+            "scope": args.scope,
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "domains": all_results,
+        }
+    else:
+        output_data = all_results.get(args.domain, {})
+
+    with open(args.output, "w", encoding="utf-8") as f:
+        json.dump(output_data, f, ensure_ascii=False, indent=2)
+
+    log.info(f"\n✅ Output saved → {args.output}")
+
+    # Exit 1 if EW detected (allows workflow conditional)
+    ew_detected = any(
+        v.get("ew_indicators", {}).get("detected", False)
+        for v in all_results.values()
     )
-
-    out_path = Path(args.output)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"[SAVED] {out_path}")
+    if ew_detected:
+        log.warning("⚠️  EW signal detected in collection results")
+        sys.exit(2)  # exit 2 = EW flag, not hard failure
 
 
 if __name__ == "__main__":

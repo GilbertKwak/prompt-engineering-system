@@ -1,0 +1,267 @@
+name: "PE · AI Intel Weekly Digest"
+
+on:
+  schedule:
+    # Every Monday 01:00 UTC (Korea 10:00 KST)
+    - cron: "0 1 * * 1"
+  workflow_dispatch:
+    inputs:
+      intel_scope:
+        description: "Collection scope"
+        required: false
+        default: "standard"
+        type: choice
+        options:
+          - standard
+          - deep
+          - emergency
+      force_ew_check:
+        description: "Force EW check even if no signals"
+        required: false
+        default: "false"
+        type: string
+      kg_version_override:
+        description: "Override KG next version (leave empty for auto)"
+        required: false
+        default: ""
+        type: string
+
+env:
+  PYTHON_VERSION: "3.11"
+  OUTPUT_DIR: output/ai_intel
+  WEEK: ""
+
+jobs:
+  # ── Step 1: Collect Intel ─────────────────────────────────────────────────
+  collect:
+    name: "1 · Collect AI Intel"
+    runs-on: ubuntu-latest
+    outputs:
+      week: ${{ steps.set-week.outputs.week }}
+      ew_detected: ${{ steps.collect.outputs.ew_detected }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: pip install -r automation/requirements_ai_intel.txt
+
+      - name: Set ISO week
+        id: set-week
+        run: |
+          WEEK=$(python3 -c "from datetime import date; d=date.today(); print(f'{d.year}-W{d.isocalendar()[1]:02d}')")
+          echo "week=$WEEK" >> $GITHUB_OUTPUT
+          echo "WEEK=$WEEK" >> $GITHUB_ENV
+
+      - name: Create output directory
+        run: mkdir -p ${{ env.OUTPUT_DIR }}
+
+      - name: Collect all domains
+        id: collect
+        env:
+          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
+        run: |
+          python automation/ai_intel_collector.py \
+            --domain all \
+            --week ${{ steps.set-week.outputs.week }} \
+            --scope ${{ github.event.inputs.intel_scope || 'standard' }} \
+            --output ${{ env.OUTPUT_DIR }}/intel_all.json
+          EXIT=$?
+          if [ $EXIT -eq 2 ]; then
+            echo "ew_detected=true" >> $GITHUB_OUTPUT
+          else
+            echo "ew_detected=false" >> $GITHUB_OUTPUT
+          fi
+          exit 0  # Don't fail on EW exit code
+
+      - name: Upload intel artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-intel-${{ steps.set-week.outputs.week }}
+          path: ${{ env.OUTPUT_DIR }}/
+          retention-days: 90
+
+  # ── Step 2: EW Detection ──────────────────────────────────────────────────
+  ew-detect:
+    name: "2 · EW Detection"
+    needs: collect
+    runs-on: ubuntu-latest
+    outputs:
+      ew_triggered: ${{ steps.ew.outputs.ew_triggered }}
+      ew_count: ${{ steps.ew.outputs.ew_count }}
+      ew_signals: ${{ steps.ew.outputs.ew_signals }}
+      ew_severity: ${{ steps.ew.outputs.ew_severity }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: pip install -r automation/requirements_ai_intel.txt
+
+      - name: Download intel artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ai-intel-${{ needs.collect.outputs.week }}
+          path: ${{ env.OUTPUT_DIR }}
+
+      - name: Run EW detection
+        id: ew
+        run: |
+          python automation/ai_ew_detector.py \
+            --input-dir ${{ env.OUTPUT_DIR }} \
+            --week ${{ needs.collect.outputs.week }} \
+            --output ${{ env.OUTPUT_DIR }}/ew_report.json
+          EXIT=$?
+
+          # Parse EW report
+          EW_TRIGGERED=$(python3 -c "
+import json
+with open('${{ env.OUTPUT_DIR }}/ew_report.json') as f: d=json.load(f)
+print(str(d.get('ew_triggered', False)).lower())")
+          EW_COUNT=$(python3 -c "
+import json
+with open('${{ env.OUTPUT_DIR }}/ew_report.json') as f: d=json.load(f)
+print(d.get('ew_domain_count', 0))")
+          EW_SIGNALS=$(python3 -c "
+import json
+with open('${{ env.OUTPUT_DIR }}/ew_report.json') as f: d=json.load(f)
+print(','.join(d.get('ew_domains', [])))")
+          EW_SEVERITY=$(python3 -c "
+import json
+with open('${{ env.OUTPUT_DIR }}/ew_report.json') as f: d=json.load(f)
+print(d.get('overall_severity', 'NONE'))")
+
+          echo "ew_triggered=$EW_TRIGGERED" >> $GITHUB_OUTPUT
+          echo "ew_count=$EW_COUNT" >> $GITHUB_OUTPUT
+          echo "ew_signals=$EW_SIGNALS" >> $GITHUB_OUTPUT
+          echo "ew_severity=$EW_SEVERITY" >> $GITHUB_OUTPUT
+          exit 0
+
+      - name: Upload EW report
+        uses: actions/upload-artifact@v4
+        with:
+          name: ew-report-${{ needs.collect.outputs.week }}
+          path: ${{ env.OUTPUT_DIR }}/ew_report.json
+          retention-days: 90
+
+  # ── Step 3: KG Delta ─────────────────────────────────────────────────────
+  kg-delta:
+    name: "3 · KG Delta"
+    needs: [collect, ew-detect]
+    runs-on: ubuntu-latest
+    outputs:
+      kg_next_version: ${{ steps.kg.outputs.kg_next_version }}
+      node_count: ${{ steps.kg.outputs.node_count }}
+      edge_count: ${{ steps.kg.outputs.edge_count }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: pip install -r automation/requirements_ai_intel.txt
+
+      - name: Download intel artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ai-intel-${{ needs.collect.outputs.week }}
+          path: ${{ env.OUTPUT_DIR }}
+
+      - name: Determine KG versions
+        id: kg
+        run: |
+          # Auto-increment version from latest KG delta file, or use override
+          OVERRIDE="${{ github.event.inputs.kg_version_override }}"
+          if [ -n "$OVERRIDE" ]; then
+            KG_NEXT="$OVERRIDE"
+            # Extract current from override by decrementing minor
+            KG_CURRENT=$(python3 -c "v=float('$OVERRIDE'); print(f'{v-0.01:.2f}')")
+          else
+            KG_FILES=$(ls knowledge_graph_v*.json 2>/dev/null | sort -V | tail -1)
+            if [ -n "$KG_FILES" ]; then
+              KG_CURRENT=$(echo $KG_FILES | grep -oP '[\d]+\.[\d]+' | tail -1)
+            else
+              KG_CURRENT="4.25"
+            fi
+            KG_NEXT=$(python3 -c "v=float('$KG_CURRENT'); print(f'{v+0.01:.2f}')")
+          fi
+
+          echo "kg_current=$KG_CURRENT" >> $GITHUB_ENV
+          echo "kg_next_version=$KG_NEXT" >> $GITHUB_OUTPUT
+
+          python automation/kg_delta_generator.py \
+            --intel-dir ${{ env.OUTPUT_DIR }} \
+            --current-version $KG_CURRENT \
+            --next-version $KG_NEXT \
+            --week ${{ needs.collect.outputs.week }} \
+            --run-date $(date +%Y-%m-%d) \
+            --ew-signals "${{ needs.ew-detect.outputs.ew_signals }}" \
+            --output knowledge_graph_v${KG_NEXT}_delta.json
+
+          NODE_COUNT=$(python3 -c "
+import json
+with open('knowledge_graph_v${KG_NEXT}_delta.json') as f: d=json.load(f)
+print(d.get('stats', {}).get('new_nodes', 0))")
+          EDGE_COUNT=$(python3 -c "
+import json
+with open('knowledge_graph_v${KG_NEXT}_delta.json') as f: d=json.load(f)
+print(d.get('stats', {}).get('new_edges', 0))")
+
+          echo "node_count=$NODE_COUNT" >> $GITHUB_OUTPUT
+          echo "edge_count=$EDGE_COUNT" >> $GITHUB_OUTPUT
+
+      - name: Commit KG delta
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(kg): auto-commit KG delta v${{ steps.kg.outputs.kg_next_version }} — ${{ needs.collect.outputs.week }}"
+          file_pattern: "knowledge_graph_v*.json"
+
+  # ── Step 4: Notion C-31 Update ───────────────────────────────────────────
+  notion-update:
+    name: "4 · Notion C-31 Update"
+    needs: [collect, ew-detect, kg-delta]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: pip install -r automation/requirements_ai_intel.txt
+
+      - name: Download intel artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ai-intel-${{ needs.collect.outputs.week }}
+          path: ${{ env.OUTPUT_DIR }}
+
+      - name: Update Notion C-31
+        env:
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+        run: |
+          python automation/notion_c31_updater.py \
+            --page-id 34a55ed436f0814d9cffe6a2f0816e29 \
+            --week ${{ needs.collect.outputs.week }} \
+            --run-date $(date +%Y-%m-%d) \
+            --ew-triggered ${{ needs.ew-detect.outputs.ew_triggered }} \
+            --ew-count ${{ needs.ew-detect.outputs.ew_count }} \
+            --ew-signals "${{ needs.ew-detect.outputs.ew_signals }}" \
+            --ew-severity ${{ needs.ew-detect.outputs.ew_severity }} \
+            --kg-version ${{ needs.kg-delta.outputs.kg_next_version }} \
+            --node-count ${{ needs.kg-delta.outputs.node_count }} \
+            --edge-count ${{ needs.kg-delta.outputs.edge_count }} \
+            --intel-dir ${{ env.OUTPUT_DIR }}

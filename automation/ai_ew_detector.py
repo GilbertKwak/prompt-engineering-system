@@ -1,265 +1,280 @@
 #!/usr/bin/env python3
 """
-automation/ai_ew_detector.py
-C-31 EW (Early Warning) 자동 탐지기
+ai_ew_detector.py — Section A, Step 2
+Early Warning 탐지: 임계값 기반 + 키워드 휴리스틱 3-tier 폴백
 
-Usage (workflow에서 호출되는 방식 — 정확한 인터페이스):
-  python automation/ai_ew_detector.py \
+Usage:
+  python ai_ew_detector.py \
     --input-dir output/ai_intel \
-    --thresholds '{"enterprise_adoption_rate": {"threshold": 40, ...}}' \
     --week 2026-W21 \
     --output output/ai_intel/ew_report.json
-
-NOTE: --thresholds는 JSON 문자열 또는 JSON 파일 경로를 모두 허용
 """
 
 import argparse
 import json
 import os
 import re
+import sys
+import logging
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Optional
 
-# ──────────────────────────────────────────
-# EW 기본 임계값 (workflow에서 --thresholds로 오버라이드 가능)
-# ──────────────────────────────────────────
-DEFAULT_THRESHOLDS = {
-    "enterprise_adoption_rate": {"threshold": 40, "direction": "below", "signal": "EW-AI-DEPLOY"},
-    "oss_rag_migration_rate": {"threshold": 50, "direction": "above", "signal": "EW-RAG-OSS"},
-    "new_model_releases_per_week": {"threshold": 8, "direction": "above", "signal": "EW-MODEL-FLOOD"},
-    "ai_consulting_market_disruption": {"threshold": 0.5, "direction": "above", "signal": "EW-CONSULT"},
-    "container_ml_adoption": {"threshold": 55, "direction": "below", "signal": "EW-INFRA"},
-    "multi_agent_orchestration_adoption": {"threshold": 30, "direction": "above", "signal": "EW-ORCH"},
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)],
+)
+log = logging.getLogger("ai_ew_detector")
+
+# ─── EW Thresholds ──────────────────────────────────────────────────────────
+# Format: metric_key → (min_threshold, max_threshold, severity)
+# None = no bound in that direction
+EW_THRESHOLDS = {
+    "enterprise_adoption_rate": (None, 15.0, "CRITICAL"),   # <15% = slow
+    "model_release_velocity": (3.0, None, "HIGH"),           # >3 major/wk = fast
+    "regulatory_action_count": (2.0, None, "HIGH"),          # >2 actions
+    "funding_decline_pct": (20.0, None, "MEDIUM"),           # >20% YoY decline
+    "open_source_adoption_surge": (40.0, None, "MEDIUM"),    # >40% surge
+    "safety_incident_count": (1.0, None, "CRITICAL"),        # any incident
+    "chip_shortage_severity": (7.0, None, "HIGH"),           # scale 1-10
 }
 
-# EW 경고 키워드 (휴리스틱 보완)
+# ─── Keyword Heuristics (Tier-3 fallback) ───────────────────────────────────
 EW_KEYWORDS = {
-    "EW-AI-DEPLOY": [
-        "enterprise adoption slow", "deployment stall", "low adoption",
-        "enterprises struggle", "adoption barrier", "deployment blocked",
+    "CRITICAL": [
+        "emergency", "crisis", "ban", "shutdown", "breach", "exploit",
+        "critical vulnerability", "regulatory halt", "market crash",
+        "supply disruption", "data leak", "system failure",
     ],
-    "EW-RAG-OSS": [
-        "oss rag", "open source rag", "migrate from openai", "langchain migration",
-        "pgvector adoption", "self-hosted rag",
+    "HIGH": [
+        "unexpected", "surge", "spike", "rapid adoption", "major release",
+        "acquisition", "merger", "breakthrough", "disruption", "pivot",
+        "significant regulatory", "major funding", "partnership",
     ],
-    "EW-MODEL-FLOOD": [
-        "model release surge", "new model every week", "model proliferation",
-        "too many models", "weekly model",
-    ],
-    "EW-CONSULT": [
-        "consulting disruption", "ai replaces consultant", "mckinsey automation",
-        "consulting market shift",
-    ],
-    "EW-INFRA": [
-        "container adoption low", "kubernetes ai", "ml infrastructure gap",
-        "gpu shortage", "compute bottleneck",
-    ],
-    "EW-ORCH": [
-        "multi-agent", "agent orchestration", "agentic workflow",
-        "langgraph production", "crewai production",
+    "MEDIUM": [
+        "accelerating", "growing concern", "watch", "emerging trend",
+        "notable", "increasing", "shifting", "transition",
     ],
 }
 
-SEVERITY_MAP = {
-    0: "NONE",
-    1: "LOW",
-    2: "MEDIUM",
-    3: "HIGH",
-}
+EW_KEYWORD_HIT_THRESHOLD = 2  # hits needed to trigger EW
 
 
-def load_thresholds(thresholds_arg: str | None) -> dict:
-    """--thresholds 인자 파싱: JSON 문자열 또는 파일 경로 모두 허용"""
-    if not thresholds_arg:
-        return DEFAULT_THRESHOLDS
-
-    # 파일 경로인 경우
-    if os.path.isfile(thresholds_arg):
-        with open(thresholds_arg, encoding="utf-8") as f:
-            return json.load(f)
-
-    # JSON 문자열인 경우
-    try:
-        parsed = json.loads(thresholds_arg)
-        return parsed if parsed else DEFAULT_THRESHOLDS
-    except json.JSONDecodeError:
-        print(f"[WARN] --thresholds 파싱 실패. 기본 임계값 사용.")
-        return DEFAULT_THRESHOLDS
-
-
-def load_intel_files(input_dir: str) -> list[dict]:
-    """input-dir에서 intel_*.json 파일 전체 로드"""
-    dir_path = Path(input_dir)
-    intel_files = list(dir_path.glob("intel_*.json"))
-    if not intel_files:
-        print(f"[WARN] {input_dir}에서 intel_*.json 파일을 찾을 수 없음")
-        return []
-
-    results = []
-    for f in intel_files:
+# ─── Detection Logic ─────────────────────────────────────────────────────────
+def extract_metric_value(metrics: dict, key: str) -> Optional[float]:
+    """Tier-1: exact key match. Tier-2: fuzzy key match. Tier-3: text parse."""
+    # Tier-1: exact
+    if key in metrics:
         try:
-            data = json.loads(f.read_text(encoding="utf-8"))
-            results.append(data)
-            print(f"  [LOADED] {f.name}: metrics={len(data.get('metrics', {}))}")
-        except Exception as e:
-            print(f"  [ERROR] {f.name} 로드 실패: {e}")
-    return results
+            val = str(metrics[key]).replace("%", "").replace(",", "").strip()
+            return float(val)
+        except (ValueError, TypeError):
+            pass
+
+    # Tier-2: fuzzy — find key with most token overlap
+    key_tokens = set(key.lower().split("_"))
+    best_score, best_val = 0, None
+    for k, v in metrics.items():
+        k_tokens = set(k.lower().replace("-", "_").split("_"))
+        score = len(key_tokens & k_tokens)
+        if score > best_score:
+            try:
+                val = str(v).replace("%", "").replace(",", "").strip()
+                best_val = float(val)
+                best_score = score
+            except (ValueError, TypeError):
+                pass
+    if best_score >= 2:
+        return best_val
+
+    # Tier-3: scan all metric values for a number
+    for v in metrics.values():
+        nums = re.findall(r"[\d]+\.?[\d]*", str(v))
+        if nums:
+            try:
+                return float(nums[0])
+            except ValueError:
+                pass
+    return None
 
 
-def check_metric_threshold(value: float, threshold: float, direction: str) -> bool:
-    """방향성에 따른 임계값 체크"""
-    if direction == "above":
-        return value > threshold
-    elif direction == "below":
-        return value < threshold
-    return False
-
-
-def keyword_heuristic_check(
-    intel_list: list[dict], signal_id: str, keywords: list[str]
-) -> int:
-    """모든 인텔 텍스트에서 키워드 hit count 반환"""
-    combined_text = ""
-    for intel in intel_list:
-        for qr in intel.get("query_results", []):
-            combined_text += qr.get("content_raw", "").lower() + " "
-        combined_text += " ".join(intel.get("key_facts", [])).lower() + " "
-
-    hits = sum(1 for kw in keywords if kw.lower() in combined_text)
-    return hits
-
-
-def detect_ew_signals(intel_list: list[dict], thresholds: dict, week: str) -> dict:
-    """EW 신호 탐지 메인 로직"""
-    signals = []
-    metrics_found = {}
-
-    # 전체 인텔에서 메트릭 통합
-    for intel in intel_list:
-        for k, v in intel.get("metrics", {}).items():
-            if k not in metrics_found:
-                metrics_found[k] = v
-            else:
-                # 평균값 사용
-                metrics_found[k] = (metrics_found[k] + v) / 2
-
-    print(f"\n[INFO] 통합 메트릭: {list(metrics_found.keys())}")
-
-    for metric_key, config in thresholds.items():
-        threshold = config["threshold"]
-        direction = config["direction"]
-        signal_id = config["signal"]
-
-        triggered = False
-        trigger_source = None
-        value_used = None
-
-        # 1순위: 실제 메트릭 값 체크
-        if metric_key in metrics_found:
-            val = metrics_found[metric_key]
-            value_used = val
-            if check_metric_threshold(val, threshold, direction):
-                triggered = True
-                trigger_source = "metric"
-                print(f"  [EW] {signal_id} 발동: {metric_key}={val} ({direction} {threshold})")
-
-        # 2순위: 키워드 휴리스틱 (메트릭 없거나 미발동 시 보완)
-        if not triggered and signal_id in EW_KEYWORDS:
-            hits = keyword_heuristic_check(intel_list, signal_id, EW_KEYWORDS[signal_id])
-            if hits >= 2:  # 2회 이상 hit 시 EW 발동
-                triggered = True
-                trigger_source = "heuristic"
-                value_used = hits
-                print(f"  [EW] {signal_id} 발동 (휴리스틱): keyword_hits={hits}")
-
-        if triggered:
-            signals.append({
-                "id": signal_id,
+def check_thresholds(metrics: dict) -> list[dict]:
+    """Tier-1+2+3: metric threshold checks."""
+    triggered = []
+    for metric_key, (min_val, max_val, severity) in EW_THRESHOLDS.items():
+        value = extract_metric_value(metrics, metric_key)
+        if value is None:
+            continue
+        breach = False
+        direction = ""
+        if min_val is not None and value < min_val:
+            breach = True
+            direction = f"< {min_val} (actual: {value:.2f})"
+        if max_val is not None and value > max_val:
+            breach = True
+            direction = f"> {max_val} (actual: {value:.2f})"
+        if breach:
+            triggered.append({
+                "type": "threshold",
                 "metric": metric_key,
-                "value": value_used,
-                "threshold": threshold,
-                "direction": direction,
-                "trigger_source": trigger_source,
-                "severity": _calc_severity(value_used, threshold, direction),
+                "condition": direction,
+                "severity": severity,
             })
+    return triggered
 
-    # 최대 심각도 계산
-    max_severity_num = max(
-        [_severity_num(s["severity"]) for s in signals], default=0
+
+def check_keywords(signals: list[dict], key_facts: list[str]) -> list[dict]:
+    """Tier-3 heuristic: keyword frequency across signals + facts."""
+    all_text = " ".join(
+        [
+            s.get("title", "") + " " + s.get("summary", "")
+            for s in signals
+        ]
+        + key_facts
+    ).lower()
+
+    triggered = []
+    for severity, keywords in EW_KEYWORDS.items():
+        hits = [kw for kw in keywords if kw.lower() in all_text]
+        if len(hits) >= EW_KEYWORD_HIT_THRESHOLD:
+            triggered.append({
+                "type": "keyword_heuristic",
+                "severity": severity,
+                "hits": hits[:5],  # top 5
+                "hit_count": len(hits),
+            })
+    return triggered
+
+
+def check_collector_ew_flags(domain_data: dict) -> list[dict]:
+    """Pass-through: respect EW flags already set by ai_intel_collector."""
+    triggered = []
+    ew = domain_data.get("ew_indicators", {})
+    if ew.get("detected"):
+        reasons = ew.get("reasons", []) or [ew.get("reason", "collector flag")]
+        triggered.append({
+            "type": "collector_flag",
+            "severity": "HIGH",
+            "reasons": reasons,
+        })
+    return triggered
+
+
+def detect_domain(domain: str, domain_data: dict) -> dict:
+    """Run all 3 EW detection tiers for a single domain."""
+    metrics = domain_data.get("metrics", {})
+    signals = domain_data.get("signals", [])
+    key_facts = domain_data.get("key_facts", [])
+
+    all_triggers = []
+    all_triggers.extend(check_collector_ew_flags(domain_data))
+    all_triggers.extend(check_thresholds(metrics))
+    all_triggers.extend(check_keywords(signals, key_facts))
+
+    # Determine overall severity
+    severity_order = {"CRITICAL": 3, "HIGH": 2, "MEDIUM": 1, "NONE": 0}
+    max_severity = "NONE"
+    for t in all_triggers:
+        s = t.get("severity", "NONE")
+        if severity_order.get(s, 0) > severity_order.get(max_severity, 0):
+            max_severity = s
+
+    ew_detected = len(all_triggers) > 0
+    log.info(
+        f"  {domain}: EW={ew_detected} | severity={max_severity} | "
+        f"triggers={len(all_triggers)}"
     )
-    max_severity = SEVERITY_MAP.get(max_severity_num, "NONE")
 
-    report = {
-        "week": week,
-        "generated_at": datetime.now(timezone.utc).isoformat(),
-        "triggered": len(signals) > 0,
+    return {
+        "domain": domain,
+        "ew_detected": ew_detected,
+        "severity": max_severity,
+        "trigger_count": len(all_triggers),
+        "triggers": all_triggers,
         "signal_count": len(signals),
-        "signals": signals,
-        "max_severity": max_severity,
-        "metrics_found": metrics_found,
-        "intel_domain_count": len(intel_list),
+        "metric_count": len(metrics),
     }
 
-    print(f"\n[RESULT] EW 발동: {report['triggered']} | 신호: {len(signals)}개 | 최대 심각도: {max_severity}")
-    return report
 
-
-def _calc_severity(value, threshold, direction) -> str:
-    """값과 임계값 차이로 심각도 계산"""
-    if value is None:
-        return "LOW"
-    try:
-        v = float(value)
-        t = float(threshold)
-        diff_pct = abs(v - t) / max(t, 1) * 100
-        if diff_pct >= 30:
-            return "HIGH"
-        elif diff_pct >= 15:
-            return "MEDIUM"
-        else:
-            return "LOW"
-    except (TypeError, ValueError):
-        return "LOW"
-
-
-def _severity_num(severity: str) -> int:
-    return {"NONE": 0, "LOW": 1, "MEDIUM": 2, "HIGH": 3}.get(severity, 0)
-
-
+# ─── Main ────────────────────────────────────────────────────────────────────
 def main():
-    parser = argparse.ArgumentParser(description="AI EW Detector — C-31 신호 탐지")
-    parser.add_argument("--input-dir", required=True, help="intel_*.json 파일이 있는 디렉토리")
-    parser.add_argument(
-        "--thresholds",
-        default=None,
-        help="EW 임계값 JSON 문자열 또는 파일 경로 (미입력시 기본값 사용)",
-    )
-    parser.add_argument("--week", required=True, help="주간 레이블 (예: 2026-W21)")
-    parser.add_argument("--output", required=True, help="EW 리포트 출력 경로")
+    parser = argparse.ArgumentParser(description="AI EW Detector — Section A Step 2")
+    parser.add_argument("--input-dir", required=True,
+                        help="Directory containing intel JSON files")
+    parser.add_argument("--week", required=True, help="ISO week e.g. 2026-W21")
+    parser.add_argument("--output", required=True, help="Output EW report JSON path")
     args = parser.parse_args()
 
-    thresholds = load_thresholds(args.thresholds)
-    intel_list = load_intel_files(args.input_dir)
+    input_dir = Path(args.input_dir)
+    if not input_dir.exists():
+        log.error(f"Input directory not found: {input_dir}")
+        sys.exit(1)
 
-    if not intel_list:
-        print("[WARN] 인텔 데이터 없음. 빈 EW 리포트 생성.")
-        report = {
-            "week": args.week,
-            "generated_at": datetime.now(timezone.utc).isoformat(),
-            "triggered": False,
-            "signal_count": 0,
-            "signals": [],
-            "max_severity": "NONE",
-            "metrics_found": {},
-            "intel_domain_count": 0,
-        }
-    else:
-        report = detect_ew_signals(intel_list, thresholds, args.week)
+    # Load all intel JSON files
+    intel_files = list(input_dir.glob("intel_*.json"))
+    if not intel_files:
+        log.warning("No intel_*.json files found in input directory")
 
-    out_path = Path(args.output)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"[SAVED] {out_path}")
+    log.info(f"EW Detection — week={args.week} | files={len(intel_files)}")
+
+    domain_results = []
+    ew_domains = []
+
+    for f in intel_files:
+        try:
+            with open(f, encoding="utf-8") as fp:
+                data = json.load(fp)
+
+            # Handle both single-domain and multi-domain JSON
+            if "domains" in data:
+                for domain, domain_data in data["domains"].items():
+                    result = detect_domain(domain, domain_data)
+                    domain_results.append(result)
+                    if result["ew_detected"]:
+                        ew_domains.append(domain)
+            else:
+                domain = data.get("domain", f.stem)
+                result = detect_domain(domain, data)
+                domain_results.append(result)
+                if result["ew_detected"]:
+                    ew_domains.append(domain)
+
+        except (json.JSONDecodeError, KeyError) as e:
+            log.error(f"Failed to process {f.name}: {e}")
+
+    # Overall EW status
+    severity_order = {"CRITICAL": 3, "HIGH": 2, "MEDIUM": 1, "NONE": 0}
+    overall_severity = "NONE"
+    for r in domain_results:
+        s = r.get("severity", "NONE")
+        if severity_order.get(s, 0) > severity_order.get(overall_severity, 0):
+            overall_severity = s
+
+    report = {
+        "week": args.week,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "ew_triggered": len(ew_domains) > 0,
+        "ew_domain_count": len(ew_domains),
+        "ew_domains": ew_domains,
+        "overall_severity": overall_severity,
+        "domain_results": domain_results,
+        "summary": (
+            f"EW {'TRIGGERED' if ew_domains else 'CLEAR'} — "
+            f"{len(ew_domains)}/{len(domain_results)} domains, "
+            f"severity={overall_severity}"
+        ),
+    }
+
+    Path(args.output).parent.mkdir(parents=True, exist_ok=True)
+    with open(args.output, "w", encoding="utf-8") as f:
+        json.dump(report, f, ensure_ascii=False, indent=2)
+
+    log.info(f"\n{'⚠️ ' if ew_domains else '✅'} EW Report → {args.output}")
+    log.info(f"   {report['summary']}")
+
+    # Exit codes: 0=clear, 2=EW triggered (not hard failure)
+    sys.exit(2 if ew_domains else 0)
 
 
 if __name__ == "__main__":
