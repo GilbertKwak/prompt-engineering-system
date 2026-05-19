@@ -1,5 +1,8 @@
 # requirements.txt — AI Intel Weekly 자동화 파이프라인
-# 최소 의존성: 표준 라이브러리 외 필요한 패키지만 명시
+# 모든 automation/ 스크립트의 공통 의존성
+# 업데이트: ai-intel-weekly.yml의 모든 Install deps 스텝이 이 파일을 참조
 
 requests>=2.31.0
 python-dotenv>=1.0.0
+python-dateutil>=2.8.2
+networkx>=3.2

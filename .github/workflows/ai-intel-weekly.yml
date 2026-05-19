@@ -106,7 +106,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Install deps
-        run: pip install requests python-dateutil
+        run: pip install -r automation/requirements.txt
 
       - name: Fetch Enterprise AI Intel
         env:
@@ -141,7 +141,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Install deps
-        run: pip install requests python-dateutil
+        run: pip install -r automation/requirements.txt
 
       - name: Fetch Framework Intel
         env:
@@ -176,7 +176,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Install deps
-        run: pip install requests python-dateutil
+        run: pip install -r automation/requirements.txt
 
       - name: Fetch Model Intel
         env:
@@ -211,7 +211,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Install deps
-        run: pip install requests python-dateutil
+        run: pip install -r automation/requirements.txt
 
       - name: Fetch Infra & Market Intel
         env:
@@ -246,7 +246,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Install deps
-        run: pip install requests python-dateutil
+        run: pip install -r automation/requirements.txt
 
       - name: Fetch Semiconductor Intel
         env:
@@ -295,7 +295,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Install deps
-        run: pip install requests python-dateutil
+        run: pip install -r automation/requirements.txt
 
       - name: Download all intel artifacts
         uses: actions/download-artifact@v4
@@ -368,7 +368,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Install deps
-        run: pip install requests networkx python-dateutil
+        run: pip install -r automation/requirements.txt
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -433,7 +433,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Install deps
-        run: pip install requests python-dateutil
+        run: pip install -r automation/requirements.txt
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
