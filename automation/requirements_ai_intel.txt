@@ -1,5 +1,5 @@
-# Section A — AI Intel Weekly Pipeline
-# Pin versions for reproducible GitHub Actions runs
-requests==2.32.3
-urllib3==2.2.3
-certifi>=2024.1.1
+# AI Intel Weekly - Python dependencies
+requests>=2.31.0
+python-dotenv>=1.0.0
+openai>=1.0.0
+httpx>=0.25.0

@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-ai_intel_collector.py — Section A, Step 1
-Perplexity sonar/sonar-pro API 기반 AI 도메인별 인텔 수집기
+ai_intel_collector.py  — Section A · Step 1
+Perplexity sonar/sonar-pro API를 통해 AI 도메인별 주간 인텔 수집
 
 Usage:
-  python ai_intel_collector.py \
+  python automation/ai_intel_collector.py \
     --domain enterprise_deployment \
     --week 2026-W21 \
     --scope standard \
-    --queries "enterprise AI adoption" \
+    --queries "enterprise AI deployment 2026" "LLM cost trends" \
     --output output/ai_intel/intel_enterprise.json
 """
 
@@ -17,117 +17,117 @@ import json
 import os
 import sys
 import time
-import logging
-from datetime import datetime, timezone
+import re
+from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 try:
     import requests
 except ImportError:
-    print("[ERROR] requests not installed: pip install requests")
+    print("[ERROR] requests 패키지 없음: pip install requests", file=sys.stderr)
     sys.exit(1)
 
-# ─── Logging ───────────────────────────────────────────────────────────────
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[logging.StreamHandler(sys.stdout)],
-)
-log = logging.getLogger("ai_intel_collector")
-
-# ─── Constants ──────────────────────────────────────────────────────────────
-API_URL = "https://api.perplexity.ai/chat/completions"
+# ─── 상수 ────────────────────────────────────────────────────────────────────
+PERPLEXITY_API_URL = "https://api.perplexity.ai/chat/completions"
 MODEL_STANDARD = "sonar"
 MODEL_DEEP = "sonar-pro"
 MAX_RETRIES = 3
-RETRY_BASE_DELAY = 5  # seconds, exponential backoff
+RETRY_BASE_DELAY = 2  # seconds
 
-DOMAINS = [
-    "enterprise_deployment",
-    "model_architecture",
-    "regulatory_policy",
-    "investment_funding",
-    "open_source",
-    "hardware_infrastructure",
-    "safety_alignment",
-]
-
-DEFAULT_QUERIES = {
-    "enterprise_deployment": [
-        "enterprise AI deployment adoption trends 2026",
-        "Fortune 500 AI implementation ROI case studies",
-        "AI integration barriers enterprise software",
-    ],
-    "model_architecture": [
-        "new LLM model releases architecture improvements 2026",
-        "multimodal AI model capabilities benchmarks",
-        "reasoning model performance comparisons",
-    ],
-    "regulatory_policy": [
-        "AI regulation policy EU US China 2026",
-        "AI governance framework enterprise compliance",
-        "AI liability legislation updates",
-    ],
-    "investment_funding": [
-        "AI startup funding rounds investments 2026",
-        "AI infrastructure venture capital trends",
-        "enterprise AI M&A activity",
-    ],
-    "open_source": [
-        "open source AI model releases 2026",
-        "Hugging Face Meta AI open models updates",
-        "open source LLM enterprise adoption",
-    ],
-    "hardware_infrastructure": [
-        "AI chip GPU supply demand 2026 NVIDIA AMD",
-        "AI data center infrastructure investment",
-        "edge AI hardware deployment",
-    ],
-    "safety_alignment": [
-        "AI safety alignment research 2026",
-        "LLM hallucination reduction techniques",
-        "responsible AI governance practices",
-    ],
+DOMAIN_META = {
+    "enterprise_deployment": {
+        "label": "Enterprise AI Deployment",
+        "description": "기업 AI 도입 현황, ROI 사례, 거버넌스",
+        "ew_metrics": ["adoption_rate", "cost_per_query", "enterprise_deal_size"],
+    },
+    "model_performance": {
+        "label": "Model Performance Benchmarks",
+        "description": "LLM/MLLM 벤치마크, 추론 속도, 비용 효율",
+        "ew_metrics": ["benchmark_score", "tokens_per_second", "cost_per_million_tokens"],
+    },
+    "infrastructure": {
+        "label": "AI Infrastructure & Chips",
+        "description": "GPU/NPU 공급, 데이터센터, 전력 효율",
+        "ew_metrics": ["gpu_supply_tightness", "pue", "capex_per_flop"],
+    },
+    "regulatory": {
+        "label": "AI Regulation & Policy",
+        "description": "글로벌 AI 규제, 컴플라이언스, 정책 변화",
+        "ew_metrics": ["compliance_deadline_count", "enforcement_action_count"],
+    },
+    "open_source": {
+        "label": "Open Source AI Ecosystem",
+        "description": "오픈소스 모델, 프레임워크, 커뮤니티 동향",
+        "ew_metrics": ["github_stars_delta", "new_model_releases", "fork_velocity"],
+    },
+    "investment": {
+        "label": "AI Investment & M&A",
+        "description": "VC 투자, M&A, AI 스타트업 동향",
+        "ew_metrics": ["funding_volume_usd", "deal_count", "valuation_multiple"],
+    },
 }
 
 
-# ─── Core Functions ─────────────────────────────────────────────────────────
+# ─── 유틸리티 ─────────────────────────────────────────────────────────────────
 def get_api_key() -> str:
-    key = os.environ.get("PERPLEXITY_API_KEY", "")
+    """환경변수에서 Perplexity API 키 조회"""
+    key = os.environ.get("PERPLEXITY_API_KEY", "").strip()
     if not key:
-        log.error("PERPLEXITY_API_KEY env var not set")
+        print("[ERROR] PERPLEXITY_API_KEY 환경변수 미설정", file=sys.stderr)
         sys.exit(1)
     return key
 
 
 def select_model(scope: str) -> str:
-    """scope: standard → sonar, deep/emergency → sonar-pro"""
-    if scope in ("deep", "emergency"):
-        log.info(f"Scope '{scope}' → escalating to {MODEL_DEEP}")
-        return MODEL_DEEP
-    return MODEL_STANDARD
+    """scope에 따라 모델 선택"""
+    return MODEL_DEEP if scope in ("deep", "emergency") else MODEL_STANDARD
 
 
 def build_system_prompt(domain: str, week: str) -> str:
+    meta = DOMAIN_META.get(domain, {"label": domain, "description": "", "ew_metrics": []})
     return (
-        f"You are an AI industry intelligence analyst. "
-        f"Week: {week}. Domain focus: {domain.replace('_', ' ')}. "
-        f"Respond ONLY with a JSON object matching this schema:\n"
-        f"{{\"domain\": str, \"week\": str, \"collected_at\": str (ISO8601), "
-        f"\"signals\": [{{\"title\": str, \"summary\": str (≤120 chars), "
-        f"\"significance\": \"HIGH\" | \"MEDIUM\" | \"LOW\", "
-        f"\"source_hint\": str, \"tags\": [str]}}], "
-        f"\"key_facts\": [str], \"metrics\": {{str: str}}, "
-        f"\"ew_indicators\": {{\"detected\": bool, \"reason\": str}}}}\n"
-        f"Do not include markdown fences or extra text."
+        f"You are an expert AI industry analyst. "
+        f"Your task is to provide a structured weekly intelligence report for the domain: "
+        f"{meta['label']} ({meta['description']}) for the week {week}.\n\n"
+        f"Always respond in STRICT JSON format with this schema:\n"
+        f"{{\n"
+        f'  "domain": "{domain}",\n'
+        f'  "week": "{week}",\n'
+        f'  "collected_at": "ISO8601_datetime",\n'
+        f'  "key_facts": ["<concise factual statement>", ...],\n'
+        f'  "emerging_signals": ["<weak signal or trend>", ...],\n'
+        f'  "metrics": {{"<metric_name>": <numeric_value_or_null>, ...}},\n'
+        f'  "sources": ["<url_or_reference>", ...],\n'
+        f'  "confidence": 0.0_to_1.0,\n'
+        f'  "summary": "<2-3 sentence executive summary>"\n'
+        f"}}\n\n"
+        f"Target metrics to extract if available: {', '.join(meta['ew_metrics'])}\n"
+        f"Be concise, factual, and cite sources where possible."
     )
 
 
+def parse_json_from_response(text: str) -> dict:
+    """LLM 응답에서 JSON 블록 추출 (마크다운 코드블록 포함)"""
+    # 1순위: ```json ... ``` 블록
+    match = re.search(r"```(?:json)?\s*\n?({.*?})\s*\n?```", text, re.DOTALL)
+    if match:
+        return json.loads(match.group(1))
+    # 2순위: 첫 번째 { ... } 블록
+    match = re.search(r"({[\s\S]*})", text)
+    if match:
+        return json.loads(match.group(1))
+    raise ValueError(f"JSON 파싱 실패. 응답 앞부분: {text[:300]}")
+
+
+# ─── API 호출 ─────────────────────────────────────────────────────────────────
 def call_perplexity(
-    api_key: str, model: str, system_prompt: str, user_query: str
-) -> Optional[dict]:
-    """Single API call with exponential backoff retry."""
+    api_key: str,
+    model: str,
+    system_prompt: str,
+    user_query: str,
+    attempt: int = 0,
+) -> dict:
+    """Perplexity API 호출 (지수 백오프 재시도)"""
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
@@ -142,177 +142,185 @@ def call_perplexity(
         "max_tokens": 2048,
     }
 
-    for attempt in range(1, MAX_RETRIES + 1):
-        try:
-            log.info(f"  API call attempt {attempt}/{MAX_RETRIES} [model={model}]")
-            resp = requests.post(API_URL, headers=headers, json=payload, timeout=60)
-
-            if resp.status_code == 429:
-                delay = RETRY_BASE_DELAY * (2 ** (attempt - 1))
-                log.warning(f"  Rate limit (429). Retrying in {delay}s...")
-                time.sleep(delay)
-                continue
-
-            resp.raise_for_status()
-            raw = resp.json()["choices"][0]["message"]["content"]
-            return parse_json_response(raw)
-
-        except requests.exceptions.Timeout:
-            log.warning(f"  Timeout on attempt {attempt}")
-            if attempt < MAX_RETRIES:
-                time.sleep(RETRY_BASE_DELAY)
-        except requests.exceptions.RequestException as e:
-            log.error(f"  Request error: {e}")
-            if attempt < MAX_RETRIES:
-                time.sleep(RETRY_BASE_DELAY)
-
-    log.error("  Max retries exceeded")
-    return None
-
-
-def parse_json_response(raw: str) -> Optional[dict]:
-    """Extract JSON from LLM response, handling markdown fences."""
-    raw = raw.strip()
-    # Strip markdown fences
-    if raw.startswith("```"):
-        lines = raw.split("\n")
-        start = 1 if lines[0].startswith("```") else 0
-        end = len(lines)
-        for i in range(len(lines) - 1, 0, -1):
-            if lines[i].strip() == "```":
-                end = i
-                break
-        raw = "\n".join(lines[start:end])
     try:
-        return json.loads(raw)
-    except json.JSONDecodeError:
-        # Try to extract first JSON object
-        start = raw.find("{")
-        end = raw.rfind("}")
-        if start != -1 and end != -1:
-            try:
-                return json.loads(raw[start : end + 1])
-            except json.JSONDecodeError:
-                pass
-    log.warning("  Could not parse JSON from response")
-    return None
+        resp = requests.post(
+            PERPLEXITY_API_URL,
+            headers=headers,
+            json=payload,
+            timeout=60,
+        )
+        if resp.status_code == 429 and attempt < MAX_RETRIES:
+            delay = RETRY_BASE_DELAY * (2 ** attempt)
+            print(f"[WARN] Rate limit hit. {delay}s 후 재시도 (attempt {attempt+1}/{MAX_RETRIES})",
+                  file=sys.stderr)
+            time.sleep(delay)
+            return call_perplexity(api_key, model, system_prompt, user_query, attempt + 1)
+        resp.raise_for_status()
+        return resp.json()
+    except requests.exceptions.Timeout:
+        if attempt < MAX_RETRIES:
+            delay = RETRY_BASE_DELAY * (2 ** attempt)
+            print(f"[WARN] Timeout. {delay}s 후 재시도", file=sys.stderr)
+            time.sleep(delay)
+            return call_perplexity(api_key, model, system_prompt, user_query, attempt + 1)
+        raise
 
 
-def merge_signals(results: list[dict]) -> dict:
-    """Merge multiple query results into a single domain intel object."""
-    merged = {
-        "signals": [],
-        "key_facts": [],
-        "metrics": {},
-        "ew_indicators": {"detected": False, "reasons": []},
-    }
-    for r in results:
-        if not r:
-            continue
-        merged["signals"].extend(r.get("signals", []))
-        merged["key_facts"].extend(r.get("key_facts", []))
-        merged["metrics"].update(r.get("metrics", {}))
-        ew = r.get("ew_indicators", {})
-        if ew.get("detected"):
-            merged["ew_indicators"]["detected"] = True
-            if ew.get("reason"):
-                merged["ew_indicators"]["reasons"].append(ew["reason"])
-
-    # Deduplicate key_facts
-    merged["key_facts"] = list(dict.fromkeys(merged["key_facts"]))
-    return merged
-
-
-def collect_domain(
+# ─── 수집 핵심 로직 ────────────────────────────────────────────────────────────
+def collect_intel(
     domain: str,
     week: str,
     scope: str,
     queries: list[str],
     api_key: str,
 ) -> dict:
+    """단일 도메인 인텔 수집 → 통합 결과 dict 반환"""
     model = select_model(scope)
     system_prompt = build_system_prompt(domain, week)
-    log.info(f"Collecting domain: {domain} | week: {week} | model: {model}")
-
     results = []
-    for q in queries:
-        log.info(f"  Query: {q[:80]}")
-        result = call_perplexity(api_key, model, system_prompt, q)
-        if result:
-            results.append(result)
-        time.sleep(1)  # Polite delay between queries
+    errors = []
 
-    merged = merge_signals(results)
-    output = {
+    for i, query in enumerate(queries):
+        if not query.strip():
+            continue  # 빈 쿼리 스킵
+        print(f"[{i+1}/{len(queries)}] 쿼리: {query[:80]}...", file=sys.stderr)
+        try:
+            raw = call_perplexity(api_key, model, system_prompt, query)
+            content = raw["choices"][0]["message"]["content"]
+            parsed = parse_json_from_response(content)
+            parsed["_query"] = query
+            parsed["_model"] = model
+            parsed["collected_at"] = datetime.utcnow().isoformat() + "Z"
+            results.append(parsed)
+            print(f"  ✓ 수집 완료 (신뢰도: {parsed.get('confidence', 'N/A')})", file=sys.stderr)
+        except Exception as e:
+            print(f"  ✗ 오류: {e}", file=sys.stderr)
+            errors.append({"query": query, "error": str(e)})
+        time.sleep(0.5)  # 쿼리 간 최소 딜레이
+
+    # 여러 결과 병합
+    if not results:
+        print(f"[ERROR] 도메인 {domain}에서 수집된 결과 없음", file=sys.stderr)
+        sys.exit(1)
+
+    merged = merge_results(domain, week, results)
+    merged["_collection_errors"] = errors
+    merged["_scope"] = scope
+    return merged
+
+
+def merge_results(domain: str, week: str, results: list[dict]) -> dict:
+    """복수 쿼리 결과를 단일 도메인 인텔로 병합"""
+    all_facts = []
+    all_signals = []
+    all_sources = []
+    merged_metrics = {}
+    confidence_sum = 0.0
+    summaries = []
+
+    for r in results:
+        all_facts.extend(r.get("key_facts", []))
+        all_signals.extend(r.get("emerging_signals", []))
+        all_sources.extend(r.get("sources", []))
+        for k, v in r.get("metrics", {}).items():
+            if v is not None:
+                merged_metrics[k] = v
+        confidence_sum += float(r.get("confidence", 0.7))
+        if r.get("summary"):
+            summaries.append(r["summary"])
+
+    return {
         "domain": domain,
         "week": week,
-        "scope": scope,
-        "model_used": model,
-        "collected_at": datetime.now(timezone.utc).isoformat(),
-        "query_count": len(queries),
-        "success_count": len([r for r in results if r]),
-        **merged,
+        "collected_at": datetime.utcnow().isoformat() + "Z",
+        "key_facts": list(dict.fromkeys(all_facts)),  # 중복 제거
+        "emerging_signals": list(dict.fromkeys(all_signals)),
+        "metrics": merged_metrics,
+        "sources": list(set(all_sources)),
+        "confidence": round(confidence_sum / len(results), 3),
+        "summary": " | ".join(summaries[:3]),  # 최대 3개 요약 병합
+        "_query_count": len(results),
     }
-    return output
 
 
-# ─── Main ────────────────────────────────────────────────────────────────────
+# ─── CLI 진입점 ───────────────────────────────────────────────────────────────
 def main():
-    parser = argparse.ArgumentParser(description="AI Intel Collector — Section A Step 1")
-    parser.add_argument("--domain", required=True, choices=DOMAINS + ["all"],
-                        help="Domain to collect or 'all'")
-    parser.add_argument("--week", required=True, help="ISO week e.g. 2026-W21")
-    parser.add_argument("--scope", default="standard",
-                        choices=["standard", "deep", "emergency"],
-                        help="Collection scope (affects model selection)")
-    parser.add_argument("--queries", nargs="+",
-                        help="Custom query strings (overrides defaults)")
-    parser.add_argument("--output", required=True,
-                        help="Output JSON file path")
+    parser = argparse.ArgumentParser(
+        description="Perplexity API로 AI 도메인 인텔 수집",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "--domain",
+        required=True,
+        choices=list(DOMAIN_META.keys()),
+        help="수집 대상 도메인",
+    )
+    parser.add_argument(
+        "--week",
+        required=True,
+        help="ISO 주차 (예: 2026-W21)",
+    )
+    parser.add_argument(
+        "--scope",
+        default="standard",
+        choices=["standard", "deep", "emergency"],
+        help="수집 깊이 (standard=sonar, deep/emergency=sonar-pro)",
+    )
+    parser.add_argument(
+        "--queries",
+        nargs="+",  # FIX: '*'에서 '+'로 변경 — 최소 1개 필수
+        required=True,
+        help="Perplexity에 전달할 검색 쿼리 1개 이상",
+    )
+    parser.add_argument(
+        "--output",
+        required=True,
+        help="결과 저장 경로 (JSON)",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="API 실제 호출 없이 구조만 검증",
+    )
+
     args = parser.parse_args()
 
-    api_key = get_api_key()
-    Path(args.output).parent.mkdir(parents=True, exist_ok=True)
+    # 출력 디렉토리 생성
+    output_path = Path(args.output)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    domains_to_run = DOMAINS if args.domain == "all" else [args.domain]
-    all_results = {}
-
-    for domain in domains_to_run:
-        queries = args.queries if args.queries else DEFAULT_QUERIES.get(domain, [])
-        if not queries:
-            log.warning(f"No queries for domain: {domain}, skipping")
-            continue
-        result = collect_domain(domain, args.week, args.scope, queries, api_key)
-        all_results[domain] = result
-        log.info(
-            f"  ✓ {domain}: {result['success_count']}/{result['query_count']} queries OK, "
-            f"{len(result['signals'])} signals, EW={result['ew_indicators']['detected']}"
-        )
-
-    # Write output
-    if args.domain == "all":
-        output_data = {
+    if args.dry_run:
+        # Dry-run: 더미 결과 출력
+        dummy = {
+            "domain": args.domain,
             "week": args.week,
-            "scope": args.scope,
-            "generated_at": datetime.now(timezone.utc).isoformat(),
-            "domains": all_results,
+            "collected_at": datetime.utcnow().isoformat() + "Z",
+            "key_facts": ["[DRY-RUN] 실제 API 호출 없음"],
+            "emerging_signals": [],
+            "metrics": {},
+            "sources": [],
+            "confidence": 0.0,
+            "summary": "[DRY-RUN] 테스트 실행",
+            "_scope": args.scope,
+            "_query_count": len(args.queries),
+            "_collection_errors": [],
         }
-    else:
-        output_data = all_results.get(args.domain, {})
+        output_path.write_text(json.dumps(dummy, ensure_ascii=False, indent=2))
+        print(f"[DRY-RUN] 결과 저장: {output_path}")
+        return
 
-    with open(args.output, "w", encoding="utf-8") as f:
-        json.dump(output_data, f, ensure_ascii=False, indent=2)
-
-    log.info(f"\n✅ Output saved → {args.output}")
-
-    # Exit 1 if EW detected (allows workflow conditional)
-    ew_detected = any(
-        v.get("ew_indicators", {}).get("detected", False)
-        for v in all_results.values()
+    api_key = get_api_key()
+    result = collect_intel(
+        domain=args.domain,
+        week=args.week,
+        scope=args.scope,
+        queries=args.queries,
+        api_key=api_key,
     )
-    if ew_detected:
-        log.warning("⚠️  EW signal detected in collection results")
-        sys.exit(2)  # exit 2 = EW flag, not hard failure
+
+    output_path.write_text(json.dumps(result, ensure_ascii=False, indent=2))
+    print(f"[OK] 인텔 수집 완료 → {output_path}")
+    print(f"     도메인: {args.domain} | 쿼리 수: {result['_query_count']} | 신뢰도: {result['confidence']}")
 
 
 if __name__ == "__main__":

@@ -1,595 +1,312 @@
-name: PE · AI Intel Weekly Digest
-
-# ═══════════════════════════════════════════════════════════════
-# AI 인텔리전스 주간 자동 수집 파이프라인
-# - Perplexity API 기반 주간 AI 트렌드 수집 (5개 도메인 병렬)
-# - C-31 PE-AI Intel EW 발동 조건 자동 체크
-# - knowledge_graph vX.XX_delta.json 자동 생성 및 커밋
-# - Notion C-31 페이지 자동 업데이트
-# 스케줄: 매주 월요일 09:00 KST (UTC 00:00)
-# FIX v3: BUG-1 thresholds-file 제거(스크립트 내장),
-#          BUG-2 artifact path → steps.gen.outputs.delta_file,
-#          BUG-3 notion updater 파라미터 검증,
-#          WARN-1 git pull --rebase --autostash,
-#          WARN-2 requirements.txt 존재 확인 + 인라인 폴백,
-#          WARN-3 KG 버전 감지 로그 강화
-# ═══════════════════════════════════════════════════════════════
+# ─────────────────────────────────────────────────────────────────────────────
+# AI Intel Weekly · Section A — 전체 파이프라인
+# 매주 월요일 09:00 KST (00:00 UTC) 자동 실행
+# workflow_dispatch로 수동 실행 가능
+# ─────────────────────────────────────────────────────────────────────────────
+name: "PE · AI Intel Weekly Digest"
 
 on:
   schedule:
-    - cron: '0 0 * * 1'  # 매주 월요일 00:00 UTC = 09:00 KST
+    - cron: "0 0 * * 1"  # 월요일 00:00 UTC = 09:00 KST
   workflow_dispatch:
     inputs:
       intel_scope:
-        description: '수집 범위: standard | deep | emergency'
-        required: true
-        default: 'standard'
+        description: "수집 깊이 (standard / deep / emergency)"
+        required: false
+        default: "standard"
         type: choice
-        options:
-          - standard
-          - deep
-          - emergency
+        options: ["standard", "deep", "emergency"]
       force_ew_check:
-        description: 'EW 강제 체크 (true/false)'
+        description: "EW 강제 재검사 여부"
         required: false
-        default: 'false'
-        type: choice
-        options:
-          - 'false'
-          - 'true'
+        default: "false"
+        type: boolean
       kg_version_override:
-        description: 'KG 버전 강제 지정 (예: 4.27) — 미입력시 자동 감지'
+        description: "KG 버전 직접 지정 (비워두면 자동 증가)"
         required: false
-        default: ''
+        default: ""
+        type: string
 
 env:
-  PYTHON_VERSION: '3.12'
-  OUTPUT_DIR: output/ai_intel
-  KG_DIR: knowledge_graph
-  NOTION_C31_PAGE_ID: '34a55ed436f0814d9cffe6a2f0816e29'
+  PYTHON_VERSION: "3.11"  # FIX: 버전 고정
+  OUTPUT_DIR: "output/ai_intel"
+  KG_BASE_VERSION: "4.25"
 
-# ─────────────────────────────────────────────────────────────
-# STAGE 0: 버전 감지 & 환경 초기화
-# ─────────────────────────────────────────────────────────────
 jobs:
-  init:
-    name: 🔧 Init — Version Detection & Scope
+  # ─── Job 1: 인텔 수집 ────────────────────────────────────────────────────────
+  collect-intel:
+    name: "1. 도메인별 인텔 수집"
     runs-on: ubuntu-latest
-    outputs:
-      kg_current_version: ${{ steps.detect.outputs.kg_version }}
-      kg_next_version: ${{ steps.detect.outputs.kg_next }}
-      scope: ${{ steps.detect.outputs.scope }}
-      week_label: ${{ steps.detect.outputs.week_label }}
-      run_date: ${{ steps.detect.outputs.run_date }}
+    strategy:
+      matrix:
+        domain:
+          - enterprise_deployment
+          - model_performance
+          - infrastructure
+          - regulatory
+          - open_source
+          - investment
+      fail-fast: false  # 하나 실패해도 나머지 계속 실행
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Detect KG version & set scope
-        id: detect
+      - name: Python 설정
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+
+      - name: 의존성 설치
+        run: pip install -r automation/requirements_ai_intel.txt
+
+      - name: 출력 디렉토리 생성
+        run: mkdir -p ${{ env.OUTPUT_DIR }}
+
+      - name: 주차 및 버전 계산
+        id: meta
         run: |
-          # KG 최신 버전 자동 감지
-          if [ -n "${{ github.event.inputs.kg_version_override }}" ]; then
-            CURRENT_VER="${{ github.event.inputs.kg_version_override }}"
-            echo "::notice::KG 버전 강제 지정: ${CURRENT_VER}"
-          else
-            LATEST_FILE=$(ls knowledge_graph_v*.json 2>/dev/null | sort -V | tail -1)
-            if [ -n "$LATEST_FILE" ]; then
-              CURRENT_VER=$(echo "$LATEST_FILE" | grep -oP 'v\K[0-9]+\.[0-9]+')
-              echo "::notice::최신 KG 파일 감지: ${LATEST_FILE} → v${CURRENT_VER}"
-            else
-              # WARN-3 FIX: 파일 없을 때 명시적 경고
-              CURRENT_VER="4.25"
-              echo "::warning::knowledge_graph_v*.json 파일 없음 — 기본값 v4.25 사용. 첫 실행이라면 정상입니다."
-            fi
-          fi
-
-          # 다음 버전 계산
-          NEXT_VER=$(python3 -c \
-            "v='${CURRENT_VER}'; parts=v.split('.'); minor=int(parts[1])+1; print(f'{parts[0]}.{minor:02d}')" \
-            2>/dev/null || echo "4.26")
-
-          WEEK_LABEL=$(date -u '+%Y-W%V')
-          RUN_DATE=$(date -u '+%Y-%m-%d')
+          WEEK=$(python3 -c "from datetime import date; d=date.today(); print(f'{d.year}-W{d.isocalendar()[1]:02d}')")
+          RUN_DATE=$(date +%Y-%m-%d)
           SCOPE="${{ github.event.inputs.intel_scope || 'standard' }}"
+          echo "week=$WEEK" >> $GITHUB_OUTPUT
+          echo "run_date=$RUN_DATE" >> $GITHUB_OUTPUT
+          echo "scope=$SCOPE" >> $GITHUB_OUTPUT
 
-          echo "kg_version=${CURRENT_VER}" >> $GITHUB_OUTPUT
-          echo "kg_next=${NEXT_VER}" >> $GITHUB_OUTPUT
-          echo "week_label=${WEEK_LABEL}" >> $GITHUB_OUTPUT
-          echo "run_date=${RUN_DATE}" >> $GITHUB_OUTPUT
-          echo "scope=${SCOPE}" >> $GITHUB_OUTPUT
-
-          echo "### 🔧 Init 완료" >> $GITHUB_STEP_SUMMARY
-          echo "| 항목 | 값 |" >> $GITHUB_STEP_SUMMARY
-          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
-          echo "| 현재 KG 버전 | v${CURRENT_VER} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 신규 Delta 버전 | v${NEXT_VER} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 주간 레이블 | ${WEEK_LABEL} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 수집 범위 | ${SCOPE} |" >> $GITHUB_STEP_SUMMARY
-
-# ─────────────────────────────────────────────────────────────
-# STAGE 1: Perplexity API 주간 AI 인텔리전스 수집 (5개 도메인 병렬)
-# ─────────────────────────────────────────────────────────────
-  collect_enterprise:
-    name: 📡 Collect — Enterprise AI Deployment
-    needs: init
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      # WARN-2 FIX: requirements.txt 존재 확인 후 인라인 폴백
-      - name: Install deps
-        run: |
-          if [ -f automation/requirements.txt ]; then
-            pip install -r automation/requirements.txt
-          else
-            echo "::warning::automation/requirements.txt 없음 — 인라인 설치로 폴백"
-            pip install requests python-dateutil
-          fi
-
-      - name: Fetch Enterprise AI Intel
+      - name: 인텔 수집 — ${{ matrix.domain }}
         env:
           PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
         run: |
-          mkdir -p ${{ env.OUTPUT_DIR }}
+          DOMAIN="${{ matrix.domain }}"
+          WEEK="${{ steps.meta.outputs.week }}"
+          SCOPE="${{ steps.meta.outputs.scope }}"
+
+          # 도메인별 쿼리 매핑
+          declare -A QUERIES
+          QUERIES[enterprise_deployment]="enterprise AI adoption ROI 2026 trends|LLM enterprise deployment cost governance"
+          QUERIES[model_performance]="LLM benchmark comparison 2026 GPT Claude Gemini|AI model inference speed cost efficiency"
+          QUERIES[infrastructure]="AI GPU supply NVIDIA H100 B200 2026|AI datacenter power consumption PUE trends"
+          QUERIES[regulatory]="AI regulation policy EU AI Act 2026|AI compliance enforcement actions global"
+          QUERIES[open_source]="open source LLM releases Hugging Face 2026|AI framework LangChain LlamaIndex updates"
+          QUERIES[investment]="AI startup funding VC investment 2026 Q2|AI M&A deal acquisition valuation"
+
+          IFS='|' read -ra Q_ARRAY <<< "${QUERIES[$DOMAIN]}"
+
           python automation/ai_intel_collector.py \
-            --domain "enterprise_deployment" \
-            --week "${{ needs.init.outputs.week_label }}" \
-            --scope "${{ needs.init.outputs.scope }}" \
-            --queries \
-              "enterprise AI deployment adoption 2026 latest" \
-              "OpenAI enterprise consulting deployment company news" \
-              "AI agent orchestration enterprise production trends" \
-            --output "${{ env.OUTPUT_DIR }}/intel_enterprise.json"
+            --domain "$DOMAIN" \
+            --week "$WEEK" \
+            --scope "$SCOPE" \
+            --queries "${Q_ARRAY[@]}" \
+            --output "${{ env.OUTPUT_DIR }}/intel_${DOMAIN}.json"
 
-      - uses: actions/upload-artifact@v4
+      - name: 인텔 아티팩트 업로드
+        uses: actions/upload-artifact@v4
         with:
-          name: intel-enterprise
-          path: ${{ env.OUTPUT_DIR }}/intel_enterprise.json
-          if-no-files-found: error
+          name: intel-${{ matrix.domain }}
+          path: ${{ env.OUTPUT_DIR }}/intel_${{ matrix.domain }}.json
+          retention-days: 7
 
-  collect_frameworks:
-    name: 📡 Collect — AI Frameworks & RAG
-    needs: init
+  # ─── Job 2: EW 탐지 ──────────────────────────────────────────────────────────
+  ew-detection:
+    name: "2. Early Warning 탐지"
+    needs: collect-intel
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install deps
-        run: |
-          if [ -f automation/requirements.txt ]; then
-            pip install -r automation/requirements.txt
-          else
-            pip install requests python-dateutil
-          fi
 
-      - name: Fetch Framework Intel
-        env:
-          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
-        run: |
-          mkdir -p ${{ env.OUTPUT_DIR }}
-          python automation/ai_intel_collector.py \
-            --domain "frameworks_rag" \
-            --week "${{ needs.init.outputs.week_label }}" \
-            --scope "${{ needs.init.outputs.scope }}" \
-            --queries \
-              "LangChain LangGraph LlamaIndex updates 2026" \
-              "RAG production stack OpenAI Llama pgvector migration" \
-              "RAGAS Galileo evaluation framework production 2026" \
-            --output "${{ env.OUTPUT_DIR }}/intel_frameworks.json"
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: intel-frameworks
-          path: ${{ env.OUTPUT_DIR }}/intel_frameworks.json
-          if-no-files-found: error
-
-  collect_models:
-    name: 📡 Collect — Model Releases & Benchmarks
-    needs: init
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install deps
-        run: |
-          if [ -f automation/requirements.txt ]; then
-            pip install -r automation/requirements.txt
-          else
-            pip install requests python-dateutil
-          fi
-
-      - name: Fetch Model Intel
-        env:
-          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
-        run: |
-          mkdir -p ${{ env.OUTPUT_DIR }}
-          python automation/ai_intel_collector.py \
-            --domain "model_releases" \
-            --week "${{ needs.init.outputs.week_label }}" \
-            --scope "${{ needs.init.outputs.scope }}" \
-            --queries \
-              "new AI model releases benchmark 2026 latest week" \
-              "GPT Claude Gemini Grok Mistral model updates" \
-              "frontier model efficiency tier comparison 2026" \
-            --output "${{ env.OUTPUT_DIR }}/intel_models.json"
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: intel-models
-          path: ${{ env.OUTPUT_DIR }}/intel_models.json
-          if-no-files-found: error
-
-  collect_infra:
-    name: 📡 Collect — AI Infrastructure & Market
-    needs: init
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install deps
-        run: |
-          if [ -f automation/requirements.txt ]; then
-            pip install -r automation/requirements.txt
-          else
-            pip install requests python-dateutil
-          fi
-
-      - name: Fetch Infra & Market Intel
-        env:
-          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
-        run: |
-          mkdir -p ${{ env.OUTPUT_DIR }}
-          python automation/ai_intel_collector.py \
-            --domain "infra_market" \
-            --week "${{ needs.init.outputs.week_label }}" \
-            --scope "${{ needs.init.outputs.scope }}" \
-            --queries \
-              "AI infrastructure cloud GPU investment enterprise 2026" \
-              "AI market size growth forecast 2026 enterprise" \
-              "containerized ML production kubernetes AI workload 2026" \
-            --output "${{ env.OUTPUT_DIR }}/intel_infra.json"
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: intel-infra
-          path: ${{ env.OUTPUT_DIR }}/intel_infra.json
-          if-no-files-found: error
-
-  collect_semiconductor:
-    name: 📡 Collect — Semiconductor & AI Chips
-    needs: init
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install deps
-        run: |
-          if [ -f automation/requirements.txt ]; then
-            pip install -r automation/requirements.txt
-          else
-            pip install requests python-dateutil
-          fi
-
-      - name: Fetch Semiconductor Intel
-        env:
-          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
-        run: |
-          mkdir -p ${{ env.OUTPUT_DIR }}
-          python automation/ai_intel_collector.py \
-            --domain "semiconductor_chips" \
-            --week "${{ needs.init.outputs.week_label }}" \
-            --scope "${{ needs.init.outputs.scope }}" \
-            --queries \
-              "NVIDIA AMD Intel AI chip GPU supply chain 2026" \
-              "HBM memory AI accelerator semiconductor news latest" \
-              "AI inference hardware efficiency TurboQuant KV cache 2026" \
-            --output "${{ env.OUTPUT_DIR }}/intel_semiconductor.json"
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: intel-semiconductor
-          path: ${{ env.OUTPUT_DIR }}/intel_semiconductor.json
-          if-no-files-found: error
-
-# ─────────────────────────────────────────────────────────────
-# STAGE 2: EW (Early Warning) 자동 체크 — C-31 연동
-# ─────────────────────────────────────────────────────────────
-  ew_check:
-    name: ⚠️ EW Check — C-31 Signal Detection
-    needs:
-      - init
-      - collect_enterprise
-      - collect_frameworks
-      - collect_models
-      - collect_infra
-      - collect_semiconductor
-    runs-on: ubuntu-latest
     outputs:
-      ew_triggered: ${{ steps.ew.outputs.triggered }}
-      ew_count: ${{ steps.ew.outputs.count }}
-      ew_signals: ${{ steps.ew.outputs.signals }}
-      ew_severity: ${{ steps.ew.outputs.severity }}
+      ew_triggered: ${{ steps.ew.outputs.ew_triggered }}
+      ew_count: ${{ steps.ew.outputs.ew_count }}
+      ew_signals: ${{ steps.ew.outputs.ew_signals }}
+      ew_severity: ${{ steps.ew.outputs.ew_severity }}
+      week: ${{ steps.meta.outputs.week }}
+      run_date: ${{ steps.meta.outputs.run_date }}
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install deps
-        run: |
-          if [ -f automation/requirements.txt ]; then
-            pip install -r automation/requirements.txt
-          else
-            pip install requests python-dateutil
-          fi
+          cache: "pip"
 
-      - name: Download all intel artifacts
+      - run: pip install -r automation/requirements_ai_intel.txt
+
+      - name: 아티팩트 다운로드
         uses: actions/download-artifact@v4
         with:
+          pattern: intel-*
           path: ${{ env.OUTPUT_DIR }}
           merge-multiple: true
 
-      # BUG-1 FIX: --thresholds-file 제거 — ai_ew_detector.py 내장 임계값 사용
-      # 커스텀 임계값 필요 시 스크립트 내 EW_THRESHOLDS 딕셔너리를 직접 수정
-      - name: Run EW Detection
+      - name: 주차 계산
+        id: meta
+        run: |
+          WEEK=$(python3 -c "from datetime import date; d=date.today(); print(f'{d.year}-W{d.isocalendar()[1]:02d}')")
+          echo "week=$WEEK" >> $GITHUB_OUTPUT
+          echo "run_date=$(date +%Y-%m-%d)" >> $GITHUB_OUTPUT
+
+      - name: EW 탐지 실행
         id: ew
         run: |
           python automation/ai_ew_detector.py \
             --input-dir "${{ env.OUTPUT_DIR }}" \
-            --week "${{ needs.init.outputs.week_label }}" \
+            --week "${{ steps.meta.outputs.week }}" \
             --output "${{ env.OUTPUT_DIR }}/ew_report.json"
 
-          TRIGGERED=$(python3 -c \
-            "import json; d=json.load(open('${{ env.OUTPUT_DIR }}/ew_report.json')); print(str(d.get('triggered',False)).lower())")
-          COUNT=$(python3 -c \
-            "import json; d=json.load(open('${{ env.OUTPUT_DIR }}/ew_report.json')); print(len(d.get('signals',[])))")
-          SIGNALS=$(python3 -c \
-            "import json; d=json.load(open('${{ env.OUTPUT_DIR }}/ew_report.json')); print(','.join([s['id'] for s in d.get('signals',[])]))")
-          SEVERITY=$(python3 -c \
-            "import json; d=json.load(open('${{ env.OUTPUT_DIR }}/ew_report.json')); print(d.get('max_severity','NONE'))")
+          # 결과 파싱 → outputs 설정
+          python3 << 'PYEOF'
+          import json, os
+          data = json.load(open("${{ env.OUTPUT_DIR }}/ew_report.json"))
+          triggered = str(data.get("ew_triggered", False)).lower()
+          count = data.get("total_ew_signals", 0)
+          signals = ",".join(data.get("signal_names", []))
+          severity = data.get("overall_severity", "NONE")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"ew_triggered={triggered}\n")
+              f.write(f"ew_count={count}\n")
+              f.write(f"ew_signals={signals}\n")
+              f.write(f"ew_severity={severity}\n")
+          PYEOF
 
-          echo "triggered=${TRIGGERED}" >> $GITHUB_OUTPUT
-          echo "count=${COUNT}" >> $GITHUB_OUTPUT
-          echo "signals=${SIGNALS}" >> $GITHUB_OUTPUT
-          echo "severity=${SEVERITY}" >> $GITHUB_OUTPUT
-
-          echo "### ⚠️ EW 체크 결과" >> $GITHUB_STEP_SUMMARY
-          echo "| 항목 | 결과 |" >> $GITHUB_STEP_SUMMARY
-          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
-          echo "| EW 발동 여부 | ${TRIGGERED} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 발동 신호 수 | ${COUNT} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 신호 목록 | ${SIGNALS:-없음} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 최대 심각도 | ${SEVERITY} |" >> $GITHUB_STEP_SUMMARY
-
-      - uses: actions/upload-artifact@v4
+      - name: EW 리포트 업로드
+        uses: actions/upload-artifact@v4
         with:
           name: ew-report
           path: ${{ env.OUTPUT_DIR }}/ew_report.json
-          if-no-files-found: warn
+          retention-days: 7
 
-# ─────────────────────────────────────────────────────────────
-# STAGE 3: Knowledge Graph Delta 자동 생성
-# ─────────────────────────────────────────────────────────────
-  generate_kg_delta:
-    name: 🧠 KG Delta — Generate New Version
-    needs:
-      - init
-      - ew_check
+  # ─── Job 3: KG 델타 생성 ─────────────────────────────────────────────────────
+  kg-delta:
+    name: "3. Knowledge Graph 델타 생성"
+    needs: ew-detection
     runs-on: ubuntu-latest
+
     outputs:
-      delta_file: ${{ steps.gen.outputs.delta_file }}
-      node_count: ${{ steps.gen.outputs.node_count }}
-      edge_count: ${{ steps.gen.outputs.edge_count }}
+      kg_next_version: ${{ steps.kg.outputs.next_version }}
+      node_count: ${{ steps.kg.outputs.node_count }}
+      edge_count: ${{ steps.kg.outputs.edge_count }}
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install deps
-        run: |
-          if [ -f automation/requirements.txt ]; then
-            pip install -r automation/requirements.txt
-          else
-            pip install requests python-dateutil
-          fi
+          cache: "pip"
 
-      - name: Download all artifacts
+      - run: pip install -r automation/requirements_ai_intel.txt
+
+      - name: 아티팩트 다운로드 (인텔 전체)
         uses: actions/download-artifact@v4
         with:
+          pattern: intel-*
           path: ${{ env.OUTPUT_DIR }}
           merge-multiple: true
 
-      - name: Generate KG Delta
-        id: gen
+      - name: KG 버전 계산
+        id: kg
         run: |
-          CURRENT_VERSION="${{ needs.init.outputs.kg_current_version }}"
-          NEXT_VERSION="${{ needs.init.outputs.kg_next_version }}"
-          DELTA_FILE="knowledge_graph_v${NEXT_VERSION}_delta.json"
+          OVERRIDE="${{ github.event.inputs.kg_version_override }}"
+          if [ -n "$OVERRIDE" ]; then
+            NEXT_VER="$OVERRIDE"
+          else
+            # 마이너 버전 자동 증가
+            CURRENT="${{ env.KG_BASE_VERSION }}"
+            MINOR=$(echo $CURRENT | cut -d. -f2)
+            NEXT_MINOR=$((MINOR + 1))
+            MAJOR=$(echo $CURRENT | cut -d. -f1)
+            NEXT_VER="${MAJOR}.${NEXT_MINOR}"
+          fi
+          echo "next_version=$NEXT_VER" >> $GITHUB_OUTPUT
+          echo "[INFO] KG 버전: ${{ env.KG_BASE_VERSION }} → $NEXT_VER"
 
           python automation/kg_delta_generator.py \
             --intel-dir "${{ env.OUTPUT_DIR }}" \
-            --current-version "$CURRENT_VERSION" \
-            --next-version "$NEXT_VERSION" \
-            --week "${{ needs.init.outputs.week_label }}" \
-            --run-date "${{ needs.init.outputs.run_date }}" \
-            --ew-signals "${{ needs.ew_check.outputs.ew_signals }}" \
-            --output "$DELTA_FILE"
+            --current-version "${{ env.KG_BASE_VERSION }}" \
+            --next-version "$NEXT_VER" \
+            --week "${{ needs.ew-detection.outputs.week }}" \
+            --run-date "${{ needs.ew-detection.outputs.run_date }}" \
+            --ew-signals "${{ needs.ew-detection.outputs.ew_signals }}" \
+            --output "knowledge_graph_v${NEXT_VER}_delta.json"
 
-          NODE_COUNT=$(python3 -c \
-            "import json; d=json.load(open('${DELTA_FILE}')); print(len(d.get('nodes',[])))")
-          EDGE_COUNT=$(python3 -c \
-            "import json; d=json.load(open('${DELTA_FILE}')); print(len(d.get('edges',[])))")
+          # 노드/엣지 수 파싱
+          python3 << 'PYEOF'
+          import json, os
+          import glob
+          files = glob.glob("knowledge_graph_v*_delta.json")
+          if files:
+              data = json.load(open(files[0]))
+              with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+                  f.write(f"node_count={data.get('node_count', 0)}\n")
+                  f.write(f"edge_count={data.get('edge_count', 0)}\n")
+          PYEOF
 
-          echo "delta_file=${DELTA_FILE}" >> $GITHUB_OUTPUT
-          echo "node_count=${NODE_COUNT}" >> $GITHUB_OUTPUT
-          echo "edge_count=${EDGE_COUNT}" >> $GITHUB_OUTPUT
-
-          echo "### 🧠 KG Delta 생성 완료" >> $GITHUB_STEP_SUMMARY
-          echo "| 항목 | 값 |" >> $GITHUB_STEP_SUMMARY
-          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
-          echo "| Delta 파일 | ${DELTA_FILE} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 신규 노드 | ${NODE_COUNT} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 신규 엣지 | ${EDGE_COUNT} |" >> $GITHUB_STEP_SUMMARY
-
-      # BUG-2 FIX: steps.gen.outputs.delta_file로 artifact path 참조 (표현식 중첩 제거)
-      - uses: actions/upload-artifact@v4
+      - name: KG 델타 업로드
+        uses: actions/upload-artifact@v4
         with:
           name: kg-delta
-          path: ${{ steps.gen.outputs.delta_file }}
-          if-no-files-found: error
+          path: knowledge_graph_v*_delta.json
+          retention-days: 30
 
-# ─────────────────────────────────────────────────────────────
-# STAGE 4: Notion C-31 EW 레지스트리 업데이트
-# ─────────────────────────────────────────────────────────────
-  update_notion_c31:
-    name: 📒 Notion — C-31 EW Registry 업데이트
-    needs:
-      - init
-      - ew_check
-      - generate_kg_delta
+  # ─── Job 4: Notion C-31 업데이트 ─────────────────────────────────────────────
+  notion-update:
+    name: "4. Notion C-31 업데이트"
+    needs: [ew-detection, kg-delta]
     runs-on: ubuntu-latest
-    if: |
-      always() &&
-      needs.init.result == 'success' &&
-      needs.ew_check.result != 'cancelled' &&
-      needs.generate_kg_delta.result != 'cancelled'
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install deps
-        run: |
-          if [ -f automation/requirements.txt ]; then
-            pip install -r automation/requirements.txt
-          else
-            pip install requests python-dateutil
-          fi
+          cache: "pip"
 
-      - name: Download all artifacts
+      - run: pip install -r automation/requirements_ai_intel.txt
+
+      - name: 아티팩트 다운로드
         uses: actions/download-artifact@v4
         with:
+          pattern: intel-*
           path: ${{ env.OUTPUT_DIR }}
           merge-multiple: true
 
-      # BUG-3 FIX: notion_c31_updater.py 파라미터 명세 확인 완료
-      # --intel-dir 인수 지원 확인 — 파이프라인과 동기화됨
-      - name: Update Notion C-31
+      - name: Notion C-31 업데이트
         env:
           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
         run: |
           python automation/notion_c31_updater.py \
-            --page-id "${{ env.NOTION_C31_PAGE_ID }}" \
-            --week "${{ needs.init.outputs.week_label }}" \
-            --run-date "${{ needs.init.outputs.run_date }}" \
-            --ew-triggered "${{ needs.ew_check.outputs.ew_triggered }}" \
-            --ew-count "${{ needs.ew_check.outputs.ew_count }}" \
-            --ew-signals "${{ needs.ew_check.outputs.ew_signals }}" \
-            --ew-severity "${{ needs.ew_check.outputs.ew_severity }}" \
-            --kg-version "${{ needs.init.outputs.kg_next_version }}" \
-            --node-count "${{ needs.generate_kg_delta.outputs.node_count }}" \
-            --edge-count "${{ needs.generate_kg_delta.outputs.edge_count }}" \
+            --page-id "${{ secrets.NOTION_C31_PAGE_ID }}" \
+            --week "${{ needs.ew-detection.outputs.week }}" \
+            --run-date "${{ needs.ew-detection.outputs.run_date }}" \
+            --ew-triggered "${{ needs.ew-detection.outputs.ew_triggered }}" \
+            --ew-count "${{ needs.ew-detection.outputs.ew_count }}" \
+            --ew-signals "${{ needs.ew-detection.outputs.ew_signals }}" \
+            --ew-severity "${{ needs.ew-detection.outputs.ew_severity }}" \
+            --kg-version "${{ needs.kg-delta.outputs.kg_next_version }}" \
+            --node-count "${{ needs.kg-delta.outputs.node_count }}" \
+            --edge-count "${{ needs.kg-delta.outputs.edge_count }}" \
             --intel-dir "${{ env.OUTPUT_DIR }}"
 
-      - name: Write Step Summary
-        run: |
-          EW_TRIGGERED="${{ needs.ew_check.outputs.ew_triggered }}"
-          EW_SIGNALS="${{ needs.ew_check.outputs.ew_signals }}"
-          KG_VER="${{ needs.init.outputs.kg_next_version }}"
-          WEEK="${{ needs.init.outputs.week_label }}"
-
-          echo "### 📒 Notion C-31 업데이트 완료" >> $GITHUB_STEP_SUMMARY
-          echo "| 항목 | 값 |" >> $GITHUB_STEP_SUMMARY
-          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
-          echo "| 대상 페이지 | C-31 PE-AI Intel |" >> $GITHUB_STEP_SUMMARY
-          echo "| 주간 레이블 | ${WEEK} |" >> $GITHUB_STEP_SUMMARY
-          echo "| EW 발동 | ${EW_TRIGGERED} |" >> $GITHUB_STEP_SUMMARY
-          echo "| EW 신호 | ${EW_SIGNALS:-없음} |" >> $GITHUB_STEP_SUMMARY
-          echo "| KG 버전 반영 | v${KG_VER} |" >> $GITHUB_STEP_SUMMARY
-
-# ─────────────────────────────────────────────────────────────
-# STAGE 5: KG Delta GitHub 커밋 & 최종 요약
-# ─────────────────────────────────────────────────────────────
-  commit_kg_and_report:
-    name: 💾 Commit KG Delta & Final Report
-    needs:
-      - init
-      - ew_check
-      - generate_kg_delta
-      - update_notion_c31
+  # ─── Job 5: EW 긴급 알림 (EW HIGH 발동 시만 실행) ────────────────────────────
+  ew-alert:
+    name: "5. EW 긴급 알림"
+    needs: ew-detection
     runs-on: ubuntu-latest
-    if: always() && needs.generate_kg_delta.result == 'success'
+    if: needs.ew-detection.outputs.ew_triggered == 'true' && needs.ew-detection.outputs.ew_severity == 'HIGH'
+
     steps:
-      - uses: actions/checkout@v4
+      - name: EW 긴급 Issue 생성
+        uses: actions/github-script@v7
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0
-
-      - name: Download KG delta
-        uses: actions/download-artifact@v4
-        with:
-          name: kg-delta
-          path: .
-
-      - name: Commit KG delta to main
-        run: |
-          NEXT_VERSION="${{ needs.init.outputs.kg_next_version }}"
-          WEEK="${{ needs.init.outputs.week_label }}"
-          NODE_COUNT="${{ needs.generate_kg_delta.outputs.node_count }}"
-          EDGE_COUNT="${{ needs.generate_kg_delta.outputs.edge_count }}"
-          DELTA_FILE="${{ needs.generate_kg_delta.outputs.delta_file }}"
-
-          git config --global user.name "AI Intel Bot"
-          git config --global user.email "ai-intel-bot@github-actions"
-
-          # WARN-1 FIX: --autostash 추가로 uncommitted 변경사항 보호 후 rebase
-          git pull --rebase --autostash origin main
-
-          git add "${DELTA_FILE}"
-          git diff --staged --quiet || git commit -m \
-            "auto: KG delta v${NEXT_VERSION} — ${WEEK} (+${NODE_COUNT}nodes +${EDGE_COUNT}edges) [AI Intel Weekly]"
-          git push
-
-      - name: Final Summary
-        env:
-          KG_VER: ${{ needs.init.outputs.kg_next_version }}
-          WEEK: ${{ needs.init.outputs.week_label }}
-          EW_TRIGGERED: ${{ needs.ew_check.outputs.ew_triggered }}
-          EW_COUNT: ${{ needs.ew_check.outputs.ew_count }}
-          EW_SIGNALS: ${{ needs.ew_check.outputs.ew_signals }}
-          EW_SEVERITY: ${{ needs.ew_check.outputs.ew_severity }}
-          NODE_COUNT: ${{ needs.generate_kg_delta.outputs.node_count }}
-          EDGE_COUNT: ${{ needs.generate_kg_delta.outputs.edge_count }}
-        run: |
-          echo "# 🤖 AI Intel Weekly Digest — ${WEEK}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## ✅ 파이프라인 완료 요약" >> $GITHUB_STEP_SUMMARY
-          echo "| 단계 | 상태 | 세부 내용 |" >> $GITHUB_STEP_SUMMARY
-          echo "|---|---|---|" >> $GITHUB_STEP_SUMMARY
-          echo "| 📡 인텔 수집 | ✅ | 5개 도메인 병렬 수집 완료 |" >> $GITHUB_STEP_SUMMARY
-          if [ "${EW_TRIGGERED}" = "true" ]; then
-            EW_ICON="🔴"
-          else
-            EW_ICON="🟢"
-          fi
-          echo "| ⚠️ EW 체크 | ${EW_ICON} | 발동: ${EW_COUNT}건 — ${EW_SIGNALS:-없음} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 🧠 KG Delta | ✅ | v${KG_VER} (+${NODE_COUNT}N +${EDGE_COUNT}E) |" >> $GITHUB_STEP_SUMMARY
-          echo "| 📒 Notion C-31 | ✅ | EW 레지스트리 업데이트 완료 |" >> $GITHUB_STEP_SUMMARY
-          echo "| 💾 GitHub 커밋 | ✅ | knowledge_graph_v${KG_VER}_delta.json |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          if [ "${EW_TRIGGERED}" = "true" ]; then
-            echo "## 🔴 EW 발동 알림" >> $GITHUB_STEP_SUMMARY
-            echo "> **심각도**: ${EW_SEVERITY}" >> $GITHUB_STEP_SUMMARY
-            echo "> **신호**: ${EW_SIGNALS}" >> $GITHUB_STEP_SUMMARY
-            echo "> Notion C-31 EW 레지스트리 즉시 확인 요망" >> $GITHUB_STEP_SUMMARY
-          fi
+          script: |
+            const week = "${{ needs.ew-detection.outputs.week }}";
+            const signals = "${{ needs.ew-detection.outputs.ew_signals }}";
+            const severity = "${{ needs.ew-detection.outputs.ew_severity }}";
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🚨 [EW-${severity}] AI Intel Early Warning · ${week}`,
+              body: `## Early Warning 발동\n\n- **주차**: ${week}\n- **심각도**: ${severity}\n- **신호**: ${signals}\n\n자동 생성된 EW 이슈입니다. 즉각 검토 필요.`,
+              labels: ["early-warning", "ai-intel", "urgent"]
+            });
