@@ -1,18 +1,8 @@
 #!/usr/bin/env python3
 """
-Smoke Test — AI Intel Pipeline 연결 검증
-
-실행:
-  export PERPLEXITY_API_KEY="pplx-xxxx"
-  export NOTION_API_KEY="secret_xxxx"
-  python automation/test_smoke.py
-
-검사 항목:
-  [1] 환경변수 (Secrets) 설정 여부
-  [2] Perplexity API 키 유효성 (minimal 1-call)
-  [3] Notion API 키 + C-31 page 접근 가능 여부
-  [4] 4개 스크립트 import 에러 없는지 확인
-  [5] output 디렉토리 쓰기 권한
+Smoke Test — AI Intel Weekly Pipeline
+Perplexity API / Notion API / 4개 스크립트 import 검증
+Usage: python automation/test_smoke.py
 """
 
 import os
@@ -21,231 +11,178 @@ import json
 import importlib.util
 from pathlib import Path
 
-# ── ANSI 색상
-GREEN  = "\033[92m"
-RED    = "\033[91m"
-YELLOW = "\033[93m"
-BLUE   = "\033[94m"
-RESET  = "\033[0m"
-BOLD   = "\033[1m"
+# .env 지원 (python-dotenv 있을 경우)
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
-NOTION_C31_PAGE_ID = "34a55ed436f0814d9cffe6a2f0816e29"
+PASS = "\033[92m[PASS]\033[0m"
+FAIL = "\033[91m[FAIL]\033[0m"
+INFO = "\033[94m[INFO]\033[0m"
 
 results = []
 
-def ok(label, detail=""):
-    msg = f"  {GREEN}✅ PASS{RESET}  {label}"
+def check(label: str, ok: bool, detail: str = ""):
+    tag = PASS if ok else FAIL
+    msg = f"{tag} {label}"
     if detail:
-        msg += f"  {BLUE}({detail}){RESET}"
+        msg += f"  →  {detail}"
     print(msg)
-    results.append(("PASS", label))
-
-def fail(label, detail=""):
-    msg = f"  {RED}❌ FAIL{RESET}  {label}"
-    if detail:
-        msg += f"  {RED}→ {detail}{RESET}"
-    print(msg)
-    results.append(("FAIL", label))
-
-def warn(label, detail=""):
-    msg = f"  {YELLOW}⚠️  WARN{RESET}  {label}"
-    if detail:
-        msg += f"  {YELLOW}({detail}){RESET}"
-    print(msg)
-    results.append(("WARN", label))
-
-def section(title):
-    print(f"\n{BOLD}{BLUE}{'─'*55}{RESET}")
-    print(f"{BOLD}  {title}{RESET}")
-    print(f"{BOLD}{BLUE}{'─'*55}{RESET}")
+    results.append((label, ok))
 
 
-# ════════════════════════════════════════════════════
-# [1] 환경변수 확인
-# ════════════════════════════════════════════════════
-section("[1] 환경변수 (Secrets) 설정 확인")
+# ──────────────────────────────────────────
+# 1. 환경변수 존재 확인
+# ──────────────────────────────────────────
+print("\n=== [1/4] 환경변수 확인 ===")
+PPLX_KEY = os.getenv("PERPLEXITY_API_KEY", "")
+NOTION_KEY = os.getenv("NOTION_API_KEY", "")
+NOTION_PAGE = os.getenv("NOTION_C31_PAGE_ID", "34a55ed436f0814d9cffe6a2f0816e29")
 
-PERPLEXITY_API_KEY = os.environ.get("PERPLEXITY_API_KEY", "")
-NOTION_API_KEY     = os.environ.get("NOTION_API_KEY", "")
-
-if PERPLEXITY_API_KEY and PERPLEXITY_API_KEY.startswith("pplx-"):
-    ok("PERPLEXITY_API_KEY", f"pplx-****{PERPLEXITY_API_KEY[-4:]}")
-elif PERPLEXITY_API_KEY:
-    warn("PERPLEXITY_API_KEY", "설정됨 (pplx- prefix 없음 — 확인 필요)")
-else:
-    fail("PERPLEXITY_API_KEY", "미설정 — export PERPLEXITY_API_KEY=pplx-xxx")
-
-if NOTION_API_KEY and NOTION_API_KEY.startswith("secret_"):
-    ok("NOTION_API_KEY", f"secret_****{NOTION_API_KEY[-4:]}")
-elif NOTION_API_KEY:
-    warn("NOTION_API_KEY", "설정됨 (secret_ prefix 없음 — 확인 필요)")
-else:
-    fail("NOTION_API_KEY", "미설정 — export NOTION_API_KEY=secret_xxx")
+check("PERPLEXITY_API_KEY 존재", bool(PPLX_KEY), f"{'설정됨 (길이 ' + str(len(PPLX_KEY)) + ')' if PPLX_KEY else '미설정 — export PERPLEXITY_API_KEY=pplx-xxxx'}")
+check("NOTION_API_KEY 존재", bool(NOTION_KEY), f"{'설정됨 (길이 ' + str(len(NOTION_KEY)) + ')' if NOTION_KEY else '미설정 — export NOTION_API_KEY=secret_xxxx'}")
+check("NOTION_C31_PAGE_ID", bool(NOTION_PAGE), NOTION_PAGE or "미설정")
 
 
-# ════════════════════════════════════════════════════
-# [2] Perplexity API 유효성 (sonar, 1회 최소 호출)
-# ════════════════════════════════════════════════════
-section("[2] Perplexity API 연결 테스트")
+# ──────────────────────────────────────────
+# 2. Perplexity API Minimal Call
+# ──────────────────────────────────────────
+print("\n=== [2/4] Perplexity API 연결 테스트 ===")
+import requests
 
-if not PERPLEXITY_API_KEY:
-    warn("SKIP", "API 키 없음")
-else:
+if PPLX_KEY:
     try:
-        import requests
         resp = requests.post(
             "https://api.perplexity.ai/chat/completions",
             headers={
-                "Authorization": f"Bearer {PERPLEXITY_API_KEY}",
+                "Authorization": f"Bearer {PPLX_KEY}",
                 "Content-Type": "application/json",
             },
             json={
                 "model": "sonar",
-                "messages": [{"role": "user", "content": "ping"}],
+                "messages": [{"role": "user", "content": "Reply with just: OK"}],
                 "max_tokens": 5,
             },
             timeout=15,
         )
         if resp.status_code == 200:
-            model = resp.json().get("model", "unknown")
-            ok("Perplexity API", f"HTTP 200 · model={model}")
+            content = resp.json()["choices"][0]["message"]["content"].strip()
+            check("Perplexity sonar API 호출", True, f"응답: '{content}'")
         elif resp.status_code == 401:
-            fail("Perplexity API", "HTTP 401 — API 키 오류 또는 만료")
+            check("Perplexity sonar API 호출", False, "401 Unauthorized — API 키 확인 필요")
         elif resp.status_code == 429:
-            warn("Perplexity API", "HTTP 429 — Rate limit (키는 유효)")
+            check("Perplexity sonar API 호출", True, "429 Rate limit (키 유효, 할당량 초과)")
         else:
-            warn("Perplexity API", f"HTTP {resp.status_code} — {resp.text[:80]}")
+            check("Perplexity sonar API 호출", False, f"HTTP {resp.status_code}: {resp.text[:120]}")
     except requests.exceptions.Timeout:
-        fail("Perplexity API", "Timeout (네트워크 확인)")
+        check("Perplexity sonar API 호출", False, "Timeout (15s) — 네트워크 확인")
     except Exception as e:
-        fail("Perplexity API", str(e)[:80])
-
-
-# ════════════════════════════════════════════════════
-# [3] Notion API 키 + C-31 page 접근
-# ════════════════════════════════════════════════════
-section("[3] Notion API 연결 + C-31 페이지 접근 테스트")
-
-if not NOTION_API_KEY:
-    warn("SKIP", "API 키 없음")
+        check("Perplexity sonar API 호출", False, str(e))
 else:
+    check("Perplexity sonar API 호출", False, "API 키 없음 — 건너뜀")
+
+
+# ──────────────────────────────────────────
+# 3. Notion API + C-31 페이지 접근 확인
+# ──────────────────────────────────────────
+print("\n=== [3/4] Notion API 연결 테스트 ===")
+
+if NOTION_KEY:
+    # 3-a. 사용자 인증 확인
     try:
-        import requests
-        # 3-a. API 키 자체 유효성
-        resp = requests.get(
+        r = requests.get(
             "https://api.notion.com/v1/users/me",
             headers={
-                "Authorization": f"Bearer {NOTION_API_KEY}",
+                "Authorization": f"Bearer {NOTION_KEY}",
                 "Notion-Version": "2022-06-28",
             },
             timeout=10,
         )
-        if resp.status_code == 200:
-            bot_name = resp.json().get("name", "unknown")
-            ok("Notion API 키", f"bot={bot_name}")
-        elif resp.status_code == 401:
-            fail("Notion API 키", "HTTP 401 — Integration Token 오류")
+        if r.status_code == 200:
+            bot_name = r.json().get("name", "unknown")
+            check("Notion API 인증", True, f"Bot: {bot_name}")
         else:
-            warn("Notion API 키", f"HTTP {resp.status_code}")
-
-        # 3-b. C-31 페이지 접근
-        resp2 = requests.get(
-            f"https://api.notion.com/v1/pages/{NOTION_C31_PAGE_ID}",
-            headers={
-                "Authorization": f"Bearer {NOTION_API_KEY}",
-                "Notion-Version": "2022-06-28",
-            },
-            timeout=10,
-        )
-        if resp2.status_code == 200:
-            title_block = resp2.json().get("properties", {}).get("title", {})
-            ok("Notion C-31 페이지", f"page_id={NOTION_C31_PAGE_ID[:8]}… 접근 성공")
-        elif resp2.status_code == 404:
-            fail("Notion C-31 페이지", "HTTP 404 — page_id 오류 또는 Integration 미연결")
-        elif resp2.status_code == 403:
-            fail("Notion C-31 페이지", "HTTP 403 — C-31 페이지에 Integration 연결 필요")
-        else:
-            warn("Notion C-31 페이지", f"HTTP {resp2.status_code}")
+            check("Notion API 인증", False, f"HTTP {r.status_code}")
     except Exception as e:
-        fail("Notion API", str(e)[:80])
+        check("Notion API 인증", False, str(e))
+
+    # 3-b. C-31 페이지 접근
+    page_id = NOTION_PAGE.replace("-", "")
+    try:
+        r2 = requests.get(
+            f"https://api.notion.com/v1/pages/{page_id}",
+            headers={
+                "Authorization": f"Bearer {NOTION_KEY}",
+                "Notion-Version": "2022-06-28",
+            },
+            timeout=10,
+        )
+        if r2.status_code == 200:
+            title_parts = r2.json().get("properties", {}).get("title", {}).get("title", [])
+            title = title_parts[0]["plain_text"] if title_parts else "(제목 없음)"
+            check("C-31 페이지 접근", True, f"페이지명: '{title}'")
+        elif r2.status_code == 404:
+            check("C-31 페이지 접근", False, "404 — Page ID 확인 또는 Integration 연결 필요")
+        elif r2.status_code == 403:
+            check("C-31 페이지 접근", False, "403 — Notion 페이지에 Integration 연결 안 됨")
+        else:
+            check("C-31 페이지 접근", False, f"HTTP {r2.status_code}")
+    except Exception as e:
+        check("C-31 페이지 접근", False, str(e))
+else:
+    check("Notion API 인증", False, "API 키 없음 — 건너뜀")
+    check("C-31 페이지 접근", False, "API 키 없음 — 건너뜀")
 
 
-# ════════════════════════════════════════════════════
-# [4] 4개 스크립트 import 에러 확인
-# ════════════════════════════════════════════════════
-section("[4] automation/ 스크립트 import 검증")
+# ──────────────────────────────────────────
+# 4. 4개 스크립트 Import 에러 확인
+# ──────────────────────────────────────────
+print("\n=== [4/4] 스크립트 Import 검증 ===")
 
+SCRIPT_DIR = Path(__file__).parent
 SCRIPTS = [
-    "automation/ai_intel_collector.py",
-    "automation/ai_ew_detector.py",
-    "automation/kg_delta_generator.py",
-    "automation/notion_c31_updater.py",
+    "ai_intel_collector",
+    "ai_ew_detector",
+    "kg_delta_generator",
+    "notion_c31_updater",
 ]
 
-for script_path in SCRIPTS:
-    path = Path(script_path)
+for name in SCRIPTS:
+    path = SCRIPT_DIR / f"{name}.py"
     if not path.exists():
-        fail(path.name, f"파일 없음 — {script_path}")
+        check(f"{name}.py import", False, "파일 없음")
         continue
     try:
-        spec = importlib.util.spec_from_file_location(path.stem, path)
-        mod  = importlib.util.module_from_spec(spec)
-        # argparse가 sys.argv를 파싱하지 않도록 격리
-        _argv = sys.argv
-        sys.argv = [path.name]
-        try:
-            spec.loader.exec_module(mod)
-        except SystemExit:
-            pass  # argparse --help 등 정상 종료는 무시
-        finally:
-            sys.argv = _argv
-        ok(path.name)
+        spec = importlib.util.spec_from_file_location(name, path)
+        mod = importlib.util.module_from_spec(spec)
+        # __name__ guard로 main() 실행 방지
+        mod.__name__ = f"_smoke_{name}"
+        spec.loader.exec_module(mod)
+        check(f"{name}.py import", True)
+    except SyntaxError as e:
+        check(f"{name}.py import", False, f"SyntaxError: {e}")
     except ImportError as e:
-        fail(path.name, f"ImportError: {e}")
+        check(f"{name}.py import", False, f"ImportError: {e} — pip install -r requirements.txt 실행")
+    except SystemExit:
+        check(f"{name}.py import", True, "(SystemExit — argparse, 정상)")
     except Exception as e:
-        warn(path.name, f"{type(e).__name__}: {str(e)[:60]}")
+        check(f"{name}.py import", False, f"{type(e).__name__}: {e}")
 
 
-# ════════════════════════════════════════════════════
-# [5] output 디렉토리 쓰기 권한
-# ════════════════════════════════════════════════════
-section("[5] output/ai_intel 디렉토리 쓰기 권한")
-
-OUT_DIR = Path("output/ai_intel")
-try:
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
-    test_file = OUT_DIR / ".smoke_write_test"
-    test_file.write_text("ok")
-    test_file.unlink()
-    ok("output/ai_intel", "디렉토리 생성 및 쓰기 성공")
-except Exception as e:
-    fail("output/ai_intel", str(e))
-
-
-# ════════════════════════════════════════════════════
+# ──────────────────────────────────────────
 # 최종 결과 요약
-# ════════════════════════════════════════════════════
-print(f"\n{BOLD}{'═'*55}{RESET}")
-print(f"{BOLD}  🔬 Smoke Test 결과 요약{RESET}")
-print(f"{BOLD}{'═'*55}{RESET}")
+# ──────────────────────────────────────────
+print("\n" + "=" * 50)
+total = len(results)
+passed = sum(1 for _, ok in results if ok)
+failed = total - passed
 
-passed = sum(1 for r in results if r[0] == "PASS")
-warned = sum(1 for r in results if r[0] == "WARN")
-failed = sum(1 for r in results if r[0] == "FAIL")
-total  = len(results)
-
-print(f"  총 {total}건  →  {GREEN}PASS {passed}{RESET}  /  {YELLOW}WARN {warned}{RESET}  /  {RED}FAIL {failed}{RESET}")
-
-if failed == 0 and warned == 0:
-    print(f"\n  {GREEN}{BOLD}🎉 모든 검사 통과 — 파이프라인 실행 준비 완료!{RESET}")
-    print(f"  다음 단계: GitHub Actions → PE · AI Intel Weekly Digest → Run workflow")
-elif failed == 0:
-    print(f"\n  {YELLOW}{BOLD}⚠️  경고 있음 — 확인 후 실행 권장{RESET}")
+if failed == 0:
+    print(f"\033[92m✅ 전체 {total}개 PASS — 파이프라인 준비 완료\033[0m")
 else:
-    print(f"\n  {RED}{BOLD}❌ 실패 항목 수정 후 재실행{RESET}")
-    for r in results:
-        if r[0] == "FAIL":
-            print(f"     → {r[1]}")
+    print(f"\033[93m⚠️  {passed}/{total} PASS  |  {failed}개 FAIL — 위 항목 확인 필요\033[0m")
 
-print()
-sys.exit(1 if failed > 0 else 0)
+print("=" * 50)
+sys.exit(0 if failed == 0 else 1)

@@ -1,4 +1,3 @@
-# automation/ 폴더 전용 의존성
-# ai_intel_collector.py, ai_ew_detector.py, kg_delta_generator.py, notion_c31_updater.py
+# AI Intel Weekly — Python Dependencies
 requests>=2.31.0
-python-dateutil>=2.9.0
+python-dotenv>=1.0.0
