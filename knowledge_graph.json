@@ -1,1200 +1,230 @@
 {
   "meta": {
-    "generated_at": "2026-05-09T04:53:58.360507+00:00",
-    "version": "1.0",
-    "total_nodes": 52,
-    "total_edges": 60,
-    "scan_dirs": [
-      "docs",
-      "engines"
-    ],
+    "generated_at": "2026-05-19T10:11:36.000000+00:00",
+    "version": "6.1",
+    "kg_version_label": "KG v6.1",
+    "total_nodes": 58,
+    "total_edges": 68,
+    "delta_nodes": 6,
+    "delta_edges": 8,
+    "trigger_event": "C-35 PE-OPTICAL v1.1 신규 편입 · OPTICAL-MODULE-DEEP v2.1",
+    "trigger_commit": "f14713f6",
+    "triggered_at": "2026-05-19T18:34:00+09:00",
+    "scan_dirs": ["docs", "engines", "prompts"],
     "sha_enabled": false,
-    "version_extract": false
+    "version_extract": false,
+    "changelog": [
+      {
+        "version": "6.1",
+        "date": "2026-05-19",
+        "delta": "+6 nodes / +8 edges",
+        "summary": "C-35 PE-OPTICAL 도메인 신규 편입: PE-OPTICAL-HUB / OPTICAL-MODULE-DEEP-v2.1 / OPT-IO-CONTRACT / OPT-MEMORY-HANDOFF / OPT-FALLBACK-ENGINE / OPT-VERSION-AB"
+      },
+      {
+        "version": "1.0",
+        "date": "2026-05-09",
+        "delta": "52 nodes / 60 edges",
+        "summary": "초기 스캔 베이스라인 (docs/engines 디렉토리)"
+      }
+    ]
   },
   "nodes": [
+    {"id": "README.md", "type": "doc", "title": "🧠 프롬프트 엔지니어링 시스템 — 자동개선·자동증식·자동검증", "status": "unknown", "version": "", "date": "2026-04-05", "tags": ["root", "meta", "v4.0"], "notion_url": "https://www.notion.so/33955ed436f081cc9f0bd014d631aa7b", "file_size": 8870, "sha": null},
+    {"id": "CHANGELOG.md", "type": "doc", "title": "CHANGELOG — 프롬프트 엔지니어링 시스템", "status": "unknown", "version": "", "date": "2026-05-07", "tags": ["root", "meta"], "notion_url": null, "file_size": 7746, "sha": null},
+    {"id": "docs/C31-AI-research-hub/A-AI-001-ai-history-1950-2011.md", "type": "doc", "title": "🧠 A-AI-001 · AI의 탄생과 초기 발전 (1950~2011)", "status": "unknown", "version": "", "date": "2026-05-04", "tags": ["C31-AI-research-hub"], "notion_url": null, "file_size": 24642, "sha": null},
+    {"id": "docs/C31-AI-research-hub/directory-structure.md", "type": "doc", "title": "AI Deep Research Hub - 디렉토리 구조", "status": "unknown", "version": "", "date": "", "tags": ["C31-AI-research-hub"], "notion_url": null, "file_size": 1974, "sha": null},
+    {"id": "docs/P4_SMR_Pipeline.md", "type": "doc", "title": "PE-7 P4: SMR Power Pipeline", "status": "unknown", "version": "v1.2", "date": "2026-04-26", "tags": [], "notion_url": null, "file_size": 3660, "sha": null},
+    {"id": "docs/P6_ExaFLOPS_TCO.md", "type": "doc", "title": "P6: ExaFLOPS 통합 자원모델", "status": "unknown", "version": "", "date": "2026-04-26", "tags": [], "notion_url": null, "file_size": 4724, "sha": null},
+    {"id": "docs/P7_Word_Report_Builder.md", "type": "doc", "title": "P7 — Word 보고서 자동 생성", "status": "unknown", "version": "", "date": "2026-04-26", "tags": [], "notion_url": null, "file_size": 3179, "sha": null},
+    {"id": "docs/PE-7-NextSteps-SecretsGuide.md", "type": "doc", "title": "PE-7 v2.0 — GitHub Secrets 등록 완전 가이드", "status": "unknown", "version": "", "date": "2026-04-26", "tags": [], "notion_url": null, "file_size": 4104, "sha": null},
+    {"id": "docs/PE-7-RunbookManual.md", "type": "doc", "title": "PE-7 v2.0 — 수동 실행 런북", "status": "unknown", "version": "", "date": "2026-04-26", "tags": [], "notion_url": null, "file_size": 5708, "sha": null},
+    {"id": "docs/PE-7-v2.0-MasterIndex.md", "type": "doc", "title": "PE-7 v2.0 — 마스터 인덱스", "status": "unknown", "version": "", "date": "2026-04-26", "tags": [], "notion_url": "https://www.notion.so/34955ed436f081149dd6de25dba027d7", "file_size": 3156, "sha": null},
+    {"id": "docs/PE-7-v2.0-Section6-ValidationReport.md", "type": "doc", "title": "PE-7 v2.0 섹션 6 — E-0N 통합검증 보고서", "status": "unknown", "version": "", "date": "2026-04-26", "tags": [], "notion_url": null, "file_size": 4035, "sha": null},
+    {"id": "docs/PE7_v2.9_metadata_manager_spec.md", "type": "doc", "title": "PE-7 v2.9 — metadata_manager.py 명세서", "status": "unknown", "version": "", "date": "2026-05-06", "tags": [], "notion_url": null, "file_size": 3272, "sha": null},
+    {"id": "docs/REGISTER_VARIANT_GUIDE.md", "type": "doc", "title": "Variant 자동 등록 워크플로우 가이드 v2.1", "status": "unknown", "version": "", "date": "2026-04-28", "tags": [], "notion_url": null, "file_size": 5896, "sha": null},
+    {"id": "docs/T09-v5.2-ssot-sync.md", "type": "doc", "title": "T-09 Mother Page v5.2 — SSOT 동기화 보고서", "status": "unknown", "version": "", "date": "2026-05-05", "tags": [], "notion_url": null, "file_size": 1742, "sha": null},
+    {"id": "docs/agent1/README.md", "type": "agent", "title": "🤖 PE-1 자동개선 엔진", "status": "unknown", "version": "", "date": "2026-04-09", "tags": ["agent1"], "notion_url": null, "file_size": 1465, "sha": null},
+    {"id": "docs/agent2/README.md", "type": "agent", "title": "🤖 PE-2 자동증식 엔진", "status": "unknown", "version": "", "date": "2026-04-09", "tags": ["agent2"], "notion_url": null, "file_size": 1430, "sha": null},
+    {"id": "docs/agent3/OUTPUT_3-4_evidence_protocol_S3.md", "type": "agent", "title": "§3 Evidence 수집 프로토콜", "status": "unknown", "version": "", "date": "2026-05-02", "tags": ["agent3"], "notion_url": null, "file_size": 2631, "sha": null},
+    {"id": "docs/agent3/README.md", "type": "agent", "title": "🤖 PE-3 자동검증 엔진", "status": "unknown", "version": "", "date": "2026-04-09", "tags": ["agent3"], "notion_url": null, "file_size": 1780, "sha": null},
+    {"id": "docs/agent4/README.md", "type": "agent", "title": "🤖 PE-4 실적용 케이스 매니저", "status": "unknown", "version": "", "date": "2026-04-09", "tags": ["agent4"], "notion_url": null, "file_size": 1617, "sha": null},
+    {"id": "docs/agent5/README.md", "type": "agent", "title": "🤖 PE-5 마스터 오케스트레이터", "status": "unknown", "version": "", "date": "2026-04-09", "tags": ["agent5"], "notion_url": null, "file_size": 1869, "sha": null},
+    {"id": "docs/graph_patches/knowledge_graph_v3.1-osat_patch.md", "type": "doc", "title": "knowledge_graph.json — v3.1-osat 패치 노트", "status": "unknown", "version": "", "date": "2026-04-29", "tags": [], "notion_url": null, "file_size": 2448, "sha": null},
+    {"id": "docs/graph_patches/knowledge_graph_v4.11-patch.md", "type": "doc", "title": "knowledge_graph.json — v4.11 패치 노트", "status": "unknown", "version": "", "date": "2026-05-05", "tags": [], "notion_url": null, "file_size": 1678, "sha": null},
+    {"id": "docs/index.md", "type": "doc", "title": "📖 Master Documentation Index", "status": "unknown", "version": "", "date": "2026-04-09", "tags": [], "notion_url": "https://www.notion.so/33955ed436f081cc9f0bd014d631aa7b", "file_size": 9501, "sha": null},
+    {"id": "docs/integration-setup-guide.md", "type": "doc", "title": "🔧 Integration Setup Guide", "status": "unknown", "version": "", "date": "2026-04-26", "tags": [], "notion_url": null, "file_size": 6957, "sha": null},
+    {"id": "docs/integration_setup_guide.md", "type": "doc", "title": "🔐 완전 자동화 Integration 설정 가이드", "status": "unknown", "version": "", "date": "2026-04-26", "tags": [], "notion_url": null, "file_size": 5027, "sha": null},
+    {"id": "docs/knowledge_graph_v3.7.md", "type": "doc", "title": "knowledge_graph v3.7", "status": "unknown", "version": "", "date": "2026-04-29", "tags": [], "notion_url": null, "file_size": 2461, "sha": null},
+    {"id": "docs/new/README.md", "type": "doc", "title": "🆕 신규 기능 파이프라인", "status": "unknown", "version": "", "date": "2026-04-09", "tags": [], "notion_url": null, "file_size": 1425, "sha": null},
+    {"id": "docs/pe_dd_tda_mece_boundary.md", "type": "doc", "title": "PE-DD vs PE-TDA MECE 경계 정의", "status": "unknown", "version": "", "date": "2026-05-09", "tags": [], "notion_url": null, "file_size": 4517, "sha": null},
+    {"id": "docs/rca-capa/AUTO_SYNC_LOG.md", "type": "rca", "title": "🔄 Auto-Sync Log", "status": "unknown", "version": "", "date": "2026-04-15", "tags": [], "notion_url": null, "file_size": 5096, "sha": null},
+    {"id": "docs/rca-capa/AUTO_VALIDATE_RUN.md", "type": "rca", "title": "AUTO_VALIDATE_RUN.md", "status": "unknown", "version": "", "date": "2026-04-18", "tags": [], "notion_url": null, "file_size": 2137, "sha": null},
+    {"id": "docs/rca-capa/RCA-001.md", "type": "rca", "title": "📋 RCA-001 — 프롬프트 구조 복잡도", "status": "resolved", "version": "", "date": "2026-04-06", "tags": [], "notion_url": null, "file_size": 1636, "sha": null},
+    {"id": "docs/rca-capa/RCA-002.md", "type": "rca", "title": "📋 RCA-002 — 검증 기준 모호성", "status": "resolved", "version": "", "date": "2026-04-06", "tags": [], "notion_url": null, "file_size": 1498, "sha": null},
+    {"id": "docs/rca-capa/RCA-003.md", "type": "rca", "title": "📋 RCA-003 — 필수 고려사항 누락", "status": "resolved", "version": "", "date": "2026-04-06", "tags": [], "notion_url": null, "file_size": 1742, "sha": null},
+    {"id": "docs/rca-capa/RCA-004.md", "type": "rca", "title": "📋 RCA-004 — 중복 출력 과다", "status": "resolved", "version": "", "date": "2026-04-06", "tags": [], "notion_url": null, "file_size": 1516, "sha": null},
+    {"id": "docs/rca-capa/README.md", "type": "rca", "title": "🔧 RCA/CAPA 허브", "status": "resolved", "version": "", "date": "2026-04-09", "tags": [], "notion_url": null, "file_size": 6445, "sha": null},
+    {"id": "docs/rca-capa/SYNC_ARCHITECTURE.md", "type": "rca", "title": "⚙️ Auto-Sync Architecture", "status": "unknown", "version": "", "date": "2026-04-15", "tags": [], "notion_url": null, "file_size": 4254, "sha": null},
+    {"id": "docs/report/2026-04-10_3engine-upgrade-report-v1.6.md", "type": "report", "title": "3-Engine 업그레이드 통합 실행 보고서", "status": "unknown", "version": "", "date": "2026-04-10", "tags": [], "notion_url": null, "file_size": 7740, "sha": null},
+    {"id": "docs/sim-results/CMD-FS-02-summary.md", "type": "doc", "title": "CMD-FS-02 · SEMI-OPT-GNN 가상 수치 완전 계산", "status": "unknown", "version": "", "date": "2026-04-30", "tags": [], "notion_url": null, "file_size": 2255, "sha": null},
+    {"id": "docs/support/README.md", "type": "support", "title": "🛠️ Support Modules", "status": "unknown", "version": "", "date": "2026-04-09", "tags": [], "notion_url": null, "file_size": 1271, "sha": null},
+    {"id": "engines/PE-1_auto-refinement/README.md", "type": "engine", "title": "🔁 PE-1: 자동개선 엔진", "status": "unknown", "version": "", "date": "2026-04-05", "tags": [], "notion_url": null, "file_size": 1747, "sha": null},
+    {"id": "engines/PE-1_auto-refinement/prompt_template.md", "type": "engine", "title": "PE-1 자동개선 프롬프트 템플릿", "status": "unknown", "version": "", "date": "", "tags": [], "notion_url": null, "file_size": 1403, "sha": null},
+    {"id": "engines/PE-1_auto-refinement/upgrade_v1.4.md", "type": "engine", "title": "PE-1 자동개선 엔진 — v1.4 업그레이드", "status": "unknown", "version": "", "date": "2026-04-10", "tags": [], "notion_url": null, "file_size": 2031, "sha": null},
+    {"id": "engines/PE-2_auto-proliferation/README.md", "type": "engine", "title": "🌱 PE-2: 자동증식 엔진", "status": "unknown", "version": "", "date": "2026-04-05", "tags": [], "notion_url": null, "file_size": 1468, "sha": null},
+    {"id": "engines/PE-2_auto-proliferation/prompt_template.md", "type": "engine", "title": "PE-2 자동증식 프롬프트 템플릿", "status": "unknown", "version": "", "date": "", "tags": [], "notion_url": null, "file_size": 1314, "sha": null},
+    {"id": "engines/PE-2_auto-proliferation/upgrade_v1.4.md", "type": "engine", "title": "PE-2 자동증식 엔진 — v1.4 업그레이드", "status": "unknown", "version": "", "date": "2026-04-10", "tags": [], "notion_url": null, "file_size": 2583, "sha": null},
+    {"id": "engines/PE-3_auto-validation/README.md", "type": "engine", "title": "✅ PE-3: 자동검증 엔진", "status": "unknown", "version": "", "date": "2026-04-05", "tags": [], "notion_url": null, "file_size": 1414, "sha": null},
+    {"id": "engines/PE-3_auto-validation/prompt_template.md", "type": "engine", "title": "PE-3 자동검증 프롬프트 템플릿", "status": "unknown", "version": "", "date": "", "tags": [], "notion_url": null, "file_size": 1161, "sha": null},
+    {"id": "engines/PE-3_auto-validation/scoring_rubric.md", "type": "engine", "title": "PE-3 5차원 채점 기준표", "status": "unknown", "version": "", "date": "", "tags": [], "notion_url": null, "file_size": 1874, "sha": null},
+    {"id": "engines/PE-3_auto-validation/upgrade_v1.4.md", "type": "engine", "title": "PE-3 자동검증 엔진 — v1.4 업그레이드", "status": "unknown", "version": "", "date": "2026-04-10", "tags": [], "notion_url": null, "file_size": 2843, "sha": null},
+    {"id": "engines/PE-7_ai-automation-design/CHANGELOG.md", "type": "engine", "title": "PE-7 Auto-Automation Design — CHANGELOG", "status": "unknown", "version": "", "date": "2026-05-08", "tags": [], "notion_url": null, "file_size": 2547, "sha": null},
+    {"id": "engines/PE-7_ai-automation-design/README.md", "type": "engine", "title": "🤖 PE-7 · AI 자동화 설계 및 구현 v1.0", "status": "unknown", "version": "", "date": "2026-04-21", "tags": [], "notion_url": "https://www.notion.so/34955ed436f081149dd6de25dba027d7", "file_size": 2401, "sha": null},
+    {"id": "engines/PE-7_ai-automation-design/prompt_template.md", "type": "engine", "title": "🤖 PE-7 · AI 자동화 설계 및 구현용 심층 프롬프트 v1.0", "status": "unknown", "version": "", "date": "2026-04-21", "tags": [], "notion_url": "https://www.notion.so/34955ed436f081149dd6de25dba027d7", "file_size": 3237, "sha": null},
     {
-      "id": "README.md",
-      "type": "doc",
-      "title": "🧠 프롬프트 엔지니어링 시스템 — 자동개선·자동증식·자동검증",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-04-05",
-      "tags": [
-        "root",
-        "meta",
-        "RCA-001",
-        "RCA-004",
-        "RCA-002",
-        "RCA-003",
-        "v1.7",
-        "v2.7",
-        "v2.0",
-        "v1.0",
-        "v1.1",
-        "v1.2",
-        "v1.3",
-        "v1.4",
-        "v1.5",
-        "v1.6",
-        "v3.0",
-        "v4.0",
-        "v1.8"
-      ],
-      "notion_url": "https://www.notion.so/33955ed436f081cc9f0bd014d631aa7b",
-      "file_size": 8870,
+      "id": "PE-OPTICAL-HUB",
+      "type": "domain_hub",
+      "title": "📡 C-35 PE-OPTICAL · 광학모듈 투자 분석 라이브러리 v1.1",
+      "status": "active",
+      "version": "v1.1",
+      "date": "2026-05-19",
+      "tags": ["PE-OPTICAL", "C-35", "C35", "optical-module", "investment-analysis"],
+      "notion_url": "https://www.notion.so/36555ed436f081c58819d7f8fedee953",
+      "file_path": "prompts/PE-OPTICAL/pe_optical_01_deep_v2.1.md",
+      "github_sha": "f14713f6",
+      "pe3_score": 95,
       "sha": null
     },
     {
-      "id": "CHANGELOG.md",
-      "type": "doc",
-      "title": "CHANGELOG — 프롬프트 엔지니어링 시스템",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-05-07",
-      "tags": [
-        "root",
-        "meta",
-        "v4.15",
-        "v5.0",
-        "v1.0",
-        "v1.2",
-        "v3.0",
-        "v4.14",
-        "v4.13",
-        "v6.2",
-        "v4.5",
-        "v4.4",
-        "v4.3",
-        "v2.0",
-        "v3.8",
-        "v13.0",
-        "v8.0",
-        "v3.5",
-        "v3.4",
-        "v11.1",
-        "v3.3"
-      ],
+      "id": "OPTICAL-MODULE-DEEP-v2.1",
+      "type": "prompt",
+      "title": "OPTICAL-MODULE-DEEP v2.1 — 광학모듈 심층 투자 분석 프롬프트",
+      "status": "active",
+      "version": "v2.1",
+      "date": "2026-05-19",
+      "tags": ["PE-OPTICAL", "deep-analysis", "v2.1", "I/O-contract"],
+      "notion_url": "https://www.notion.so/36555ed436f081c58819d7f8fedee953",
+      "file_path": "prompts/PE-OPTICAL/pe_optical_01_deep_v2.1.md",
+      "pe3_score": 95,
+      "sha": null
+    },
+    {
+      "id": "OPT-IO-CONTRACT",
+      "type": "component",
+      "title": "I/O Contract v2.0 — PE-OPTICAL 입출력 계약 명세",
+      "status": "active",
+      "version": "v2.0",
+      "date": "2026-05-19",
+      "tags": ["PE-OPTICAL", "io-contract", "interface-spec"],
       "notion_url": null,
-      "file_size": 7746,
+      "file_path": "prompts/PE-OPTICAL/pe_optical_01_deep_v2.1.md",
       "sha": null
     },
     {
-      "id": "docs/C31-AI-research-hub/A-AI-001-ai-history-1950-2011.md",
-      "type": "doc",
-      "title": "🧠 A-AI-001 · AI의 탄생과 초기 발전 (1950~2011) — 심층 보고서",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-05-04",
-      "tags": [
-        "C31-AI-research-hub",
-        "v1.6",
-        "v1.0",
-        "v1.4",
-        "v1.5"
-      ],
+      "id": "OPT-MEMORY-HANDOFF",
+      "type": "component",
+      "title": "Memory Handoff Engine — PE-OPTICAL 세션 간 메모리 핸드오프",
+      "status": "active",
+      "version": "v1.0",
+      "date": "2026-05-19",
+      "tags": ["PE-OPTICAL", "memory-handoff", "session-continuity"],
       "notion_url": null,
-      "file_size": 24642,
+      "file_path": "prompts/PE-OPTICAL/pe_optical_01_deep_v2.1.md",
       "sha": null
     },
     {
-      "id": "docs/C31-AI-research-hub/directory-structure.md",
-      "type": "doc",
-      "title": "AI Deep Research Hub - 디렉토리 구조",
-      "status": "unknown",
-      "version": "",
-      "date": "",
-      "tags": [
-        "C31-AI-research-hub"
-      ],
+      "id": "OPT-FALLBACK-ENGINE",
+      "type": "component",
+      "title": "Fallback 3조건 Engine — PE-OPTICAL 신뢰도 저하 대응 체계",
+      "status": "active",
+      "version": "v1.0",
+      "date": "2026-05-19",
+      "tags": ["PE-OPTICAL", "fallback", "confidence-flag", "reliability"],
       "notion_url": null,
-      "file_size": 1974,
+      "file_path": "prompts/PE-OPTICAL/pe_optical_01_deep_v2.1.md",
       "sha": null
     },
     {
-      "id": "docs/P4_SMR_Pipeline.md",
-      "type": "doc",
-      "title": "PE-7 P4: SMR Power Pipeline — GitHub Actions",
-      "status": "unknown",
-      "version": "v1.2",
-      "date": "2026-04-26",
-      "tags": [
-        "v1.2",
-        "v1.0"
-      ],
+      "id": "OPT-VERSION-AB",
+      "type": "component",
+      "title": "Version A/B — PE-OPTICAL 분석 모드 분기 (투자집중형 / 기술심층형)",
+      "status": "active",
+      "version": "v1.0",
+      "date": "2026-05-19",
+      "tags": ["PE-OPTICAL", "version-ab", "analysis-mode"],
       "notion_url": null,
-      "file_size": 3660,
-      "sha": null
-    },
-    {
-      "id": "docs/P6_ExaFLOPS_TCO.md",
-      "type": "doc",
-      "title": "P6: ExaFLOPS 통합 자원모델 — HBM·Glass·전력·패키징 단일 TCO",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-04-26",
-      "tags": [],
-      "notion_url": null,
-      "file_size": 4724,
-      "sha": null
-    },
-    {
-      "id": "docs/P7_Word_Report_Builder.md",
-      "type": "doc",
-      "title": "P7 — Word 보고서 자동 생성 운영 문서",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-04-26",
-      "tags": [
-        "v1.0",
-        "v1.1"
-      ],
-      "notion_url": null,
-      "file_size": 3179,
-      "sha": null
-    },
-    {
-      "id": "docs/PE-7-NextSteps-SecretsGuide.md",
-      "type": "doc",
-      "title": "PE-7 v2.0 — GitHub Secrets 등록 완전 가이드",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-04-26",
-      "tags": [
-        "v2.0"
-      ],
-      "notion_url": "https://www.notion.so/profile",
-      "file_size": 4104,
-      "sha": null
-    },
-    {
-      "id": "docs/PE-7-RunbookManual.md",
-      "type": "doc",
-      "title": "PE-7 v2.0 — 수동 실행 런북 + 스케줄 컨필보드",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-04-26",
-      "tags": [
-        "v2.0"
-      ],
-      "notion_url": null,
-      "file_size": 5708,
-      "sha": null
-    },
-    {
-      "id": "docs/PE-7-v2.0-MasterIndex.md",
-      "type": "doc",
-      "title": "PE-7 v2.0 — 마스터 인덱스 (SSOT 기준)",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-04-26",
-      "tags": [
-        "v2.0"
-      ],
-      "notion_url": "https://www.notion.so/34955ed436f081149dd6de25dba027d7",
-      "file_size": 3156,
-      "sha": null
-    },
-    {
-      "id": "docs/PE-7-v2.0-Section6-ValidationReport.md",
-      "type": "doc",
-      "title": "PE-7 v2.0 섹션 6 — E-0N 통합검증 + Notion SSOT 업데이트 완료 보고서",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-04-26",
-      "tags": [
-        "v2.0"
-      ],
-      "notion_url": null,
-      "file_size": 4035,
-      "sha": null
-    },
-    {
-      "id": "docs/PE7_v2.9_metadata_manager_spec.md",
-      "type": "doc",
-      "title": "PE-7 v2.9 — metadata_manager.py 명세서",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-05-06",
-      "tags": [
-        "v2.9"
-      ],
-      "notion_url": null,
-      "file_size": 3272,
-      "sha": null
-    },
-    {
-      "id": "docs/REGISTER_VARIANT_GUIDE.md",
-      "type": "doc",
-      "title": "Variant 자동 등록 워크플로우 가이드 v2.1",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-04-28",
-      "tags": [
-        "v2.1"
-      ],
-      "notion_url": null,
-      "file_size": 5896,
-      "sha": null
-    },
-    {
-      "id": "docs/T09-v5.2-ssot-sync.md",
-      "type": "doc",
-      "title": "T-09 Mother Page v5.2 — SSOT 동기화 보고서",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-05-05",
-      "tags": [
-        "v5.2",
-        "v5.1",
-        "v11.0",
-        "v4.11",
-        "v4.10",
-        "v4.12",
-        "v5.3"
-      ],
-      "notion_url": null,
-      "file_size": 1742,
-      "sha": null
-    },
-    {
-      "id": "docs/agent1/README.md",
-      "type": "agent",
-      "title": "🤖 PE-1 자동개선 엔진 (Auto-Refinement Engine)",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-04-09",
-      "tags": [
-        "agent1",
-        "RCA-001",
-        "v3.1",
-        "v3.0"
-      ],
-      "notion_url": null,
-      "file_size": 1465,
-      "sha": null
-    },
-    {
-      "id": "docs/agent2/README.md",
-      "type": "agent",
-      "title": "🤖 PE-2 자동증식 엔진 (Auto-Proliferation Engine)",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-04-09",
-      "tags": [
-        "agent2",
-        "v3.1",
-        "v3.0"
-      ],
-      "notion_url": null,
-      "file_size": 1430,
-      "sha": null
-    },
-    {
-      "id": "docs/agent3/OUTPUT_3-4_evidence_protocol_S3.md",
-      "type": "agent",
-      "title": "§3 Evidence 수집 프로토콜 — OUTPUT 3-4 베이지안 방법론",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-05-02",
-      "tags": [
-        "agent3"
-      ],
-      "notion_url": null,
-      "file_size": 2631,
-      "sha": null
-    },
-    {
-      "id": "docs/agent3/README.md",
-      "type": "agent",
-      "title": "🤖 PE-3 자동검증 엔진 (Auto-Validation Engine)",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-04-09",
-      "tags": [
-        "agent3",
-        "RCA-002",
-        "v3.1",
-        "v3.0"
-      ],
-      "notion_url": null,
-      "file_size": 1780,
-      "sha": null
-    },
-    {
-      "id": "docs/agent4/README.md",
-      "type": "agent",
-      "title": "🤖 PE-4 실적용 케이스 매니저 (Applied Case Manager)",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-04-09",
-      "tags": [
-        "agent4",
-        "v0.2",
-        "v0.1"
-      ],
-      "notion_url": null,
-      "file_size": 1617,
-      "sha": null
-    },
-    {
-      "id": "docs/agent5/README.md",
-      "type": "agent",
-      "title": "🤖 PE-5 마스터 오케스트레이터 (Master Orchestrator)",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-04-09",
-      "tags": [
-        "agent5",
-        "RCA-004",
-        "v0.3",
-        "v0.2",
-        "v0.1"
-      ],
-      "notion_url": null,
-      "file_size": 1869,
-      "sha": null
-    },
-    {
-      "id": "docs/graph_patches/knowledge_graph_v3.1-osat_patch.md",
-      "type": "doc",
-      "title": "knowledge_graph.json — v3.1-osat 패치 노트",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-04-29",
-      "tags": [
-        "graph_patches",
-        "v3.1",
-        "v3.2",
-        "v1.0"
-      ],
-      "notion_url": "https://www.notion.so/35155ed436f0812295f2de6895e27c39",
-      "file_size": 2448,
-      "sha": null
-    },
-    {
-      "id": "docs/graph_patches/knowledge_graph_v4.11-patch.md",
-      "type": "doc",
-      "title": "knowledge_graph.json — v4.11 패치 노트",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-05-05",
-      "tags": [
-        "graph_patches",
-        "v4.11",
-        "v4.10",
-        "v5.2",
-        "v11.0"
-      ],
-      "notion_url": null,
-      "file_size": 1678,
-      "sha": null
-    },
-    {
-      "id": "docs/index.md",
-      "type": "doc",
-      "title": "📖 Master Documentation Index",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-04-09",
-      "tags": [
-        "RCA-001",
-        "RCA-002",
-        "RCA-003",
-        "RCA-004",
-        "RCA-005",
-        "v1.5",
-        "v3.1",
-        "v3.0",
-        "v1.4",
-        "v1.3",
-        "v1.2",
-        "v1.1",
-        "v1.0"
-      ],
-      "notion_url": "https://www.notion.so/33955ed436f081cc9f0bd014d631aa7b",
-      "file_size": 9501,
-      "sha": null
-    },
-    {
-      "id": "docs/integration-setup-guide.md",
-      "type": "doc",
-      "title": "🔧 Integration Setup Guide — 완전 자동화 셋업 절차",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-04-26",
-      "tags": [
-        "v1.0",
-        "v2.0"
-      ],
-      "notion_url": "https://www.notion.so/my-integrations",
-      "file_size": 6957,
-      "sha": null
-    },
-    {
-      "id": "docs/integration_setup_guide.md",
-      "type": "doc",
-      "title": "🔐 완전 자동화 Integration 설정 가이드",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-04-26",
-      "tags": [
-        "v1.0",
-        "v2.7"
-      ],
-      "notion_url": "https://www.notion.so/my-integrations",
-      "file_size": 5027,
-      "sha": null
-    },
-    {
-      "id": "docs/knowledge_graph_v3.7.md",
-      "type": "doc",
-      "title": "knowledge_graph v3.7",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-04-29",
-      "tags": [
-        "v3.7",
-        "v6.4",
-        "v3.4",
-        "v3.5",
-        "v3.6",
-        "v13.0"
-      ],
-      "notion_url": null,
-      "file_size": 2461,
-      "sha": null
-    },
-    {
-      "id": "docs/new/README.md",
-      "type": "doc",
-      "title": "🆕 신규 기능 파이프라인 (New Feature Pipeline)",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-04-09",
-      "tags": [
-        "new",
-        "v3.1"
-      ],
-      "notion_url": null,
-      "file_size": 1425,
-      "sha": null
-    },
-    {
-      "id": "docs/pe_dd_tda_mece_boundary.md",
-      "type": "doc",
-      "title": "PE-DD vs PE-TDA MECE 경계 정의",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-05-09",
-      "tags": [
-        "v2.0"
-      ],
-      "notion_url": null,
-      "file_size": 4517,
-      "sha": null
-    },
-    {
-      "id": "docs/rca-capa/AUTO_SYNC_LOG.md",
-      "type": "rca",
-      "title": "🔄 Auto-Sync Log — Notion × GitHub 자동 연동 이력",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-04-15",
-      "tags": [
-        "rca-capa",
-        "RCA-001",
-        "RCA-002",
-        "RCA-003",
-        "RCA-004",
-        "v1.2",
-        "v2.0",
-        "v1.1",
-        "v1.0"
-      ],
-      "notion_url": "https://www.notion.so/33d55ed436f081bfa2aeccc26f344de5",
-      "file_size": 5096,
-      "sha": null
-    },
-    {
-      "id": "docs/rca-capa/AUTO_VALIDATE_RUN.md",
-      "type": "rca",
-      "title": "AUTO_VALIDATE_RUN.md",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-04-18",
-      "tags": [
-        "rca-capa",
-        "RCA-001",
-        "RCA-002",
-        "RCA-003",
-        "RCA-004",
-        "v1.3"
-      ],
-      "notion_url": "https://www.notion.so/33d55ed436f081bfa2aeccc26f344de5",
-      "file_size": 2137,
-      "sha": null
-    },
-    {
-      "id": "docs/rca-capa/RCA-001.md",
-      "type": "rca",
-      "title": "📋 RCA-001 — 프롬프트 구조 복잡도",
-      "status": "resolved",
-      "version": "",
-      "date": "2026-04-06",
-      "tags": [
-        "rca-capa",
-        "RCA-001",
-        "RCA-002",
-        "v3.0"
-      ],
-      "notion_url": "https://www.notion.so/33d55ed436f081c593ede0347d2b581a",
-      "file_size": 1636,
-      "sha": null
-    },
-    {
-      "id": "docs/rca-capa/RCA-002.md",
-      "type": "rca",
-      "title": "📋 RCA-002 — 검증 기준 모호성",
-      "status": "resolved",
-      "version": "",
-      "date": "2026-04-06",
-      "tags": [
-        "rca-capa",
-        "RCA-002",
-        "RCA-001",
-        "RCA-003",
-        "v3.1"
-      ],
-      "notion_url": "https://www.notion.so/33d55ed436f081d0a7a1d4a2a8de4a8f",
-      "file_size": 1498,
-      "sha": null
-    },
-    {
-      "id": "docs/rca-capa/RCA-003.md",
-      "type": "rca",
-      "title": "📋 RCA-003 — 필수 고려사항 누락",
-      "status": "resolved",
-      "version": "",
-      "date": "2026-04-06",
-      "tags": [
-        "rca-capa",
-        "RCA-003",
-        "RCA-002",
-        "RCA-004",
-        "v3.1"
-      ],
-      "notion_url": "https://www.notion.so/33d55ed436f0817e83e0f3bc0f168316",
-      "file_size": 1742,
-      "sha": null
-    },
-    {
-      "id": "docs/rca-capa/RCA-004.md",
-      "type": "rca",
-      "title": "📋 RCA-004 — 중복 출력 과다",
-      "status": "resolved",
-      "version": "",
-      "date": "2026-04-06",
-      "tags": [
-        "rca-capa",
-        "RCA-004",
-        "RCA-003",
-        "v3.1"
-      ],
-      "notion_url": "https://www.notion.so/33d55ed436f08195bd49cdd19f062644",
-      "file_size": 1516,
-      "sha": null
-    },
-    {
-      "id": "docs/rca-capa/README.md",
-      "type": "rca",
-      "title": "🔧 RCA/CAPA 허브",
-      "status": "resolved",
-      "version": "",
-      "date": "2026-04-09",
-      "tags": [
-        "rca-capa",
-        "RCA-001",
-        "RCA-002",
-        "RCA-003",
-        "RCA-004",
-        "v2.1",
-        "v3.0",
-        "v3.1",
-        "v2.0",
-        "v1.0"
-      ],
-      "notion_url": "https://www.notion.so/33d55ed436f081bfa2aeccc26f344de5",
-      "file_size": 6445,
-      "sha": null
-    },
-    {
-      "id": "docs/rca-capa/SYNC_ARCHITECTURE.md",
-      "type": "rca",
-      "title": "⚙️ Auto-Sync Architecture — Notion × GitHub 연동 설계",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-04-15",
-      "tags": [
-        "rca-capa",
-        "RCA-001",
-        "RCA-002",
-        "RCA-003",
-        "RCA-004",
-        "v1.0",
-        "v1.1",
-        "v2.0"
-      ],
-      "notion_url": null,
-      "file_size": 4254,
-      "sha": null
-    },
-    {
-      "id": "docs/report/2026-04-10_3engine-upgrade-report-v1.6.md",
-      "type": "report",
-      "title": "프롬프트 엔진니어링 시스템 — 3-Engine 업그레이드 통합 실행 보고서",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-04-10",
-      "tags": [
-        "report",
-        "v1.6",
-        "v1.0",
-        "v1.1",
-        "v1.5",
-        "v1.7"
-      ],
-      "notion_url": "https://www.notion.so/33955ed436f081cc9f0bd014d631aa7b",
-      "file_size": 7740,
-      "sha": null
-    },
-    {
-      "id": "docs/sim-results/CMD-FS-02-summary.md",
-      "type": "doc",
-      "title": "CMD-FS-02 · SEMI-OPT-GNN 가상 수치 완전 계산",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-04-30",
-      "tags": [
-        "sim-results",
-        "v4.3"
-      ],
-      "notion_url": null,
-      "file_size": 2255,
-      "sha": null
-    },
-    {
-      "id": "docs/support/README.md",
-      "type": "support",
-      "title": "🛠️ Support Modules — 공통 템플릿 & 루브릭",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-04-09",
-      "tags": [
-        "support"
-      ],
-      "notion_url": null,
-      "file_size": 1271,
-      "sha": null
-    },
-    {
-      "id": "engines/PE-1_auto-refinement/README.md",
-      "type": "engine",
-      "title": "🔁 PE-1: 자동개선 엔진 (Auto-Refinement Engine)",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-04-05",
-      "tags": [
-        "PE-1_auto-refinement",
-        "v1.1"
-      ],
-      "notion_url": "https://www.notion.so/33955ed436f081cc9f0bd014d631aa7b",
-      "file_size": 1747,
-      "sha": null
-    },
-    {
-      "id": "engines/PE-1_auto-refinement/prompt_template.md",
-      "type": "engine",
-      "title": "PE-1 자동개선 프롬프트 템플릿",
-      "status": "unknown",
-      "version": "",
-      "date": "",
-      "tags": [
-        "PE-1_auto-refinement",
-        "v1.1"
-      ],
-      "notion_url": null,
-      "file_size": 1403,
-      "sha": null
-    },
-    {
-      "id": "engines/PE-1_auto-refinement/upgrade_v1.4.md",
-      "type": "engine",
-      "title": "PE-1 자동개선 엔진 — v1.4 업그레이드",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-04-10",
-      "tags": [
-        "PE-1_auto-refinement",
-        "v1.4",
-        "v1.3"
-      ],
-      "notion_url": null,
-      "file_size": 2031,
-      "sha": null
-    },
-    {
-      "id": "engines/PE-2_auto-proliferation/README.md",
-      "type": "engine",
-      "title": "🌱 PE-2: 자동증식 엔진 (Auto-Proliferation Engine)",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-04-05",
-      "tags": [
-        "PE-2_auto-proliferation",
-        "v1.1"
-      ],
-      "notion_url": "https://www.notion.so/33955ed436f081cc9f0bd014d631aa7b",
-      "file_size": 1468,
-      "sha": null
-    },
-    {
-      "id": "engines/PE-2_auto-proliferation/prompt_template.md",
-      "type": "engine",
-      "title": "PE-2 자동증식 프롬프트 템플릿",
-      "status": "unknown",
-      "version": "",
-      "date": "",
-      "tags": [
-        "PE-2_auto-proliferation",
-        "v1.1"
-      ],
-      "notion_url": null,
-      "file_size": 1314,
-      "sha": null
-    },
-    {
-      "id": "engines/PE-2_auto-proliferation/upgrade_v1.4.md",
-      "type": "engine",
-      "title": "PE-2 자동증식 엔진 — v1.4 업그레이드",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-04-10",
-      "tags": [
-        "PE-2_auto-proliferation",
-        "v1.4",
-        "v1.3"
-      ],
-      "notion_url": null,
-      "file_size": 2583,
-      "sha": null
-    },
-    {
-      "id": "engines/PE-3_auto-validation/README.md",
-      "type": "engine",
-      "title": "✅ PE-3: 자동검증 엔진 (Auto-Validation Engine)",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-04-05",
-      "tags": [
-        "PE-3_auto-validation",
-        "v1.1"
-      ],
-      "notion_url": "https://www.notion.so/33955ed436f081cc9f0bd014d631aa7b",
-      "file_size": 1414,
-      "sha": null
-    },
-    {
-      "id": "engines/PE-3_auto-validation/prompt_template.md",
-      "type": "engine",
-      "title": "PE-3 자동검증 프롬프트 템플릿",
-      "status": "unknown",
-      "version": "",
-      "date": "",
-      "tags": [
-        "PE-3_auto-validation",
-        "v1.1"
-      ],
-      "notion_url": null,
-      "file_size": 1161,
-      "sha": null
-    },
-    {
-      "id": "engines/PE-3_auto-validation/scoring_rubric.md",
-      "type": "engine",
-      "title": "PE-3 5차원 채점 기준표 (Scoring Rubric)",
-      "status": "unknown",
-      "version": "",
-      "date": "",
-      "tags": [
-        "PE-3_auto-validation"
-      ],
-      "notion_url": null,
-      "file_size": 1874,
-      "sha": null
-    },
-    {
-      "id": "engines/PE-3_auto-validation/upgrade_v1.4.md",
-      "type": "engine",
-      "title": "PE-3 자동검증 엔진 — v1.4 업그레이드",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-04-10",
-      "tags": [
-        "PE-3_auto-validation",
-        "v1.4",
-        "v1.3"
-      ],
-      "notion_url": null,
-      "file_size": 2843,
-      "sha": null
-    },
-    {
-      "id": "engines/PE-7_ai-automation-design/CHANGELOG.md",
-      "type": "engine",
-      "title": "PE-7 Auto-Automation Design — CHANGELOG",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-05-08",
-      "tags": [
-        "PE-7_ai-automation-design",
-        "v1.4",
-        "v1.0"
-      ],
-      "notion_url": null,
-      "file_size": 2547,
-      "sha": null
-    },
-    {
-      "id": "engines/PE-7_ai-automation-design/README.md",
-      "type": "engine",
-      "title": "🤖 PE-7 · AI 자동화 설계 및 구현 — 심층 프롬프트 완전판 v1.0",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-04-21",
-      "tags": [
-        "PE-7_ai-automation-design",
-        "v1.0"
-      ],
-      "notion_url": "https://www.notion.so/34955ed436f081149dd6de25dba027d7",
-      "file_size": 2401,
-      "sha": null
-    },
-    {
-      "id": "engines/PE-7_ai-automation-design/prompt_template.md",
-      "type": "engine",
-      "title": "🤖 PE-7 · AI 자동화 설계 및 구현용 심층 프롬프트 — 완전판 v1.0",
-      "status": "unknown",
-      "version": "",
-      "date": "2026-04-21",
-      "tags": [
-        "PE-7_ai-automation-design",
-        "v1.0"
-      ],
-      "notion_url": "https://www.notion.so/34955ed436f081149dd6de25dba027d7",
-      "file_size": 3237,
+      "file_path": "prompts/PE-OPTICAL/pe_optical_01_deep_v2.1.md",
       "sha": null
     }
   ],
   "edges": [
-    {
-      "source": "docs/agent1/README.md",
-      "target": "docs/index.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/agent1/README.md",
-      "target": "docs/agent3/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/agent1/README.md",
-      "target": "docs/agent5/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/agent1/README.md",
-      "target": "docs/rca-capa/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/agent2/README.md",
-      "target": "docs/index.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/agent2/README.md",
-      "target": "docs/agent1/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/agent2/README.md",
-      "target": "docs/agent3/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/agent2/README.md",
-      "target": "docs/rca-capa/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/agent3/README.md",
-      "target": "docs/index.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/agent3/README.md",
-      "target": "docs/agent1/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/agent3/README.md",
-      "target": "docs/rca-capa/RCA-002.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/agent4/README.md",
-      "target": "applied-cases/2026-04-05_upgrade-execution.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/agent4/README.md",
-      "target": "docs/index.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/agent4/README.md",
-      "target": "docs/agent3/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/agent4/README.md",
-      "target": "docs/agent5/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/agent5/README.md",
-      "target": "docs/index.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/agent5/README.md",
-      "target": "docs/rca-capa/RCA-004.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/agent5/README.md",
-      "target": "workflows/3engine_pipeline.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/index.md",
-      "target": "README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/index.md",
-      "target": "CHANGELOG.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/index.md",
-      "target": "docs/new/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/index.md",
-      "target": "docs/support/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/index.md",
-      "target": "dashboard/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/index.md",
-      "target": "docs/agent1/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/index.md",
-      "target": "docs/agent2/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/index.md",
-      "target": "docs/agent3/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/index.md",
-      "target": "docs/agent4/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/index.md",
-      "target": "docs/agent5/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/index.md",
-      "target": "docs/rca-capa/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/index.md",
-      "target": "docs/rca-capa/RCA-001.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/index.md",
-      "target": "docs/rca-capa/RCA-002.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/index.md",
-      "target": "docs/rca-capa/RCA-003.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/index.md",
-      "target": "docs/rca-capa/RCA-004.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/index.md",
-      "target": "dashboard/metrics.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/new/README.md",
-      "target": "docs/index.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/new/README.md",
-      "target": "CHANGELOG.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/new/README.md",
-      "target": "dashboard/metrics.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/new/README.md",
-      "target": "docs/rca-capa/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/rca-capa/RCA-001.md",
-      "target": "docs/rca-capa/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/rca-capa/RCA-001.md",
-      "target": "docs/rca-capa/RCA-002.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/rca-capa/RCA-002.md",
-      "target": "docs/rca-capa/RCA-001.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/rca-capa/RCA-002.md",
-      "target": "docs/rca-capa/RCA-003.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/rca-capa/RCA-003.md",
-      "target": "docs/rca-capa/RCA-002.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/rca-capa/RCA-003.md",
-      "target": "docs/rca-capa/RCA-004.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/rca-capa/RCA-004.md",
-      "target": "docs/rca-capa/RCA-003.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/rca-capa/RCA-004.md",
-      "target": "docs/rca-capa/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/rca-capa/README.md",
-      "target": "docs/index.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/rca-capa/README.md",
-      "target": "docs/rca-capa/RCA-001.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/rca-capa/README.md",
-      "target": "docs/rca-capa/RCA-002.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/rca-capa/README.md",
-      "target": "docs/rca-capa/RCA-003.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/rca-capa/README.md",
-      "target": "docs/rca-capa/RCA-004.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/rca-capa/README.md",
-      "target": "CHANGELOG.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/support/README.md",
-      "target": "docs/index.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "docs/support/README.md",
-      "target": "docs/agent3/README.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "engines/PE-1_auto-refinement/upgrade_v1.4.md",
-      "target": "engines/PE-2_auto-proliferation/upgrade_v1.4.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "engines/PE-1_auto-refinement/upgrade_v1.4.md",
-      "target": "engines/PE-3_auto-validation/upgrade_v1.4.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "engines/PE-2_auto-proliferation/upgrade_v1.4.md",
-      "target": "engines/PE-1_auto-refinement/upgrade_v1.4.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "engines/PE-2_auto-proliferation/upgrade_v1.4.md",
-      "target": "engines/PE-3_auto-validation/upgrade_v1.4.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "engines/PE-3_auto-validation/upgrade_v1.4.md",
-      "target": "engines/PE-1_auto-refinement/upgrade_v1.4.md",
-      "relation": "links_to"
-    },
-    {
-      "source": "engines/PE-3_auto-validation/upgrade_v1.4.md",
-      "target": "engines/PE-2_auto-proliferation/upgrade_v1.4.md",
-      "relation": "links_to"
-    }
+    {"source": "docs/agent1/README.md", "target": "docs/index.md", "relation": "links_to"},
+    {"source": "docs/agent1/README.md", "target": "docs/agent3/README.md", "relation": "links_to"},
+    {"source": "docs/agent1/README.md", "target": "docs/agent5/README.md", "relation": "links_to"},
+    {"source": "docs/agent1/README.md", "target": "docs/rca-capa/README.md", "relation": "links_to"},
+    {"source": "docs/agent2/README.md", "target": "docs/index.md", "relation": "links_to"},
+    {"source": "docs/agent2/README.md", "target": "docs/agent1/README.md", "relation": "links_to"},
+    {"source": "docs/agent2/README.md", "target": "docs/agent3/README.md", "relation": "links_to"},
+    {"source": "docs/agent2/README.md", "target": "docs/rca-capa/README.md", "relation": "links_to"},
+    {"source": "docs/agent3/README.md", "target": "docs/index.md", "relation": "links_to"},
+    {"source": "docs/agent3/README.md", "target": "docs/agent1/README.md", "relation": "links_to"},
+    {"source": "docs/agent3/README.md", "target": "docs/rca-capa/RCA-002.md", "relation": "links_to"},
+    {"source": "docs/agent4/README.md", "target": "applied-cases/2026-04-05_upgrade-execution.md", "relation": "links_to"},
+    {"source": "docs/agent4/README.md", "target": "docs/index.md", "relation": "links_to"},
+    {"source": "docs/agent4/README.md", "target": "docs/agent3/README.md", "relation": "links_to"},
+    {"source": "docs/agent4/README.md", "target": "docs/agent5/README.md", "relation": "links_to"},
+    {"source": "docs/agent5/README.md", "target": "docs/index.md", "relation": "links_to"},
+    {"source": "docs/agent5/README.md", "target": "docs/rca-capa/RCA-004.md", "relation": "links_to"},
+    {"source": "docs/agent5/README.md", "target": "workflows/3engine_pipeline.md", "relation": "links_to"},
+    {"source": "docs/index.md", "target": "README.md", "relation": "links_to"},
+    {"source": "docs/index.md", "target": "CHANGELOG.md", "relation": "links_to"},
+    {"source": "docs/index.md", "target": "docs/new/README.md", "relation": "links_to"},
+    {"source": "docs/index.md", "target": "docs/support/README.md", "relation": "links_to"},
+    {"source": "docs/index.md", "target": "dashboard/README.md", "relation": "links_to"},
+    {"source": "docs/index.md", "target": "docs/agent1/README.md", "relation": "links_to"},
+    {"source": "docs/index.md", "target": "docs/agent2/README.md", "relation": "links_to"},
+    {"source": "docs/index.md", "target": "docs/agent3/README.md", "relation": "links_to"},
+    {"source": "docs/index.md", "target": "docs/agent4/README.md", "relation": "links_to"},
+    {"source": "docs/index.md", "target": "docs/agent5/README.md", "relation": "links_to"},
+    {"source": "docs/index.md", "target": "docs/rca-capa/README.md", "relation": "links_to"},
+    {"source": "docs/index.md", "target": "docs/rca-capa/RCA-001.md", "relation": "links_to"},
+    {"source": "docs/index.md", "target": "docs/rca-capa/RCA-002.md", "relation": "links_to"},
+    {"source": "docs/index.md", "target": "docs/rca-capa/RCA-003.md", "relation": "links_to"},
+    {"source": "docs/index.md", "target": "docs/rca-capa/RCA-004.md", "relation": "links_to"},
+    {"source": "docs/index.md", "target": "dashboard/metrics.md", "relation": "links_to"},
+    {"source": "docs/new/README.md", "target": "docs/index.md", "relation": "links_to"},
+    {"source": "docs/new/README.md", "target": "CHANGELOG.md", "relation": "links_to"},
+    {"source": "docs/new/README.md", "target": "dashboard/metrics.md", "relation": "links_to"},
+    {"source": "docs/new/README.md", "target": "docs/rca-capa/README.md", "relation": "links_to"},
+    {"source": "docs/rca-capa/RCA-001.md", "target": "docs/rca-capa/README.md", "relation": "links_to"},
+    {"source": "docs/rca-capa/RCA-001.md", "target": "docs/rca-capa/RCA-002.md", "relation": "links_to"},
+    {"source": "docs/rca-capa/RCA-002.md", "target": "docs/rca-capa/RCA-001.md", "relation": "links_to"},
+    {"source": "docs/rca-capa/RCA-002.md", "target": "docs/rca-capa/RCA-003.md", "relation": "links_to"},
+    {"source": "docs/rca-capa/RCA-003.md", "target": "docs/rca-capa/RCA-002.md", "relation": "links_to"},
+    {"source": "docs/rca-capa/RCA-003.md", "target": "docs/rca-capa/RCA-004.md", "relation": "links_to"},
+    {"source": "docs/rca-capa/RCA-004.md", "target": "docs/rca-capa/RCA-003.md", "relation": "links_to"},
+    {"source": "docs/rca-capa/RCA-004.md", "target": "docs/rca-capa/README.md", "relation": "links_to"},
+    {"source": "docs/rca-capa/README.md", "target": "docs/index.md", "relation": "links_to"},
+    {"source": "docs/rca-capa/README.md", "target": "docs/rca-capa/RCA-001.md", "relation": "links_to"},
+    {"source": "docs/rca-capa/README.md", "target": "docs/rca-capa/RCA-002.md", "relation": "links_to"},
+    {"source": "docs/rca-capa/README.md", "target": "docs/rca-capa/RCA-003.md", "relation": "links_to"},
+    {"source": "docs/rca-capa/README.md", "target": "docs/rca-capa/RCA-004.md", "relation": "links_to"},
+    {"source": "docs/rca-capa/README.md", "target": "CHANGELOG.md", "relation": "links_to"},
+    {"source": "docs/support/README.md", "target": "docs/index.md", "relation": "links_to"},
+    {"source": "docs/support/README.md", "target": "docs/agent3/README.md", "relation": "links_to"},
+    {"source": "engines/PE-1_auto-refinement/upgrade_v1.4.md", "target": "engines/PE-2_auto-proliferation/upgrade_v1.4.md", "relation": "links_to"},
+    {"source": "engines/PE-1_auto-refinement/upgrade_v1.4.md", "target": "engines/PE-3_auto-validation/upgrade_v1.4.md", "relation": "links_to"},
+    {"source": "engines/PE-2_auto-proliferation/upgrade_v1.4.md", "target": "engines/PE-1_auto-refinement/upgrade_v1.4.md", "relation": "links_to"},
+    {"source": "engines/PE-2_auto-proliferation/upgrade_v1.4.md", "target": "engines/PE-3_auto-validation/upgrade_v1.4.md", "relation": "links_to"},
+    {"source": "engines/PE-3_auto-validation/upgrade_v1.4.md", "target": "engines/PE-1_auto-refinement/upgrade_v1.4.md", "relation": "links_to"},
+    {"source": "engines/PE-3_auto-validation/upgrade_v1.4.md", "target": "engines/PE-2_auto-proliferation/upgrade_v1.4.md", "relation": "links_to"},
+    {"source": "PE-OPTICAL-HUB", "target": "PE-SEMI-HUB", "relation": "cross_domain_link"},
+    {"source": "PE-OPTICAL-HUB", "target": "PE-AI-HUB", "relation": "cross_domain_link"},
+    {"source": "PE-OPTICAL-HUB", "target": "PE-STRAT-HUB", "relation": "cross_domain_link"},
+    {"source": "PE-OPTICAL-HUB", "target": "PE-FIN-HUB", "relation": "cross_domain_link"},
+    {"source": "PE-OPTICAL-HUB", "target": "PE-RISK-HUB", "relation": "cross_domain_link"},
+    {"source": "PE-OPTICAL-HUB", "target": "PE-PAT-HUB", "relation": "cross_domain_link"},
+    {"source": "PE-OPTICAL-HUB", "target": "T-09-MOTHER", "relation": "child_of"},
+    {"source": "PE-OPTICAL-HUB", "target": "PE-STRAT-ORCH", "relation": "orchestration_input"}
   ]
 }
