@@ -1,23 +1,26 @@
-# ═══════════════════════════════════════════════════════════════
-# AI Intel Weekly Pipeline — Python Dependencies
-# ai_intel_collector.py | ai_ew_detector.py
-# kg_delta_generator.py | notion_c31_updater.py
-# ═══════════════════════════════════════════════════════════════
+# automation/requirements.txt
+# AI Intel Weekly Pipeline 전용 의존성
+# ai_intel_collector.py, ai_ew_detector.py, kg_delta_generator.py, notion_c31_updater.py
 
-# HTTP 클라이언트 (Perplexity API, Notion API)
+# ── HTTP / API ──────────────────────────────────────────────
 requests>=2.31.0
+urllib3>=2.0.0
 
-# 환경변수 관리 (로컬 .env 파일 지원)
-python-dotenv>=1.0.0
+# ── Data Processing ─────────────────────────────────────────
+pandas>=2.1.0
+numpy>=1.26.0
 
-# JSON 처리 강화 (표준 json 모듈 보완)
+# ── Notion API (notion_c31_updater.py) ──────────────────────
+notion-client>=2.2.1
+
+# ── JSON / Validation ───────────────────────────────────────
 jsonschema>=4.21.0
 
-# 날짜/시간 처리
+# ── Date / Time ─────────────────────────────────────────────
 python-dateutil>=2.8.2
 
-# 재시도 로직 (Rate limit 429 대응)
-urllib3>=2.1.0
+# ── Retry / Backoff ─────────────────────────────────────────
+tenacity>=8.2.3
 
-# 로깅 포맷터 (구조화 로그)
-colorama>=0.4.6
+# ── Logging / Utils ─────────────────────────────────────────
+rich>=13.7.0

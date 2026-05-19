@@ -1,35 +1,52 @@
-# ============================================================
-# requirements.txt — prompt-engineering-system
-# All GitHub Actions workflows use: pip install -r requirements.txt
-# Last updated: 2026-05-19
-# ============================================================
+# requirements.txt (root)
+# 전체 프로젝트 통합 의존성
+# GitHub Actions의 모든 workflow에서 pip install -r requirements.txt 로 참조
 
-# === HTTP / API ===
+# ── HTTP / Web Scraping ─────────────────────────────────────
 requests>=2.31.0
-httpx>=0.27.0
-aiohttp>=3.9.0
+urllib3>=2.0.0
+beautifulsoup4>=4.12.0
+lxml>=4.9.0
+feedparser>=6.0.10
 
-# === Notion ===
-notion-client>=2.2.2
+# ── Data Processing ─────────────────────────────────────────
+pandas>=2.1.0
+numpy>=1.26.0
+scipy>=1.11.0
 
-# === Data Processing ===
-pydantic>=2.6.0
-python-dotenv>=1.0.1
-python-dateutil>=2.9.0
+# ── Google APIs (Sheets, Drive) ──────────────────────────────
+gspread>=5.12.0
+google-auth>=2.23.0
+google-auth-oauthlib>=1.1.0
+google-auth-httplib2>=0.1.1
+google-api-python-client>=2.100.0
 
-# === JSON / YAML ===
-PyYAML>=6.0.1
+# ── Notion API ──────────────────────────────────────────────
+notion-client>=2.2.1
+
+# ── NLP / Sentiment ─────────────────────────────────────────
+nltk>=3.8.1
+
+# ── JSON / Validation ───────────────────────────────────────
 jsonschema>=4.21.0
+pyyaml>=6.0.1
 
-# === Utilities ===
+# ── Date / Time ─────────────────────────────────────────────
+python-dateutil>=2.8.2
+
+# ── Retry / Backoff ─────────────────────────────────────────
 tenacity>=8.2.3
+
+# ── Logging / Utils ─────────────────────────────────────────
 rich>=13.7.0
-click>=8.1.7
-tqdm>=4.66.2
+tqdm>=4.66.0
 
-# === Validation / Quality ===
-pytest>=8.1.0
-pytest-asyncio>=0.23.0
+# ── Crypto / Hash ───────────────────────────────────────────
+hashlib2>=1.0.0; python_version < '3.9'
 
-# === Type hints ===
-typing-extensions>=4.10.0
+# ── Reddit API (B-3 sentiment, optional) ────────────────────
+# praw>=7.7.0  # Reddit API 사용 시 주석 해제
+
+# ── ML / Transformers (B-3 FinBERT, optional) ───────────────
+# transformers>=4.35.0  # FinBERT 사용 시 주석 해제
+# torch>=2.1.0          # CPU-only: --index-url https://download.pytorch.org/whl/cpu
