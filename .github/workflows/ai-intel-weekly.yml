@@ -2,6 +2,10 @@
 # AI Intel Weekly · Section A — 전체 파이프라인
 # 매주 월요일 09:00 KST (00:00 UTC) 자동 실행
 # workflow_dispatch로 수동 실행 가능
+#
+# [SSOT] .github/prompts/execution_protocol_v2.6.md
+#   → 모든 Job의 EXECUTION_PROTOCOL 환경변수로 자동 주입
+#   → Python 스크립트는 os.environ.get("EXECUTION_PROTOCOL") 으로 참조
 # ─────────────────────────────────────────────────────────────────────────────
 name: "PE · AI Intel Weekly Digest"
 
@@ -11,31 +15,92 @@ on:
   workflow_dispatch:
     inputs:
       intel_scope:
-        description: "수집 깊이 (standard / deep / emergency)"
+        description: "수집 깊이 (standard=Sonar / deep=Sonar-Pro / emergency=즉시 EW 발동)"
         required: false
         default: "standard"
         type: choice
         options: ["standard", "deep", "emergency"]
       force_ew_check:
-        description: "EW 강제 재검사 여부"
+        description: "EW 강제 재검사 여부 (true=임계값 무시하고 EW 발동)"
         required: false
         default: "false"
         type: boolean
       kg_version_override:
-        description: "KG 버전 직접 지정 (비워두면 자동 증가)"
+        description: "KG 버전 직접 지정 (비워두면 KG_BASE_VERSION에서 자동 +0.01 증가)"
         required: false
         default: ""
         type: string
+      protocol_debug:
+        description: "실행 프로토콜 디버그 출력 여부 (true=프로토콜 내용 로그 출력)"
+        required: false
+        default: "false"
+        type: boolean
 
 env:
-  PYTHON_VERSION: "3.11"  # FIX: 버전 고정
+  PYTHON_VERSION: "3.11"
   OUTPUT_DIR: "output/ai_intel"
   KG_BASE_VERSION: "4.25"
+  PROTOCOL_PATH: ".github/prompts/execution_protocol_v2.6.md"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# [재사용 컴포짓] 프로토콜 로드 스텝 — 각 Job에서 공통 사용
+# cat으로 파일을 읽어 EXECUTION_PROTOCOL 환경변수에 멀티라인 주입
+# GitHub Actions 멀티라인 env 표준: EOF delimiter 방식
+# ─────────────────────────────────────────────────────────────────────────────
 
 jobs:
+  # ─── Job 0: 프로토콜 검증 (파이프라인 시작 전 SSOT 무결성 확인) ──────────────
+  protocol-check:
+    name: "0. 실행 프로토콜 SSOT 검증"
+    runs-on: ubuntu-latest
+
+    outputs:
+      protocol_hash: ${{ steps.hash.outputs.hash }}
+      protocol_version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: 프로토콜 파일 존재 확인
+        run: |
+          if [ ! -f "${{ env.PROTOCOL_PATH }}" ]; then
+            echo "::error::SSOT 파일 없음: ${{ env.PROTOCOL_PATH }}"
+            echo "::error::.github/prompts/execution_protocol_v2.6.md 가 누락되었습니다."
+            exit 1
+          fi
+          echo "✅ 프로토콜 파일 확인: ${{ env.PROTOCOL_PATH }}"
+          echo "   크기: $(wc -c < ${{ env.PROTOCOL_PATH }}) bytes"
+          echo "   라인수: $(wc -l < ${{ env.PROTOCOL_PATH }}) lines"
+
+      - name: 프로토콜 해시 계산 (무결성 추적)
+        id: hash
+        run: |
+          HASH=$(sha256sum ${{ env.PROTOCOL_PATH }} | cut -d' ' -f1 | head -c 12)
+          echo "hash=$HASH" >> $GITHUB_OUTPUT
+          echo "📎 프로토콜 SHA256 (앞 12자): $HASH"
+
+      - name: 프로토콜 버전 추출
+        id: version
+        run: |
+          # 파일 첫 줄 또는 version: 필드에서 버전 추출
+          VERSION=$(grep -m1 'version\|Version\|v[0-9]' ${{ env.PROTOCOL_PATH }} | head -1 | tr -d ' #' || echo "v2.6")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "📋 프로토콜 버전: $VERSION"
+
+      - name: 프로토콜 디버그 출력 (선택)
+        if: github.event.inputs.protocol_debug == 'true'
+        run: |
+          echo "════════════════════════════════════════"
+          echo "  EXECUTION PROTOCOL CONTENT (DEBUG)"
+          echo "════════════════════════════════════════"
+          cat ${{ env.PROTOCOL_PATH }}
+          echo "════════════════════════════════════════"
+
   # ─── Job 1: 인텔 수집 ────────────────────────────────────────────────────────
   collect-intel:
     name: "1. 도메인별 인텔 수집"
+    needs: protocol-check
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -64,6 +129,14 @@ jobs:
       - name: 출력 디렉토리 생성
         run: mkdir -p ${{ env.OUTPUT_DIR }}
 
+      # ── SSOT 주입: execution_protocol_v2.6.md → EXECUTION_PROTOCOL 환경변수 ──
+      - name: 실행 프로토콜 주입 (SSOT)
+        run: |
+          echo "EXECUTION_PROTOCOL<<__PROTOCOL_EOF__" >> $GITHUB_ENV
+          cat ${{ env.PROTOCOL_PATH }} >> $GITHUB_ENV
+          echo "__PROTOCOL_EOF__" >> $GITHUB_ENV
+          echo "✅ EXECUTION_PROTOCOL 주입 완료 (protocol_hash: ${{ needs.protocol-check.outputs.protocol_hash }})"
+
       - name: 주차 및 버전 계산
         id: meta
         run: |
@@ -77,6 +150,8 @@ jobs:
       - name: 인텔 수집 — ${{ matrix.domain }}
         env:
           PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
+          PROTOCOL_HASH: ${{ needs.protocol-check.outputs.protocol_hash }}
+          PROTOCOL_VERSION: ${{ needs.protocol-check.outputs.protocol_version }}
         run: |
           DOMAIN="${{ matrix.domain }}"
           WEEK="${{ steps.meta.outputs.week }}"
@@ -110,7 +185,7 @@ jobs:
   # ─── Job 2: EW 탐지 ──────────────────────────────────────────────────────────
   ew-detection:
     name: "2. Early Warning 탐지"
-    needs: collect-intel
+    needs: [protocol-check, collect-intel]
     runs-on: ubuntu-latest
 
     outputs:
@@ -138,6 +213,14 @@ jobs:
           path: ${{ env.OUTPUT_DIR }}
           merge-multiple: true
 
+      # ── SSOT 주입 ──────────────────────────────────────────────────────────────
+      - name: 실행 프로토콜 주입 (SSOT)
+        run: |
+          echo "EXECUTION_PROTOCOL<<__PROTOCOL_EOF__" >> $GITHUB_ENV
+          cat ${{ env.PROTOCOL_PATH }} >> $GITHUB_ENV
+          echo "__PROTOCOL_EOF__" >> $GITHUB_ENV
+          echo "✅ EXECUTION_PROTOCOL 주입 완료 (protocol_hash: ${{ needs.protocol-check.outputs.protocol_hash }})"
+
       - name: 주차 계산
         id: meta
         run: |
@@ -147,6 +230,9 @@ jobs:
 
       - name: EW 탐지 실행
         id: ew
+        env:
+          PROTOCOL_HASH: ${{ needs.protocol-check.outputs.protocol_hash }}
+          FORCE_EW: ${{ github.event.inputs.force_ew_check || 'false' }}
         run: |
           python automation/ai_ew_detector.py \
             --input-dir "${{ env.OUTPUT_DIR }}" \
@@ -178,7 +264,7 @@ jobs:
   # ─── Job 3: KG 델타 생성 ─────────────────────────────────────────────────────
   kg-delta:
     name: "3. Knowledge Graph 델타 생성"
-    needs: ew-detection
+    needs: [protocol-check, ew-detection]
     runs-on: ubuntu-latest
 
     outputs:
@@ -203,14 +289,23 @@ jobs:
           path: ${{ env.OUTPUT_DIR }}
           merge-multiple: true
 
-      - name: KG 버전 계산
+      # ── SSOT 주입 ──────────────────────────────────────────────────────────────
+      - name: 실행 프로토콜 주입 (SSOT)
+        run: |
+          echo "EXECUTION_PROTOCOL<<__PROTOCOL_EOF__" >> $GITHUB_ENV
+          cat ${{ env.PROTOCOL_PATH }} >> $GITHUB_ENV
+          echo "__PROTOCOL_EOF__" >> $GITHUB_ENV
+          echo "✅ EXECUTION_PROTOCOL 주입 완료 (protocol_hash: ${{ needs.protocol-check.outputs.protocol_hash }})"
+
+      - name: KG 버전 계산 및 델타 생성
         id: kg
+        env:
+          PROTOCOL_HASH: ${{ needs.protocol-check.outputs.protocol_hash }}
         run: |
           OVERRIDE="${{ github.event.inputs.kg_version_override }}"
           if [ -n "$OVERRIDE" ]; then
             NEXT_VER="$OVERRIDE"
           else
-            # 마이너 버전 자동 증가
             CURRENT="${{ env.KG_BASE_VERSION }}"
             MINOR=$(echo $CURRENT | cut -d. -f2)
             NEXT_MINOR=$((MINOR + 1))
@@ -229,10 +324,8 @@ jobs:
             --ew-signals "${{ needs.ew-detection.outputs.ew_signals }}" \
             --output "knowledge_graph_v${NEXT_VER}_delta.json"
 
-          # 노드/엣지 수 파싱
           python3 << 'PYEOF'
-          import json, os
-          import glob
+          import json, os, glob
           files = glob.glob("knowledge_graph_v*_delta.json")
           if files:
               data = json.load(open(files[0]))
@@ -251,7 +344,7 @@ jobs:
   # ─── Job 4: Notion C-31 업데이트 ─────────────────────────────────────────────
   notion-update:
     name: "4. Notion C-31 업데이트"
-    needs: [ew-detection, kg-delta]
+    needs: [protocol-check, ew-detection, kg-delta]
     runs-on: ubuntu-latest
 
     steps:
@@ -271,9 +364,19 @@ jobs:
           path: ${{ env.OUTPUT_DIR }}
           merge-multiple: true
 
+      # ── SSOT 주입 ──────────────────────────────────────────────────────────────
+      - name: 실행 프로토콜 주입 (SSOT)
+        run: |
+          echo "EXECUTION_PROTOCOL<<__PROTOCOL_EOF__" >> $GITHUB_ENV
+          cat ${{ env.PROTOCOL_PATH }} >> $GITHUB_ENV
+          echo "__PROTOCOL_EOF__" >> $GITHUB_ENV
+          echo "✅ EXECUTION_PROTOCOL 주입 완료 (protocol_hash: ${{ needs.protocol-check.outputs.protocol_hash }})"
+
       - name: Notion C-31 업데이트
         env:
           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          PROTOCOL_HASH: ${{ needs.protocol-check.outputs.protocol_hash }}
+          PROTOCOL_VERSION: ${{ needs.protocol-check.outputs.protocol_version }}
         run: |
           python automation/notion_c31_updater.py \
             --page-id "${{ secrets.NOTION_C31_PAGE_ID }}" \
@@ -291,7 +394,7 @@ jobs:
   # ─── Job 5: EW 긴급 알림 (EW HIGH 발동 시만 실행) ────────────────────────────
   ew-alert:
     name: "5. EW 긴급 알림"
-    needs: ew-detection
+    needs: [protocol-check, ew-detection]
     runs-on: ubuntu-latest
     if: needs.ew-detection.outputs.ew_triggered == 'true' && needs.ew-detection.outputs.ew_severity == 'HIGH'
 
@@ -303,10 +406,36 @@ jobs:
             const week = "${{ needs.ew-detection.outputs.week }}";
             const signals = "${{ needs.ew-detection.outputs.ew_signals }}";
             const severity = "${{ needs.ew-detection.outputs.ew_severity }}";
+            const protocolHash = "${{ needs.protocol-check.outputs.protocol_hash }}";
+            const protocolVersion = "${{ needs.protocol-check.outputs.protocol_version }}";
             await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
               title: `🚨 [EW-${severity}] AI Intel Early Warning · ${week}`,
-              body: `## Early Warning 발동\n\n- **주차**: ${week}\n- **심각도**: ${severity}\n- **신호**: ${signals}\n\n자동 생성된 EW 이슈입니다. 즉각 검토 필요.`,
+              body: `## Early Warning 발동\n\n- **주차**: ${week}\n- **심각도**: ${severity}\n- **신호**: ${signals}\n- **실행 프로토콜**: \`${protocolVersion}\` (hash: \`${protocolHash}\`)\n- **프로토콜 경로**: \`.github/prompts/execution_protocol_v2.6.md\`\n\n자동 생성된 EW 이슈입니다. 즉각 검토 필요.`,
               labels: ["early-warning", "ai-intel", "urgent"]
             });
+
+  # ─── Job 6: 파이프라인 완료 요약 ─────────────────────────────────────────────
+  pipeline-summary:
+    name: "6. 파이프라인 완료 요약"
+    needs: [protocol-check, ew-detection, kg-delta, notion-update]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: 실행 결과 요약 출력
+        run: |
+          echo "════════════════════════════════════════════════════════"
+          echo "  PE · AI Intel Weekly Digest — 파이프라인 완료 요약"
+          echo "════════════════════════════════════════════════════════"
+          echo "  주차         : ${{ needs.ew-detection.outputs.week }}"
+          echo "  실행일       : ${{ needs.ew-detection.outputs.run_date }}"
+          echo "  EW 발동      : ${{ needs.ew-detection.outputs.ew_triggered }}"
+          echo "  EW 심각도    : ${{ needs.ew-detection.outputs.ew_severity }}"
+          echo "  KG 버전      : ${{ needs.kg-delta.outputs.kg_next_version }}"
+          echo "  노드 수      : ${{ needs.kg-delta.outputs.node_count }}"
+          echo "  엣지 수      : ${{ needs.kg-delta.outputs.edge_count }}"
+          echo "  프로토콜 해시: ${{ needs.protocol-check.outputs.protocol_hash }}"
+          echo "  프로토콜 버전: ${{ needs.protocol-check.outputs.protocol_version }}"
+          echo "════════════════════════════════════════════════════════"
