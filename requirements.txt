@@ -1,25 +1,26 @@
-# PE-7 Parallel Workflow — shared Python dependencies
-# Covers Track A (Waza Skills), Track B (Finance Plugin), Track C (PE-3 Validation)
-# Last updated: 2026-05-16
+# ═══════════════════════════════════════════════════════════════
+# Root requirements.txt — 공통 의존성 (prompt_validate 등)
+# build_kg.yml | prompt_validate.yml | validate_prompts.yml
+# jv_prompt_validate.yml | pe7_e0n_validate.yml
+# ═══════════════════════════════════════════════════════════════
 
-# Core
-numpy>=1.26
-pandas>=2.2
-scipy>=1.13
+# HTTP 클라이언트
+requests>=2.31.0
 
-# YAML / JSON / Schema
-pyyaml>=6.0
-jsonschema>=4.22
+# YAML 파싱 (프롬프트 메타데이터)
+pyyaml>=6.0.1
 
-# HTTP / Notion sync
-requests>=2.32
-python-dotenv>=1.0
+# JSON 스키마 검증
+jsonschema>=4.21.0
 
-# CLI / Formatting
-rich>=13.7
+# Notion API 클라이언트
+notion-client>=2.2.1
 
-# Excel output (Track B)
-openpyxl>=3.1
+# 환경변수
+python-dotenv>=1.0.0
 
-# Testing (Track C)
-pytest>=8.2
+# 날짜 처리
+python-dateutil>=2.8.2
+
+# 로깅
+colorama>=0.4.6

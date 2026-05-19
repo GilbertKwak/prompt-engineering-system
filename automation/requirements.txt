@@ -1,25 +1,23 @@
-# ─────────────────────────────────────────────────────────────
-# automation/requirements.txt
-# AI Intel Weekly 파이프라인 전용 의존성
-# 사용 workflow: ai-intel-weekly.yml (Stage 1~4 모든 job)
-# ─────────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════
+# AI Intel Weekly Pipeline — Python Dependencies
+# ai_intel_collector.py | ai_ew_detector.py
+# kg_delta_generator.py | notion_c31_updater.py
+# ═══════════════════════════════════════════════════════════════
 
-# HTTP 클라이언트
+# HTTP 클라이언트 (Perplexity API, Notion API)
 requests>=2.31.0
-httpx>=0.27.0
 
-# Notion API
-notion-client>=2.2.1
-
-# 데이터 처리
-python-dateutil>=2.9.0
-
-# 환경변수 관리 (로컬 테스트용)
+# 환경변수 관리 (로컬 .env 파일 지원)
 python-dotenv>=1.0.0
 
-# JSON 스키마 검증
-jsonschema>=4.22.0
+# JSON 처리 강화 (표준 json 모듈 보완)
+jsonschema>=4.21.0
 
-# 유틸리티
-tqdm>=4.66.0
-tenacity>=8.3.0
+# 날짜/시간 처리
+python-dateutil>=2.8.2
+
+# 재시도 로직 (Rate limit 429 대응)
+urllib3>=2.1.0
+
+# 로깅 포맷터 (구조화 로그)
+colorama>=0.4.6

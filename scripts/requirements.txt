@@ -1,0 +1,29 @@
+# ═══════════════════════════════════════════════════════════════
+# PE-7 Daily Pipeline — Python Dependencies
+# sheets_exporter.py | supply_chain_collector.py
+# sentiment_analyzer.py | markowitz.py | black_litterman.py
+# ═══════════════════════════════════════════════════════════════
+
+# 데이터 처리
+pandas>=2.1.0
+numpy>=1.26.0
+scipy>=1.11.0
+
+# Google Sheets 연동
+gspread>=5.12.0
+google-auth>=2.25.0
+google-auth-oauthlib>=1.1.0
+
+# RSS / 웹 수집
+feedparser>=6.0.10
+beautifulsoup4>=4.12.0
+lxml>=4.9.0
+
+# LLM / Sentiment
+nltk>=3.8.1
+
+# HTTP 클라이언트
+requests>=2.31.0
+
+# 환경변수
+python-dotenv>=1.0.0
