@@ -1,52 +1,43 @@
-name: PE7· Product MECE Loop
+name: PE7 · Product MECE Loop
 
 on:
   workflow_dispatch:
     inputs:
       product_id:
-        description: '대상 프로덕트 ID'
+        description: '제품 ID'
         required: true
-      mece_rounds:
-        description: 'MECE 루프 횟수 (1-5)'
+      loop_count:
+        description: 'MECE 루프 횟수 (기본: 3)'
         required: false
         default: '3'
-      dry_run:
-        description: 'Dry-run'
-        required: false
-        default: 'false'
-        type: boolean
 
 env:
   PYTHON_VERSION: '3.12'
-  OUTPUT_DIR: output/mece
 
 jobs:
   mece_loop:
-    name: 🔄 MECE Loop
+    name: 🔁 MECE Loop
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install deps
-        run: pip install -r requirements.txt
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r automation/requirements.txt
+
       - name: Run MECE loop
         env:
-          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
-          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           PRODUCT_ID: ${{ github.event.inputs.product_id }}
-          ROUNDS: ${{ github.event.inputs.mece_rounds || '3' }}
-          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+          LOOP_COUNT: ${{ github.event.inputs.loop_count || '3' }}
         run: |
-          mkdir -p ${{ env.OUTPUT_DIR }}
-          python scripts/mece_loop_runner.py \
+          python automation/pe7_mece_loop.py \
             --product-id "$PRODUCT_ID" \
-            --rounds "$ROUNDS" \
-            --output-dir "${{ env.OUTPUT_DIR }}" \
-            --dry-run "$DRY_RUN"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: mece-output
-          path: ${{ env.OUTPUT_DIR }}/
-          if-no-files-found: ignore
+            --loops "$LOOP_COUNT" \
+            --output output/mece/

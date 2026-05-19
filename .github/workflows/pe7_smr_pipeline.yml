@@ -1,213 +1,75 @@
-name: PE· SMR Pipeline
+name: PE7 · SMR Pipeline
 
 on:
   schedule:
-    - cron: '0 2 * * 1'  # 매주 월요일 11:00 KST
+    - cron: '30 1 * * 1'  # 매주 월요일 01:30 UTC = 10:30 KST
   workflow_dispatch:
     inputs:
       smr_scope:
-        description: 'SMR 범위: weekly | monthly | full'
+        description: 'SMR 범위: standard | deep | full'
         required: false
-        default: 'weekly'
+        default: 'standard'
         type: choice
         options:
-          - weekly
-          - monthly
+          - standard
+          - deep
           - full
-      target_company:
-        description: '대상 기업 (비어 있으면 전체)'
+      week_override:
+        description: '주간 레이블 강제 지정 (예: 2026-W22)'
         required: false
         default: ''
-      dry_run:
-        description: 'Dry-run 모드'
-        required: false
-        default: 'false'
-        type: boolean
 
 env:
   PYTHON_VERSION: '3.12'
   OUTPUT_DIR: output/smr
 
 jobs:
-  # ─── STAGE 0: 초기화 ────────────────────────────────────────────────────────
-  init:
-    name: 🔧 Init
+  smr_run:
+    name: 📊 SMR Pipeline Run
     runs-on: ubuntu-latest
-    outputs:
-      run_date: ${{ steps.env.outputs.run_date }}
-      week_label: ${{ steps.env.outputs.week_label }}
-      scope: ${{ steps.env.outputs.scope }}
-      target: ${{ steps.env.outputs.target }}
     steps:
       - uses: actions/checkout@v4
-      - name: Set env vars
-        id: env
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
         run: |
+          pip install --upgrade pip
+          pip install -r automation/requirements.txt
+
+      - name: Set week label
+        id: week
+        run: |
+          if [ -n "${{ github.event.inputs.week_override }}" ]; then
+            WEEK="${{ github.event.inputs.week_override }}"
+          else
+            WEEK=$(date -u '+%Y-W%V')
+          fi
+          echo "label=${WEEK}" >> $GITHUB_OUTPUT
           echo "run_date=$(date -u '+%Y-%m-%d')" >> $GITHUB_OUTPUT
-          echo "week_label=$(date -u '+%Y-W%V')" >> $GITHUB_OUTPUT
-          echo "scope=${{ github.event.inputs.smr_scope || 'weekly' }}" >> $GITHUB_OUTPUT
-          echo "target=${{ github.event.inputs.target_company || '' }}" >> $GITHUB_OUTPUT
 
-  # ─── STAGE 1: 매크로 환경 검증 ──────────────────────────────────────────────
-  validate_env:
-    name: ✅ Validate Env & Secrets
-    needs: init
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install deps
-        run: pip install -r requirements.txt
-      - name: Validate secrets presence
-        run: |
-          python - <<'EOF'
-          import os, sys
-          required = ['PERPLEXITY_API_KEY', 'NOTION_API_KEY']
-          missing = [k for k in required if not os.environ.get(k)]
-          if missing:
-              print(f'MISSING SECRETS: {missing}', file=sys.stderr)
-              sys.exit(1)
-          print('All required secrets present.')
-          EOF
+      - name: Run SMR pipeline
         env:
           PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
-
-  # ─── STAGE 2: 시장 모니터링 ─────────────────────────────────────────────
-  market_monitor:
-    name: 📊 Market Monitor
-    needs: [init, validate_env]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install deps
-        run: pip install -r requirements.txt
-      - name: Run market monitor
-        env:
-          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
-          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
-          SCOPE: ${{ needs.init.outputs.scope }}
-          TARGET: ${{ needs.init.outputs.target }}
-          RUN_DATE: ${{ needs.init.outputs.run_date }}
-          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          WEEK: ${{ steps.week.outputs.label }}
+          SCOPE: ${{ github.event.inputs.smr_scope || 'standard' }}
         run: |
           mkdir -p ${{ env.OUTPUT_DIR }}
-          python scripts/smr_market_monitor.py \
+          echo "[INFO] SMR pipeline — week: $WEEK scope: $SCOPE"
+          python automation/pe7_smr_runner.py \
+            --week "$WEEK" \
             --scope "$SCOPE" \
-            --target "$TARGET" \
-            --run-date "$RUN_DATE" \
-            --output "${{ env.OUTPUT_DIR }}/market_report.json" \
-            --dry-run "$DRY_RUN"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: smr-market
-          path: ${{ env.OUTPUT_DIR }}/market_report.json
-          if-no-files-found: ignore
+            --run-date "${{ steps.week.outputs.run_date }}" \
+            --output "${{ env.OUTPUT_DIR }}/smr_${WEEK}.json"
 
-  # ─── STAGE 3: 경쟁사 분석 ──────────────────────────────────────────────────
-  competitor_analysis:
-    name: 🥊 Competitor Analysis
-    needs: [init, validate_env]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Upload SMR artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install deps
-        run: pip install -r requirements.txt
-      - name: Run competitor analysis
-        env:
-          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
-          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
-          SCOPE: ${{ needs.init.outputs.scope }}
-          TARGET: ${{ needs.init.outputs.target }}
-          RUN_DATE: ${{ needs.init.outputs.run_date }}
-          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
-        run: |
-          mkdir -p ${{ env.OUTPUT_DIR }}
-          python scripts/smr_competitor_analyzer.py \
-            --scope "$SCOPE" \
-            --target "$TARGET" \
-            --run-date "$RUN_DATE" \
-            --output "${{ env.OUTPUT_DIR }}/competitor_report.json" \
-            --dry-run "$DRY_RUN"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: smr-competitor
-          path: ${{ env.OUTPUT_DIR }}/competitor_report.json
-          if-no-files-found: ignore
-
-  # ─── STAGE 4: Notion 업데이트 ──────────────────────────────────────────────
-  notion_update:
-    name: 📓 Notion SMR Update
-    needs: [init, market_monitor, competitor_analysis]
-    runs-on: ubuntu-latest
-    if: always() && needs.init.result == 'success'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install deps
-        run: pip install -r requirements.txt
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
+          name: smr-${{ steps.week.outputs.label }}
           path: ${{ env.OUTPUT_DIR }}/
-          merge-multiple: true
-      - name: Update Notion SMR pages
-        env:
-          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
-          SCOPE: ${{ needs.init.outputs.scope }}
-          RUN_DATE: ${{ needs.init.outputs.run_date }}
-          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
-        run: |
-          python scripts/smr_notion_updater.py \
-            --input-dir "${{ env.OUTPUT_DIR }}" \
-            --scope "$SCOPE" \
-            --run-date "$RUN_DATE" \
-            --dry-run "$DRY_RUN"
-
-  # ─── STAGE 5: 코미트 & 리포트 ────────────────────────────────────────────────
-  commit_and_report:
-    name: 💾 Commit & Report
-    needs: [init, market_monitor, competitor_analysis, notion_update]
-    runs-on: ubuntu-latest
-    if: always() && needs.init.result == 'success'
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: ${{ env.OUTPUT_DIR }}/
-          merge-multiple: true
-      - name: Commit SMR outputs
-        env:
-          RUN_DATE: ${{ needs.init.outputs.run_date }}
-          SCOPE: ${{ needs.init.outputs.scope }}
-        run: |
-          git config --global user.name "SMR Pipeline Bot"
-          git config --global user.email "smr-bot@github-actions"
-          git add output/smr/ || true
-          git diff --staged --quiet || git commit -m \
-            "auto: SMR ${SCOPE} outputs — ${RUN_DATE} [SMR Pipeline]"
-          git push || true
-      - name: Step Summary
-        env:
-          RUN_DATE: ${{ needs.init.outputs.run_date }}
-          SCOPE: ${{ needs.init.outputs.scope }}
-        run: |
-          echo "# 📊 PE SMR Pipeline — ${RUN_DATE} (${SCOPE})" >> $GITHUB_STEP_SUMMARY
-          echo "| Stage | Result |" >> $GITHUB_STEP_SUMMARY
-          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
-          echo "| Market Monitor | ${{ needs.market_monitor.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Competitor Analysis | ${{ needs.competitor_analysis.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Notion Update | ${{ needs.notion_update.result }} |" >> $GITHUB_STEP_SUMMARY
+          retention-days: 30

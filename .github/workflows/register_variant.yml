@@ -1,92 +1,57 @@
-name: PE· Register Variant
+name: Register Variant
 
 on:
   workflow_dispatch:
     inputs:
       variant_id:
-        description: '변이체 ID'
+        description: '변형 ID'
         required: true
-      base_prompt_id:
-        description: '원미 프롬프트 ID'
+      base_prompt:
+        description: '기반 프롬프트 경로'
         required: true
       variant_type:
-        description: '변이체 유형'
+        description: '변형 유형 (A/B | shadow | experimental)'
         required: false
-        default: 'standard'
-        type: choice
-        options:
-          - standard
-          - ablation
-          - experimental
-      dry_run:
-        description: 'Dry-run'
-        required: false
-        default: 'false'
-        type: boolean
+        default: 'A/B'
 
 env:
   PYTHON_VERSION: '3.12'
-  OUTPUT_DIR: output/variants
 
 jobs:
-  validate_base:
-    name: ✅ Validate Base Prompt
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install deps
-        run: pip install -r requirements.txt
-      - name: Validate base prompt
-        env:
-          BASE_ID: ${{ github.event.inputs.base_prompt_id }}
-        run: |
-          python scripts/validate_base_prompt.py \
-            --prompt-id "$BASE_ID" \
-            --prompts-dir prompts/
-
   register:
     name: 📝 Register Variant
-    needs: validate_base
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install deps
-        run: pip install -r requirements.txt
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r automation/requirements.txt
+
       - name: Register variant
         env:
           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
           VARIANT_ID: ${{ github.event.inputs.variant_id }}
-          BASE_ID: ${{ github.event.inputs.base_prompt_id }}
-          TYPE: ${{ github.event.inputs.variant_type || 'standard' }}
-          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+          BASE_PROMPT: ${{ github.event.inputs.base_prompt }}
+          VARIANT_TYPE: ${{ github.event.inputs.variant_type }}
         run: |
-          mkdir -p ${{ env.OUTPUT_DIR }}
-          python scripts/register_variant.py \
+          python automation/variant_registrar.py \
             --variant-id "$VARIANT_ID" \
-            --base-id "$BASE_ID" \
-            --type "$TYPE" \
-            --output "${{ env.OUTPUT_DIR }}/variant_${VARIANT_ID}.json" \
-            --dry-run "$DRY_RUN"
-      - name: Commit variant registration
-        env:
-          VARIANT_ID: ${{ github.event.inputs.variant_id }}
+            --base-prompt "$BASE_PROMPT" \
+            --type "$VARIANT_TYPE" \
+            --output output/variants/
+
+      - name: Commit variant registry
         run: |
-          git config --global user.name "Variant Register Bot"
+          git config --global user.name "Variant Bot"
           git config --global user.email "variant-bot@github-actions"
           git add output/variants/ || true
-          git diff --staged --quiet || git commit -m \
-            "auto: register variant ${VARIANT_ID} [Variant Register]"
+          git diff --staged --quiet || git commit -m "auto: register variant ${{ github.event.inputs.variant_id }} [variant-bot]"
           git push || true
-      - uses: actions/upload-artifact@v4
-        with:
-          name: variant-registration
-          path: ${{ env.OUTPUT_DIR }}/variant_${{ github.event.inputs.variant_id }}.json
-          if-no-files-found: ignore

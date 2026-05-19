@@ -1,25 +1,24 @@
-# ═══════════════════════════════════════════════════════════════
-# AI Intel Pipeline — automation/requirements.txt
-# 대상: ai_intel_collector.py, ai_ew_detector.py,
-#        kg_delta_generator.py, notion_c31_updater.py
-# 업데이트: 2026-05-19
-# ═══════════════════════════════════════════════════════════════
+# automation/requirements.txt
+# AI Intel Weekly + PE7 Pipeline 공통 의존성
+# Python 3.12+
 
-# HTTP & API (Perplexity API 호출)
+# ── HTTP & API ──────────────────────────
 requests>=2.31.0
 urllib3>=2.0.0
 
-# Notion API (notion_c31_updater.py)
+# ── Notion API ──────────────────────────
 notion-client>=2.2.1
 
-# 날짜/시간 처리
+# ── Data & JSON ─────────────────────────
+pydantic>=2.5.0
+
+# ── Utility ─────────────────────────────
+python-dotenv>=1.0.0
+click>=8.1.7
+rich>=13.7.0
+
+# ── Date/Time ───────────────────────────
 python-dateutil>=2.8.2
 
-# JSON 스키마 검증
-jsonschema>=4.21.0
-
-# 환경변수
-python-dotenv>=1.0.0
-
-# 텍스트 처리 / 인코딩
-chardet>=5.2.0
+# ── Testing (CI only) ───────────────────
+pytest>=7.4.0

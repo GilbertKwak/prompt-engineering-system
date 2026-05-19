@@ -1,83 +1,59 @@
-name: PE7· Monthly Report
+name: PE7 · Monthly Report
 
 on:
   schedule:
-    - cron: '0 6 2 * *'  # 매월 2일 15:00 KST
+    - cron: '0 5 1 * *'  # 매월 1일 05:00 UTC = 14:00 KST
   workflow_dispatch:
     inputs:
-      report_month:
-        description: '리포트 월 (YYYY-MM)'
+      month_override:
+        description: '월 강제 지정 (예: 2026-05)'
         required: false
         default: ''
-      include_kg:
-        description: 'KG 변화량 포함'
-        required: false
-        default: 'true'
-        type: boolean
 
 env:
   PYTHON_VERSION: '3.12'
   OUTPUT_DIR: output/pe7_monthly
 
 jobs:
-  generate:
-    name: 📈 Generate PE7 Monthly Report
+  pe7_monthly:
+    name: 📊 PE7 Monthly Report
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install deps
-        run: pip install -r requirements.txt
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r automation/requirements.txt
+
       - name: Set month
         id: month
         run: |
-          if [ -n "${{ github.event.inputs.report_month }}" ]; then
-            echo "month=${{ github.event.inputs.report_month }}" >> $GITHUB_OUTPUT
+          if [ -n "${{ github.event.inputs.month_override }}" ]; then
+            MONTH="${{ github.event.inputs.month_override }}"
           else
-            echo "month=$(date -u -d '1 month ago' '+%Y-%m' 2>/dev/null || date -u '+%Y-%m')" >> $GITHUB_OUTPUT
+            MONTH=$(date -u '+%Y-%m')
           fi
+          echo "label=${MONTH}" >> $GITHUB_OUTPUT
+
       - name: Generate PE7 monthly report
         env:
           PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
-          REPORT_MONTH: ${{ steps.month.outputs.month }}
-          INCLUDE_KG: ${{ github.event.inputs.include_kg || 'true' }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          MONTH: ${{ steps.month.outputs.label }}
         run: |
           mkdir -p ${{ env.OUTPUT_DIR }}
-          python scripts/pe7_monthly_reporter.py \
-            --month "$REPORT_MONTH" \
-            --include-kg "$INCLUDE_KG" \
-            --kg-dir knowledge_graph/ \
-            --output "${{ env.OUTPUT_DIR }}/pe7_monthly_${REPORT_MONTH}.json"
+          python automation/pe7_monthly_reporter.py \
+            --month "$MONTH" \
+            --output "${{ env.OUTPUT_DIR }}/pe7_monthly_${MONTH}.json"
+
       - uses: actions/upload-artifact@v4
         with:
-          name: pe7-monthly
+          name: pe7-monthly-${{ steps.month.outputs.label }}
           path: ${{ env.OUTPUT_DIR }}/
-          if-no-files-found: ignore
-
-  update_notion:
-    name: 📓 Update Notion
-    needs: generate
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install deps
-        run: pip install -r requirements.txt
-      - name: Download report
-        uses: actions/download-artifact@v4
-        with:
-          name: pe7-monthly
-          path: ${{ env.OUTPUT_DIR }}/
-      - name: Update Notion PE7 monthly
-        env:
-          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
-          REPORT_MONTH: ${{ needs.generate.outputs.month || '' }}
-        run: |
-          python scripts/pe7_notion_monthly.py \
-            --input-dir "${{ env.OUTPUT_DIR }}" \
-            --month "$REPORT_MONTH"
+          retention-days: 90

@@ -1,280 +1,193 @@
-name: PE· Parallel v3
+name: PE7 · Parallel Pipeline v3
 
 on:
   workflow_dispatch:
     inputs:
-      execution_mode:
-        description: '실행 모드: full | validate-only | collect-only | analyze-only'
+      target_set:
+        description: '처리 세트: A | B | C | all'
         required: false
-        default: 'full'
+        default: 'all'
         type: choice
         options:
-          - full
-          - validate-only
-          - collect-only
-          - analyze-only
-      target_domains:
-        description: '대상 도메인 (콤마 구분, 부비지른 시 전체)'
+          - all
+          - A
+          - B
+          - C
+      run_mode:
+        description: '실행 모드: fast | standard | deep'
         required: false
-        default: ''
-      parallel_workers:
-        description: '병렬 워커 수 (1-5)'
-        required: false
-        default: '3'
+        default: 'standard'
+        type: choice
+        options:
+          - fast
+          - standard
+          - deep
   schedule:
-    - cron: '0 3 * * 0'  # 매주 일요일 12:00 KST
+    - cron: '0 2 * * 3'  # 매주 수요일 02:00 UTC = 11:00 KST
 
 env:
   PYTHON_VERSION: '3.12'
   OUTPUT_DIR: output/parallel
 
 jobs:
-  # ─── STAGE 0: 실행 계획 수립 ────────────────────────────────────────────────
-  plan:
-    name: 📍 Plan Execution
+  # ── 공통 초기화 ──────────────────────────────────────
+  init:
+    name: 🔧 Init
     runs-on: ubuntu-latest
     outputs:
-      run_date: ${{ steps.plan.outputs.run_date }}
-      week_label: ${{ steps.plan.outputs.week_label }}
-      mode: ${{ steps.plan.outputs.mode }}
-      workers: ${{ steps.plan.outputs.workers }}
-      domains_json: ${{ steps.plan.outputs.domains_json }}
+      run_id: ${{ steps.meta.outputs.run_id }}
+      run_date: ${{ steps.meta.outputs.run_date }}
+      target_set: ${{ steps.meta.outputs.target_set }}
+      run_mode: ${{ steps.meta.outputs.run_mode }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install deps
-        run: pip install -r requirements.txt
-      - name: Plan
-        id: plan
+      - name: Set run metadata
+        id: meta
         run: |
-          MODE="${{ github.event.inputs.execution_mode || 'full' }}"
-          WORKERS="${{ github.event.inputs.parallel_workers || '3' }}"
-          RAW_DOMAINS="${{ github.event.inputs.target_domains || '' }}"
+          RUN_ID="parallel-$(date -u '+%Y%m%d-%H%M')"
+          RUN_DATE=$(date -u '+%Y-%m-%d')
+          TARGET="${{ github.event.inputs.target_set || 'all' }}"
+          MODE="${{ github.event.inputs.run_mode || 'standard' }}"
+          echo "run_id=${RUN_ID}" >> $GITHUB_OUTPUT
+          echo "run_date=${RUN_DATE}" >> $GITHUB_OUTPUT
+          echo "target_set=${TARGET}" >> $GITHUB_OUTPUT
+          echo "run_mode=${MODE}" >> $GITHUB_OUTPUT
+          echo "### 🔧 Parallel v3 Init" >> $GITHUB_STEP_SUMMARY
+          echo "| Run ID | ${RUN_ID} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Target | ${TARGET} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Mode | ${MODE} |" >> $GITHUB_STEP_SUMMARY
 
-          # 도메인 JSON 배열로 변환
-          if [ -n "$RAW_DOMAINS" ]; then
-            DOMAINS_JSON=$(python3 -c "
-import json, sys
-doms = [d.strip() for d in '$RAW_DOMAINS'.split(',') if d.strip()]
-print(json.dumps(doms))
-")
-          else
-            DOMAINS_JSON='["enterprise","frameworks","models","infra","semiconductor"]'
-          fi
-
-          echo "run_date=$(date -u '+%Y-%m-%d')" >> $GITHUB_OUTPUT
-          echo "week_label=$(date -u '+%Y-W%V')" >> $GITHUB_OUTPUT
-          echo "mode=${MODE}" >> $GITHUB_OUTPUT
-          echo "workers=${WORKERS}" >> $GITHUB_OUTPUT
-          echo "domains_json=${DOMAINS_JSON}" >> $GITHUB_OUTPUT
-
-          echo "### 📍 실행 계획" >> $GITHUB_STEP_SUMMARY
-          echo "| 항목 | 값 |" >> $GITHUB_STEP_SUMMARY
-          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
-          echo "| 모드 | ${MODE} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 워커 수 | ${WORKERS} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 도메인 | ${DOMAINS_JSON} |" >> $GITHUB_STEP_SUMMARY
-
-  # ─── STAGE 1: 유효성 검증 ──────────────────────────────────────────────────
-  validate:
-    name: ✅ Validate
-    needs: plan
+  # ── 병렬 세트 A ──────────────────────────────────────
+  run_set_a:
+    name: ⚡ Set A
+    needs: init
+    if: needs.init.outputs.target_set == 'all' || needs.init.outputs.target_set == 'A'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install deps
-        run: pip install -r requirements.txt
-      - name: Validate schemas
+      - name: Install dependencies
         run: |
-          python scripts/validate_prompts.py \
-            --schema schemas/prompt_schema.json \
-            --dir prompts/ \
-            --strict || true
-
-  # ─── STAGE 2A: 도메인 1 병렬 수집 ──────────────────────────────────────────
-  collect_domain_1:
-    name: 📡 Collect D1
-    needs: [plan, validate]
-    runs-on: ubuntu-latest
-    if: |
-      needs.plan.outputs.mode == 'full' ||
-      needs.plan.outputs.mode == 'collect-only'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install deps
-        run: pip install -r requirements.txt
-      - name: Collect domain 1
-        env:
-          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
-          RUN_DATE: ${{ needs.plan.outputs.run_date }}
-          WEEK: ${{ needs.plan.outputs.week_label }}
-        run: |
-          mkdir -p ${{ env.OUTPUT_DIR }}
-          python scripts/parallel_collector.py \
-            --worker-id 1 \
-            --total-workers "${{ needs.plan.outputs.workers }}" \
-            --domains '${{ needs.plan.outputs.domains_json }}' \
-            --week "$WEEK" \
-            --output "${{ env.OUTPUT_DIR }}/collect_d1.json"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: collect-d1
-          path: ${{ env.OUTPUT_DIR }}/collect_d1.json
-          if-no-files-found: ignore
-
-  # ─── STAGE 2B: 도메인 2 병렬 수집 ──────────────────────────────────────────
-  collect_domain_2:
-    name: 📡 Collect D2
-    needs: [plan, validate]
-    runs-on: ubuntu-latest
-    if: |
-      (needs.plan.outputs.mode == 'full' ||
-      needs.plan.outputs.mode == 'collect-only') &&
-      fromJson(needs.plan.outputs.workers) >= 2
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install deps
-        run: pip install -r requirements.txt
-      - name: Collect domain 2
-        env:
-          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
-          RUN_DATE: ${{ needs.plan.outputs.run_date }}
-          WEEK: ${{ needs.plan.outputs.week_label }}
-        run: |
-          mkdir -p ${{ env.OUTPUT_DIR }}
-          python scripts/parallel_collector.py \
-            --worker-id 2 \
-            --total-workers "${{ needs.plan.outputs.workers }}" \
-            --domains '${{ needs.plan.outputs.domains_json }}' \
-            --week "$WEEK" \
-            --output "${{ env.OUTPUT_DIR }}/collect_d2.json"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: collect-d2
-          path: ${{ env.OUTPUT_DIR }}/collect_d2.json
-          if-no-files-found: ignore
-
-  # ─── STAGE 2C: 도메인 3 병렬 수집 ──────────────────────────────────────────
-  collect_domain_3:
-    name: 📡 Collect D3
-    needs: [plan, validate]
-    runs-on: ubuntu-latest
-    if: |
-      (needs.plan.outputs.mode == 'full' ||
-      needs.plan.outputs.mode == 'collect-only') &&
-      fromJson(needs.plan.outputs.workers) >= 3
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install deps
-        run: pip install -r requirements.txt
-      - name: Collect domain 3
-        env:
-          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
-          RUN_DATE: ${{ needs.plan.outputs.run_date }}
-          WEEK: ${{ needs.plan.outputs.week_label }}
-        run: |
-          mkdir -p ${{ env.OUTPUT_DIR }}
-          python scripts/parallel_collector.py \
-            --worker-id 3 \
-            --total-workers "${{ needs.plan.outputs.workers }}" \
-            --domains '${{ needs.plan.outputs.domains_json }}' \
-            --week "$WEEK" \
-            --output "${{ env.OUTPUT_DIR }}/collect_d3.json"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: collect-d3
-          path: ${{ env.OUTPUT_DIR }}/collect_d3.json
-          if-no-files-found: ignore
-
-  # ─── STAGE 3: 병렬 분석 ──────────────────────────────────────────────────────
-  analyze:
-    name: 🧠 Analyze
-    needs: [plan, collect_domain_1, collect_domain_2, collect_domain_3]
-    runs-on: ubuntu-latest
-    if: |
-      always() &&
-      (needs.plan.outputs.mode == 'full' ||
-      needs.plan.outputs.mode == 'analyze-only')
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install deps
-        run: pip install -r requirements.txt
-      - name: Download all collect artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: ${{ env.OUTPUT_DIR }}/
-          merge-multiple: true
-      - name: Merge and analyze
+          pip install --upgrade pip
+          pip install -r automation/requirements.txt
+      - name: Run Set A
         env:
           PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
-          WEEK: ${{ needs.plan.outputs.week_label }}
-          RUN_DATE: ${{ needs.plan.outputs.run_date }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RUN_ID: ${{ needs.init.outputs.run_id }}
+          MODE: ${{ needs.init.outputs.run_mode }}
         run: |
-          python scripts/parallel_analyzer.py \
-            --input-dir "${{ env.OUTPUT_DIR }}" \
-            --week "$WEEK" \
-            --run-date "$RUN_DATE" \
-            --output "${{ env.OUTPUT_DIR }}/analysis_result.json"
+          mkdir -p ${{ env.OUTPUT_DIR }}
+          python automation/pe7_parallel_runner.py \
+            --set A \
+            --mode "$MODE" \
+            --run-id "$RUN_ID" \
+            --output "${{ env.OUTPUT_DIR }}/set_a.json"
       - uses: actions/upload-artifact@v4
         with:
-          name: analysis-result
-          path: ${{ env.OUTPUT_DIR }}/analysis_result.json
-          if-no-files-found: ignore
+          name: parallel-set-a-${{ needs.init.outputs.run_id }}
+          path: ${{ env.OUTPUT_DIR }}/set_a.json
 
-  # ─── STAGE 4: 코미트 & 리포트 ────────────────────────────────────────────────
-  commit_and_report:
-    name: 💾 Commit & Report
-    needs: [plan, validate, analyze]
+  # ── 병렬 세트 B ──────────────────────────────────────
+  run_set_b:
+    name: ⚡ Set B
+    needs: init
+    if: needs.init.outputs.target_set == 'all' || needs.init.outputs.target_set == 'B'
     runs-on: ubuntu-latest
-    if: always() && needs.plan.result == 'success'
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Download all artifacts
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r automation/requirements.txt
+      - name: Run Set B
+        env:
+          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RUN_ID: ${{ needs.init.outputs.run_id }}
+          MODE: ${{ needs.init.outputs.run_mode }}
+        run: |
+          mkdir -p ${{ env.OUTPUT_DIR }}
+          python automation/pe7_parallel_runner.py \
+            --set B \
+            --mode "$MODE" \
+            --run-id "$RUN_ID" \
+            --output "${{ env.OUTPUT_DIR }}/set_b.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: parallel-set-b-${{ needs.init.outputs.run_id }}
+          path: ${{ env.OUTPUT_DIR }}/set_b.json
+
+  # ── 병렬 세트 C ──────────────────────────────────────
+  run_set_c:
+    name: ⚡ Set C
+    needs: init
+    if: needs.init.outputs.target_set == 'all' || needs.init.outputs.target_set == 'C'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r automation/requirements.txt
+      - name: Run Set C
+        env:
+          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RUN_ID: ${{ needs.init.outputs.run_id }}
+          MODE: ${{ needs.init.outputs.run_mode }}
+        run: |
+          mkdir -p ${{ env.OUTPUT_DIR }}
+          python automation/pe7_parallel_runner.py \
+            --set C \
+            --mode "$MODE" \
+            --run-id "$RUN_ID" \
+            --output "${{ env.OUTPUT_DIR }}/set_c.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: parallel-set-c-${{ needs.init.outputs.run_id }}
+          path: ${{ env.OUTPUT_DIR }}/set_c.json
+
+  # ── 병합 및 최종 보고 ─────────────────────────────────
+  merge_and_report:
+    name: 🔀 Merge & Report
+    needs: [init, run_set_a, run_set_b, run_set_c]
+    if: always() && needs.init.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r automation/requirements.txt
+      - name: Download all parallel artifacts
         uses: actions/download-artifact@v4
         with:
           path: ${{ env.OUTPUT_DIR }}/
           merge-multiple: true
-      - name: Commit outputs
+      - name: Merge results
         env:
-          RUN_DATE: ${{ needs.plan.outputs.run_date }}
-          MODE: ${{ needs.plan.outputs.mode }}
+          RUN_ID: ${{ needs.init.outputs.run_id }}
+          RUN_DATE: ${{ needs.init.outputs.run_date }}
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
         run: |
-          git config --global user.name "Parallel v3 Bot"
-          git config --global user.email "parallel-bot@github-actions"
-          git add output/parallel/ || true
-          git diff --staged --quiet || git commit -m \
-            "auto: parallel-v3 ${MODE} — ${RUN_DATE} [PE Parallel]"
-          git push || true
-      - name: Step Summary
-        env:
-          RUN_DATE: ${{ needs.plan.outputs.run_date }}
-          MODE: ${{ needs.plan.outputs.mode }}
-        run: |
-          echo "# 📡 PE Parallel v3 — ${RUN_DATE} (${MODE})" >> $GITHUB_STEP_SUMMARY
-          echo "| Stage | Result |" >> $GITHUB_STEP_SUMMARY
-          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
-          echo "| Validate | ${{ needs.validate.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Collect D1 | ${{ needs.collect_domain_1.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Collect D2 | ${{ needs.collect_domain_2.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Collect D3 | ${{ needs.collect_domain_3.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Analyze | ${{ needs.analyze.result }} |" >> $GITHUB_STEP_SUMMARY
+          python automation/pe7_merge_results.py \
+            --input-dir "${{ env.OUTPUT_DIR }}" \
+            --run-id "$RUN_ID" \
+            --run-date "$RUN_DATE" \
+            --output "${{ env.OUTPUT_DIR }}/merged_${RUN_ID}.json"
+          echo "### ✅ Parallel v3 완료 — ${RUN_ID}" >> $GITHUB_STEP_SUMMARY

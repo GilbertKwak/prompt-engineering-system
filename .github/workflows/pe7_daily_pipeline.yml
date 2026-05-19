@@ -1,181 +1,52 @@
-name: PE· Daily Pipeline
+name: PE7 · Daily Pipeline
 
 on:
   schedule:
-    - cron: '0 1 * * *'  # 10:00 KST
+    - cron: '0 1 * * *'  # 매일 01:00 UTC = 10:00 KST
   workflow_dispatch:
     inputs:
       target_domain:
-        description: '대상 도메인 (all | smr | ai | strategy)'
+        description: '처리 도메인 (all | smr | ai | kg)'
         required: false
         default: 'all'
-      dry_run:
-        description: 'Dry-run 모드'
-        required: false
-        default: 'false'
-        type: boolean
 
 env:
   PYTHON_VERSION: '3.12'
 
 jobs:
-  # ─── STAGE 0: 환경 초기화 ───────────────────────────────────────────────────
-  init:
-    name: 🔧 Init
+  daily_run:
+    name: 🔄 Daily Pipeline Run
     runs-on: ubuntu-latest
-    outputs:
-      run_date: ${{ steps.env.outputs.run_date }}
-      week_label: ${{ steps.env.outputs.week_label }}
-      target: ${{ steps.env.outputs.target }}
     steps:
       - uses: actions/checkout@v4
-      - name: Set env vars
-        id: env
-        run: |
-          echo "run_date=$(date -u '+%Y-%m-%d')" >> $GITHUB_OUTPUT
-          echo "week_label=$(date -u '+%Y-W%V')" >> $GITHUB_OUTPUT
-          echo "target=${{ github.event.inputs.target_domain || 'all' }}" >> $GITHUB_OUTPUT
 
-  # ─── STAGE 1: 프롬프트 유효성 검증 ─────────────────────────────────────────────
-  validate:
-    name: ✅ Validate Prompts
-    needs: init
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install deps
-        run: pip install -r requirements.txt
-      - name: Validate prompt JSON schemas
-        run: |
-          python scripts/validate_prompts.py \
-            --schema schemas/prompt_schema.json \
-            --dir prompts/ \
-            --strict
 
-  # ─── STAGE 2: SMR 파이프라인 ─────────────────────────────────────────────────
-  smr_pipeline:
-    name: 📊 SMR Pipeline
-    needs: [init, validate]
-    runs-on: ubuntu-latest
-    if: contains(fromJson('["all","smr"]'), needs.init.outputs.target)
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install deps
-        run: pip install -r requirements.txt
-      - name: Run SMR analysis
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r automation/requirements.txt
+
+      - name: Run daily pipeline
         env:
           PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
-          RUN_DATE: ${{ needs.init.outputs.run_date }}
-          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          TARGET_DOMAIN: ${{ github.event.inputs.target_domain || 'all' }}
         run: |
-          python scripts/smr_daily_runner.py \
-            --run-date "$RUN_DATE" \
-            --dry-run "$DRY_RUN"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: smr-output
-          path: output/smr/
-          if-no-files-found: ignore
+          echo "[INFO] Daily pipeline — domain: $TARGET_DOMAIN"
+          python automation/pe7_daily_runner.py \
+            --domain "$TARGET_DOMAIN" \
+            --run-date "$(date -u '+%Y-%m-%d')" \
+            --output output/daily/
 
-  # ─── STAGE 3: AI 인텔 데일리 요약 ──────────────────────────────────────────────
-  ai_intel_daily:
-    name: 🤖 AI Intel Daily
-    needs: [init, validate]
-    runs-on: ubuntu-latest
-    if: contains(fromJson('["all","ai"]'), needs.init.outputs.target)
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install deps
-        run: pip install -r requirements.txt
-      - name: Run daily AI intel summary
-        env:
-          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
-          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
-          RUN_DATE: ${{ needs.init.outputs.run_date }}
-          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
-        run: |
-          python scripts/ai_daily_summary.py \
-            --run-date "$RUN_DATE" \
-            --dry-run "$DRY_RUN"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: ai-intel-daily
-          path: output/ai_intel/daily/
-          if-no-files-found: ignore
-
-  # ─── STAGE 4: 전략 분석 ──────────────────────────────────────────────────────
-  strategy:
-    name: 🧠 Strategy Analysis
-    needs: [init, validate]
-    runs-on: ubuntu-latest
-    if: contains(fromJson('["all","strategy"]'), needs.init.outputs.target)
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install deps
-        run: pip install -r requirements.txt
-      - name: Run strategy analysis
-        env:
-          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
-          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
-          RUN_DATE: ${{ needs.init.outputs.run_date }}
-          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
-        run: |
-          python scripts/strategy_analyzer.py \
-            --run-date "$RUN_DATE" \
-            --dry-run "$DRY_RUN"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: strategy-output
-          path: output/strategy/
-          if-no-files-found: ignore
-
-  # ─── STAGE 5: 요약 코미트 ──────────────────────────────────────────────────────
-  commit_and_report:
-    name: 💾 Commit & Report
-    needs: [init, smr_pipeline, ai_intel_daily, strategy]
-    runs-on: ubuntu-latest
-    if: always() && needs.init.result == 'success'
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: output/
-          merge-multiple: true
-      - name: Commit outputs
-        env:
-          RUN_DATE: ${{ needs.init.outputs.run_date }}
-        run: |
-          git config --global user.name "PE Daily Bot"
-          git config --global user.email "pe-daily-bot@github-actions"
-          git add output/ || true
-          git diff --staged --quiet || git commit -m \
-            "auto: daily pipeline outputs — ${RUN_DATE} [PE Daily]"
-          git push || true
-      - name: Step Summary
-        env:
-          RUN_DATE: ${{ needs.init.outputs.run_date }}
-          WEEK: ${{ needs.init.outputs.week_label }}
-        run: |
-          echo "# 🤖 PE Daily Pipeline — ${RUN_DATE}" >> $GITHUB_STEP_SUMMARY
-          echo "| Stage | Result |" >> $GITHUB_STEP_SUMMARY
-          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
-          echo "| Validate | ${{ needs.validate.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| SMR Pipeline | ${{ needs.smr_pipeline.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| AI Intel Daily | ${{ needs.ai_intel_daily.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Strategy | ${{ needs.strategy.result }} |" >> $GITHUB_STEP_SUMMARY
+          name: daily-output-${{ github.run_number }}
+          path: output/daily/
+          retention-days: 7

@@ -1,108 +1,49 @@
-name: PE· AI Ecosystem Pipeline
+name: PE · AI Ecosystem Pipeline
 
 on:
   schedule:
-    - cron: '0 7 * * 3'  # 매주 수요일 16:00 KST
+    - cron: '0 7 * * 2'  # 매주 화요일 07:00 UTC = 16:00 KST
   workflow_dispatch:
     inputs:
-      scope:
-        description: '수집 범위'
+      ecosystem_scope:
+        description: '생태계 범위 (all | llm | infra | tools)'
         required: false
-        default: 'standard'
-        type: choice
-        options:
-          - standard
-          - deep
-      dry_run:
-        description: 'Dry-run'
-        required: false
-        default: 'false'
-        type: boolean
+        default: 'all'
 
 env:
   PYTHON_VERSION: '3.12'
-  OUTPUT_DIR: output/ai_ecosystem
+  OUTPUT_DIR: output/ecosystem
 
 jobs:
-  collect:
-    name: 📡 Collect AI Ecosystem Data
+  ecosystem_run:
+    name: 🌐 AI Ecosystem Analysis
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install deps
-        run: pip install -r requirements.txt
-      - name: Collect ecosystem data
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r automation/requirements.txt
+
+      - name: Run ecosystem pipeline
         env:
           PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
-          SCOPE: ${{ github.event.inputs.scope || 'standard' }}
-          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          SCOPE: ${{ github.event.inputs.ecosystem_scope || 'all' }}
         run: |
           mkdir -p ${{ env.OUTPUT_DIR }}
-          python scripts/ai_ecosystem_collector.py \
+          python automation/pe_ai_ecosystem.py \
             --scope "$SCOPE" \
-            --output "${{ env.OUTPUT_DIR }}/ecosystem_data.json" \
-            --dry-run "$DRY_RUN"
+            --run-date "$(date -u '+%Y-%m-%d')" \
+            --output "${{ env.OUTPUT_DIR }}/"
+
       - uses: actions/upload-artifact@v4
         with:
-          name: ecosystem-data
-          path: ${{ env.OUTPUT_DIR }}/ecosystem_data.json
-          if-no-files-found: ignore
-
-  analyze:
-    name: 🧠 Analyze Ecosystem
-    needs: collect
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install deps
-        run: pip install -r requirements.txt
-      - name: Download data
-        uses: actions/download-artifact@v4
-        with:
-          name: ecosystem-data
+          name: ecosystem-$(date -u '+%Y%m%d')
           path: ${{ env.OUTPUT_DIR }}/
-      - name: Analyze
-        env:
-          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
-          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
-        run: |
-          python scripts/ai_ecosystem_analyzer.py \
-            --input "${{ env.OUTPUT_DIR }}/ecosystem_data.json" \
-            --output "${{ env.OUTPUT_DIR }}/ecosystem_analysis.json" \
-            --dry-run "$DRY_RUN"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: ecosystem-analysis
-          path: ${{ env.OUTPUT_DIR }}/ecosystem_analysis.json
-          if-no-files-found: ignore
-
-  update_notion:
-    name: 📓 Update Notion
-    needs: analyze
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install deps
-        run: pip install -r requirements.txt
-      - name: Download analysis
-        uses: actions/download-artifact@v4
-        with:
-          name: ecosystem-analysis
-          path: ${{ env.OUTPUT_DIR }}/
-      - name: Update Notion AI Ecosystem pages
-        env:
-          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
-          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
-        run: |
-          python scripts/ai_ecosystem_notion_updater.py \
-            --input "${{ env.OUTPUT_DIR }}/ecosystem_analysis.json" \
-            --dry-run "$DRY_RUN"
+          retention-days: 14

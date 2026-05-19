@@ -1,19 +1,16 @@
-name: PE· Build KG
+name: Build KG
 
 on:
   workflow_dispatch:
     inputs:
       kg_version:
-        description: 'KG 빌드 버전 (예: 4.26)'
+        description: 'KG 버전 (예: 4.27)'
+        required: true
+      source_file:
+        description: '소스 델타 파일 경로'
         required: false
         default: ''
-      dry_run:
-        description: 'Dry-run 모드'
-        required: false
-        default: 'false'
-        type: boolean
   push:
-    branches: [main]
     paths:
       - 'knowledge_graph_v*.json'
 
@@ -21,26 +18,26 @@ env:
   PYTHON_VERSION: '3.12'
 
 jobs:
-  build:
+  build_kg:
     name: 🧠 Build Knowledge Graph
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install deps
-        run: pip install -r requirements.txt
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r automation/requirements.txt
+
       - name: Build KG
         env:
-          KG_VERSION: ${{ github.event.inputs.kg_version || '' }}
-          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+          KG_VERSION: ${{ github.event.inputs.kg_version || 'auto' }}
         run: |
-          python scripts/build_kg.py \
+          echo "[INFO] Building KG v${KG_VERSION}"
+          python automation/kg_builder.py \
             --version "$KG_VERSION" \
-            --dry-run "$DRY_RUN"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: kg-build
-          path: knowledge_graph/
-          if-no-files-found: ignore
+            --output output/kg/

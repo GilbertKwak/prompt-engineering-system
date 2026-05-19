@@ -1,11 +1,9 @@
-name: PE· Prompt Validate
+name: Prompt Validate
 
 on:
   push:
-    branches: [main, develop]
     paths:
       - 'prompts/**'
-      - 'schemas/**'
   pull_request:
     paths:
       - 'prompts/**'
@@ -16,23 +14,22 @@ env:
 
 jobs:
   validate:
-    name: ✅ Validate Prompts
+    name: ✅ Prompt Validation
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install deps
-        run: pip install -r requirements.txt
-      - name: Validate prompt schemas
+
+      - name: Install dependencies
         run: |
-          python scripts/validate_prompts.py \
-            --schema schemas/prompt_schema.json \
-            --dir prompts/ \
-            --strict
-      - name: Check metadata completeness
+          pip install --upgrade pip
+          pip install -r automation/requirements.txt
+
+      - name: Validate all prompts
         run: |
-          python scripts/check_metadata.py \
-            --dir prompts/ \
-            --required-fields "id,version,domain,created_at"
+          python automation/prompt_validator.py \
+            --input-dir prompts/ \
+            --output output/validation/

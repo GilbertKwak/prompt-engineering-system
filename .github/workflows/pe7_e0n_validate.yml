@@ -1,87 +1,33 @@
-name: PE7· E0N Validate
+name: PE7 · E0N Validate
 
 on:
   push:
-    branches: [main, develop]
     paths:
-      - 'prompts/e0n/**'
-      - 'schemas/e0n*'
-  pull_request:
-    paths:
+      - 'e0n/**'
       - 'prompts/e0n/**'
   workflow_dispatch:
-    inputs:
-      strict_mode:
-        description: 'Strict validation mode'
-        required: false
-        default: 'true'
-        type: boolean
-      target_version:
-        description: 'E0N 버전 (e.g. v7.0)'
-        required: false
-        default: ''
 
 env:
   PYTHON_VERSION: '3.12'
 
 jobs:
-  validate_schema:
-    name: ✅ Validate E0N Schema
+  e0n_validate:
+    name: ✅ E0N Validation
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install deps
-        run: pip install -r requirements.txt
-      - name: Validate E0N JSON schema
-        env:
-          STRICT: ${{ github.event.inputs.strict_mode || 'true' }}
-          TARGET_VER: ${{ github.event.inputs.target_version || '' }}
-        run: |
-          python scripts/e0n_validator.py \
-            --schema schemas/e0n_schema.json \
-            --dir prompts/e0n/ \
-            --strict "$STRICT" \
-            --version "$TARGET_VER"
 
-  validate_content:
-    name: ✅ Validate E0N Content
-    needs: validate_schema
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install deps
-        run: pip install -r requirements.txt
-      - name: Content quality checks
-        run: |
-          python scripts/e0n_content_checker.py \
-            --dir prompts/e0n/ \
-            --min-score 0.7 \
-            --report output/e0n_quality_report.json
-      - uses: actions/upload-artifact@v4
-        with:
-          name: e0n-quality-report
-          path: output/e0n_quality_report.json
-          if-no-files-found: ignore
 
-  validate_metadata:
-    name: ✅ Validate E0N Metadata
-    needs: validate_schema
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install deps
-        run: pip install -r requirements.txt
-      - name: Metadata completeness check
+      - name: Install dependencies
         run: |
-          python scripts/e0n_metadata_checker.py \
-            --dir prompts/e0n/ \
-            --required-fields "id,version,domain,tier,created_at,updated_at"
+          pip install --upgrade pip
+          pip install -r automation/requirements.txt
+
+      - name: Run E0N validation
+        run: |
+          python automation/pe7_e0n_validator.py \
+            --input-dir e0n/ \
+            --output output/e0n/

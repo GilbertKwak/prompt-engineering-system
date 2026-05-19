@@ -1,106 +1,59 @@
-name: PE· MIN GA S4 Monthly Report
+name: PE-MIN · GA S4 Monthly Report
 
 on:
   schedule:
-    - cron: '0 5 1 * *'  # 매월 1일 14:00 KST
+    - cron: '0 4 1 * *'  # 매월 1일 04:00 UTC = 13:00 KST
   workflow_dispatch:
     inputs:
-      report_month:
-        description: '리포트 월 (YYYY-MM, 부비지륳시 지난달)'
+      month_override:
+        description: '월 강제 지정 (예: 2026-05)'
         required: false
         default: ''
-      dry_run:
-        description: 'Dry-run'
-        required: false
-        default: 'false'
-        type: boolean
 
 env:
   PYTHON_VERSION: '3.12'
-  OUTPUT_DIR: output/monthly_report
+  OUTPUT_DIR: output/monthly
 
 jobs:
-  generate_report:
-    name: 📈 Generate Monthly Report
+  monthly_report:
+    name: 📋 Monthly Report Generation
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install deps
-        run: pip install -r requirements.txt
-      - name: Determine report month
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r automation/requirements.txt
+
+      - name: Set month label
         id: month
         run: |
-          if [ -n "${{ github.event.inputs.report_month }}" ]; then
-            MONTH="${{ github.event.inputs.report_month }}"
+          if [ -n "${{ github.event.inputs.month_override }}" ]; then
+            MONTH="${{ github.event.inputs.month_override }}"
           else
-            MONTH=$(date -u -d '1 month ago' '+%Y-%m' 2>/dev/null || date -u '+%Y-%m')
+            MONTH=$(date -u '+%Y-%m')
           fi
-          echo "month=${MONTH}" >> $GITHUB_OUTPUT
-      - name: Generate report
+          echo "label=${MONTH}" >> $GITHUB_OUTPUT
+
+      - name: Generate monthly report
         env:
           PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
-          REPORT_MONTH: ${{ steps.month.outputs.month }}
-          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          MONTH: ${{ steps.month.outputs.label }}
         run: |
           mkdir -p ${{ env.OUTPUT_DIR }}
-          python scripts/ga_s4_monthly_report.py \
-            --month "$REPORT_MONTH" \
-            --output "${{ env.OUTPUT_DIR }}/monthly_report_${REPORT_MONTH}.json" \
-            --dry-run "$DRY_RUN"
+          python automation/pe_min_ga_s4_monthly.py \
+            --month "$MONTH" \
+            --output "${{ env.OUTPUT_DIR }}/report_${MONTH}.json"
+
       - uses: actions/upload-artifact@v4
         with:
-          name: monthly-report
+          name: monthly-report-${{ steps.month.outputs.label }}
           path: ${{ env.OUTPUT_DIR }}/
-          if-no-files-found: ignore
-
-  update_notion:
-    name: 📓 Update Notion
-    needs: generate_report
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install deps
-        run: pip install -r requirements.txt
-      - name: Download report
-        uses: actions/download-artifact@v4
-        with:
-          name: monthly-report
-          path: ${{ env.OUTPUT_DIR }}/
-      - name: Update Notion monthly page
-        env:
-          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
-          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
-        run: |
-          python scripts/notion_monthly_updater.py \
-            --input-dir "${{ env.OUTPUT_DIR }}" \
-            --dry-run "$DRY_RUN"
-
-  commit_report:
-    name: 💾 Commit Report
-    needs: [generate_report, update_notion]
-    runs-on: ubuntu-latest
-    if: always() && needs.generate_report.result == 'success'
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Download report
-        uses: actions/download-artifact@v4
-        with:
-          name: monthly-report
-          path: ${{ env.OUTPUT_DIR }}/
-      - name: Commit
-        run: |
-          git config --global user.name "Monthly Report Bot"
-          git config --global user.email "monthly-bot@github-actions"
-          git add output/monthly_report/ || true
-          git diff --staged --quiet || git commit -m \
-            "auto: GA S4 monthly report — $(date -u '+%Y-%m') [Monthly Report]"
-          git push || true
+          retention-days: 90

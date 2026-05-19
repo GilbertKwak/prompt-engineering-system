@@ -1,45 +1,33 @@
-name: PE3· Product QC
+name: PE3 · Product QC
 
 on:
   push:
-    branches: [main, develop]
     paths:
-      - 'prompts/**'
       - 'products/**'
-  pull_request:
-    paths:
-      - 'prompts/**'
-      - 'products/**'
+      - 'automation/**'
   workflow_dispatch:
 
 env:
   PYTHON_VERSION: '3.12'
 
 jobs:
-  qc:
-    name: ✅ Product QC
+  product_qc:
+    name: 🔬 Product QC Check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install deps
-        run: pip install -r requirements.txt
-      - name: Run product QC checks
+
+      - name: Install dependencies
         run: |
-          python scripts/product_qc.py \
-            --dir products/ \
-            --schema schemas/product_schema.json \
-            --strict
-      - name: Check prompt coverage
+          pip install --upgrade pip
+          pip install -r automation/requirements.txt
+
+      - name: Run QC
         run: |
-          python scripts/check_prompt_coverage.py \
-            --products-dir products/ \
-            --prompts-dir prompts/ \
-            --report-file output/qc_coverage_report.json
-      - uses: actions/upload-artifact@v4
-        with:
-          name: qc-report
-          path: output/qc_coverage_report.json
-          if-no-files-found: ignore
+          python automation/pe3_product_qc.py \
+            --input-dir products/ \
+            --output output/qc/

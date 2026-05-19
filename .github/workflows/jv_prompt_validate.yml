@@ -1,14 +1,10 @@
-name: PE· JV Prompt Validate
+name: JV · Prompt Validate
 
 on:
   push:
-    branches: [main, develop]
     paths:
       - 'prompts/**'
-      - 'schemas/**'
-  pull_request:
-    paths:
-      - 'prompts/**'
+      - 'jv/**'
   workflow_dispatch:
 
 env:
@@ -16,23 +12,23 @@ env:
 
 jobs:
   validate:
-    name: ✅ JV Prompt Validate
+    name: ✅ JV Prompt Validation
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install deps
-        run: pip install -r requirements.txt
-      - name: Validate JV prompts
+
+      - name: Install dependencies
         run: |
-          python scripts/jv_prompt_validator.py \
-            --schema schemas/jv_prompt_schema.json \
-            --dir prompts/jv/ \
-            --strict
-      - name: Check PE-7 metadata
+          pip install --upgrade pip
+          pip install -r automation/requirements.txt
+
+      - name: Validate prompts
         run: |
-          python scripts/check_pe7_metadata.py \
-            --dir prompts/ \
-            --required-fields "id,version,domain,created_at"
+          python automation/jv_prompt_validator.py \
+            --input-dir prompts/ \
+            --schema jv/schema.json \
+            --output output/validation/

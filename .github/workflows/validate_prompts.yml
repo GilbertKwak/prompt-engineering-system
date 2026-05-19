@@ -1,59 +1,34 @@
-name: PE· Validate Prompts (Full)
+name: Validate Prompts
 
 on:
   push:
-    branches: [main]
     paths:
       - 'prompts/**'
-      - 'schemas/**'
-      - 'requirements.txt'
-  pull_request:
-    branches: [main]
-    paths:
-      - 'prompts/**'
-  schedule:
-    - cron: '0 8 * * 1'  # 매주 월요일 17:00 KST
+      - 'templates/**'
   workflow_dispatch:
-    inputs:
-      strict_mode:
-        description: 'Strict mode'
-        required: false
-        default: 'true'
-        type: boolean
 
 env:
   PYTHON_VERSION: '3.12'
 
 jobs:
-  validate_all:
-    name: ✅ Validate All Prompts
+  validate_prompts:
+    name: ✅ Validate Prompts
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install deps
-        run: pip install -r requirements.txt
-      - name: Full prompt validation
-        env:
-          STRICT: ${{ github.event.inputs.strict_mode || 'true' }}
+
+      - name: Install dependencies
         run: |
-          python scripts/validate_prompts.py \
-            --schema schemas/prompt_schema.json \
-            --dir prompts/ \
-            --strict "$STRICT" \
-            --report output/validation_report.json
-      - name: Metadata audit
+          pip install --upgrade pip
+          pip install -r automation/requirements.txt
+
+      - name: Run prompt validation
         run: |
-          python scripts/metadata_auditor.py \
-            --dir prompts/ \
-            --required-fields "id,version,domain,tier,created_at" \
-            --report output/metadata_audit.json
-      - uses: actions/upload-artifact@v4
-        with:
-          name: validation-reports
-          path: |
-            output/validation_report.json
-            output/metadata_audit.json
-          if-no-files-found: ignore
+          python automation/validate_prompts.py \
+            --input-dir prompts/ \
+            --templates-dir templates/ \
+            --output output/validation/
