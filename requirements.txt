@@ -1,52 +1,32 @@
-# requirements.txt (root)
-# 전체 프로젝트 통합 의존성
-# GitHub Actions의 모든 workflow에서 pip install -r requirements.txt 로 참조
+# ═══════════════════════════════════════════════════════════════
+# PE System — Root requirements.txt
+# 대상: pe7_daily_pipeline, pe7_smr_pipeline, pe7_parallel_v3
+#        + 나머지 일반 workflow
+# 업데이트: 2026-05-19
+# ═══════════════════════════════════════════════════════════════
 
-# ── HTTP / Web Scraping ─────────────────────────────────────
+# HTTP & API
 requests>=2.31.0
 urllib3>=2.0.0
-beautifulsoup4>=4.12.0
-lxml>=4.9.0
-feedparser>=6.0.10
 
-# ── Data Processing ─────────────────────────────────────────
-pandas>=2.1.0
-numpy>=1.26.0
-scipy>=1.11.0
-
-# ── Google APIs (Sheets, Drive) ──────────────────────────────
-gspread>=5.12.0
-google-auth>=2.23.0
-google-auth-oauthlib>=1.1.0
-google-auth-httplib2>=0.1.1
-google-api-python-client>=2.100.0
-
-# ── Notion API ──────────────────────────────────────────────
+# Notion API
 notion-client>=2.2.1
 
-# ── NLP / Sentiment ─────────────────────────────────────────
-nltk>=3.8.1
-
-# ── JSON / Validation ───────────────────────────────────────
-jsonschema>=4.21.0
-pyyaml>=6.0.1
-
-# ── Date / Time ─────────────────────────────────────────────
+# 날짜/시간 처리
 python-dateutil>=2.8.2
 
-# ── Retry / Backoff ─────────────────────────────────────────
-tenacity>=8.2.3
+# JSON 스키마 검증
+jsonschema>=4.21.0
 
-# ── Logging / Utils ─────────────────────────────────────────
-rich>=13.7.0
-tqdm>=4.66.0
+# YAML 파싱
+pyyaml>=6.0.1
 
-# ── Crypto / Hash ───────────────────────────────────────────
-hashlib2>=1.0.0; python_version < '3.9'
+# 환경변수
+python-dotenv>=1.0.0
 
-# ── Reddit API (B-3 sentiment, optional) ────────────────────
-# praw>=7.7.0  # Reddit API 사용 시 주석 해제
+# 데이터 처리
+pandas>=2.1.0
+numpy>=1.26.0
 
-# ── ML / Transformers (B-3 FinBERT, optional) ───────────────
-# transformers>=4.35.0  # FinBERT 사용 시 주석 해제
-# torch>=2.1.0          # CPU-only: --index-url https://download.pytorch.org/whl/cpu
+# 텍스트 처리
+chardet>=5.2.0
