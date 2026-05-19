@@ -1,0 +1,119 @@
+name: 🤖 Agent Index → Notion Sync
+
+on:
+  push:
+    paths:
+      - 'agents/agent_index.yaml'
+      - 'agents/**/*.md'
+    branches: [main]
+
+  workflow_dispatch:
+    inputs:
+      write_back:
+        description: 'Write notion_page_id back to agent_index.yaml'
+        type: boolean
+        default: true
+      link_prompt_library:
+        description: 'Link agents to Prompt Library DB'
+        type: boolean
+        default: true
+      dry_run:
+        description: 'Dry run (no Notion writes)'
+        type: boolean
+        default: false
+
+jobs:
+  sync-agents:
+    name: Sync Agents to Notion
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install requests pyyaml
+
+      - name: Validate agent_index.yaml
+        run: |
+          python - <<'EOF'
+          import yaml, sys
+          with open('agents/agent_index.yaml') as f:
+              data = yaml.safe_load(f)
+          agents = data.get('agents', [])
+          print(f"✅ YAML valid: {len(agents)} agents found")
+          required = ['agent_id', 'name', 'domain', 'status', 'tier']
+          errors = []
+          for a in agents:
+              for field in required:
+                  if not a.get(field):
+                      errors.append(f"{a.get('agent_id','?')} missing: {field}")
+          if errors:
+              for e in errors: print(f"❌ {e}")
+              sys.exit(1)
+          print("✅ All required fields present")
+          EOF
+
+      - name: Sync to Notion
+        env:
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+        run: |
+          ARGS=""
+
+          # write-back flag
+          if [ "${{ github.event.inputs.write_back }}" = "true" ] || \
+             [ "${{ github.event_name }}" = "push" ]; then
+            ARGS="$ARGS --write-back"
+          fi
+
+          # link prompt library flag  
+          if [ "${{ github.event.inputs.link_prompt_library }}" = "true" ] || \
+             [ "${{ github.event_name }}" = "push" ]; then
+            ARGS="$ARGS --link-prompt-library"
+          fi
+
+          # dry-run flag
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            ARGS="$ARGS --dry-run"
+          fi
+
+          python scripts/sync_agents_to_notion.py \
+            --yaml agents/agent_index.yaml \
+            --db-id ${{ secrets.NOTION_AGENT_DB_ID }} \
+            --prompt-lib-page-id ${{ secrets.NOTION_PROMPT_LIB_PAGE_ID }} \
+            $ARGS
+
+      - name: Commit write-back (if page IDs updated)
+        if: |
+          github.event_name == 'workflow_dispatch' && 
+          github.event.inputs.write_back == 'true' &&
+          github.event.inputs.dry_run != 'true'
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'chore(agents): write-back notion_page_id to agent_index.yaml [skip ci]'
+          file_pattern: 'agents/agent_index.yaml'
+          commit_user_name: 'github-actions[bot]'
+          commit_user_email: 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Sync Summary
+        if: always()
+        run: |
+          echo "## Agent Index Sync Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Item | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Trigger | ${{ github.event_name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Branch | ${{ github.ref_name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Dry Run | ${{ github.event.inputs.dry_run || 'false' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Write-back | ${{ github.event.inputs.write_back || 'true' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Prompt Library Linked | ${{ github.event.inputs.link_prompt_library || 'true' }} |" >> $GITHUB_STEP_SUMMARY

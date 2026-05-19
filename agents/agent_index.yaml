@@ -1,0 +1,409 @@
+# ==============================================================================
+# Agent Index — prompt-engineering-system
+# Master registry of all production agents
+# Version: 1.0.0
+# Last Updated: 2026-05-20
+# Maintainer: GilbertKwak
+# ==============================================================================
+
+metadata:
+  version: "1.0.0"
+  total_agents: 20
+  domains: [semiconductor, investment, ai_technology, strategy, knowledge_management, operations]
+  last_updated: "2026-05-20"
+  notion_db_id: ""  # populated after Notion DB creation
+  prompt_library_db_id: "35055ed4-36f0-8159-aaa8-d0817e76ba18"
+
+# ==============================================================================
+# DOMAIN: SEMICONDUCTOR (3 agents)
+# ==============================================================================
+agents:
+
+  - agent_id: AGT-SC-001
+    name: Chip Supply Chain Analyst
+    domain: semiconductor
+    tier: core
+    version: "1.0"
+    status: active
+    file_path: agents/semiconductor/chip_supply_chain_analyst.md
+    tags: [semiconductor, supply-chain, HBM, TSMC, geopolitics]
+    llm_preference: claude-opus-4
+    capabilities:
+      - HBM/CoWoS 공급망 병목 분석
+      - TSMC/삼성/SK하이닉스 팹 가동률 추적
+      - 선단 공정 수율 및 CapEx 모델링
+    prompt_refs:
+      - PE-IP/domains/semiconductor/supply_chain_v2.md
+    notion_page_id: ""
+    priority: 1
+
+  - agent_id: AGT-SC-002
+    name: AI Chip Demand Forecaster
+    domain: semiconductor
+    tier: core
+    version: "1.0"
+    status: active
+    file_path: agents/semiconductor/ai_chip_demand_forecaster.md
+    tags: [AI-chip, GPU, demand-forecast, NVIDIA, datacenter]
+    llm_preference: claude-opus-4
+    capabilities:
+      - AI 가속기 수요 예측 (12~18개월)
+      - Hyperscaler CapEx → 칩 소요량 역산
+      - 데이터센터 전력 제약 보정
+    prompt_refs:
+      - PE-IP/domains/ai_infra/chip_demand_v1.md
+    notion_page_id: ""
+    priority: 2
+
+  - agent_id: AGT-SC-003
+    name: Export Control & Regulatory Monitor
+    domain: semiconductor
+    tier: core
+    version: "1.0"
+    status: active
+    file_path: agents/semiconductor/export_control_monitor.md
+    tags: [export-control, BIS, EAR, China, CHIPS-Act, regulatory]
+    llm_preference: claude-sonnet-4
+    capabilities:
+      - BIS 수출통제 규정 변경사항 추적
+      - Entity List 영향 분석
+      - CHIPS Act 보조금 모니터링
+    prompt_refs:
+      - PE-FIN/regulatory/export_control_v1.md
+    notion_page_id: ""
+    priority: 3
+
+# ==============================================================================
+# DOMAIN: INVESTMENT (3 agents)
+# ==============================================================================
+
+  - agent_id: AGT-INV-001
+    name: PE Due Diligence Agent
+    domain: investment
+    tier: core
+    version: "2.0"
+    status: active
+    file_path: agents/investment/pe_due_diligence_agent.md
+    tags: [PE, due-diligence, LBO, valuation, financial-model]
+    llm_preference: claude-opus-4
+    capabilities:
+      - LBO 모델 구조 설계 및 검증
+      - 재무제표 이상 탐지
+      - IC Memo 초안 생성
+    prompt_refs:
+      - PE-FIN/dd/lbo_model_v3.md
+      - PE-FIN/dd/ic_memo_template.md
+    notion_page_id: ""
+    priority: 4
+
+  - agent_id: AGT-INV-002
+    name: Strategic M&A Advisor
+    domain: investment
+    tier: core
+    version: "1.0"
+    status: active
+    file_path: agents/investment/strategic_ma_advisor.md
+    tags: [M&A, strategic, synergy, valuation, deal-structure]
+    llm_preference: claude-opus-4
+    capabilities:
+      - M&A 시너지 정량화
+      - 딜 구조 설계
+      - Regulatory clearance 리스크 분석
+    prompt_refs:
+      - PE-FIN/ma/synergy_model_v2.md
+    notion_page_id: ""
+    priority: 5
+
+  - agent_id: AGT-INV-003
+    name: Market Intelligence Scout
+    domain: investment
+    tier: core
+    version: "1.0"
+    status: active
+    file_path: agents/investment/market_intelligence_scout.md
+    tags: [market-intel, deal-flow, sector-mapping, competitive-intel]
+    llm_preference: claude-sonnet-4
+    capabilities:
+      - 섹터별 딜 플로우 스캐닝
+      - 신흥 테마 조기 탐지
+      - 투자 테제 검증
+    prompt_refs:
+      - PE-FIN/intel/market_scout_v1.md
+    notion_page_id: ""
+    priority: 6
+
+# ==============================================================================
+# DOMAIN: AI TECHNOLOGY (4 agents)
+# ==============================================================================
+
+  - agent_id: AGT-AI-001
+    name: LLM Capability Tracker
+    domain: ai_technology
+    tier: core
+    version: "1.0"
+    status: active
+    file_path: agents/ai_technology/llm_capability_tracker.md
+    tags: [LLM, benchmark, capability-assessment, frontier-AI]
+    llm_preference: claude-opus-4
+    capabilities:
+      - 프론티어 모델 벤치마크 추적
+      - 모델 아키텍처 변화 분석
+      - AI 역량 한계 탐지 (EW 연동)
+    prompt_refs:
+      - PE-IP/domains/ai_tech/llm_tracker_v1.md
+    notion_page_id: ""
+    priority: 7
+
+  - agent_id: AGT-AI-002
+    name: AI Infrastructure Analyst
+    domain: ai_technology
+    tier: core
+    version: "1.0"
+    status: active
+    file_path: agents/ai_technology/ai_infra_analyst.md
+    tags: [AI-infra, datacenter, networking, power, NVIDIA]
+    llm_preference: claude-sonnet-4
+    capabilities:
+      - AI 데이터센터 인프라 스택 분석
+      - 전력/냉각 제약 투자 기회 발굴
+      - InfiniBand vs RoCE 분석
+    prompt_refs:
+      - PE-IP/domains/ai_infra/datacenter_v2.md
+    notion_page_id: ""
+    priority: 8
+
+  - agent_id: AGT-AI-003
+    name: Agentic AI & Orchestration Monitor
+    domain: ai_technology
+    tier: core
+    version: "1.0"
+    status: active
+    file_path: agents/ai_technology/agentic_ai_monitor.md
+    tags: [agentic-AI, multi-agent, orchestration, MCP, LangChain]
+    llm_preference: claude-opus-4
+    capabilities:
+      - 멀티에이전트 프레임워크 비교
+      - MCP/A2A 프로토콜 추적
+      - Enterprise agent 도입 ROI 분석
+    prompt_refs:
+      - PE-IP/domains/ai_tech/agentic_v1.md
+    notion_page_id: ""
+    priority: 9
+
+  - agent_id: AGT-AI-004
+    name: AI Weekly Intel Collector
+    domain: ai_technology
+    tier: core
+    version: "1.0"
+    status: active
+    file_path: automation/ai_intel_collector.py
+    tags: [intel-collection, weekly-digest, perplexity, sonar]
+    llm_preference: perplexity-sonar-pro
+    capabilities:
+      - 도메인별 AI 인텔 수집
+      - EW 임계값 탐지 연동
+      - KG Delta 생성 트리거
+    prompt_refs:
+      - PE-IP/domains/ai_tech/intel_collector_v1.md
+    notion_page_id: ""
+    priority: 10
+
+# ==============================================================================
+# DOMAIN: STRATEGY (3 agents)
+# ==============================================================================
+
+  - agent_id: AGT-STR-001
+    name: Competitive Strategy Analyst
+    domain: strategy
+    tier: core
+    version: "1.0"
+    status: active
+    file_path: agents/strategy/competitive_strategy_analyst.md
+    tags: [competitive-strategy, Porter, moat, positioning, BCG]
+    llm_preference: claude-opus-4
+    capabilities:
+      - Porter 5-Forces 분석
+      - 경쟁 우위 원천 식별 (VRIN)
+      - 전략 대안 시나리오 설계
+    prompt_refs:
+      - PE-CON/strategy/competitive_analysis_v2.md
+    notion_page_id: ""
+    priority: 11
+
+  - agent_id: AGT-STR-002
+    name: Scenario Planning Agent
+    domain: strategy
+    tier: core
+    version: "1.0"
+    status: active
+    file_path: agents/strategy/scenario_planning_agent.md
+    tags: [scenario-planning, geopolitics, macro, Shell-method]
+    llm_preference: claude-opus-4
+    capabilities:
+      - Shell 방식 시나리오 설계
+      - 지정학 리스크 매핑
+      - 조기 경보 지표 설계
+    prompt_refs:
+      - PE-CON/strategy/scenario_v1.md
+    notion_page_id: ""
+    priority: 12
+
+  - agent_id: AGT-STR-003
+    name: Corporate Development Agent
+    domain: strategy
+    tier: core
+    version: "1.0"
+    status: active
+    file_path: agents/strategy/corporate_development_agent.md
+    tags: [corp-dev, M&A, JV, build-buy-partner]
+    llm_preference: claude-sonnet-4
+    capabilities:
+      - Build-Buy-Partner 의사결정 프레임워크
+      - 전략적 제휴 구조 설계
+      - Corporate VC 포트폴리오 전략
+    prompt_refs:
+      - PE-CON/strategy/corp_dev_v1.md
+    notion_page_id: ""
+    priority: 13
+
+# ==============================================================================
+# DOMAIN: KNOWLEDGE MANAGEMENT (4 agents)
+# ==============================================================================
+
+  - agent_id: AGT-KM-001
+    name: Knowledge Graph Curator
+    domain: knowledge_management
+    tier: core
+    version: "1.0"
+    status: active
+    file_path: agents/knowledge_management/knowledge_graph_curator.md
+    tags: [knowledge-graph, ontology, entity-extraction, KG]
+    llm_preference: claude-opus-4
+    capabilities:
+      - 엔티티/관계 자동 추출
+      - KG 노드 충돌 감지
+      - KG 기반 추론 체인 생성
+    prompt_refs:
+      - PE-IP/domains/knowledge/kg_curator_v1.md
+    notion_page_id: ""
+    priority: 14
+
+  - agent_id: AGT-KM-002
+    name: Prompt Engineer Agent
+    domain: knowledge_management
+    tier: core
+    version: "2.0"
+    status: active
+    file_path: agents/knowledge_management/prompt_engineer_agent.md
+    tags: [prompt-engineering, CoT, meta-prompting, evaluation]
+    llm_preference: claude-opus-4
+    capabilities:
+      - 프롬프트 설계 및 최적화
+      - A/B 테스트 프레임워크
+      - 프롬프트 버전 관리
+    prompt_refs:
+      - PE-IP/core/prompt_engineer_v2.md
+    notion_page_id: ""
+    priority: 15
+
+  - agent_id: AGT-KM-003
+    name: Research Synthesis Agent
+    domain: knowledge_management
+    tier: core
+    version: "1.0"
+    status: active
+    file_path: agents/knowledge_management/research_synthesis_agent.md
+    tags: [research, synthesis, literature-review, OSINT]
+    llm_preference: claude-opus-4
+    capabilities:
+      - 다중 소스 리서치 통합
+      - 신호 vs 노이즈 분류
+      - OSINT 기반 시장 정보 합성
+    prompt_refs:
+      - PE-IP/core/research_synthesis_v1.md
+    notion_page_id: ""
+    priority: 16
+
+  - agent_id: AGT-KM-004
+    name: Notion Sync Manager
+    domain: knowledge_management
+    tier: core
+    version: "1.0"
+    status: active
+    file_path: scripts/sync_agents_to_notion.py
+    tags: [notion, sync, automation, YAML, DB-management]
+    llm_preference: claude-sonnet-4
+    capabilities:
+      - YAML→Notion 페이지 업서트
+      - Agent Index DB 관리
+      - Prompt Library 관계 연결
+    prompt_refs: []
+    notion_page_id: ""
+    priority: 17
+
+# ==============================================================================
+# DOMAIN: OPERATIONS (3 agents)
+# ==============================================================================
+
+  - agent_id: AGT-OPS-001
+    name: Workflow Automation Agent
+    domain: operations
+    tier: core
+    version: "1.0"
+    status: active
+    file_path: agents/operations/workflow_automation_agent.md
+    tags: [automation, GitHub-Actions, Python, CI-CD]
+    llm_preference: claude-sonnet-4
+    capabilities:
+      - GitHub Actions 워크플로 설계
+      - Python 자동화 스크립트 생성
+      - Notion↔GitHub 양방향 동기화
+    prompt_refs:
+      - PE-IP/core/workflow_automation_v1.md
+    notion_page_id: ""
+    priority: 18
+
+  - agent_id: AGT-OPS-002
+    name: Quality Validator Agent
+    domain: operations
+    tier: core
+    version: "1.0"
+    status: active
+    file_path: agents/operations/quality_validator_agent.md
+    tags: [quality, validation, QA, hallucination-detection, scoring]
+    llm_preference: claude-sonnet-4
+    capabilities:
+      - LLM 출력 품질 자동 스코어링
+      - 할루시네이션 탐지
+      - 프롬프트 회귀 테스트
+    prompt_refs:
+      - PE-IP/core/quality_validator_v1.md
+    notion_page_id: ""
+    priority: 19
+
+  - agent_id: AGT-OPS-003
+    name: Session Log Manager
+    domain: operations
+    tier: core
+    version: "1.0"
+    status: active
+    file_path: agents/operations/session_log_manager.md
+    tags: [session-management, logging, continuity, context]
+    llm_preference: claude-sonnet-4
+    capabilities:
+      - 세션 컨텍스트 자동 요약
+      - 작업 연속성 보장
+      - Notion 세션 로그 자동 업데이트
+    prompt_refs:
+      - PE-IP/core/session_manager_v1.md
+    notion_page_id: ""
+    priority: 20
+
+# ==============================================================================
+# USAGE NOTES
+# ==============================================================================
+# 1. notion_page_id: populated by scripts/sync_agents_to_notion.py on first run
+# 2. prompt_refs: relative paths from repo root to source prompt files
+# 3. tier: core (always active) | experimental (A/B testing) | deprecated
+# 4. llm_preference: default model — can be overridden per call
+# 5. To add a new agent: follow template, add entry here, run sync script
