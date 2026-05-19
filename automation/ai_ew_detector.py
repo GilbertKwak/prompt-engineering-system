@@ -1,267 +1,293 @@
 #!/usr/bin/env python3
 """
-ai_ew_detector.py  — Section A · Step 2
-수집된 인텔에서 Early Warning(EW) 신호 탐지
+ai_ew_detector.py — Early Warning (EW) Detector v2
+AI Intel Weekly pipeline: Step 2
 
-Usage:
-  python automation/ai_ew_detector.py \
-    --input-dir output/ai_intel \
-    --week 2026-W21 \
-    --output output/ai_intel/ew_report.json
+Inputs : output/ai_intel/*.json  (from ai_intel_collector.py)
+Outputs: ew_report.json          (EW signals, severity, domain weights)
+
+EW Trigger Logic:
+  1. Metric threshold breach  → score += weight
+  2. Keyword frequency hit    → score += 0.5 per hit
+  3. Cross-domain correlation → score *= 1.2 bonus
+  Severity: NONE(<2) / WATCH(2-4) / ALERT(4-6) / CRITICAL(6+)
 """
 
 import argparse
 import json
 import os
-import sys
 import re
+import sys
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
-# ─── EW 탐지 규칙 정의 ─────────────────────────────────────────────────────────
-# 각 도메인별 임계값 규칙 + 키워드 기반 휴리스틱
-EW_RULES = {
-    "enterprise_deployment": [
-        {"metric": "adoption_rate", "threshold": 0.30, "direction": "below",
-         "signal": "EW_ENTERPRISE_STALL", "severity": "MEDIUM",
-         "description": "기업 AI 도입률 30% 미만 — 성장 둔화 신호"},
-        {"metric": "enterprise_deal_size", "threshold": 1_000_000, "direction": "below",
-         "signal": "EW_DEAL_SIZE_DROP", "severity": "LOW",
-         "description": "평균 계약 규모 $1M 미만 — 예산 압박 가능성"},
-    ],
-    "model_performance": [
-        {"metric": "cost_per_million_tokens", "threshold": 50, "direction": "above",
-         "signal": "EW_MODEL_COST_SPIKE", "severity": "HIGH",
-         "description": "토큰당 비용 급등 — 경쟁 모델 전환 압력"},
-        {"metric": "benchmark_score", "threshold": 0.80, "direction": "below",
-         "signal": "EW_BENCHMARK_REGRESSION", "severity": "MEDIUM",
-         "description": "벤치마크 점수 하락 — 모델 품질 이슈"},
-    ],
-    "infrastructure": [
-        {"metric": "gpu_supply_tightness", "threshold": 0.80, "direction": "above",
-         "signal": "EW_GPU_SHORTAGE", "severity": "HIGH",
-         "description": "GPU 공급 긴축 80% 초과 — 인프라 병목 위험"},
-        {"metric": "pue", "threshold": 1.6, "direction": "above",
-         "signal": "EW_DATACENTER_INEFFICIENCY", "severity": "LOW",
-         "description": "PUE 1.6 초과 — 에너지 효율 저하"},
-    ],
-    "regulatory": [
-        {"metric": "enforcement_action_count", "threshold": 3, "direction": "above",
-         "signal": "EW_REGULATORY_SURGE", "severity": "HIGH",
-         "description": "주간 규제 조치 3건 초과 — 컴플라이언스 긴급 대응 필요"},
-        {"metric": "compliance_deadline_count", "threshold": 2, "direction": "above",
-         "signal": "EW_COMPLIANCE_DEADLINE", "severity": "MEDIUM",
-         "description": "임박 컴플라이언스 데드라인 2건 초과"},
-    ],
-    "open_source": [
-        {"metric": "new_model_releases", "threshold": 5, "direction": "above",
-         "signal": "EW_OSS_EXPLOSION", "severity": "MEDIUM",
-         "description": "주간 오픈소스 모델 5개 초과 릴리스 — 파편화 위험"},
-    ],
-    "investment": [
-        {"metric": "funding_volume_usd", "threshold": 5_000_000_000, "direction": "above",
-         "signal": "EW_INVESTMENT_SPIKE", "severity": "HIGH",
-         "description": "주간 AI 투자 $5B 초과 — 버블 징후 또는 구조적 전환"},
-        {"metric": "deal_count", "threshold": 1, "direction": "below",
-         "signal": "EW_INVESTMENT_DROUGHT", "severity": "MEDIUM",
-         "description": "주간 딜 1건 미만 — 투자 위축"},
-    ],
+# ── EW Configuration ──────────────────────────────────────────────────────────
+
+EW_METRIC_THRESHOLDS: dict[str, dict] = {
+    "training_cost_reduction_pct": {"threshold": 50, "op": "gte", "weight": 2.0, "domain": "model_architecture"},
+    "inference_cost_reduction_pct": {"threshold": 40, "op": "gte", "weight": 1.5, "domain": "model_architecture"},
+    "new_model_releases_count":     {"threshold": 3,  "op": "gte", "weight": 1.0, "domain": "model_architecture"},
+    "enterprise_adoption_pct":      {"threshold": 40, "op": "gte", "weight": 1.5, "domain": "enterprise_deployment"},
+    "rag_migration_rate_pct":       {"threshold": 30, "op": "gte", "weight": 1.0, "domain": "enterprise_deployment"},
+    "open_source_share_pct":        {"threshold": 50, "op": "gte", "weight": 1.5, "domain": "open_source_dynamics"},
+    "regulatory_actions_count":     {"threshold": 2,  "op": "gte", "weight": 2.0, "domain": "regulatory_geopolitical"},
+    "china_export_restriction_new": {"threshold": 1,  "op": "gte", "weight": 2.5, "domain": "regulatory_geopolitical"},
+    "gpu_supply_shortage_severity": {"threshold": 7,  "op": "gte", "weight": 2.0, "domain": "hardware_infrastructure"},
+    "hbm_price_change_pct":         {"threshold": 20, "op": "gte", "weight": 1.5, "domain": "hardware_infrastructure"},
+    "agent_deployment_incidents":   {"threshold": 3,  "op": "gte", "weight": 1.5, "domain": "agentic_multimodal"},
+    "multimodal_capability_jump":   {"threshold": 1,  "op": "gte", "weight": 1.0, "domain": "agentic_multimodal"},
 }
 
-# 키워드 기반 EW 휴리스틱 (메트릭 데이터 없을 때 보완)
-EW_KEYWORDS = {
-    "EW_SECURITY_BREACH": {
-        "keywords": ["breach", "vulnerability", "exploit", "attack", "hack", "zero-day"],
-        "severity": "HIGH", "min_hits": 2,
-        "description": "보안 위협 키워드 다수 탐지",
-    },
-    "EW_LEADERSHIP_CHANGE": {
-        "keywords": ["CEO", "CTO", "resign", "fired", "replaced", "departure", "leadership"],
-        "severity": "MEDIUM", "min_hits": 2,
-        "description": "주요 리더십 변동 신호",
-    },
-    "EW_RAG_MIGRATION": {
-        "keywords": ["RAG", "retrieval-augmented", "vector database", "migration", "pipeline shift"],
-        "severity": "MEDIUM", "min_hits": 2,
-        "description": "RAG 아키텍처 대규모 전환 신호",
-    },
-    "EW_GEOPOLITICAL": {
-        "keywords": ["sanction", "export control", "ban", "geopolitical", "China", "Taiwan", "trade war"],
-        "severity": "HIGH", "min_hits": 2,
-        "description": "지정학적 리스크 신호",
-    },
-}
+EW_KEYWORDS: list[dict] = [
+    {"pattern": r"export.{0,10}restrict|ban.{0,10}chip|sanction.{0,10}(nvidia|tsmc|asml)",
+     "weight": 2.5, "tag": "EW_EXPORT_CONTROL"},
+    {"pattern": r"breakthrou|paradigm.shift|10x.{0,5}(faster|cheaper|better)",
+     "weight": 1.5, "tag": "EW_CAPABILITY_JUMP"},
+    {"pattern": r"(openai|anthropic|google).{0,20}(acqui|merger|partner).{0,20}(microsoft|amazon|apple)",
+     "weight": 2.0, "tag": "EW_STRATEGIC_ALLIANCE"},
+    {"pattern": r"regulation.{0,15}(pass|sign|enforce)|EU AI Act|AI Safety.{0,10}(law|bill|mandate)",
+     "weight": 2.0, "tag": "EW_REGULATORY"},
+    {"pattern": r"open.?source.{0,20}(match|surpass|beat).{0,20}(gpt|claude|gemini)",
+     "weight": 1.5, "tag": "EW_OPENSOURCE_PARITY"},
+    {"pattern": r"rag.{0,15}(dead|obsolete|replac).{0,15}(fine.?tun|memory|context)",
+     "weight": 1.0, "tag": "EW_RAG_MIGRATION"},
+    {"pattern": r"(hbm|gpu|tpu).{0,20}(shortage|supply.{0,10}crunch|allocation)",
+     "weight": 2.0, "tag": "EW_HW_SUPPLY"},
+    {"pattern": r"agent.{0,20}(autonom|self.direct|unsupervised).{0,20}(deploy|production)",
+     "weight": 1.5, "tag": "EW_AGENT_AUTONOMY"},
+]
+
+SEVERITY_MATRIX = [
+    (6.0, "CRITICAL"),
+    (4.0, "ALERT"),
+    (2.0, "WATCH"),
+    (0.0, "NONE"),
+]
+
+DOMAIN_CROSS_CORRELATIONS: list[set] = [
+    {"model_architecture", "hardware_infrastructure"},
+    {"regulatory_geopolitical", "hardware_infrastructure"},
+    {"enterprise_deployment", "agentic_multimodal"},
+]
 
 
-# ─── 유틸리티 ─────────────────────────────────────────────────────────────────
-def safe_float(value) -> float | None:
-    """안전한 숫자 변환 (문자열 포함)"""
-    if value is None:
-        return None
-    try:
-        # 퍼센트 문자열 처리 (예: "45%" → 0.45)
-        if isinstance(value, str):
-            value = value.replace("%", "").replace(",", "").strip()
-            v = float(value)
-            # 0-1 범위를 벗어난 퍼센트를 비율로 변환 (50 → 0.5)
-            # 단, 1보다 큰 값은 그대로 유지 (예: 5000000000)
-            return v
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+def _score_severity(score: float) -> str:
+    for threshold, label in SEVERITY_MATRIX:
+        if score >= threshold:
+            return label
+    return "NONE"
+
+
+def _extract_number(value: Any) -> float | None:
+    if isinstance(value, (int, float)):
         return float(value)
-    except (ValueError, TypeError):
-        return None
-
-
-def extract_metric_flexible(metrics_dict: dict, target_key: str) -> float | None:
-    """유사 키 매칭으로 메트릭 값 추출 (예: 'cost_per_million_tokens' ↔ 'cost_per_token')"""
-    if not metrics_dict:
-        return None
-    # 1순위: 정확한 키
-    if target_key in metrics_dict:
-        return safe_float(metrics_dict[target_key])
-    # 2순위: 부분 문자열 매칭
-    for k, v in metrics_dict.items():
-        if target_key in k or k in target_key:
-            return safe_float(v)
-    # 3순위: 키워드 토큰 매칭
-    target_tokens = set(target_key.split("_"))
-    for k, v in metrics_dict.items():
-        k_tokens = set(k.split("_"))
-        if len(target_tokens & k_tokens) >= 2:
-            return safe_float(v)
+    if isinstance(value, str):
+        m = re.search(r"[-+]?\d+\.?\d*", value.replace(",", ""))
+        if m:
+            return float(m.group())
     return None
 
 
-def check_metric_rule(rule: dict, metrics: dict) -> dict | None:
-    """단일 메트릭 규칙 평가 → 위반 시 EW 결과 반환"""
-    value = extract_metric_flexible(metrics, rule["metric"])
-    if value is None:
-        return None  # 데이터 없으면 스킵 (휴리스틱으로 보완)
-
-    triggered = False
-    if rule["direction"] == "above" and value > rule["threshold"]:
-        triggered = True
-    elif rule["direction"] == "below" and value < rule["threshold"]:
-        triggered = True
-
-    if triggered:
-        return {
-            "signal": rule["signal"],
-            "severity": rule["severity"],
-            "description": rule["description"],
-            "metric": rule["metric"],
-            "observed_value": value,
-            "threshold": rule["threshold"],
-            "direction": rule["direction"],
-            "source": "metric_rule",
-        }
+def _find_metric(data: dict, metric_key: str) -> float | None:
+    """Search metrics dict with fuzzy key matching."""
+    metrics: dict = data.get("metrics", {})
+    if not metrics:
+        return None
+    # exact match
+    if metric_key in metrics:
+        return _extract_number(metrics[metric_key])
+    # partial / underscore-tolerant match
+    norm = metric_key.lower().replace("_", "")
+    for k, v in metrics.items():
+        if norm in k.lower().replace("_", ""):
+            return _extract_number(v)
     return None
 
 
-def check_keyword_heuristics(intel: dict) -> list[dict]:
-    """key_facts + emerging_signals 텍스트에서 키워드 EW 탐지"""
-    text_corpus = " ".join(
-        intel.get("key_facts", []) +
-        intel.get("emerging_signals", []) +
-        [intel.get("summary", "")]
-    ).lower()
-
-    triggered = []
-    for signal_name, rule in EW_KEYWORDS.items():
-        hits = sum(1 for kw in rule["keywords"] if kw.lower() in text_corpus)
-        if hits >= rule["min_hits"]:
-            triggered.append({
-                "signal": signal_name,
-                "severity": rule["severity"],
-                "description": rule["description"],
-                "keyword_hits": hits,
-                "source": "keyword_heuristic",
-            })
-    return triggered
+def _text_body(data: dict) -> str:
+    """Combine all text fields from an intel JSON for keyword scanning."""
+    parts = []
+    for field in ("summary", "analysis", "key_facts", "recommendations"):
+        val = data.get(field, "")
+        if isinstance(val, list):
+            parts.extend(val)
+        elif isinstance(val, str):
+            parts.append(val)
+    return " ".join(parts).lower()
 
 
-def analyze_domain(intel_path: Path) -> dict:
-    """단일 인텔 파일 EW 분석"""
-    try:
-        intel = json.loads(intel_path.read_text())
-    except Exception as e:
-        return {"file": str(intel_path), "error": str(e), "signals": []}
+# ── Core Detection ────────────────────────────────────────────────────────────
 
-    domain = intel.get("domain", "unknown")
-    metrics = intel.get("metrics", {})
-    ew_signals = []
-
-    # 메트릭 규칙 검사
-    for rule in EW_RULES.get(domain, []):
-        result = check_metric_rule(rule, metrics)
-        if result:
-            ew_signals.append(result)
-
-    # 키워드 휴리스틱 (메트릭 신호가 없을 때 보완)
-    if not ew_signals:
-        ew_signals.extend(check_keyword_heuristics(intel))
-
-    return {
-        "domain": domain,
-        "week": intel.get("week"),
-        "analyzed_at": datetime.utcnow().isoformat() + "Z",
-        "ew_triggered": len(ew_signals) > 0,
-        "signal_count": len(ew_signals),
-        "signals": ew_signals,
-        "max_severity": _max_severity(ew_signals),
-        "intel_confidence": intel.get("confidence", 0.0),
-        "source_file": str(intel_path),
-    }
-
-
-def _max_severity(signals: list[dict]) -> str:
-    priority = {"HIGH": 3, "MEDIUM": 2, "LOW": 1, "NONE": 0}
-    if not signals:
-        return "NONE"
-    return max(signals, key=lambda s: priority.get(s.get("severity", "NONE"), 0))["severity"]
-
-
-# ─── CLI 진입점 ───────────────────────────────────────────────────────────────
-def main():
-    parser = argparse.ArgumentParser(description="AI 인텔 Early Warning 탐지")
-    parser.add_argument("--input-dir", required=True, help="ai_intel_collector 출력 디렉토리")
-    parser.add_argument("--week", required=True, help="분석 대상 주차 (예: 2026-W21)")
-    parser.add_argument("--output", required=True, help="EW 리포트 저장 경로 (JSON)")
-    args = parser.parse_args()
-
-    input_dir = Path(args.input_dir)
-    if not input_dir.exists():
-        print(f"[ERROR] 입력 디렉토리 없음: {input_dir}", file=sys.stderr)
+def detect_ew(intel_dir: str, week: str) -> dict:
+    intel_path = Path(intel_dir)
+    if not intel_path.exists():
+        print(f"[EW] Directory not found: {intel_dir}", file=sys.stderr)
         sys.exit(1)
 
-    intel_files = list(input_dir.glob("intel_*.json"))
-    if not intel_files:
-        print(f"[WARN] intel_*.json 파일 없음: {input_dir}", file=sys.stderr)
+    json_files = sorted(intel_path.glob("*.json"))
+    if not json_files:
+        print(f"[EW] No JSON files found in {intel_dir}", file=sys.stderr)
+        sys.exit(1)
 
-    domain_results = [analyze_domain(f) for f in intel_files]
+    triggered_signals: list[dict] = []
+    domain_scores: dict[str, float] = {}
+    total_score: float = 0.0
+    domains_triggered: set[str] = set()
 
-    total_signals = [s for r in domain_results for s in r.get("signals", [])]
-    all_signal_names = [s["signal"] for s in total_signals]
-    overall_severity = _max_severity(total_signals)
+    for jf in json_files:
+        try:
+            with open(jf, encoding="utf-8") as f:
+                data = json.load(f)
+        except (json.JSONDecodeError, OSError) as e:
+            print(f"[EW] Skip {jf.name}: {e}", file=sys.stderr)
+            continue
+
+        domain = data.get("domain", jf.stem)
+        text   = _text_body(data)
+
+        # ── 1. Metric threshold checks ──
+        for metric_key, cfg in EW_METRIC_THRESHOLDS.items():
+            if cfg["domain"] not in domain:
+                # still check cross-domain if file domain is ambiguous
+                if domain not in ("all", "overview"):
+                    continue
+            val = _find_metric(data, metric_key)
+            if val is None:
+                continue
+            threshold = cfg["threshold"]
+            op = cfg["op"]
+            triggered = (
+                (op == "gte" and val >= threshold) or
+                (op == "lte" and val <= threshold) or
+                (op == "gt"  and val >  threshold) or
+                (op == "lt"  and val <  threshold)
+            )
+            if triggered:
+                w = cfg["weight"]
+                total_score += w
+                domain_scores[domain] = domain_scores.get(domain, 0.0) + w
+                domains_triggered.add(cfg["domain"])
+                triggered_signals.append({
+                    "type":    "METRIC_BREACH",
+                    "domain":  domain,
+                    "metric":  metric_key,
+                    "value":   val,
+                    "threshold": threshold,
+                    "weight":  w,
+                    "tag":     f"EW_{metric_key.upper()}",
+                    "source_file": jf.name,
+                })
+
+        # ── 2. Keyword frequency hits ──
+        for kw_cfg in EW_KEYWORDS:
+            hits = len(re.findall(kw_cfg["pattern"], text, re.IGNORECASE))
+            if hits >= 2:
+                w = kw_cfg["weight"] * min(hits / 2, 2.0)  # cap at 2x
+                total_score += w
+                domain_scores[domain] = domain_scores.get(domain, 0.0) + w
+                domains_triggered.add(domain)
+                triggered_signals.append({
+                    "type":    "KEYWORD_HIT",
+                    "domain":  domain,
+                    "pattern": kw_cfg["pattern"][:60],
+                    "hits":    hits,
+                    "weight":  round(w, 2),
+                    "tag":     kw_cfg["tag"],
+                    "source_file": jf.name,
+                })
+
+    # ── 3. Cross-domain correlation bonus ──
+    cross_bonus_applied = False
+    for corr_set in DOMAIN_CROSS_CORRELATIONS:
+        if corr_set.issubset(domains_triggered):
+            total_score *= 1.2
+            cross_bonus_applied = True
+            triggered_signals.append({
+                "type":   "CROSS_DOMAIN_CORRELATION",
+                "domains": list(corr_set),
+                "bonus":  "×1.2",
+                "tag":    "EW_CROSS_DOMAIN",
+            })
+            break  # apply once
+
+    severity   = _score_severity(total_score)
+    ew_triggered = severity != "NONE"
+
+    # top signal tags (deduplicated)
+    signal_tags = list(dict.fromkeys(
+        s["tag"] for s in triggered_signals if s.get("tag")
+    ))
 
     report = {
-        "week": args.week,
-        "generated_at": datetime.utcnow().isoformat() + "Z",
-        "total_domains_analyzed": len(domain_results),
-        "total_ew_signals": len(total_signals),
-        "overall_severity": overall_severity,
-        "ew_triggered": len(total_signals) > 0,
-        "signal_names": all_signal_names,
-        "domain_results": domain_results,
+        "week":          week,
+        "generated_at":  datetime.utcnow().isoformat() + "Z",
+        "ew_triggered":  ew_triggered,
+        "severity":      severity,
+        "total_score":   round(total_score, 2),
+        "signal_count":  len(triggered_signals),
+        "signal_tags":   signal_tags,
+        "domain_scores": {k: round(v, 2) for k, v in sorted(domain_scores.items(), key=lambda x: -x[1])},
+        "cross_bonus":   cross_bonus_applied,
+        "signals":       triggered_signals,
+        "summary": (
+            f"EW {severity}: score={total_score:.1f}, "
+            f"{len(triggered_signals)} signals across "
+            f"{len(domain_scores)} domains"
+        ),
     }
 
-    output_path = Path(args.output)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(report, ensure_ascii=False, indent=2))
+    return report
 
-    print(f"[OK] EW 분석 완료 → {output_path}")
-    print(f"     총 신호: {len(total_signals)} | 최고 심각도: {overall_severity}")
-    if all_signal_names:
-        print(f"     신호 목록: {', '.join(all_signal_names)}")
+
+# ── CLI ───────────────────────────────────────────────────────────────────────
+
+def parse_args() -> argparse.Namespace:
+    p = argparse.ArgumentParser(description="AI Intel Early Warning Detector")
+    p.add_argument("--input-dir",  default="output/ai_intel", help="Directory with intel JSON files")
+    p.add_argument("--week",       required=True,              help="ISO week tag e.g. 2026-W21")
+    p.add_argument("--output",     default="",                 help="Output JSON path (default: input-dir/ew_report.json)")
+    p.add_argument("--threshold",  type=float, default=2.0,    help="Minimum score to trigger EW (default 2.0)")
+    return p.parse_args()
+
+
+def main() -> None:
+    args = parse_args()
+
+    print(f"[EW] Scanning: {args.input_dir}  |  Week: {args.week}")
+    report = detect_ew(args.input_dir, args.week)
+
+    # Apply custom threshold override
+    if report["total_score"] < args.threshold:
+        report["ew_triggered"] = False
+        report["severity"]     = "NONE"
+
+    # Output path
+    out_path = args.output or str(Path(args.input_dir) / "ew_report.json")
+    os.makedirs(os.path.dirname(os.path.abspath(out_path)), exist_ok=True)
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(report, f, ensure_ascii=False, indent=2)
+
+    print(f"[EW] Severity : {report['severity']}")
+    print(f"[EW] Score    : {report['total_score']}")
+    print(f"[EW] Signals  : {report['signal_count']}")
+    print(f"[EW] Tags     : {', '.join(report['signal_tags']) or 'none'}")
+    print(f"[EW] Output   : {out_path}")
+
+    # GitHub Actions outputs
+    gh_output = os.environ.get("GITHUB_OUTPUT", "")
+    if gh_output:
+        with open(gh_output, "a") as f:
+            f.write(f"ew_triggered={str(report['ew_triggered']).lower()}\n")
+            f.write(f"ew_severity={report['severity']}\n")
+            f.write(f"ew_score={report['total_score']}\n")
+            f.write(f"ew_count={report['signal_count']}\n")
+            tags_str = ",".join(report["signal_tags"])
+            f.write(f"ew_signals={tags_str}\n")
+
+    sys.exit(0 if not report["ew_triggered"] else 2)
 
 
 if __name__ == "__main__":
