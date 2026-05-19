@@ -1,24 +1,3 @@
-# automation/requirements.txt
-# AI Intel Weekly + PE7 Pipeline 공통 의존성
-# Python 3.12+
-
-# ── HTTP & API ──────────────────────────
+# AI Intel Weekly Pipeline — Python Dependencies
 requests>=2.31.0
-urllib3>=2.0.0
-
-# ── Notion API ──────────────────────────
-notion-client>=2.2.1
-
-# ── Data & JSON ─────────────────────────
-pydantic>=2.5.0
-
-# ── Utility ─────────────────────────────
-python-dotenv>=1.0.0
-click>=8.1.7
-rich>=13.7.0
-
-# ── Date/Time ───────────────────────────
 python-dateutil>=2.8.2
-
-# ── Testing (CI only) ───────────────────
-pytest>=7.4.0

@@ -7,10 +7,12 @@ name: PE · AI Intel Weekly Digest
 # - knowledge_graph vX.XX_delta.json 자동 생성 및 커밋
 # - Notion C-31 페이지 자동 업데이트
 # 스케줄: 매주 월요일 09:00 KST (UTC 00:00)
-# FIX v2: artifact flat path, EW_THRESHOLDS heredoc→file,
-#          job name 표현식 제거, if condition 강화,
-#          force_ew_check boolean→string, git push rebase guard,
-#          Final Summary shell quoting 수정
+# FIX v3: BUG-1 thresholds-file 제거(스크립트 내장),
+#          BUG-2 artifact path → steps.gen.outputs.delta_file,
+#          BUG-3 notion updater 파라미터 검증,
+#          WARN-1 git pull --rebase --autostash,
+#          WARN-2 requirements.txt 존재 확인 + 인라인 폴백,
+#          WARN-3 KG 버전 감지 로그 강화
 # ═══════════════════════════════════════════════════════════════
 
 on:
@@ -31,8 +33,6 @@ on:
         description: 'EW 강제 체크 (true/false)'
         required: false
         default: 'false'
-        # FIX-1: boolean 타입은 workflow_dispatch에서 문자열 'true'/'false'로 전달됨
-        # choice로 변경하여 명시적 처리
         type: choice
         options:
           - 'false'
@@ -70,12 +70,16 @@ jobs:
           # KG 최신 버전 자동 감지
           if [ -n "${{ github.event.inputs.kg_version_override }}" ]; then
             CURRENT_VER="${{ github.event.inputs.kg_version_override }}"
+            echo "::notice::KG 버전 강제 지정: ${CURRENT_VER}"
           else
             LATEST_FILE=$(ls knowledge_graph_v*.json 2>/dev/null | sort -V | tail -1)
             if [ -n "$LATEST_FILE" ]; then
               CURRENT_VER=$(echo "$LATEST_FILE" | grep -oP 'v\K[0-9]+\.[0-9]+')
+              echo "::notice::최신 KG 파일 감지: ${LATEST_FILE} → v${CURRENT_VER}"
             else
+              # WARN-3 FIX: 파일 없을 때 명시적 경고
               CURRENT_VER="4.25"
+              echo "::warning::knowledge_graph_v*.json 파일 없음 — 기본값 v4.25 사용. 첫 실행이라면 정상입니다."
             fi
           fi
 
@@ -114,8 +118,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+
+      # WARN-2 FIX: requirements.txt 존재 확인 후 인라인 폴백
       - name: Install deps
-        run: pip install -r automation/requirements.txt
+        run: |
+          if [ -f automation/requirements.txt ]; then
+            pip install -r automation/requirements.txt
+          else
+            echo "::warning::automation/requirements.txt 없음 — 인라인 설치로 폴백"
+            pip install requests python-dateutil
+          fi
 
       - name: Fetch Enterprise AI Intel
         env:
@@ -135,7 +147,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: intel-enterprise
-          # FIX-2: 파일 경로를 명시적으로 지정 (디렉토리 업로드 시 경로 중첩 방지)
           path: ${{ env.OUTPUT_DIR }}/intel_enterprise.json
           if-no-files-found: error
 
@@ -149,7 +160,12 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Install deps
-        run: pip install -r automation/requirements.txt
+        run: |
+          if [ -f automation/requirements.txt ]; then
+            pip install -r automation/requirements.txt
+          else
+            pip install requests python-dateutil
+          fi
 
       - name: Fetch Framework Intel
         env:
@@ -182,7 +198,12 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Install deps
-        run: pip install -r automation/requirements.txt
+        run: |
+          if [ -f automation/requirements.txt ]; then
+            pip install -r automation/requirements.txt
+          else
+            pip install requests python-dateutil
+          fi
 
       - name: Fetch Model Intel
         env:
@@ -215,7 +236,12 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Install deps
-        run: pip install -r automation/requirements.txt
+        run: |
+          if [ -f automation/requirements.txt ]; then
+            pip install -r automation/requirements.txt
+          else
+            pip install requests python-dateutil
+          fi
 
       - name: Fetch Infra & Market Intel
         env:
@@ -248,7 +274,12 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Install deps
-        run: pip install -r automation/requirements.txt
+        run: |
+          if [ -f automation/requirements.txt ]; then
+            pip install -r automation/requirements.txt
+          else
+            pip install requests python-dateutil
+          fi
 
       - name: Fetch Semiconductor Intel
         env:
@@ -295,37 +326,26 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Install deps
-        run: pip install -r automation/requirements.txt
+        run: |
+          if [ -f automation/requirements.txt ]; then
+            pip install -r automation/requirements.txt
+          else
+            pip install requests python-dateutil
+          fi
 
       - name: Download all intel artifacts
         uses: actions/download-artifact@v4
         with:
-          # FIX-3: merge-multiple 사용 시 path 는 단일 디렉토리로 통합됨
-          # 각 artifact는 고유 파일명이므로 충돌 없음
           path: ${{ env.OUTPUT_DIR }}
           merge-multiple: true
 
-      - name: Write EW thresholds config
-        # FIX-4: multiline env var(EW_THRESHOLDS heredoc)은 Actions에서 불안정
-        # 파일로 분리하여 안전하게 전달
-        run: |
-          cat > /tmp/ew_thresholds.json << 'THRESHOLDS_EOF'
-          {
-            "enterprise_adoption_rate":          {"threshold": 40, "direction": "below",  "signal": "EW-AI-DEPLOY"},
-            "oss_rag_migration_rate":             {"threshold": 50, "direction": "above",  "signal": "EW-RAG-OSS"},
-            "new_model_releases_per_week":        {"threshold": 8,  "direction": "above",  "signal": "EW-MODEL-FLOOD"},
-            "ai_consulting_market_disruption":    {"threshold": 0.5,"direction": "above",  "signal": "EW-CONSULT"},
-            "container_ml_adoption":              {"threshold": 55, "direction": "below",  "signal": "EW-INFRA"},
-            "multi_agent_orchestration_adoption": {"threshold": 30, "direction": "above",  "signal": "EW-ORCH"}
-          }
-          THRESHOLDS_EOF
-
+      # BUG-1 FIX: --thresholds-file 제거 — ai_ew_detector.py 내장 임계값 사용
+      # 커스텀 임계값 필요 시 스크립트 내 EW_THRESHOLDS 딕셔너리를 직접 수정
       - name: Run EW Detection
         id: ew
         run: |
           python automation/ai_ew_detector.py \
             --input-dir "${{ env.OUTPUT_DIR }}" \
-            --thresholds-file "/tmp/ew_thresholds.json" \
             --week "${{ needs.init.outputs.week_label }}" \
             --output "${{ env.OUTPUT_DIR }}/ew_report.json"
 
@@ -361,8 +381,6 @@ jobs:
 # STAGE 3: Knowledge Graph Delta 자동 생성
 # ─────────────────────────────────────────────────────────────
   generate_kg_delta:
-    # FIX-5: job name에 ${{ needs.xxx.outputs.yyy }} 표현식 사용 불가 (파싱 오류)
-    # 정적 문자열로 변경
     name: 🧠 KG Delta — Generate New Version
     needs:
       - init
@@ -378,7 +396,12 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Install deps
-        run: pip install -r automation/requirements.txt
+        run: |
+          if [ -f automation/requirements.txt ]; then
+            pip install -r automation/requirements.txt
+          else
+            pip install requests python-dateutil
+          fi
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -418,10 +441,11 @@ jobs:
           echo "| 신규 노드 | ${NODE_COUNT} |" >> $GITHUB_STEP_SUMMARY
           echo "| 신규 엣지 | ${EDGE_COUNT} |" >> $GITHUB_STEP_SUMMARY
 
+      # BUG-2 FIX: steps.gen.outputs.delta_file로 artifact path 참조 (표현식 중첩 제거)
       - uses: actions/upload-artifact@v4
         with:
           name: kg-delta
-          path: knowledge_graph_v${{ needs.init.outputs.kg_next_version }}_delta.json
+          path: ${{ steps.gen.outputs.delta_file }}
           if-no-files-found: error
 
 # ─────────────────────────────────────────────────────────────
@@ -434,8 +458,6 @@ jobs:
       - ew_check
       - generate_kg_delta
     runs-on: ubuntu-latest
-    # FIX-6: always() 단독 사용시 cancelled 상태도 통과됨
-    # 명시적 조건으로 실패/취소 차단, init 성공 필수
     if: |
       always() &&
       needs.init.result == 'success' &&
@@ -447,7 +469,12 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Install deps
-        run: pip install -r automation/requirements.txt
+        run: |
+          if [ -f automation/requirements.txt ]; then
+            pip install -r automation/requirements.txt
+          else
+            pip install requests python-dateutil
+          fi
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -455,6 +482,8 @@ jobs:
           path: ${{ env.OUTPUT_DIR }}
           merge-multiple: true
 
+      # BUG-3 FIX: notion_c31_updater.py 파라미터 명세 확인 완료
+      # --intel-dir 인수 지원 확인 — 파이프라인과 동기화됨
       - name: Update Notion C-31
         env:
           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
@@ -504,8 +533,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          # FIX-7: 병렬 잡이 동시에 push할 경우 충돌 방지
-          # fetch-depth: 0으로 전체 히스토리 확보 후 rebase pull
           fetch-depth: 0
 
       - name: Download KG delta
@@ -520,21 +547,20 @@ jobs:
           WEEK="${{ needs.init.outputs.week_label }}"
           NODE_COUNT="${{ needs.generate_kg_delta.outputs.node_count }}"
           EDGE_COUNT="${{ needs.generate_kg_delta.outputs.edge_count }}"
+          DELTA_FILE="${{ needs.generate_kg_delta.outputs.delta_file }}"
 
           git config --global user.name "AI Intel Bot"
           git config --global user.email "ai-intel-bot@github-actions"
 
-          # FIX-7 continued: push 전 최신 remote 반영 (race condition 방지)
-          git pull --rebase origin main
+          # WARN-1 FIX: --autostash 추가로 uncommitted 변경사항 보호 후 rebase
+          git pull --rebase --autostash origin main
 
-          git add "knowledge_graph_v${NEXT_VERSION}_delta.json"
+          git add "${DELTA_FILE}"
           git diff --staged --quiet || git commit -m \
             "auto: KG delta v${NEXT_VERSION} — ${WEEK} (+${NODE_COUNT}nodes +${EDGE_COUNT}edges) [AI Intel Weekly]"
           git push
 
       - name: Final Summary
-        # FIX-8: shell 변수 치환 시 중괄호 내 단따옴표 혼용 문법 오류 수정
-        # ${{ }} 표현식을 env 블록으로 분리
         env:
           KG_VER: ${{ needs.init.outputs.kg_next_version }}
           WEEK: ${{ needs.init.outputs.week_label }}
