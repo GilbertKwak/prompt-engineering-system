@@ -1,0 +1,48 @@
+{
+  "_schema_version": "2.0",
+  "_description": "FIN-MSIA-MASTER v2.0 표준 투자안 입력 템플릿",
+  "_last_updated": "2026-05-19",
+  "_domain": "Gilbert Kwak — AstraChips · HBM · B-Star eCO₂",
+
+  "investments": [
+    {
+      "id": "INV-001",
+      "투자명": "",
+      "산업군": "SEMI | ESG | JV | AI | MFG | BIO | CNS 중 선택",
+      "투자유형": "Build | Buy | Partner | CAPEX | Securities 중 선택",
+      "투자금액": {
+        "value": 0,
+        "unit": "억원 또는 USD_M"
+      },
+      "예상IRR": {
+        "value": 0,
+        "unit": "%",
+        "basis": "Base 시나리오 기준"
+      },
+      "전략목적": "",
+      "주요시장": {
+        "TAM": "",
+        "SAM": "",
+        "SOM": "",
+        "지역": ""
+      },
+      "경쟁상황": "",
+      "예상시너지": "",
+      "주요리스크": [],
+      "투자일정": {
+        "시작일": "YYYY-MM-DD",
+        "완료예정일": "YYYY-MM-DD"
+      },
+      "Exit전략": "IPO | 전략매각 | 지속보유 | N/A",
+      "첨부자료": "재무모델 | IM | Teaser | N/A",
+      "추가메모": ""
+    }
+  ],
+
+  "analysis_config": {
+    "mode": "single | multi",
+    "portfolio_compare": false,
+    "industry_weight_override": null,
+    "conditional_go_deadline": "YYYY-MM-DD"
+  }
+}
