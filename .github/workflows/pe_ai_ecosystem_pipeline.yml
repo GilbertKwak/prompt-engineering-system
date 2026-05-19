@@ -1,202 +1,108 @@
-name: PE · AI Ecosystem Pipeline
+name: PE· AI Ecosystem Pipeline
 
 on:
+  schedule:
+    - cron: '0 7 * * 3'  # 매주 수요일 16:00 KST
   workflow_dispatch:
     inputs:
-      target_company:
-        description: 'Target company or technology (e.g. NVIDIA, OpenAI, HBM)'
-        required: true
-        default: 'NVIDIA'
-      analysis_depth:
-        description: 'Analysis depth: quick | standard | deep'
-        required: true
+      scope:
+        description: '수집 범위'
+        required: false
         default: 'standard'
         type: choice
         options:
-          - quick
           - standard
           - deep
-  schedule:
-    - cron: '0 1 * * 1'  # Every Monday 10:00 KST
+      dry_run:
+        description: 'Dry-run'
+        required: false
+        default: 'false'
+        type: boolean
+
+env:
+  PYTHON_VERSION: '3.12'
+  OUTPUT_DIR: output/ai_ecosystem
 
 jobs:
-  # ─────────────────────────────────────────────
-  # STAGE 1: MECE Decomposition
-  # ─────────────────────────────────────────────
-  mece_decompose:
-    name: MECE Layer Decomposition
-    runs-on: ubuntu-latest
-    outputs:
-      layers: ${{ steps.decompose.outputs.layers }}
-      target: ${{ steps.decompose.outputs.target }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set target
-        id: decompose
-        run: |
-          TARGET="${{ github.event.inputs.target_company || 'NVIDIA' }}"
-          echo "target=${TARGET}" >> $GITHUB_OUTPUT
-          echo "layers=[\"infra\",\"model\",\"app\",\"market\"]" >> $GITHUB_OUTPUT
-          echo "### 🏗️ MECE Decomposition" >> $GITHUB_STEP_SUMMARY
-          echo "**Target**: ${TARGET}" >> $GITHUB_STEP_SUMMARY
-          echo "**Layers**: Infra → Model → App → Market" >> $GITHUB_STEP_SUMMARY
-
-  # ─────────────────────────────────────────────
-  # STAGE 2: Parallel 4-Layer Analysis
-  # ─────────────────────────────────────────────
-  layer_infra:
-    name: Layer — Infrastructure
-    needs: mece_decompose
+  collect:
+    name: 📡 Collect AI Ecosystem Data
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
-      - name: Run infra analysis
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install deps
+        run: pip install -r requirements.txt
+      - name: Collect ecosystem data
         env:
-          TARGET: ${{ needs.mece_decompose.outputs.target }}
-          LAYER: infra
-          DEPTH: ${{ github.event.inputs.analysis_depth || 'standard' }}
+          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
+          SCOPE: ${{ github.event.inputs.scope || 'standard' }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
         run: |
-          python automation/ai_ecosystem_analyzer.py \
-            --target "$TARGET" --layer "$LAYER" --depth "$DEPTH"
+          mkdir -p ${{ env.OUTPUT_DIR }}
+          python scripts/ai_ecosystem_collector.py \
+            --scope "$SCOPE" \
+            --output "${{ env.OUTPUT_DIR }}/ecosystem_data.json" \
+            --dry-run "$DRY_RUN"
       - uses: actions/upload-artifact@v4
         with:
-          name: result-infra
-          path: output/ai_ecosystem/infra_*.json
+          name: ecosystem-data
+          path: ${{ env.OUTPUT_DIR }}/ecosystem_data.json
+          if-no-files-found: ignore
 
-  layer_model:
-    name: Layer — Model & Compute
-    needs: mece_decompose
+  analyze:
+    name: 🧠 Analyze Ecosystem
+    needs: collect
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
-      - name: Run model analysis
-        env:
-          TARGET: ${{ needs.mece_decompose.outputs.target }}
-          LAYER: model
-          DEPTH: ${{ github.event.inputs.analysis_depth || 'standard' }}
-        run: |
-          python automation/ai_ecosystem_analyzer.py \
-            --target "$TARGET" --layer "$LAYER" --depth "$DEPTH"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: result-model
-          path: output/ai_ecosystem/model_*.json
-
-  layer_app:
-    name: Layer — Application & Platform
-    needs: mece_decompose
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - name: Run app analysis
-        env:
-          TARGET: ${{ needs.mece_decompose.outputs.target }}
-          LAYER: app
-          DEPTH: ${{ github.event.inputs.analysis_depth || 'standard' }}
-        run: |
-          python automation/ai_ecosystem_analyzer.py \
-            --target "$TARGET" --layer "$LAYER" --depth "$DEPTH"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: result-app
-          path: output/ai_ecosystem/app_*.json
-
-  layer_market:
-    name: Layer — Market & Competitive
-    needs: mece_decompose
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - name: Run market analysis
-        env:
-          TARGET: ${{ needs.mece_decompose.outputs.target }}
-          LAYER: market
-          DEPTH: ${{ github.event.inputs.analysis_depth || 'standard' }}
-        run: |
-          python automation/ai_ecosystem_analyzer.py \
-            --target "$TARGET" --layer "$LAYER" --depth "$DEPTH"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: result-market
-          path: output/ai_ecosystem/market_*.json
-
-  # ─────────────────────────────────────────────
-  # STAGE 3: Synthesis & GNN Scoring
-  # ─────────────────────────────────────────────
-  synthesize:
-    name: Synthesis + GNN Score
-    needs: [layer_infra, layer_model, layer_app, layer_market]
-    runs-on: ubuntu-latest
-    outputs:
-      overall_score: ${{ steps.score.outputs.score }}
-      signal: ${{ steps.score.outputs.signal }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Download all layer results
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install deps
+        run: pip install -r requirements.txt
+      - name: Download data
         uses: actions/download-artifact@v4
         with:
-          path: output/ai_ecosystem/
-          merge-multiple: true
-
-      - name: Synthesize + score
-        id: score
+          name: ecosystem-data
+          path: ${{ env.OUTPUT_DIR }}/
+      - name: Analyze
         env:
-          TARGET: ${{ needs.mece_decompose.outputs.target }}
+          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
         run: |
-          python automation/ai_ecosystem_synthesizer.py --target "$TARGET"
-          SCORE=$(python -c 'import json,glob; files=glob.glob("output/ai_ecosystem/synthesis_*.json"); d=json.load(open(files[0])) if files else {}; print(d.get("overall_score","N/A"))')
-          SIGNAL=$(python -c 'import json,glob; files=glob.glob("output/ai_ecosystem/synthesis_*.json"); d=json.load(open(files[0])) if files else {}; print(d.get("signal","NEUTRAL"))')
-          echo "score=${SCORE}" >> $GITHUB_OUTPUT
-          echo "signal=${SIGNAL}" >> $GITHUB_OUTPUT
+          python scripts/ai_ecosystem_analyzer.py \
+            --input "${{ env.OUTPUT_DIR }}/ecosystem_data.json" \
+            --output "${{ env.OUTPUT_DIR }}/ecosystem_analysis.json" \
+            --dry-run "$DRY_RUN"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ecosystem-analysis
+          path: ${{ env.OUTPUT_DIR }}/ecosystem_analysis.json
+          if-no-files-found: ignore
 
-  # ─────────────────────────────────────────────
-  # STAGE 4: Notion Sync + Summary
-  # ─────────────────────────────────────────────
-  report:
-    name: Report & Notion Sync
-    needs: synthesize
+  update_notion:
+    name: 📓 Update Notion
+    needs: analyze
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
-
-      - name: Download synthesis
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install deps
+        run: pip install -r requirements.txt
+      - name: Download analysis
         uses: actions/download-artifact@v4
         with:
-          path: output/ai_ecosystem/
-          merge-multiple: true
-
-      - name: Write Step Summary
+          name: ecosystem-analysis
+          path: ${{ env.OUTPUT_DIR }}/
+      - name: Update Notion AI Ecosystem pages
         env:
-          SCORE: ${{ needs.synthesize.outputs.overall_score }}
-          SIGNAL: ${{ needs.synthesize.outputs.signal }}
-          TARGET: ${{ needs.mece_decompose.outputs.target }}
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
         run: |
-          python automation/ai_ecosystem_report.py \
-            --target "$TARGET" --score "$SCORE" --signal "$SIGNAL"
-
-      - name: Upload final report
-        uses: actions/upload-artifact@v4
-        with:
-          name: ai-ecosystem-report
-          path: output/ai_ecosystem/report_*.md
-          retention-days: 30
+          python scripts/ai_ecosystem_notion_updater.py \
+            --input "${{ env.OUTPUT_DIR }}/ecosystem_analysis.json" \
+            --dry-run "$DRY_RUN"

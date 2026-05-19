@@ -1,108 +1,52 @@
-name: PE-UNIV · Universal Prompt Optimization Apply
+name: PE· Univ Apply
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'prompts/**/*.md'
-      - 'PE-CON/**/*.md'
-      - 'PE-IP/**/*.md'
-      - 'applied-cases/**/*.md'
-      - 'PE-MEM/**/*.md'
-      - 'PE-11/**/*.md'
-      - 'PE-7/**/*.md'
+  workflow_dispatch:
+    inputs:
+      target_program:
+        description: '대상 프로그램'
+        required: true
+      deadline:
+        description: '마감일 (YYYY-MM-DD)'
+        required: false
+        default: ''
+      dry_run:
+        description: 'Dry-run'
+        required: false
+        default: 'false'
+        type: boolean
 
 env:
-  PYTHON_VERSION: '3.11'
+  PYTHON_VERSION: '3.12'
+  OUTPUT_DIR: output/univ_apply
 
 jobs:
-  universal_apply:
-    name: PE-UNIV Apply Pipeline
+  prepare:
+    name: 🎓 Prepare Application
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-
     steps:
-      # ── 1. Checkout ──────────────────────────────────────────────
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 2  # HEAD~1 diff 를 위해 2개 커밋 필요
-
-      # ── 2. Python setup ──────────────────────────────────────────
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: pip
-
-      - name: Install dependencies
+      - name: Install deps
+        run: pip install -r requirements.txt
+      - name: Prepare application materials
+        env:
+          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          TARGET: ${{ github.event.inputs.target_program }}
+          DEADLINE: ${{ github.event.inputs.deadline || '' }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
         run: |
-          pip install --quiet pyyaml requests pathlib2
-
-      # ── 3. Parse changed files → domain tags ─────────────────────
-      - name: Parse domain tags
-        id: tag_parser
-        run: python automation/pe_univ_tag_parser.py
-
-      # ── 4. PE-3 validation gate (E-09 감지) ──────────────────────
-      - name: PE-3 validation gate
-        run: |
-          python automation/auto_validate.py \
-            --mode all \
-            --threshold 88 \
-            --output pe3_gate_report.json \
-            || true  # E-09 시에도 파이프라인 계속 진행 (결과 기록)
-
-      # ── 5. P1 MVP — C-31 → PE-CON / PE-STR / PE-JV 적용 ─────────
-      - name: Apply to target domains (P1 MVP test)
-        run: |
-          python automation/pe_univ_apply.py \
-            --source prompts/ai-platform/notion_005_v1.0.md \
-            --domains PE-CON,PE-STR,PE-JV
-
-      # ── 6. (Phase 2 예약) 전 도메인 일괄 적용 ────────────────────
-      # 현재 비활성화 — P2 배포 시 주석 해제
-      # - name: Apply to ALL domains
-      #   run: python automation/pe_univ_apply.py --source ${{ steps.tag_parser.outputs.source_file }} --domains ALL
-
-      # ── 7. Commit adapted files ───────────────────────────────────
-      - name: Commit adapted prompt files
-        run: |
-          git config user.name  "PE-UNIV Bot"
-          git config user.email "pe-univ@prompt-engineering-system"
-          git add 'PE-CON/ADAPTED_*.md' 'prompts/strategy/ADAPTED_*.md' 'applied-cases/jv-fund/ADAPTED_*.md' || true
-          git add automation/pe_univ_p1_report_*.json || true
-          git diff --cached --quiet || git commit -m "bot: PE-UNIV adapted prompts auto-applied [skip ci]"
-          git push origin main || true
-
-      # ── 8. Upload report artifact ─────────────────────────────────
-      - name: Upload PE-UNIV P1 report
-        uses: actions/upload-artifact@v4
-        if: always()
+          mkdir -p ${{ env.OUTPUT_DIR }}
+          python scripts/univ_apply_preparer.py \
+            --target "$TARGET" \
+            --deadline "$DEADLINE" \
+            --output "${{ env.OUTPUT_DIR }}/apply_materials.json" \
+            --dry-run "$DRY_RUN"
+      - uses: actions/upload-artifact@v4
         with:
-          name: pe-univ-p1-report
-          path: automation/pe_univ_p1_report_*.json
-          retention-days: 30
-
-      # ── 9. Summary in GitHub Actions UI ──────────────────────────
-      - name: Write job summary
-        if: always()
-        run: |
-          echo "## 🚀 PE-UNIV P1 MVP Apply Result" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Domain | Status | PE-3 Before | PE-3 After | Delta |" >> $GITHUB_STEP_SUMMARY
-          echo "|--------|--------|-------------|------------|-------|" >> $GITHUB_STEP_SUMMARY
-          python3 -c "
-import json, glob
-files = glob.glob('automation/pe_univ_p1_report_*.json')
-if files:
-    with open(sorted(files)[-1]) as f:
-        data = json.load(f)
-    for r in data.get('results', []):
-        status = r.get('status', '?')
-        domain = r.get('domain', '?')
-        before = r.get('pe3_before', '?')
-        after  = r.get('pe3_after', '?')
-        delta  = r.get('delta', '?')
-        print(f'| {domain} | {status} | {before} | {after} | {delta:+.1f} |')
-" >> $GITHUB_STEP_SUMMARY 2>/dev/null || echo "| (report not available) | - | - | - | - |" >> $GITHUB_STEP_SUMMARY
+          name: apply-materials
+          path: ${{ env.OUTPUT_DIR }}/apply_materials.json
+          if-no-files-found: ignore

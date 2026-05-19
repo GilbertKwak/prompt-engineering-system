@@ -1,107 +1,45 @@
-# ============================================================
-# PE-3-PROD QC 자동검증 — GitHub Actions
-# Version : 1.0 | Date: 2026-05-09
-# 대상  : prompts/PE-PROD/ 내 모든 .md 파일
-# ============================================================
-
-name: "PE-3-PROD | 제품 PM QC 자동검증"
+name: PE3· Product QC
 
 on:
   push:
+    branches: [main, develop]
     paths:
-      - "prompts/PE-PROD/**"
-      - "config/pe3_product_checklist.yaml"
-      - "automation/pe3_product_validator.py"
+      - 'prompts/**'
+      - 'products/**'
   pull_request:
     paths:
-      - "prompts/PE-PROD/**"
+      - 'prompts/**'
+      - 'products/**'
   workflow_dispatch:
-    inputs:
-      target_file:
-        description: "단일 파일 검증 (옵션, 비울 시 전체 검증)"
-        required: false
-        default: ""
-      strict:
-        description: "Strict 모드 (88점 미만 실패)"
-        required: false
-        default: "true"
-        type: boolean
+
+env:
+  PYTHON_VERSION: '3.12'
 
 jobs:
-  pe3-product-qc:
-    name: "PE-3-PROD QC 실행"
+  qc:
+    name: ✅ Product QC
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-
     steps:
-      - name: "📥 Checkout"
-        uses: actions/checkout@v4
-
-      - name: "🐍 Python 3.11"
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-          cache: pip
-
-      - name: "📦 의존성 설치"
-        run: pip install pyyaml
-
-      - name: "🔍 PE-3-PROD QC 실행"
-        id: qc
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install deps
+        run: pip install -r requirements.txt
+      - name: Run product QC checks
         run: |
-          STRICT_FLAG=""
-          if [ "${{ github.event.inputs.strict }}" != "false" ]; then
-            STRICT_FLAG="--strict"
-          fi
-
-          if [ -n "${{ github.event.inputs.target_file }}" ]; then
-            python automation/pe3_product_validator.py \
-              --file "${{ github.event.inputs.target_file }}" \
-              --yaml config/pe3_product_checklist.yaml \
-              --output pe3_qc_report.json \
-              $STRICT_FLAG
-          else
-            python automation/pe3_product_validator.py \
-              --dir prompts/PE-PROD/ \
-              --yaml config/pe3_product_checklist.yaml \
-              --output pe3_qc_report.json \
-              $STRICT_FLAG
-          fi
-
-      - name: "📊 QC 요약 출력"
-        if: always()
+          python scripts/product_qc.py \
+            --dir products/ \
+            --schema schemas/product_schema.json \
+            --strict
+      - name: Check prompt coverage
         run: |
-          echo "## PE-3-PROD QC 결과" >> $GITHUB_STEP_SUMMARY
-          echo "| 파일 | 점수 | Grade |" >> $GITHUB_STEP_SUMMARY
-          echo "|---|---|---|" >> $GITHUB_STEP_SUMMARY
-          python3 -c "
-import json, sys
-with open('pe3_qc_report.json') as f:
-    data = json.load(f)
-if isinstance(data, dict): data = [data]
-for r in data:
-    name = r.get('file','?').split('/')[-1]
-    score = r.get('overall','?')
-    grade = r.get('grade','?')
-    print(f'| {name} | {score}% | {grade} |')
-" >> $GITHUB_STEP_SUMMARY
-
-      - name: "💾 QC 리포트 아티팩트"
-        if: always()
-        uses: actions/upload-artifact@v4
+          python scripts/check_prompt_coverage.py \
+            --products-dir products/ \
+            --prompts-dir prompts/ \
+            --report-file output/qc_coverage_report.json
+      - uses: actions/upload-artifact@v4
         with:
-          name: pe3-product-qc-${{ github.run_id }}
-          path: pe3_qc_report.json
-          retention-days: 30
-
-      - name: "🚫 실패 시 PR 블록"
-        if: failure() && github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '## ❌ PE-3-PROD QC 실패\n\n88점 미만 프롬프트가 존재합니다.\n`pe3_qc_report.json` 아티팩트를 확인하세요.'
-            })
+          name: qc-report
+          path: output/qc_coverage_report.json
+          if-no-files-found: ignore

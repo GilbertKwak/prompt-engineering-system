@@ -1,211 +1,85 @@
-# ============================================================
-# PE-MIN EW3: MOFCOM Weekly Monitor — v2.0 COMPLETE
-# Trigger: 매주 월요일 09:00 KST / 수동 dispatch
-# Pipeline:
-#   1. MOFCOM 수출허가 데이터 수집 (Ga, Ge, Li 3종)
-#   2. EW3 임계 판정 (-20% QoQ 또는 허가거부율 >15%)
-#   3. Notion PE-MIN EW 테이블 자동 갱신
-#   4. EW3 발동 시 → Slack 알림 + GitHub Issue 생성
-#   5. global-semiconductor-ai-research 연동 (early-warning-monitor.yml 트리거)
-#   6. PE-3 검증 점수 Notion DB 자동 기록
-# ============================================================
-name: PE-MIN EW3 · MOFCOM Weekly Monitor
+name: PE· MIN EW3 MOFCOM Monitor
 
 on:
   schedule:
-    - cron: '0 0 * * 1'   # 매주 월요일 00:00 UTC = 09:00 KST
+    - cron: '0 4 * * 1,3,5'  # 월/수/금 13:00 KST
   workflow_dispatch:
     inputs:
       force_alert:
-        description: 'EW3 알림 강제 발동 (테스트용)'
+        description: '알림 강제 발동'
         required: false
         default: 'false'
-      mineral_focus:
-        description: '모니터링 광물 (ALL / Ga / Ge / Li)'
+        type: boolean
+      dry_run:
+        description: 'Dry-run'
         required: false
-        default: 'ALL'
+        default: 'false'
+        type: boolean
 
 env:
-  PYTHON_VERSION: '3.11'
-  NOTION_API_VERSION: '2022-06-28'
-  REPO_GSR: 'GilbertKwak/global-semiconductor-ai-research'
+  PYTHON_VERSION: '3.12'
+  OUTPUT_DIR: output/mofcom
 
 jobs:
-  # ──────────────────────────────────────
-  # JOB 1: 데이터 수집 & EW3 판정
-  # ──────────────────────────────────────
-  collect-and-evaluate:
-    name: '📡 MOFCOM 데이터 수집 & EW3 판정'
+  monitor:
+    name: 👁️ MOFCOM Monitor
     runs-on: ubuntu-latest
     outputs:
-      ew3_triggered: ${{ steps.evaluate.outputs.ew3_triggered }}
-      gallium_delta: ${{ steps.evaluate.outputs.gallium_delta }}
-      germanium_delta: ${{ steps.evaluate.outputs.germanium_delta }}
-      lithium_delta: ${{ steps.evaluate.outputs.lithium_delta }}
-      report_json: ${{ steps.evaluate.outputs.report_json }}
-      pe3_score: ${{ steps.evaluate.outputs.pe3_score }}
+      ew_triggered: ${{ steps.monitor.outputs.ew_triggered }}
+      alert_level: ${{ steps.monitor.outputs.alert_level }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install dependencies
-        run: |
-          pip install requests pandas python-dotenv notion-client
-
-      - name: Collect MOFCOM Export License Data
-        id: collect
+      - name: Install deps
+        run: pip install -r requirements.txt
+      - name: Run MOFCOM monitor
+        id: monitor
         env:
-          MOFCOM_API_KEY: ${{ secrets.MOFCOM_API_KEY }}
-        run: |
-          python scripts/pe_min_mofcom_collector.py \
-            --mineral ${{ github.event.inputs.mineral_focus || 'ALL' }} \
-            --output data/pe_min_ew3_raw.json
-
-      - name: EW3 Threshold Evaluation
-        id: evaluate
-        env:
+          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
           FORCE_ALERT: ${{ github.event.inputs.force_alert || 'false' }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
         run: |
-          python scripts/pe_min_ew3_evaluator.py \
-            --input data/pe_min_ew3_raw.json \
-            --threshold-delta -0.20 \
-            --threshold-rejection 0.15 \
-            --output data/pe_min_ew3_result.json
+          mkdir -p ${{ env.OUTPUT_DIR }}
+          python scripts/mofcom_monitor.py \
+            --output "${{ env.OUTPUT_DIR }}/mofcom_report.json" \
+            --force-alert "$FORCE_ALERT" \
+            --dry-run "$DRY_RUN"
 
-          # Extract outputs
-          EW3=$(python -c "import json; d=json.load(open('data/pe_min_ew3_result.json')); print(str(d['ew3_triggered']).lower())")
-          GA_D=$(python -c "import json; d=json.load(open('data/pe_min_ew3_result.json')); print(d['gallium_qoq_delta'])")
-          GE_D=$(python -c "import json; d=json.load(open('data/pe_min_ew3_result.json')); print(d['germanium_qoq_delta'])")
-          LI_D=$(python -c "import json; d=json.load(open('data/pe_min_ew3_result.json')); print(d['lithium_qoq_delta'])")
-          PE3=$(python -c "import json; d=json.load(open('data/pe_min_ew3_result.json')); print(d.get('pe3_score', 92))")
-          REPORT=$(cat data/pe_min_ew3_result.json | tr -d '\n')
-
-          echo "ew3_triggered=${EW3}" >> $GITHUB_OUTPUT
-          echo "gallium_delta=${GA_D}" >> $GITHUB_OUTPUT
-          echo "germanium_delta=${GE_D}" >> $GITHUB_OUTPUT
-          echo "lithium_delta=${LI_D}" >> $GITHUB_OUTPUT
-          echo "pe3_score=${PE3}" >> $GITHUB_OUTPUT
-          echo "report_json=${REPORT}" >> $GITHUB_OUTPUT
-
-      - name: Upload EW3 artifact
-        uses: actions/upload-artifact@v4
+          EW=$(python3 -c "import json,sys; d=json.load(open('${{ env.OUTPUT_DIR }}/mofcom_report.json')); print(str(d.get('ew_triggered',False)).lower())" 2>/dev/null || echo 'false')
+          LEVEL=$(python3 -c "import json,sys; d=json.load(open('${{ env.OUTPUT_DIR }}/mofcom_report.json')); print(d.get('alert_level','LOW'))" 2>/dev/null || echo 'LOW')
+          echo "ew_triggered=${EW}" >> $GITHUB_OUTPUT
+          echo "alert_level=${LEVEL}" >> $GITHUB_OUTPUT
+      - uses: actions/upload-artifact@v4
         with:
-          name: ew3-result-${{ github.run_id }}
-          path: data/pe_min_ew3_result.json
-          retention-days: 30
+          name: mofcom-report
+          path: ${{ env.OUTPUT_DIR }}/mofcom_report.json
+          if-no-files-found: ignore
 
-  # ──────────────────────────────────────
-  # JOB 2: Notion PE-MIN EW 테이블 갱신
-  # ──────────────────────────────────────
-  notion-update:
-    name: '📝 Notion PE-MIN DB 자동 기록'
+  notify:
+    name: 🔔 Notify
+    needs: monitor
     runs-on: ubuntu-latest
-    needs: collect-and-evaluate
+    if: needs.monitor.outputs.ew_triggered == 'true'
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install Notion client
-        run: pip install notion-client requests
-
-      - name: Download EW3 artifact
+      - name: Install deps
+        run: pip install -r requirements.txt
+      - name: Download report
         uses: actions/download-artifact@v4
         with:
-          name: ew3-result-${{ github.run_id }}
-          path: data/
-
-      - name: Update Notion PE-MIN EW Database
+          name: mofcom-report
+          path: ${{ env.OUTPUT_DIR }}/
+      - name: Send EW notification
         env:
           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
-          NOTION_PE_MIN_DB_ID: ${{ secrets.NOTION_PE_MIN_DB_ID }}
-          NOTION_PE_MIN_EW_DB_ID: ${{ secrets.NOTION_PE_MIN_EW_DB_ID }}
-          NOTION_KG_DB_ID: ${{ secrets.NOTION_KG_DB_ID }}
-          EW3_TRIGGERED: ${{ needs.collect-and-evaluate.outputs.ew3_triggered }}
-          GALLIUM_DELTA: ${{ needs.collect-and-evaluate.outputs.gallium_delta }}
-          GERMANIUM_DELTA: ${{ needs.collect-and-evaluate.outputs.germanium_delta }}
-          LITHIUM_DELTA: ${{ needs.collect-and-evaluate.outputs.lithium_delta }}
-          PE3_SCORE: ${{ needs.collect-and-evaluate.outputs.pe3_score }}
+          ALERT_LEVEL: ${{ needs.monitor.outputs.alert_level }}
         run: |
-          python scripts/pe_min_notion_db_loop.py \
-            --mode ew3-weekly \
-            --ew3-triggered ${EW3_TRIGGERED} \
-            --report-path data/pe_min_ew3_result.json
-
-  # ──────────────────────────────────────
-  # JOB 3: EW3 알림 (조건부 — 발동 시만)
-  # ──────────────────────────────────────
-  alert-and-issue:
-    name: '🚨 EW3 경보 발동 알림'
-    runs-on: ubuntu-latest
-    needs: collect-and-evaluate
-    if: needs.collect-and-evaluate.outputs.ew3_triggered == 'true'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Send Slack Alert
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          GALLIUM_DELTA: ${{ needs.collect-and-evaluate.outputs.gallium_delta }}
-          GERMANIUM_DELTA: ${{ needs.collect-and-evaluate.outputs.germanium_delta }}
-          LITHIUM_DELTA: ${{ needs.collect-and-evaluate.outputs.lithium_delta }}
-        run: |
-          curl -X POST "${SLACK_WEBHOOK_URL}" \
-            -H 'Content-type: application/json' \
-            --data "{
-              \"text\": \":rotating_light: *PE-MIN EW3 CRITICAL 발동* :rotating_light:\\n\\n*갈륨 QoQ 변화율*: ${GALLIUM_DELTA}%\\n*게르마늄 QoQ 변화율*: ${GERMANIUM_DELTA}%\\n*리튬 QoQ 변화율*: ${LITHIUM_DELTA}%\\n\\n→ Notion PE-MIN DB 자동 기록 완료\\n→ GitHub Issue 자동 생성 중\\n\\n[PE-MIN Library](https://app.notion.com/p/35155ed436f081d4aed4f7fc1958187f)\"
-            }"
-
-      - name: Create GitHub Issue
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const galliumDelta = '${{ needs.collect-and-evaluate.outputs.gallium_delta }}';
-            const germaniumDelta = '${{ needs.collect-and-evaluate.outputs.germanium_delta }}';
-            const lithiumDelta = '${{ needs.collect-and-evaluate.outputs.lithium_delta }}';
-            const runDate = new Date().toISOString().split('T')[0];
-
-            await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: `🚨 [EW3-CRITICAL] MOFCOM 수출허가 급감 감지 — ${runDate}`,
-              body: `## PE-MIN EW3 CRITICAL 경보\n\n**발동일시**: ${new Date().toISOString()}\n**트리거**: MOFCOM 수출허가 QoQ 변화율 임계치(-20%) 초과\n\n### 광물별 변화율\n| 광물 | QoQ 변화율 | 임계치 | 판정 |\n|------|----------:|-------:|------|\n| 갈륨(Ga) | ${galliumDelta}% | -20% | 🔴 CRITICAL |\n| 게르마늄(Ge) | ${germaniumDelta}% | -20% | 🔴 CRITICAL |\n| 리튬(Li) | ${lithiumDelta}% | -20% | 🔴 MONITOR |\n\n### 자동화 처리 현황\n- [x] Notion PE-MIN EW 테이블 자동 갱신\n- [x] Slack 알림 발송\n- [x] GitHub Issue 자동 생성\n- [ ] PE-JV 파트너 평가 연동 (다음 GA S4 Monthly 실행 시)\n\n### 연계 페이지\n- [PE-MIN Library](https://app.notion.com/p/35155ed436f081d4aed4f7fc1958187f)\n- [SSOT Master Hub](https://app.notion.com/p/f392046f06ff491698ca249849f03a40)\n\n> **대응 임계**: 비중국 갈륨 생산 50톤 달성 전까지 매월 1일 Ga S4 Monthly Report 자동 생성 유지`,
-              labels: ['EW3-CRITICAL', 'PE-MIN', 'auto-generated']
-            });
-
-  # ──────────────────────────────────────
-  # JOB 4: GSR 연동 트리거
-  # ──────────────────────────────────────
-  gsr-integration:
-    name: '🔗 global-semiconductor-ai-research 연동'
-    runs-on: ubuntu-latest
-    needs: [collect-and-evaluate, notion-update]
-    steps:
-      - name: Trigger GSR early-warning-monitor
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GH_PAT_CROSS_REPO }}
-          script: |
-            await github.rest.actions.createWorkflowDispatch({
-              owner: 'GilbertKwak',
-              repo: 'global-semiconductor-ai-research',
-              workflow_id: 'early-warning-monitor.yml',
-              ref: 'main',
-              inputs: {
-                source: 'pe-min-ew3-mofcom-monitor',
-                ew3_status: '${{ needs.collect-and-evaluate.outputs.ew3_triggered }}',
-                gallium_delta: '${{ needs.collect-and-evaluate.outputs.gallium_delta }}',
-                run_id: '${{ github.run_id }}'
-              }
-            });
-            console.log('✅ GSR early-warning-monitor.yml 트리거 완료');
+          python scripts/ew_notifier.py \
+            --report "${{ env.OUTPUT_DIR }}/mofcom_report.json" \
+            --level "$ALERT_LEVEL"

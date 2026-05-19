@@ -1,141 +1,52 @@
-# ============================================================
-# PE-7 Product Idea → MECE 자동분석 루프 — GitHub Actions
-# Version : 1.3 | Date: 2026-05-16  (feat: pe3_prompt_upsert 통합)
-# ============================================================
-
-name: "PE-7 | Product Idea → MECE 자동분석"
+name: PE7· Product MECE Loop
 
 on:
-  # 1) 스케줄: 매시간 정각 (KST 기준 +9h)
-  schedule:
-    - cron: "0 * * * *"
-
-  # 2) 수동 트리거
   workflow_dispatch:
     inputs:
+      product_id:
+        description: '대상 프로덕트 ID'
+        required: true
+      mece_rounds:
+        description: 'MECE 루프 횟수 (1-5)'
+        required: false
+        default: '3'
       dry_run:
-        description: "Dry-run 모드 (API 미호출)"
+        description: 'Dry-run'
         required: false
-        default: "false"
+        default: 'false'
         type: boolean
-      record_id:
-        description: "특정 Notion 레코드 ID (선택)"
-        required: false
-        default: ""
 
-  # 3) Push 트리거 (PE-PROD 프롬프트 변경 시 재실행)
-  push:
-    paths:
-      - "prompts/PE-PROD/**"
-      - "config/pe7_product_mece_loop.yaml"
-
-permissions:
-  contents: write
+env:
+  PYTHON_VERSION: '3.12'
+  OUTPUT_DIR: output/mece
 
 jobs:
-  mece-analysis:
-    name: "MECE 자동분석 실행"
+  mece_loop:
+    name: 🔄 MECE Loop
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-
-    env:
-      NOTION_TOKEN     : ${{ secrets.NOTION_TOKEN }}
-      OPENAI_API_KEY   : ${{ secrets.OPENAI_API_KEY }}
-      GITHUB_TOKEN     : ${{ secrets.GITHUB_TOKEN }}
-      NOTION_DB_ID     : "e34f78c6-d1df-4575-8a2f-a45d716c593e"
-      GITHUB_REPO      : "GilbertKwak/prompt-engineering-system"
-      POLL_INTERVAL_SEC: "60"
-
     steps:
-      - name: "📥 Checkout"
-        uses: actions/checkout@v4
-
-      - name: "🐍 Python 3.11 세팅"
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-          cache: pip
-
-      - name: "📦 의존성 설치"
-        run: pip install requests notion-client
-
-      # ── SECRETS VALIDATION ────────────────────────────────────────────────
-      - name: "🔐 Secrets 주입 확인"
-        run: |
-          if [ -z "$NOTION_TOKEN" ]; then
-            echo "❌ NOTION_TOKEN 미설정 — Settings > Secrets > Actions 에서 등록하세요"
-            exit 1
-          else
-            echo "✅ NOTION_TOKEN 주입 확인 (길이: ${#NOTION_TOKEN}자)"
-          fi
-          if [ -z "$OPENAI_API_KEY" ]; then
-            echo "❌ OPENAI_API_KEY 미설정 — Settings > Secrets > Actions 에서 등록하세요"
-            exit 1
-          else
-            echo "✅ OPENAI_API_KEY 주입 확인 (길이: ${#OPENAI_API_KEY}자)"
-          fi
-          if [ -z "$PE3_STRAT_DB_ID" ]; then
-            echo "❌ PE3_STRAT_DB_ID 미설정 — Settings > Secrets > Actions 에서 등록하세요"
-            exit 1
-          else
-            echo "✅ PE3_STRAT_DB_ID 주입 확인 (길이: ${#PE3_STRAT_DB_ID}자)"
-          fi
-          echo "🔒 모든 필수 Secrets 정상 주입 확인 완료"
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install deps
+        run: pip install -r requirements.txt
+      - name: Run MECE loop
         env:
-          NOTION_TOKEN   : ${{ secrets.NOTION_TOKEN }}
-          OPENAI_API_KEY : ${{ secrets.OPENAI_API_KEY }}
-          PE3_STRAT_DB_ID: ${{ secrets.PE3_STRAT_DB_ID }}
-
-      - name: "🚀 PE-7 루프 실행"
+          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          PRODUCT_ID: ${{ github.event.inputs.product_id }}
+          ROUNDS: ${{ github.event.inputs.mece_rounds || '3' }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
         run: |
-          DRY_RUN_FLAG=""
-          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
-            DRY_RUN_FLAG="--dry-run"
-          fi
-
-          RECORD_FLAG=""
-          if [ -n "${{ github.event.inputs.record_id }}" ]; then
-            RECORD_FLAG="--record-id ${{ github.event.inputs.record_id }}"
-          fi
-
-          python automation/pe7_product_mece_loop.py \
-            $DRY_RUN_FLAG \
-            $RECORD_FLAG \
-            --output pe7_results.json
-
-      # ── PE-3 최적화 프롬프트 Upsert ───────────────────────────────────────
-      # 목적: PE-7 분석 완료 후 생성된 최적화 프롬프트 3종을
-      #       Notion PE-3 STRAT DB에 자동 Create/Update
-      #       · 중복 실행 시 Update(幂等), 신규 시 Create
-      #       · LastValidated = 실행일 자동 적용
-      # 의존: PE3_STRAT_DB_ID secret 필요 (위 Secrets 검증 step에서 확인)
-      # ──────────────────────────────────────────────────────────────────────
-      - name: "🗂️ Upsert Optimized Prompts to Notion PE-3"
-        run: python automation/pe3_prompt_upsert.py
-        env:
-          NOTION_TOKEN   : ${{ secrets.NOTION_TOKEN }}
-          PE3_STRAT_DB_ID: ${{ secrets.PE3_STRAT_DB_ID }}
-
-      # ── FIX v1.1 ──────────────────────────────────────────────────────────
-      # 기존: python3 -c "..." 인라인 코드에서 f-string 이중 이스케이프(\")
-      #       가 YAML 파서를 깨뜨려 L82 SyntaxError 발생
-      # 수정: 인라인 Python을 별도 헬퍼 스크립트(automation/pe7_summary.py)로
-      #       분리하여 따옴표 충돌 완전 제거
-      # ──────────────────────────────────────────────────────────────────────
-      - name: "📊 결과 요약 출력"
-        if: always()
-        run: |
-          if [ -f pe7_results.json ]; then
-            echo "## PE-7 실행 결과" >> $GITHUB_STEP_SUMMARY
-            echo "| 상태 | 아이디어 | PE-3 점수 | IRR |" >> $GITHUB_STEP_SUMMARY
-            echo "|------|---------|-----------|-----|" >> $GITHUB_STEP_SUMMARY
-            python automation/pe7_summary.py pe7_results.json >> $GITHUB_STEP_SUMMARY
-          fi
-
-      - name: "💾 결과 아티팩트 저장"
-        if: always()
-        uses: actions/upload-artifact@v4
+          mkdir -p ${{ env.OUTPUT_DIR }}
+          python scripts/mece_loop_runner.py \
+            --product-id "$PRODUCT_ID" \
+            --rounds "$ROUNDS" \
+            --output-dir "${{ env.OUTPUT_DIR }}" \
+            --dry-run "$DRY_RUN"
+      - uses: actions/upload-artifact@v4
         with:
-          name: pe7-mece-results-${{ github.run_id }}
-          path: pe7_results.json
-          retention-days: 30
+          name: mece-output
+          path: ${{ env.OUTPUT_DIR }}/
+          if-no-files-found: ignore

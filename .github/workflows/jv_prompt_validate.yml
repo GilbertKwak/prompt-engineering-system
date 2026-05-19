@@ -1,132 +1,38 @@
-name: JV Fund Prompt — Validate & Notion Sync
+name: PE· JV Prompt Validate
 
 on:
   push:
+    branches: [main, develop]
     paths:
-      - 'prompts/jv_fund/**'
+      - 'prompts/**'
+      - 'schemas/**'
   pull_request:
     paths:
-      - 'prompts/jv_fund/**'
-  schedule:
-    # 매월 1일 09:00 KST (00:00 UTC) 월간 리뷰 자동 실행
-    - cron: '0 0 1 * *'
+      - 'prompts/**'
   workflow_dispatch:
-    inputs:
-      validation_target:
-        description: '검증 대상 파일 (기본: 전체)'
-        required: false
-        default: 'prompts/jv_fund/'
+
+env:
+  PYTHON_VERSION: '3.12'
 
 jobs:
-  validate-prompts:
-    name: PE-1 + PE-3 Validation
+  validate:
+    name: ✅ JV Prompt Validate
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-
-      - name: Install Dependencies
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install deps
+        run: pip install -r requirements.txt
+      - name: Validate JV prompts
         run: |
-          pip install -r requirements.txt || echo "No requirements.txt, skipping"
-
-      - name: Run PE-1 Validation (Source Citation Check)
+          python scripts/jv_prompt_validator.py \
+            --schema schemas/jv_prompt_schema.json \
+            --dir prompts/jv/ \
+            --strict
+      - name: Check PE-7 metadata
         run: |
-          echo "=== PE-1: 출처 명시 검증 ==="
-          python automation/auto_validate.py \
-            --dir prompts/jv_fund/ \
-            --rules PE-1 \
-            --output validation_report_pe1.json || true
-
-      - name: Run PE-3 Validation (Counter-Scenario Check)
-        run: |
-          echo "=== PE-3: 반대 시나리오 검증 ==="
-          python automation/auto_validate.py \
-            --dir prompts/jv_fund/ \
-            --rules PE-3 \
-            --output validation_report_pe3.json || true
-
-      - name: Structure Validation
-        run: |
-          echo "=== 구조 완결성 검증 ==="
-          for f in prompts/jv_fund/*.md prompts/jv_fund/variants/*.md; do
-            echo "Checking: $f"
-            # SYSTEM ROLE, TASK CHAIN, OUTPUT FORMAT 존재 여부 확인
-            grep -l "SYSTEM ROLE\|TASK CHAIN\|OUTPUT" "$f" && echo "✅ $f" || echo "⚠️  Missing sections in $f"
-          done
-
-      - name: Upload Validation Report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: validation-reports
-          path: validation_report_*.json
-          if-no-files-found: ignore
-
-  notion-sync:
-    name: Notion Sync (main branch only)
-    runs-on: ubuntu-latest
-    needs: validate-prompts
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Sync Master Prompt to Notion
-        env:
-          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-          NOTION_JV_PAGE_ID: ${{ secrets.NOTION_JV_PAGE_ID }}
-        run: |
-          python automation/notion_sync.py \
-            --page-env NOTION_JV_PAGE_ID \
-            --file prompts/jv_fund/master_v3.md \
-            --mode upsert || echo "Notion sync skipped (token not configured)"
-
-  monthly-review-issue:
-    name: Monthly Review Issue (scheduled only)
-    runs-on: ubuntu-latest
-    if: github.event_name == 'schedule'
-    steps:
-      - name: Create Monthly Review Issue
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const date = new Date().toISOString().slice(0, 7);
-            await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: `[Monthly Review] JV Fund Prompt Performance — ${date}`,
-              labels: ['prompt-review', 'monthly', 'jv-analysis'],
-              body: [
-                '## JV Fund 프롬프트 월간 리뷰',
-                '',
-                `**리뷰 기간**: ${date}`,
-                '',
-                '### 검토 항목',
-                '- [ ] Master Prompt v3 PE-1 준수율',
-                '- [ ] PE-3 반대 시나리오 품질',
-                '- [ ] 도메인 변형 프롬프트 업데이트 필요 여부',
-                '  - [ ] FU-Series Adapter',
-                '  - [ ] B-Star eCO2 Prompt',
-                '  - [ ] AI Infra Prompt',
-                '- [ ] 시장 데이터 신선도 확인 (2년 이내)',
-                '- [ ] 파트너 후보 목록 업데이트',
-                '- [ ] Notion JV Pipeline DB 동기화 상태',
-                '',
-                '### 버전 업그레이드 필요 여부',
-                '- [ ] v3 → v4 업그레이드 필요 시 체크',
-                '',
-                '### 관련 링크',
-                '- [Master Prompt v3](https://github.com/GilbertKwak/prompt-engineering-system/blob/main/prompts/jv_fund/master_v3.md)',
-                '- [Validation Checklist](https://github.com/GilbertKwak/prompt-engineering-system/blob/main/prompts/jv_fund/validation_checklist.md)',
-              ].join('aga')
-            });
+          python scripts/check_pe7_metadata.py \
+            --dir prompts/ \
+            --required-fields "id,version,domain,created_at"

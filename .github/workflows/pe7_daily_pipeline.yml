@@ -1,223 +1,181 @@
-# PE-7 v2.0 | Track A-1 → B-1 → B-3 → C-2 → C-3 Daily Pipeline
-# 스케줄: 매일 KST 08:00 (UTC 23:00) | 수동 트리거 지원
-# E-0N: E-03, E-05, E-07, E-08 방어 로직 내장
-name: PE-7 Daily Pipeline
+name: PE· Daily Pipeline
 
 on:
   schedule:
-    - cron: '0 23 * * *'   # 매일 UTC 23:00 = KST 08:00
+    - cron: '0 1 * * *'  # 10:00 KST
   workflow_dispatch:
     inputs:
-      skip_sentiment:
-        description: 'B-3 감성분석 건너뜀 (Reddit API 불안정 시)'
+      target_domain:
+        description: '대상 도메인 (all | smr | ai | strategy)'
         required: false
-        default: 'false'
-        type: boolean
+        default: 'all'
       dry_run:
-        description: 'Dry-run (파일 저장만, Sheets/Notion 업데이트 없음)'
+        description: 'Dry-run 모드'
         required: false
         default: 'false'
         type: boolean
 
 env:
-  PYTHON_VERSION: '3.11'
-  TZ: 'Asia/Seoul'
+  PYTHON_VERSION: '3.12'
 
 jobs:
-  # ────────────────────────────────────────────────────────────────
-  # Job 1: Track A-1 — Notion DB → Google Sheets Export
-  # ────────────────────────────────────────────────────────────────
-  track-a1-sheets-export:
-    name: 'Track A-1 | Sheets Export'
+  # ─── STAGE 0: 환경 초기화 ───────────────────────────────────────────────────
+  init:
+    name: 🔧 Init
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: pip
-
-      - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-          pip install pandas gspread google-auth requests
-
-      - name: Run sheets_exporter.py
-        env:
-          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-          NOTION_DB_ID: ${{ secrets.NOTION_KPI_DB_ID }}
-          GOOGLE_SHEETS_ID: ${{ secrets.GOOGLE_SHEETS_ID }}
-          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-          DRY_RUN: ${{ inputs.dry_run || 'false' }}
-        run: python scripts/sheets_exporter.py
-
-      - name: Upload data artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: a1-sheets-data-${{ github.run_id }}
-          path: data/
-          retention-days: 7
-
-  # ────────────────────────────────────────────────────────────────
-  # Job 2: Track B-1 — RSS/Web 수집 + LLM 요약  (A-1 완료 후)
-  # ────────────────────────────────────────────────────────────────
-  track-b1-supply-chain:
-    name: 'Track B-1 | Supply Chain Collector'
-    runs-on: ubuntu-latest
-    needs: track-a1-sheets-export
-    timeout-minutes: 15
+    outputs:
+      run_date: ${{ steps.env.outputs.run_date }}
+      week_label: ${{ steps.env.outputs.week_label }}
+      target: ${{ steps.env.outputs.target }}
     steps:
       - uses: actions/checkout@v4
+      - name: Set env vars
+        id: env
+        run: |
+          echo "run_date=$(date -u '+%Y-%m-%d')" >> $GITHUB_OUTPUT
+          echo "week_label=$(date -u '+%Y-W%V')" >> $GITHUB_OUTPUT
+          echo "target=${{ github.event.inputs.target_domain || 'all' }}" >> $GITHUB_OUTPUT
 
+  # ─── STAGE 1: 프롬프트 유효성 검증 ─────────────────────────────────────────────
+  validate:
+    name: ✅ Validate Prompts
+    needs: init
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: pip
-
-      - name: Install dependencies
+      - name: Install deps
+        run: pip install -r requirements.txt
+      - name: Validate prompt JSON schemas
         run: |
-          pip install --upgrade pip
-          pip install pandas feedparser beautifulsoup4 requests lxml
+          python scripts/validate_prompts.py \
+            --schema schemas/prompt_schema.json \
+            --dir prompts/ \
+            --strict
 
-      - name: Run supply_chain_collector.py
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: python scripts/supply_chain_collector.py
-
-      - name: Upload supply chain data
-        uses: actions/upload-artifact@v4
-        with:
-          name: b1-supply-chain-${{ github.run_id }}
-          path: data/supply_chain_*.{csv,json}
-          retention-days: 14
-
-  # ────────────────────────────────────────────────────────────────
-  # Job 3: Track B-3 — Reddit 감성분석  (병렬: B-1과 동시)
-  # ────────────────────────────────────────────────────────────────
-  track-b3-sentiment:
-    name: 'Track B-3 | Sentiment Analyzer'
+  # ─── STAGE 2: SMR 파이프라인 ─────────────────────────────────────────────────
+  smr_pipeline:
+    name: 📊 SMR Pipeline
+    needs: [init, validate]
     runs-on: ubuntu-latest
-    needs: track-a1-sheets-export
-    timeout-minutes: 20
-    if: ${{ inputs.skip_sentiment != 'true' }}
+    if: contains(fromJson('["all","smr"]'), needs.init.outputs.target)
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: pip
-
-      - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-          pip install pandas nltk
-          # FinBERT 설치 시도 (E-05: 실패 시 VADER fallback)
-          pip install transformers torch --index-url https://download.pytorch.org/whl/cpu || \
-            echo '[E-05] FinBERT 설치 실패 → VADER fallback 사용'
-
-      - name: Run sentiment_analyzer.py
+      - name: Install deps
+        run: pip install -r requirements.txt
+      - name: Run SMR analysis
         env:
-          REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
-          REDDIT_SECRET: ${{ secrets.REDDIT_SECRET }}
-        run: python scripts/sentiment_analyzer.py
-        continue-on-error: true   # E-05: Reddit 429 시에도 파이프라인 계속
-
-      - name: Upload sentiment data
-        uses: actions/upload-artifact@v4
+          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          RUN_DATE: ${{ needs.init.outputs.run_date }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+        run: |
+          python scripts/smr_daily_runner.py \
+            --run-date "$RUN_DATE" \
+            --dry-run "$DRY_RUN"
+      - uses: actions/upload-artifact@v4
         with:
-          name: b3-sentiment-${{ github.run_id }}
-          path: data/sentiment_*.csv
-          retention-days: 14
+          name: smr-output
+          path: output/smr/
+          if-no-files-found: ignore
 
-  # ────────────────────────────────────────────────────────────────
-  # Job 4: Track C-2 — Markowitz  (B-1, B-3 완료 후)
-  # ────────────────────────────────────────────────────────────────
-  track-c2-markowitz:
-    name: 'Track C-2 | Markowitz Optimizer'
+  # ─── STAGE 3: AI 인텔 데일리 요약 ──────────────────────────────────────────────
+  ai_intel_daily:
+    name: 🤖 AI Intel Daily
+    needs: [init, validate]
     runs-on: ubuntu-latest
-    needs: [track-b1-supply-chain, track-b3-sentiment]
-    timeout-minutes: 10
+    if: contains(fromJson('["all","ai"]'), needs.init.outputs.target)
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: pip
-
-      - name: Install dependencies
-        run: pip install numpy pandas scipy
-
-      - name: Run markowitz.py
-        run: python scripts/markowitz.py
-
-      - name: Upload Markowitz results
-        uses: actions/upload-artifact@v4
+      - name: Install deps
+        run: pip install -r requirements.txt
+      - name: Run daily AI intel summary
+        env:
+          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          RUN_DATE: ${{ needs.init.outputs.run_date }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+        run: |
+          python scripts/ai_daily_summary.py \
+            --run-date "$RUN_DATE" \
+            --dry-run "$DRY_RUN"
+      - uses: actions/upload-artifact@v4
         with:
-          name: c2-markowitz-${{ github.run_id }}
-          path: |
-            data/efficient_frontier_*.csv
-            data/markowitz_result_*.json
-          retention-days: 30
+          name: ai-intel-daily
+          path: output/ai_intel/daily/
+          if-no-files-found: ignore
 
-  # ────────────────────────────────────────────────────────────────
-  # Job 5: Track C-3 — Black-Litterman  (C-2 완료 후)
-  # ────────────────────────────────────────────────────────────────
-  track-c3-black-litterman:
-    name: 'Track C-3 | Black-Litterman'
+  # ─── STAGE 4: 전략 분석 ──────────────────────────────────────────────────────
+  strategy:
+    name: 🧠 Strategy Analysis
+    needs: [init, validate]
     runs-on: ubuntu-latest
-    needs: track-c2-markowitz
-    timeout-minutes: 10
+    if: contains(fromJson('["all","strategy"]'), needs.init.outputs.target)
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: pip
-
-      - name: Install dependencies
-        run: pip install numpy pandas
-
-      - name: Run black_litterman.py
-        run: python scripts/black_litterman.py
-
-      - name: Upload BL results
-        uses: actions/upload-artifact@v4
-        with:
-          name: c3-black-litterman-${{ github.run_id }}
-          path: data/black_litterman_*.json
-          retention-days: 30
-
-  # ────────────────────────────────────────────────────────────────
-  # Job 6: 파이프라인 요약 알림 (Slack)
-  # ────────────────────────────────────────────────────────────────
-  notify-completion:
-    name: 'Notify | Slack Alert'
-    runs-on: ubuntu-latest
-    needs: [track-c3-black-litterman]
-    if: always()
-    steps:
-      - name: Slack 알림 전송
+      - name: Install deps
+        run: pip install -r requirements.txt
+      - name: Run strategy analysis
         env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          RUN_DATE: ${{ needs.init.outputs.run_date }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
         run: |
-          STATUS="${{ needs.track-c3-black-litterman.result }}"
-          COLOR=$([ "$STATUS" = "success" ] && echo "#36a64f" || echo "#e01e5a")
-          ICON=$([ "$STATUS" = "success" ] && echo "✅" || echo "❌")
-          DATE=$(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M KST')
-          curl -s -X POST "$SLACK_WEBHOOK" \
-            -H 'Content-type: application/json' \
-            -d "{
-              \"attachments\": [{
-                \"color\": \"$COLOR\",
-                \"title\": \"$ICON PE-7 Daily Pipeline — $STATUS\",
-                \"text\": \"실행 시각: $DATE\\n실행 ID: ${{ github.run_id }}\\nCommit: ${{ github.sha }}\",
-                \"footer\": \"PE-7 v2.0 | GilbertKwak\"
-              }]
-            }" || echo '[SKIP] SLACK_WEBHOOK_URL 미설정'
+          python scripts/strategy_analyzer.py \
+            --run-date "$RUN_DATE" \
+            --dry-run "$DRY_RUN"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: strategy-output
+          path: output/strategy/
+          if-no-files-found: ignore
+
+  # ─── STAGE 5: 요약 코미트 ──────────────────────────────────────────────────────
+  commit_and_report:
+    name: 💾 Commit & Report
+    needs: [init, smr_pipeline, ai_intel_daily, strategy]
+    runs-on: ubuntu-latest
+    if: always() && needs.init.result == 'success'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: output/
+          merge-multiple: true
+      - name: Commit outputs
+        env:
+          RUN_DATE: ${{ needs.init.outputs.run_date }}
+        run: |
+          git config --global user.name "PE Daily Bot"
+          git config --global user.email "pe-daily-bot@github-actions"
+          git add output/ || true
+          git diff --staged --quiet || git commit -m \
+            "auto: daily pipeline outputs — ${RUN_DATE} [PE Daily]"
+          git push || true
+      - name: Step Summary
+        env:
+          RUN_DATE: ${{ needs.init.outputs.run_date }}
+          WEEK: ${{ needs.init.outputs.week_label }}
+        run: |
+          echo "# 🤖 PE Daily Pipeline — ${RUN_DATE}" >> $GITHUB_STEP_SUMMARY
+          echo "| Stage | Result |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| Validate | ${{ needs.validate.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| SMR Pipeline | ${{ needs.smr_pipeline.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| AI Intel Daily | ${{ needs.ai_intel_daily.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Strategy | ${{ needs.strategy.result }} |" >> $GITHUB_STEP_SUMMARY

@@ -1,129 +1,88 @@
-name: VC Layer Strategy Apply (PE-VC-02/03)
+name: PE· VC Layer Apply
 
 on:
   workflow_dispatch:
     inputs:
-      query:
-        description: '분석 쿼리 (한국어/영어)'
+      target_layer:
+        description: '대상 VC 레이어'
         required: true
-        type: string
-      domain:
-        description: '대상 도메인'
-        required: true
+      apply_mode:
+        description: '적용 모드'
+        required: false
+        default: 'merge'
         type: choice
         options:
-          - PE-AI-ECO
-          - PE-SEMI
-          - PE-DD
-          - PE-FIN
-          - PE-STRAT
-          - PE-MIN
-          - PE-PROD
-          - PE-NBD
-          - PE-DC
-          - PE-SAT
-          - PE-TDA
-          - PE-THERM
-          - PE-PWR
-      force_layer3:
-        description: 'Layer 3 강제 실행 (3종 도메인 한정)'
+          - merge
+          - replace
+          - diff-only
+      dry_run:
+        description: 'Dry-run'
         required: false
+        default: 'false'
         type: boolean
-        default: false
 
 env:
-  # TODO(P5): 2026-06-02 Node.js 24 공식 기본값 전환 이후 상단 줄 제거
-  # 제거 후 actions/checkout, actions/setup-python 최신 버전 pin도 확인
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  PYTHON_VERSION: '3.12'
+  OUTPUT_DIR: output/vc_layer
 
 jobs:
-  layer2-preprocess:
-    name: Layer 2 — 전처리 게이트 (PE-VC-02)
+  validate_layer:
+    name: ✅ Validate VC Layer
     runs-on: ubuntu-latest
-    outputs:
-      intent_class: ${{ steps.route.outputs.intent_class }}
-      layer3_required: ${{ steps.route.outputs.layer3_required }}
-      routing_packet: ${{ steps.route.outputs.routing_packet }}
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-
-      - name: Run PE-VC-02 Preprocessing Gate
-        id: route
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install deps
+        run: pip install -r requirements.txt
+      - name: Validate VC layer
         env:
-          VC_QUERY: ${{ inputs.query }}
-          VC_DOMAIN: ${{ inputs.domain }}
-          VC_FORCE: ${{ inputs.force_layer3 }}
+          LAYER: ${{ github.event.inputs.target_layer }}
         run: |
-          python automation/vc_layer_router.py \
-            "$VC_QUERY" \
-            "$VC_DOMAIN" \
-            --verbose > routing_packet.txt 2>&1
+          python scripts/vc_layer_validator.py \
+            --layer "$LAYER" \
+            --schema schemas/vc_layer_schema.json
 
-          # intent_class 추출 (단일행)
-          INTENT=$(grep 'intent_class:' routing_packet.txt | awk '{print $2}' | tr -d '"' | head -1)
-          echo "intent_class=${INTENT:-UNKNOWN}" >> "$GITHUB_OUTPUT"
-
-          # layer3 에스콜레이션 여부 (단일행)
-          L3=$(grep 'layer3_escalate:' routing_packet.txt | awk '{print $2}' | tr -d '"' | head -1)
-          if [ "$VC_FORCE" = 'true' ]; then
-            L3='True'
-          fi
-          echo "layer3_required=${L3:-False}" >> "$GITHUB_OUTPUT"
-
-          # 패킷 내용 저장 — multiline delimiter 형식
-          DELIM="PACKET_EOF_$(uuidgen | tr -d '-')"
-          echo "routing_packet<<${DELIM}" >> "$GITHUB_OUTPUT"
-          cat routing_packet.txt >> "$GITHUB_OUTPUT"
-          echo "${DELIM}" >> "$GITHUB_OUTPUT"
-
-      - name: Layer 2 Summary
-        run: |
-          python3 automation/vc_layer2_summary.py routing_packet.txt >> "$GITHUB_STEP_SUMMARY"
-
-  layer3-deep-analysis:
-    name: Layer 3 — 심층 분석 (PE-VC-03, 3종 한정)
+  apply_layer:
+    name: ⚙️ Apply VC Layer
+    needs: validate_layer
     runs-on: ubuntu-latest
-    needs: layer2-preprocess
-    if: |
-      needs.layer2-preprocess.outputs.layer3_required == 'True' &&
-      (inputs.domain == 'PE-AI-ECO' || inputs.domain == 'PE-SEMI' || inputs.domain == 'PE-DD')
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
         with:
-          python-version: '3.11'
-
-      - name: Dispatch Layer 3 Modules
-        id: l3_dispatch
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install deps
+        run: pip install -r requirements.txt
+      - name: Apply VC layer
         env:
-          VC_QUERY: ${{ inputs.query }}
-          VC_DOMAIN: ${{ inputs.domain }}
-          VC_FORCE: ${{ inputs.force_layer3 }}
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          LAYER: ${{ github.event.inputs.target_layer }}
+          MODE: ${{ github.event.inputs.apply_mode || 'merge' }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
         run: |
-          python3 automation/vc_layer3_dispatch.py \
-            --query "$VC_QUERY" \
-            --domain "$VC_DOMAIN" \
-            --force "$VC_FORCE" \
-            --output l3_result.json
-
-      - name: Layer 3 Summary
+          mkdir -p ${{ env.OUTPUT_DIR }}
+          python scripts/vc_layer_applier.py \
+            --layer "$LAYER" \
+            --mode "$MODE" \
+            --output "${{ env.OUTPUT_DIR }}/vc_apply_result.json" \
+            --dry-run "$DRY_RUN"
+      - name: Commit VC layer
+        env:
+          LAYER: ${{ github.event.inputs.target_layer }}
+          MODE: ${{ github.event.inputs.apply_mode || 'merge' }}
         run: |
-          python3 automation/vc_layer3_summary.py l3_result.json >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Upload L3 Result
-        uses: actions/upload-artifact@v4
+          git config --global user.name "VC Layer Bot"
+          git config --global user.email "vc-layer-bot@github-actions"
+          git add vc_layers/ output/vc_layer/ || true
+          git diff --staged --quiet || git commit -m \
+            "auto: vc-layer ${LAYER} (${MODE}) [VC Layer Apply]"
+          git push || true
+      - uses: actions/upload-artifact@v4
         with:
-          name: layer3-result-${{ inputs.domain }}
-          path: l3_result.json
-          retention-days: 30
+          name: vc-apply-result
+          path: ${{ env.OUTPUT_DIR }}/vc_apply_result.json
+          if-no-files-found: ignore
