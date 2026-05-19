@@ -1,0 +1,21 @@
+# ─────────────────────────────────────────────────────────────
+# requirements/validate.txt
+# 프롬프트 검증 workflow 의존성
+# 사용 workflow: jv_prompt_validate.yml, prompt_validate.yml,
+#               validate_prompts.yml, pe7_secrets_validate.yml,
+#               pe3_product_qc.yml
+# ─────────────────────────────────────────────────────────────
+-r base.txt
+
+# YAML 파싱
+pyyaml>=6.0.1
+
+# Markdown 파싱
+markdownify>=0.13.1
+
+# 텍스트 유사도/검증
+fuzz>=1.0.0
+thefuzz>=0.22.1
+
+# Notion API (프롬프트 결과 저장)
+notion-client>=2.2.1

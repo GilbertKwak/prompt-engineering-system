@@ -1,25 +1,16 @@
 # ─────────────────────────────────────────────────────────────
-# automation/requirements.txt
-# AI Intel Weekly 파이프라인 전용 의존성
-# 사용 workflow: ai-intel-weekly.yml (Stage 1~4 모든 job)
+# requirements/base.txt
+# 공통 베이스 의존성 — 모든 workflow에서 공유
 # ─────────────────────────────────────────────────────────────
 
 # HTTP 클라이언트
 requests>=2.31.0
-httpx>=0.27.0
-
-# Notion API
-notion-client>=2.2.1
-
-# 데이터 처리
-python-dateutil>=2.9.0
 
 # 환경변수 관리 (로컬 테스트용)
 python-dotenv>=1.0.0
 
+# 날짜/시간 처리
+python-dateutil>=2.9.0
+
 # JSON 스키마 검증
 jsonschema>=4.22.0
-
-# 유틸리티
-tqdm>=4.66.0
-tenacity>=8.3.0

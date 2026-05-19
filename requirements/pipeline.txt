@@ -1,0 +1,28 @@
+# ─────────────────────────────────────────────────────────────
+# requirements/pipeline.txt
+# 메인 파이프라인 workflow 의존성
+# 사용 workflow: pe7_daily_pipeline.yml, pe7_parallel_v3.yml,
+#               pe7_smr_pipeline.yml, pe7_product_mece_loop.yml,
+#               build_kg.yml, register_variant.yml,
+#               pe7_e0n_validate.yml, pe_ai_ecosystem_pipeline.yml,
+#               pe_univ_apply.yml, vc_layer_apply.yml
+# ─────────────────────────────────────────────────────────────
+-r base.txt
+
+# HTTP 클라이언트 (고급)
+httpx>=0.27.0
+
+# Notion API
+notion-client>=2.2.1
+
+# YAML 파싱
+pyyaml>=6.0.1
+
+# 데이터 처리
+pandas>=2.2.0
+
+# 재시도/백오프
+tenacity>=8.3.0
+
+# 유틸리티
+tqdm>=4.66.0
