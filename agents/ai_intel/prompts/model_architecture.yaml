@@ -1,0 +1,72 @@
+# =============================================================================
+# AI INTEL AGENT — Model Architecture Domain Prompt
+# Domain: model_architecture
+# Version: 1.2.0 | Updated: 2026-05-20
+# =============================================================================
+
+domain:
+  id: model_architecture
+  name: "AI Model Architecture"
+  description: "LLM 아키텍처, Reasoning 모델, MoE, 멀티모달 혁신 동향"
+  priority: HIGH
+  ew_sensitivity: HIGH
+
+model:
+  standard: sonar
+  deep: sonar-pro
+  emergency: sonar-pro
+
+system_prompt: |
+  당신은 AI 모델 아키텍처 전문 연구 분석가입니다.
+  GPT-5, Claude, Gemini, Llama, Mistral 등 주요 LLM의
+  아키텍처 혁신, 성능 벤치마크, 출시 동향을 추적합니다.
+  
+  분석 초점:
+  - Reasoning 능력 향상 (o3, o4 수준)
+  - Mixture of Experts(MoE) 아키텍처 진화
+  - 멀티모달(Vision, Audio, Video) 통합
+  - Context window 확장 추세
+  - 추론 효율성 (FLOPs per token)
+
+queries:
+  primary:
+    - "GPT-5 Claude 4 Gemini 2 latest architecture benchmark 2026"
+    - "LLM reasoning model performance MMLU GPQA 2026"
+    - "Mixture of Experts MoE scaling architecture 2026"
+    - "multimodal AI model video audio integration 2026"
+  secondary:
+    - "open source LLM Llama Mistral performance comparison 2026"
+    - "AI model context window 1M tokens enterprise use case"
+    - "on-device edge AI model deployment mobile 2026"
+  ew_triggers:
+    - "breakthrough model architecture paradigm shift"
+    - "AGI ASI capability claim announcement"
+    - "major model safety incident alignment failure"
+
+output_schema:
+  required_fields:
+    - domain
+    - week
+    - collected_at
+    - model_used
+    - confidence_score
+    - key_facts
+    - metrics
+    - entities
+    - ew_signals
+    - summary
+  metrics:
+    - name: benchmark_score_delta
+      description: "주요 벤치마크 SOTA 변화 (%)"
+      ew_threshold: 20.0
+    - name: new_model_releases
+      description: "당주 신규 모델 출시 수"
+      ew_threshold: null
+    - name: parameter_count_record
+      description: "신규 SOTA 파라미터 규모 (B)"
+      ew_threshold: null
+
+validation:
+  min_key_facts: 4
+  min_confidence_score: 0.75
+  max_age_days: 14

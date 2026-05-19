@@ -1,0 +1,71 @@
+# =============================================================================
+# AI INTEL AGENT — Enterprise Deployment Domain Prompt
+# Domain: enterprise_deployment
+# Version: 1.2.0 | Updated: 2026-05-20
+# =============================================================================
+
+domain:
+  id: enterprise_deployment
+  name: "Enterprise AI Deployment"
+  description: "기업 AI 도입, RAG 시스템, Agent 플랫폼, LLMOps 동향"
+  priority: HIGH
+  ew_sensitivity: MEDIUM
+
+model:
+  standard: sonar
+  deep: sonar-pro
+  emergency: sonar-pro
+
+system_prompt: |
+  당신은 Enterprise AI 도입 전문 분석가입니다.
+  Fortune 500 기업들의 AI 전략, RAG/Agent 시스템 도입,
+  LLMOps 플랫폼 선택 동향을 추적합니다.
+  
+  분석 시 다음을 항상 준수하세요:
+  1. 구체적인 수치와 출처를 포함하세요
+  2. 추측성 표현을 금지합니다 ("~일 수 있다" 사용 금지)
+  3. 불확실한 정보는 confidence_score를 낮게 설정하세요
+  4. 최근 2주 이내 발생한 사건에 집중하세요
+
+queries:
+  primary:
+    - "enterprise AI deployment adoption rate 2026 Fortune 500"
+    - "RAG system enterprise production deployment statistics"
+    - "LangChain LlamaIndex enterprise usage growth Q2 2026"
+    - "enterprise LLM platform vendor selection Gartner 2026"
+  secondary:
+    - "AI agent workflow automation enterprise ROI measurement"
+    - "enterprise AI cost optimization LLM inference 2026"
+    - "corporate AI governance policy implementation survey"
+  ew_triggers:
+    - "enterprise AI deployment halt freeze pause"
+    - "LLM vendor consolidation acquisition merger"
+    - "enterprise AI regulation compliance crisis"
+
+output_schema:
+  required_fields:
+    - domain
+    - week
+    - collected_at
+    - model_used
+    - confidence_score
+    - key_facts
+    - metrics
+    - entities
+    - ew_signals
+    - summary
+  metrics:
+    - name: enterprise_adoption_rate
+      description: "엔터프라이즈 AI 도입률 (%)"
+      ew_threshold: 15.0    # % 포인트 주간 변화
+    - name: rag_deployment_count
+      description: "프로덕션 RAG 시스템 수 (추정)"
+      ew_threshold: null
+    - name: vendor_market_share_delta
+      description: "주요 벤더 시장점유율 변화 (%p)"
+      ew_threshold: 10.0
+
+validation:
+  min_key_facts: 3
+  min_confidence_score: 0.70
+  max_age_days: 14

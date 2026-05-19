@@ -1,0 +1,91 @@
+# =============================================================================
+# NOTION SYNC AGENT — C-31 Update Template
+# Version: 1.2.0 | Updated: 2026-05-20
+# =============================================================================
+
+agent:
+  id: notion_sync
+  name: "Notion C-31 Updater"
+  description: "Notion C-31 페이지 주간 업데이트 블록 템플릿"
+
+notion:
+  page_id: "34a55ed436f0814d9cffe6a2f0816e29"
+  api_version: "2022-06-28"
+  append_mode: true      # 항상 append (기존 내용 보존)
+  batch_size: 50
+
+block_templates:
+  weekly_header:
+    type: heading_2
+    pattern: "📊 {week} 주간 AI 인텔 업데이트"
+    divider_before: true
+
+  ew_callout:
+    type: callout
+    ew_none:
+      icon: "✅"
+      color: green_background
+      text: "EW 없음 — 정상 운영 중"
+    ew_low:
+      icon: "🔵"
+      color: blue_background
+      text: "EW LOW — 트렌드 기록"
+    ew_medium:
+      icon: "🟡"
+      color: yellow_background
+      text: "EW MEDIUM — 모니터링 강화 ({count}건)"
+    ew_high:
+      icon: "🟠"
+      color: orange_background
+      text: "EW HIGH — 전략 수정 검토 ({count}건)"
+    ew_critical:
+      icon: "🔴"
+      color: red_background
+      text: "⚠️ EW CRITICAL — 즉각 대응 필요 ({count}건)"
+
+  intel_summary:
+    type: toggle
+    title: "📈 도메인별 인텔 요약"
+    children:
+      - type: heading_3
+        text: "🏢 Enterprise Deployment"
+      - type: bulleted_list
+        source: intel.enterprise_deployment.key_facts
+      - type: heading_3
+        text: "🧠 Model Architecture"
+      - type: bulleted_list
+        source: intel.model_architecture.key_facts
+      - type: heading_3
+        text: "⚖️ Regulatory Policy"
+      - type: bulleted_list
+        source: intel.regulatory_policy.key_facts
+      - type: heading_3
+        text: "💰 Investment & Funding"
+      - type: bulleted_list
+        source: intel.investment_funding.key_facts
+
+  kg_update:
+    type: toggle
+    title: "🗺️ Knowledge Graph 업데이트"
+    children:
+      - type: paragraph
+        text: "버전: {kg_current_version} → {kg_next_version}"
+      - type: paragraph
+        text: "신규 노드: {node_count}개 | 신규 엣지: {edge_count}개"
+      - type: paragraph
+        text: "실행 시각: {run_date} KST"
+
+  ew_detail:
+    type: toggle
+    title: "⚠️ EW 시그널 상세 ({ew_count}건)"
+    visible_when: "ew_triggered == true"
+    children:
+      - type: bulleted_list
+        source: ew_signals
+        format: "[{severity}] {domain}: {signal}"
+
+formatting:
+  date_format: "%Y-%m-%d %H:%M KST"
+  week_format: "%Y-W%V"
+  number_format: ","        # 천단위 구분자
+  confidence_format: ".1%"  # 소수점 1자리 퍼센트

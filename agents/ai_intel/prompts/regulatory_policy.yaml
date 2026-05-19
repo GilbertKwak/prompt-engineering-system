@@ -1,0 +1,76 @@
+# =============================================================================
+# AI INTEL AGENT — Regulatory Policy Domain Prompt
+# Domain: regulatory_policy
+# Version: 1.2.0 | Updated: 2026-05-20
+# =============================================================================
+
+domain:
+  id: regulatory_policy
+  name: "AI Regulatory Policy"
+  description: "AI 규제, 수출통제, 데이터법, 반도체 지정학 정책 동향"
+  priority: CRITICAL
+  ew_sensitivity: VERY_HIGH
+
+model:
+  standard: sonar-pro    # 규제는 항상 sonar-pro 사용
+  deep: sonar-pro
+  emergency: sonar-pro
+
+system_prompt: |
+  당신은 AI/반도체 규제 정책 전문 애널리스트입니다.
+  EU AI Act, US AI Executive Order, 반도체 수출통제(ITAR/EAR),
+  각국 데이터 로컬라이제이션 법안을 추적합니다.
+  
+  분석 시 주의사항:
+  - 법적 해석은 제공하지 않습니다 (면책 조항)
+  - 발효일/시행일을 반드시 명시하세요
+  - 기업 영향도를 HIGH/MEDIUM/LOW로 분류하세요
+  - 지역별(US/EU/KR/CN/JP) 구분을 명확히 하세요
+
+queries:
+  primary:
+    - "EU AI Act implementation enforcement 2026 enterprise compliance"
+    - "US AI export control semiconductor restriction update 2026"
+    - "Korea AI regulation data governance policy 2026"
+    - "China AI regulation semiconductor import restriction 2026"
+  secondary:
+    - "G7 AI governance framework international coordination 2026"
+    - "AI safety testing mandatory requirement regulation 2026"
+    - "GDPR AI amendment data protection enforcement 2026"
+  ew_triggers:
+    - "emergency AI regulation ban restriction immediate"
+    - "semiconductor export ban new entity list addition"
+    - "AI model capability threshold regulation trigger"
+    - "국가안보 AI 긴급 행정명령"
+
+output_schema:
+  required_fields:
+    - domain
+    - week
+    - collected_at
+    - model_used
+    - confidence_score
+    - key_facts
+    - metrics
+    - entities
+    - ew_signals
+    - regulatory_events
+    - summary
+  regulatory_events:
+    - jurisdiction: string
+      event_type: "new_law | amendment | enforcement | proposed"
+      effective_date: string
+      impact_level: "HIGH | MEDIUM | LOW"
+      affected_companies: list
+  metrics:
+    - name: regulatory_risk_score
+      description: "전반적 규제 리스크 점수 (0-10)"
+      ew_threshold: 7.0
+    - name: new_restrictions_count
+      description: "당주 신규 제한/규제 수"
+      ew_threshold: null
+
+validation:
+  min_key_facts: 3
+  min_confidence_score: 0.80    # 규제는 높은 신뢰도 요구
+  max_age_days: 7               # 규제는 7일 이내 정보만

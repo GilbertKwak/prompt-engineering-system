@@ -1,0 +1,109 @@
+# =============================================================================
+# EW DETECTION AGENT — Early Warning Analyzer Prompt
+# Version: 1.1.0 | Updated: 2026-05-20
+# =============================================================================
+
+agent:
+  id: ew_detector
+  name: "EW Analyzer"
+  description: "수집된 인텔 데이터에서 EW 시그널 탐지 및 심각도 분류"
+
+system_prompt: |
+  당신은 AI/반도체 시장 Early Warning 전문 분석가입니다.
+  수집된 주간 인텔리전스 데이터를 분석하여 시장 변화 신호를 탐지합니다.
+  
+  EW 판정 기준:
+  - CRITICAL: 즉각적인 비즈니스 영향, 패러다임 전환 수준
+  - HIGH: 2-4주 내 대응 필요, 전략 수정 검토
+  - MEDIUM: 모니터링 강화, 다음 사이클 추적
+  - LOW: 기록만, 트렌드 누적 관찰
+  - NONE: 정상 범위 내
+
+  분석 시 주의:
+  - 노이즈와 실질적 시그널을 엄격히 구분하세요
+  - False positive를 최소화하세요
+  - 근거 데이터를 반드시 인용하세요
+
+detection_logic:
+  layer_1_metric_threshold:
+    description: "정량 임계값 기반 1차 탐지"
+    rules:
+      - metric: enterprise_adoption_rate
+        delta_threshold: 15.0
+        direction: any
+        severity: HIGH
+      - metric: market_share_delta
+        delta_threshold: 10.0
+        direction: any
+        severity: HIGH
+      - metric: investment_volume
+        delta_threshold: 30.0
+        direction: spike
+        severity: MEDIUM
+      - metric: regulatory_risk_score
+        absolute_threshold: 7.0
+        direction: above
+        severity: HIGH
+      - metric: benchmark_score_delta
+        delta_threshold: 20.0
+        direction: improvement
+        severity: MEDIUM
+
+  layer_2_keyword_heuristic:
+    description: "경고 키워드 hit count 기반 2차 탐지 (메트릭 미발견 시 폴백)"
+    min_hit_count: 2
+    keyword_weights:
+      critical_keywords:
+        weight: 3
+        terms:
+          - "ban"
+          - "emergency"
+          - "crisis"
+          - "collapse"
+          - "halt"
+          - "AGI"
+          - "paradigm shift"
+      high_keywords:
+        weight: 2
+        terms:
+          - "breakthrough"
+          - "acquisition"
+          - "monopoly"
+          - "sanction"
+          - "restriction"
+          - "major announcement"
+      medium_keywords:
+        weight: 1
+        terms:
+          - "growth"
+          - "launch"
+          - "investment"
+          - "partnership"
+          - "regulation"
+
+  layer_3_llm_reasoning:
+    description: "LLM 컨텍스트 추론 3차 탐지 (선택적 활성화)"
+    enabled: false    # true로 변경 시 활성화
+    model: sonar-pro
+    prompt: |
+      다음 인텔 요약에서 비즈니스 임팩트가 높은 EW 시그널을 탐지하세요.
+      시그널이 있다면 severity(CRITICAL/HIGH/MEDIUM/LOW)와 근거를 제시하세요.
+
+output_schema:
+  ew_triggered: boolean
+  ew_count: integer
+  severity: "CRITICAL | HIGH | MEDIUM | LOW | NONE"
+  signals:
+    - domain: string
+      signal_type: string
+      severity: string
+      evidence: string
+      metric_value: number
+      threshold_exceeded: number
+      detection_layer: integer
+  recommended_actions:
+    CRITICAL: "sonar-pro 전환 + 즉시 심층 분석 실행"
+    HIGH: "당주 추가 수집 + KG 우선 업데이트"
+    MEDIUM: "다음 사이클 모니터링 강화"
+    LOW: "정기 사이클 유지"
+    NONE: "정상 운영"

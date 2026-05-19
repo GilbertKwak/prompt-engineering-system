@@ -1,0 +1,80 @@
+# =============================================================================
+# AI INTEL AGENT — Investment & Funding Domain Prompt
+# Domain: investment_funding
+# Version: 1.2.0 | Updated: 2026-05-20
+# =============================================================================
+
+domain:
+  id: investment_funding
+  name: "AI Investment & Funding"
+  description: "AI/반도체 VC 투자, M&A, IPO, PE 딜 동향"
+  priority: HIGH
+  ew_sensitivity: HIGH
+
+model:
+  standard: sonar
+  deep: sonar-pro
+  emergency: sonar-pro
+
+system_prompt: |
+  당신은 AI/반도체 섹터 투자 전문 애널리스트입니다.
+  VC 펀딩 라운드, M&A 딜, IPO, PE 투자 동향을 추적합니다.
+  
+  분석 포커스:
+  - 딜 규모, 투자자, 밸류에이션 배수
+  - AI infrastructure vs application layer 투자 비율
+  - 지역별(US/EU/Asia) 투자 분포
+  - 주요 PE/VC 포트폴리오 동향 (Sequoia, a16z, SoftBank 등)
+  - M&A 전략적 의도 분석
+
+queries:
+  primary:
+    - "AI startup funding round Series A B C 2026 Q2"
+    - "semiconductor company M&A acquisition deal 2026"
+    - "AI infrastructure investment venture capital 2026"
+    - "AI unicorn valuation IPO 2026"
+  secondary:
+    - "SoftBank Vision Fund AI portfolio investment 2026"
+    - "Sequoia a16z AI investment thesis 2026"
+    - "sovereign wealth fund AI semiconductor investment 2026"
+  ew_triggers:
+    - "major AI company IPO cancelled delayed"
+    - "large AI funding round collapse down round"
+    - "strategic M&A blocked antitrust regulatory"
+    - "AI investment bubble correction warning"
+
+output_schema:
+  required_fields:
+    - domain
+    - week
+    - collected_at
+    - model_used
+    - confidence_score
+    - key_facts
+    - metrics
+    - entities
+    - deals
+    - ew_signals
+    - summary
+  deals:
+    - company: string
+      deal_type: "funding | acquisition | ipo | pe_investment"
+      amount_usd_m: number
+      investors: list
+      valuation_usd_m: number
+      strategic_rationale: string
+  metrics:
+    - name: total_funding_volume_usd_b
+      description: "주간 총 AI 투자 규모 ($B)"
+      ew_threshold: 30.0    # $30B 이상 시 EW
+    - name: deal_count
+      description: "당주 주요 딜 수"
+      ew_threshold: null
+    - name: avg_valuation_multiple
+      description: "평균 밸류에이션 배수 (Revenue x)"
+      ew_threshold: null
+
+validation:
+  min_key_facts: 3
+  min_confidence_score: 0.72
+  max_age_days: 14

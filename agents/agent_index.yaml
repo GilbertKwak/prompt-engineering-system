@@ -1,409 +1,412 @@
-# ==============================================================================
-# Agent Index — prompt-engineering-system
-# Master registry of all production agents
-# Version: 1.0.0
-# Last Updated: 2026-05-20
-# Maintainer: GilbertKwak
-# ==============================================================================
+# =============================================================================
+# AGENT INDEX — PE System Multi-Agent Registry
+# Version: 2.0.0 | Updated: 2026-05-20
+# Owner: GilbertKwak
+# =============================================================================
+# 이 파일은 모든 에이전트의 단일 진실 소스(Single Source of Truth)입니다.
+# orchestrator가 라우팅 결정 시 이 인덱스를 우선 참조합니다.
+# =============================================================================
 
-metadata:
-  version: "1.0.0"
-  total_agents: 20
-  domains: [semiconductor, investment, ai_technology, strategy, knowledge_management, operations]
+meta:
+  version: "2.0.0"
   last_updated: "2026-05-20"
-  notion_db_id: ""  # populated after Notion DB creation
-  prompt_library_db_id: "35055ed4-36f0-8159-aaa8-d0817e76ba18"
+  total_agents: 12
+  active_agents: 10
+  registry_owner: GilbertKwak
+  routing_strategy: "priority_cascade"   # priority_cascade | round_robin | domain_affinity
+  fallback_model: "sonar"                # Perplexity 최소 모델
+  emergency_model: "sonar-pro"           # EW 발동 시 강제 업그레이드
 
-# ==============================================================================
-# DOMAIN: SEMICONDUCTOR (3 agents)
-# ==============================================================================
+# =============================================================================
+# AGENT DEFINITIONS
+# =============================================================================
 agents:
 
-  - agent_id: AGT-SC-001
-    name: Chip Supply Chain Analyst
-    domain: semiconductor
-    tier: core
-    version: "1.0"
+  # ---------------------------------------------------------------------------
+  # 1. AI INTEL COLLECTOR — 도메인별 AI 인텔 수집
+  # ---------------------------------------------------------------------------
+  - id: ai_intel_collector
+    name: "AI Intel Collector"
+    version: "1.2.0"
     status: active
-    file_path: agents/semiconductor/chip_supply_chain_analyst.md
-    tags: [semiconductor, supply-chain, HBM, TSMC, geopolitics]
-    llm_preference: claude-opus-4
-    capabilities:
-      - HBM/CoWoS 공급망 병목 분석
-      - TSMC/삼성/SK하이닉스 팹 가동률 추적
-      - 선단 공정 수율 및 CapEx 모델링
-    prompt_refs:
-      - PE-IP/domains/semiconductor/supply_chain_v2.md
-    notion_page_id: ""
-    priority: 1
+    category: collection
+    script: automation/ai_intel_collector.py
+    prompt_dir: agents/ai_intel/
+    description: |
+      Perplexity sonar/sonar-pro API를 사용해 4개 AI 도메인의
+      주간 인텔리전스를 수집하고 구조화된 JSON으로 저장합니다.
+    domains:
+      - enterprise_deployment
+      - model_architecture
+      - regulatory_policy
+      - investment_funding
+    models:
+      standard: sonar
+      deep: sonar-pro
+      emergency: sonar-pro
+    triggers:
+      schedule: "0 6 * * 1"   # 매주 월요일 06:00 KST
+      manual: true
+      ew_override: true        # EW 발동 시 즉시 재실행
+    outputs:
+      dir: output/ai_intel/
+      format: json
+      naming: "intel_{domain}_{week}.json"
+    rate_limit:
+      requests_per_minute: 20
+      retry_max: 3
+      retry_backoff_base: 2.0
+    health_check:
+      timeout_seconds: 120
+      min_confidence_score: 0.70
 
-  - agent_id: AGT-SC-002
-    name: AI Chip Demand Forecaster
-    domain: semiconductor
-    tier: core
-    version: "1.0"
+  # ---------------------------------------------------------------------------
+  # 2. EW DETECTOR — Early Warning 탐지
+  # ---------------------------------------------------------------------------
+  - id: ew_detector
+    name: "EW Detector"
+    version: "1.1.0"
     status: active
-    file_path: agents/semiconductor/ai_chip_demand_forecaster.md
-    tags: [AI-chip, GPU, demand-forecast, NVIDIA, datacenter]
-    llm_preference: claude-opus-4
-    capabilities:
-      - AI 가속기 수요 예측 (12~18개월)
-      - Hyperscaler CapEx → 칩 소요량 역산
-      - 데이터센터 전력 제약 보정
-    prompt_refs:
-      - PE-IP/domains/ai_infra/chip_demand_v1.md
-    notion_page_id: ""
-    priority: 2
+    category: analysis
+    script: automation/ai_ew_detector.py
+    prompt_dir: agents/ew_detection/
+    description: |
+      수집된 인텔 데이터에서 시장 변화 신호(EW)를 탐지합니다.
+      정량 임계값 + 키워드 휴리스틱 2단계 검증을 수행합니다.
+    detection_layers:
+      - name: metric_threshold
+        description: "메트릭 수치 기반 임계값 탐지"
+        priority: 1
+      - name: keyword_heuristic
+        description: "경고 키워드 hit count 기반 폴백"
+        priority: 2
+      - name: llm_reasoning
+        description: "LLM 컨텍스트 추론 (선택적)"
+        priority: 3
+    thresholds:
+      adoption_rate_delta: 15.0        # % 포인트 변화
+      market_share_delta: 10.0
+      investment_volume_delta: 30.0
+      regulatory_risk_score: 7.0       # 10점 만점
+      keyword_hit_min: 2               # 휴리스틱 최소 hit수
+    severity_levels:
+      - CRITICAL: "즉시 행동 필요, sonar-pro 강제 전환"
+      - HIGH: "당주 분석 심화, KG 긴급 업데이트"
+      - MEDIUM: "모니터링 강화, 다음 주 추적"
+      - LOW: "기록만, 정기 사이클 유지"
+      - NONE: "정상"
+    outputs:
+      dir: output/ai_intel/
+      format: json
+      naming: "ew_report_{week}.json"
+    depends_on: [ai_intel_collector]
 
-  - agent_id: AGT-SC-003
-    name: Export Control & Regulatory Monitor
-    domain: semiconductor
-    tier: core
-    version: "1.0"
+  # ---------------------------------------------------------------------------
+  # 3. KG BUILDER — Knowledge Graph 빌더
+  # ---------------------------------------------------------------------------
+  - id: kg_builder
+    name: "KG Delta Generator"
+    version: "1.3.0"
     status: active
-    file_path: agents/semiconductor/export_control_monitor.md
-    tags: [export-control, BIS, EAR, China, CHIPS-Act, regulatory]
-    llm_preference: claude-sonnet-4
-    capabilities:
-      - BIS 수출통제 규정 변경사항 추적
-      - Entity List 영향 분석
-      - CHIPS Act 보조금 모니터링
-    prompt_refs:
-      - PE-FIN/regulatory/export_control_v1.md
-    notion_page_id: ""
-    priority: 3
+    category: knowledge
+    script: automation/kg_delta_generator.py
+    prompt_dir: agents/kg_builder/
+    description: |
+      인텔 데이터와 EW 시그널을 결합해 Knowledge Graph의
+      증분(delta) 노드/엣지를 자동 생성합니다.
+    node_types:
+      - COMPANY
+      - TECHNOLOGY
+      - PERSON
+      - EVENT
+      - METRIC
+      - REGULATION
+    edge_types:
+      - DEVELOPS
+      - ACQUIRES
+      - COMPETES_WITH
+      - PARTNERS_WITH
+      - REGULATES
+      - INVESTS_IN
+      - EW_SIGNAL
+    versioning:
+      major_trigger: "EW CRITICAL 또는 paradigm shift"
+      minor_trigger: "신규 노드 5개 이상"
+      patch_trigger: "속성 업데이트만"
+    outputs:
+      format: json
+      naming: "knowledge_graph_v{version}_delta.json"
+    depends_on: [ai_intel_collector, ew_detector]
 
-# ==============================================================================
-# DOMAIN: INVESTMENT (3 agents)
-# ==============================================================================
-
-  - agent_id: AGT-INV-001
-    name: PE Due Diligence Agent
-    domain: investment
-    tier: core
-    version: "2.0"
+  # ---------------------------------------------------------------------------
+  # 4. NOTION SYNC — Notion C-31 동기화
+  # ---------------------------------------------------------------------------
+  - id: notion_sync
+    name: "Notion C-31 Updater"
+    version: "1.2.0"
     status: active
-    file_path: agents/investment/pe_due_diligence_agent.md
-    tags: [PE, due-diligence, LBO, valuation, financial-model]
-    llm_preference: claude-opus-4
-    capabilities:
-      - LBO 모델 구조 설계 및 검증
-      - 재무제표 이상 탐지
-      - IC Memo 초안 생성
-    prompt_refs:
-      - PE-FIN/dd/lbo_model_v3.md
-      - PE-FIN/dd/ic_memo_template.md
-    notion_page_id: ""
-    priority: 4
+    category: sync
+    script: automation/notion_c31_updater.py
+    prompt_dir: agents/notion_sync/
+    description: |
+      KG delta와 EW 리포트를 Notion C-31 페이지에
+      Blocks API append 방식으로 동기화합니다.
+    notion:
+      page_id: "34a55ed436f0814d9cffe6a2f0816e29"
+      api_version: "2022-06-28"
+      batch_size: 50
+    callout_colors:
+      CRITICAL: red
+      HIGH: orange
+      MEDIUM: yellow
+      LOW: blue
+      NONE: green
+    outputs:
+      log_dir: logs/notion_sync/
+      format: json
+    depends_on: [kg_builder]
 
-  - agent_id: AGT-INV-002
-    name: Strategic M&A Advisor
-    domain: investment
-    tier: core
-    version: "1.0"
+  # ---------------------------------------------------------------------------
+  # 5. ORCHESTRATOR — 멀티에이전트 오케스트레이터
+  # ---------------------------------------------------------------------------
+  - id: orchestrator
+    name: "PE System Orchestrator"
+    version: "2.0.0"
     status: active
-    file_path: agents/investment/strategic_ma_advisor.md
-    tags: [M&A, strategic, synergy, valuation, deal-structure]
-    llm_preference: claude-opus-4
-    capabilities:
-      - M&A 시너지 정량화
-      - 딜 구조 설계
-      - Regulatory clearance 리스크 분석
-    prompt_refs:
-      - PE-FIN/ma/synergy_model_v2.md
-    notion_page_id: ""
-    priority: 5
+    category: orchestration
+    script: agents/orchestrator/run_pipeline.py
+    prompt_dir: agents/orchestrator/
+    description: |
+      전체 파이프라인을 조율하는 마스터 오케스트레이터입니다.
+      에이전트 실행 순서, EW 조건 분기, 재시도 로직을 관리합니다.
+    pipeline_order:
+      - ai_intel_collector
+      - ew_detector
+      - kg_builder
+      - notion_sync
+    execution_modes:
+      sequential: "기본 모드, 의존성 순서 준수"
+      parallel_collect: "도메인별 수집 병렬화 (4 threads)"
+      emergency: "EW CRITICAL 시 sonar-pro 강제, 즉시 실행"
+    retry_policy:
+      max_retries: 3
+      backoff_multiplier: 2.0
+      timeout_per_agent: 300
+    health_monitoring:
+      enabled: true
+      heartbeat_interval: 30
+      alert_on_failure: true
+    depends_on: []
 
-  - agent_id: AGT-INV-003
-    name: Market Intelligence Scout
-    domain: investment
-    tier: core
-    version: "1.0"
+  # ---------------------------------------------------------------------------
+  # 6. SEMICONDUCTOR ANALYST — 반도체 도메인 전문 에이전트
+  # ---------------------------------------------------------------------------
+  - id: semiconductor_analyst
+    name: "Semiconductor Domain Analyst"
+    version: "1.0.0"
     status: active
-    file_path: agents/investment/market_intelligence_scout.md
-    tags: [market-intel, deal-flow, sector-mapping, competitive-intel]
-    llm_preference: claude-sonnet-4
-    capabilities:
-      - 섹터별 딜 플로우 스캐닝
-      - 신흥 테마 조기 탐지
-      - 투자 테제 검증
-    prompt_refs:
-      - PE-FIN/intel/market_scout_v1.md
-    notion_page_id: ""
-    priority: 6
+    category: domain_specialist
+    prompt_dir: agents/domain_specialists/semiconductor/
+    description: |
+      HBM, CoWoS, 패키징, 공급망, TSMC/삼성/SK하이닉스 동향을
+      전문적으로 분석하는 반도체 도메인 특화 에이전트입니다.
+    focus_areas:
+      - HBM3/HBM3E/HBM4 수급 동향
+      - CoWoS/SoIC 패키징 capacity
+      - 지정학적 공급망 리스크
+      - TSMC/삼성/Intel Foundry 경쟁 구도
+      - AI 가속기 ASIC vs GPU
+    data_sources:
+      - perplexity_sonar_pro
+      - industry_reports
+      - earnings_calls
+    models:
+      default: sonar-pro
+      reasoning: claude-3-5-sonnet
+    outputs:
+      dir: output/semiconductor/
+      format: json
+    status_note: "standalone 실행 또는 orchestrator 통합 가능"
 
-# ==============================================================================
-# DOMAIN: AI TECHNOLOGY (4 agents)
-# ==============================================================================
-
-  - agent_id: AGT-AI-001
-    name: LLM Capability Tracker
-    domain: ai_technology
-    tier: core
-    version: "1.0"
+  # ---------------------------------------------------------------------------
+  # 7. INVESTMENT ANALYST — 투자 분석 에이전트
+  # ---------------------------------------------------------------------------
+  - id: investment_analyst
+    name: "Investment & Due Diligence Analyst"
+    version: "1.0.0"
     status: active
-    file_path: agents/ai_technology/llm_capability_tracker.md
-    tags: [LLM, benchmark, capability-assessment, frontier-AI]
-    llm_preference: claude-opus-4
-    capabilities:
-      - 프론티어 모델 벤치마크 추적
-      - 모델 아키텍처 변화 분석
-      - AI 역량 한계 탐지 (EW 연동)
-    prompt_refs:
-      - PE-IP/domains/ai_tech/llm_tracker_v1.md
-    notion_page_id: ""
-    priority: 7
+    category: domain_specialist
+    prompt_dir: agents/domain_specialists/investment/
+    description: |
+      AI/반도체 섹터 M&A, PE 투자, 밸류에이션,
+      due diligence 분석을 수행하는 투자 전문 에이전트입니다.
+    focus_areas:
+      - AI infrastructure 투자 라운드
+      - 반도체 M&A 동향
+      - PE 포트폴리오 scoring
+      - 밸류에이션 멀티플 분석
+      - 경쟁사 재무 비교
+    models:
+      default: sonar-pro
+      reasoning: claude-3-5-sonnet
+    outputs:
+      dir: output/investment/
+      format: json
 
-  - agent_id: AGT-AI-002
-    name: AI Infrastructure Analyst
-    domain: ai_technology
-    tier: core
-    version: "1.0"
+  # ---------------------------------------------------------------------------
+  # 8. STRATEGIC ANALYST — 전략 분석 에이전트
+  # ---------------------------------------------------------------------------
+  - id: strategic_analyst
+    name: "Corporate Strategy Analyst"
+    version: "1.0.0"
     status: active
-    file_path: agents/ai_technology/ai_infra_analyst.md
-    tags: [AI-infra, datacenter, networking, power, NVIDIA]
-    llm_preference: claude-sonnet-4
-    capabilities:
-      - AI 데이터센터 인프라 스택 분석
-      - 전력/냉각 제약 투자 기회 발굴
-      - InfiniBand vs RoCE 분석
-    prompt_refs:
-      - PE-IP/domains/ai_infra/datacenter_v2.md
-    notion_page_id: ""
-    priority: 8
+    category: domain_specialist
+    prompt_dir: agents/domain_specialists/strategy/
+    description: |
+      기업 전략, 경쟁 포지셔닝, M&A 시너지,
+      시장 진입 전략 분석을 수행합니다.
+    focus_areas:
+      - 경쟁 구도 분석 (Porter's Five Forces)
+      - 전략적 M&A 타깃 스크리닝
+      - 시장 진입/확장 전략
+      - 기술 로드맵 평가
+    models:
+      default: sonar-pro
+      reasoning: claude-3-5-sonnet
+    outputs:
+      dir: output/strategy/
+      format: json
 
-  - agent_id: AGT-AI-003
-    name: Agentic AI & Orchestration Monitor
-    domain: ai_technology
-    tier: core
-    version: "1.0"
+  # ---------------------------------------------------------------------------
+  # 9. REGULATORY MONITOR — 규제 모니터링 에이전트
+  # ---------------------------------------------------------------------------
+  - id: regulatory_monitor
+    name: "AI Regulatory Policy Monitor"
+    version: "1.0.0"
     status: active
-    file_path: agents/ai_technology/agentic_ai_monitor.md
-    tags: [agentic-AI, multi-agent, orchestration, MCP, LangChain]
-    llm_preference: claude-opus-4
-    capabilities:
-      - 멀티에이전트 프레임워크 비교
-      - MCP/A2A 프로토콜 추적
-      - Enterprise agent 도입 ROI 분석
-    prompt_refs:
-      - PE-IP/domains/ai_tech/agentic_v1.md
-    notion_page_id: ""
-    priority: 9
+    category: monitoring
+    prompt_dir: agents/regulatory/
+    description: |
+      EU AI Act, US AI Policy, 각국 반도체 수출통제,
+      규제 변화를 실시간 모니터링합니다.
+    jurisdictions:
+      - EU
+      - US
+      - KR
+      - JP
+      - CN
+    regulatory_areas:
+      - AI safety regulations
+      - Export control (ITAR/EAR)
+      - Data localization
+      - Competition law (antitrust)
+    ew_sensitivity: HIGH    # 규제 변화는 EW 민감도 높음
+    models:
+      default: sonar-pro
+    outputs:
+      dir: output/regulatory/
+      format: json
 
-  - agent_id: AGT-AI-004
-    name: AI Weekly Intel Collector
-    domain: ai_technology
-    tier: core
-    version: "1.0"
+  # ---------------------------------------------------------------------------
+  # 10. QUALITY VALIDATOR — 품질 검증 에이전트
+  # ---------------------------------------------------------------------------
+  - id: quality_validator
+    name: "Output Quality Validator"
+    version: "1.1.0"
     status: active
-    file_path: automation/ai_intel_collector.py
-    tags: [intel-collection, weekly-digest, perplexity, sonar]
-    llm_preference: perplexity-sonar-pro
-    capabilities:
-      - 도메인별 AI 인텔 수집
-      - EW 임계값 탐지 연동
-      - KG Delta 생성 트리거
-    prompt_refs:
-      - PE-IP/domains/ai_tech/intel_collector_v1.md
-    notion_page_id: ""
-    priority: 10
+    category: validation
+    prompt_dir: agents/validation/
+    description: |
+      모든 에이전트 출력의 품질을 검증합니다.
+      confidence score, completeness, consistency를 평가합니다.
+    validation_rules:
+      min_confidence_score: 0.70
+      required_fields_check: true
+      json_schema_validation: true
+      duplicate_detection: true
+      hallucination_flags:
+        - unsourced_statistics
+        - future_date_claims
+        - contradictory_statements
+    scoring:
+      confidence: 0.40
+      completeness: 0.30
+      consistency: 0.20
+      freshness: 0.10
+    outputs:
+      dir: logs/validation/
+      format: json
+      naming: "validation_{agent_id}_{timestamp}.json"
+    runs_after: all_agents
 
-# ==============================================================================
-# DOMAIN: STRATEGY (3 agents)
-# ==============================================================================
+  # ---------------------------------------------------------------------------
+  # 11-12. RESERVED (planned)
+  # ---------------------------------------------------------------------------
+  - id: graph_visualizer
+    name: "KG Visualizer"
+    version: "0.1.0"
+    status: planned
+    category: visualization
+    description: "Knowledge Graph 시각화 에이전트 (개발 예정)"
 
-  - agent_id: AGT-STR-001
-    name: Competitive Strategy Analyst
-    domain: strategy
-    tier: core
-    version: "1.0"
-    status: active
-    file_path: agents/strategy/competitive_strategy_analyst.md
-    tags: [competitive-strategy, Porter, moat, positioning, BCG]
-    llm_preference: claude-opus-4
-    capabilities:
-      - Porter 5-Forces 분석
-      - 경쟁 우위 원천 식별 (VRIN)
-      - 전략 대안 시나리오 설계
-    prompt_refs:
-      - PE-CON/strategy/competitive_analysis_v2.md
-    notion_page_id: ""
-    priority: 11
+  - id: report_generator
+    name: "Auto Report Generator"
+    version: "0.1.0"
+    status: planned
+    category: reporting
+    description: "주간 보고서 자동 생성 에이전트 (개발 예정)"
 
-  - agent_id: AGT-STR-002
-    name: Scenario Planning Agent
-    domain: strategy
-    tier: core
-    version: "1.0"
-    status: active
-    file_path: agents/strategy/scenario_planning_agent.md
-    tags: [scenario-planning, geopolitics, macro, Shell-method]
-    llm_preference: claude-opus-4
-    capabilities:
-      - Shell 방식 시나리오 설계
-      - 지정학 리스크 매핑
-      - 조기 경보 지표 설계
-    prompt_refs:
-      - PE-CON/strategy/scenario_v1.md
-    notion_page_id: ""
-    priority: 12
+# =============================================================================
+# ROUTING RULES
+# =============================================================================
+routing:
+  default_pipeline:
+    - ai_intel_collector
+    - ew_detector
+    - kg_builder
+    - notion_sync
 
-  - agent_id: AGT-STR-003
-    name: Corporate Development Agent
-    domain: strategy
-    tier: core
-    version: "1.0"
-    status: active
-    file_path: agents/strategy/corporate_development_agent.md
-    tags: [corp-dev, M&A, JV, build-buy-partner]
-    llm_preference: claude-sonnet-4
-    capabilities:
-      - Build-Buy-Partner 의사결정 프레임워크
-      - 전략적 제휴 구조 설계
-      - Corporate VC 포트폴리오 전략
-    prompt_refs:
-      - PE-CON/strategy/corp_dev_v1.md
-    notion_page_id: ""
-    priority: 13
+  conditional_routes:
+    - condition: "ew_severity == CRITICAL"
+      action: emergency_pipeline
+      pipeline:
+        - ai_intel_collector  # sonar-pro 강제
+        - ew_detector
+        - semiconductor_analyst   # 추가 심층 분석
+        - investment_analyst
+        - kg_builder
+        - notion_sync
 
-# ==============================================================================
-# DOMAIN: KNOWLEDGE MANAGEMENT (4 agents)
-# ==============================================================================
+    - condition: "domain == semiconductor"
+      action: domain_specialist_route
+      additional_agents: [semiconductor_analyst]
 
-  - agent_id: AGT-KM-001
-    name: Knowledge Graph Curator
-    domain: knowledge_management
-    tier: core
-    version: "1.0"
-    status: active
-    file_path: agents/knowledge_management/knowledge_graph_curator.md
-    tags: [knowledge-graph, ontology, entity-extraction, KG]
-    llm_preference: claude-opus-4
-    capabilities:
-      - 엔티티/관계 자동 추출
-      - KG 노드 충돌 감지
-      - KG 기반 추론 체인 생성
-    prompt_refs:
-      - PE-IP/domains/knowledge/kg_curator_v1.md
-    notion_page_id: ""
-    priority: 14
+    - condition: "domain == investment"
+      action: domain_specialist_route
+      additional_agents: [investment_analyst]
 
-  - agent_id: AGT-KM-002
-    name: Prompt Engineer Agent
-    domain: knowledge_management
-    tier: core
-    version: "2.0"
-    status: active
-    file_path: agents/knowledge_management/prompt_engineer_agent.md
-    tags: [prompt-engineering, CoT, meta-prompting, evaluation]
-    llm_preference: claude-opus-4
-    capabilities:
-      - 프롬프트 설계 및 최적화
-      - A/B 테스트 프레임워크
-      - 프롬프트 버전 관리
-    prompt_refs:
-      - PE-IP/core/prompt_engineer_v2.md
-    notion_page_id: ""
-    priority: 15
+    - condition: "regulatory_event == true"
+      action: regulatory_route
+      additional_agents: [regulatory_monitor]
 
-  - agent_id: AGT-KM-003
-    name: Research Synthesis Agent
-    domain: knowledge_management
-    tier: core
-    version: "1.0"
-    status: active
-    file_path: agents/knowledge_management/research_synthesis_agent.md
-    tags: [research, synthesis, literature-review, OSINT]
-    llm_preference: claude-opus-4
-    capabilities:
-      - 다중 소스 리서치 통합
-      - 신호 vs 노이즈 분류
-      - OSINT 기반 시장 정보 합성
-    prompt_refs:
-      - PE-IP/core/research_synthesis_v1.md
-    notion_page_id: ""
-    priority: 16
+  always_run: [quality_validator]
 
-  - agent_id: AGT-KM-004
-    name: Notion Sync Manager
-    domain: knowledge_management
-    tier: core
-    version: "1.0"
-    status: active
-    file_path: scripts/sync_agents_to_notion.py
-    tags: [notion, sync, automation, YAML, DB-management]
-    llm_preference: claude-sonnet-4
-    capabilities:
-      - YAML→Notion 페이지 업서트
-      - Agent Index DB 관리
-      - Prompt Library 관계 연결
-    prompt_refs: []
-    notion_page_id: ""
-    priority: 17
-
-# ==============================================================================
-# DOMAIN: OPERATIONS (3 agents)
-# ==============================================================================
-
-  - agent_id: AGT-OPS-001
-    name: Workflow Automation Agent
-    domain: operations
-    tier: core
-    version: "1.0"
-    status: active
-    file_path: agents/operations/workflow_automation_agent.md
-    tags: [automation, GitHub-Actions, Python, CI-CD]
-    llm_preference: claude-sonnet-4
-    capabilities:
-      - GitHub Actions 워크플로 설계
-      - Python 자동화 스크립트 생성
-      - Notion↔GitHub 양방향 동기화
-    prompt_refs:
-      - PE-IP/core/workflow_automation_v1.md
-    notion_page_id: ""
-    priority: 18
-
-  - agent_id: AGT-OPS-002
-    name: Quality Validator Agent
-    domain: operations
-    tier: core
-    version: "1.0"
-    status: active
-    file_path: agents/operations/quality_validator_agent.md
-    tags: [quality, validation, QA, hallucination-detection, scoring]
-    llm_preference: claude-sonnet-4
-    capabilities:
-      - LLM 출력 품질 자동 스코어링
-      - 할루시네이션 탐지
-      - 프롬프트 회귀 테스트
-    prompt_refs:
-      - PE-IP/core/quality_validator_v1.md
-    notion_page_id: ""
-    priority: 19
-
-  - agent_id: AGT-OPS-003
-    name: Session Log Manager
-    domain: operations
-    tier: core
-    version: "1.0"
-    status: active
-    file_path: agents/operations/session_log_manager.md
-    tags: [session-management, logging, continuity, context]
-    llm_preference: claude-sonnet-4
-    capabilities:
-      - 세션 컨텍스트 자동 요약
-      - 작업 연속성 보장
-      - Notion 세션 로그 자동 업데이트
-    prompt_refs:
-      - PE-IP/core/session_manager_v1.md
-    notion_page_id: ""
-    priority: 20
-
-# ==============================================================================
-# USAGE NOTES
-# ==============================================================================
-# 1. notion_page_id: populated by scripts/sync_agents_to_notion.py on first run
-# 2. prompt_refs: relative paths from repo root to source prompt files
-# 3. tier: core (always active) | experimental (A/B testing) | deprecated
-# 4. llm_preference: default model — can be overridden per call
-# 5. To add a new agent: follow template, add entry here, run sync script
+# =============================================================================
+# GLOBAL SETTINGS
+# =============================================================================
+global:
+  log_level: INFO                    # DEBUG | INFO | WARNING | ERROR
+  output_base_dir: output/
+  log_base_dir: logs/
+  timezone: Asia/Seoul
+  week_format: "%Y-W%V"              # ISO 8601
+  secrets:
+    - PERPLEXITY_API_KEY
+    - NOTION_API_KEY
+    - GITHUB_TOKEN                   # optional, for PR creation
+  notification:
+    slack_webhook: false             # TODO: Slack 알림 추가
+    email: false
+  monitoring:
+    prometheus: false                # TODO: 메트릭 수집
+    grafana: false

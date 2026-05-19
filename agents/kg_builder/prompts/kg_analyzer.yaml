@@ -1,0 +1,107 @@
+# =============================================================================
+# KG BUILDER AGENT — Knowledge Graph Analyzer Prompt
+# Version: 1.3.0 | Updated: 2026-05-20
+# =============================================================================
+
+agent:
+  id: kg_builder
+  name: "KG Delta Generator"
+  description: "인텔 데이터에서 KG 노드/엣지 자동 추출 및 delta 생성"
+
+system_prompt: |
+  당신은 AI/반도체 도메인 Knowledge Graph 전문 빌더입니다.
+  수집된 인텔리전스 데이터를 분석하여 엔티티(노드)와
+  관계(엣지)를 추출하고 KG delta를 생성합니다.
+  
+  추출 원칙:
+  1. 검증된 사실만 노드로 생성 (추측 금지)
+  2. 관계는 명확한 근거가 있을 때만 설정
+  3. 기존 노드와 중복 방지 (upsert 로직)
+  4. confidence_score 0.70 미만 정보는 노드 생성 보류
+
+entity_extraction:
+  node_types:
+    COMPANY:
+      examples: ["NVIDIA", "OpenAI", "Anthropic", "TSMC", "Samsung", "SK Hynix"]
+      required_attributes: [name, domain, founded_year]
+      optional_attributes: [revenue, employees, hq_location, stock_ticker]
+    TECHNOLOGY:
+      examples: ["HBM3E", "CoWoS", "RAG", "MoE", "Transformer"]
+      required_attributes: [name, category, maturity_level]
+      optional_attributes: [specs, use_cases, competing_techs]
+    PERSON:
+      examples: ["Jensen Huang", "Sam Altman", "Dario Amodei"]
+      required_attributes: [name, role, organization]
+      optional_attributes: [linkedin, notable_statements]
+    EVENT:
+      examples: ["NVIDIA GTC 2026", "EU AI Act enforcement start"]
+      required_attributes: [name, date, event_type]
+      optional_attributes: [location, participants, outcomes]
+    METRIC:
+      examples: ["HBM market share 2026", "GPT-5 MMLU score"]
+      required_attributes: [name, value, unit, measurement_date]
+      optional_attributes: [source, methodology]
+    REGULATION:
+      examples: ["EU AI Act", "US Export Control Rule"]
+      required_attributes: [name, jurisdiction, status]
+      optional_attributes: [effective_date, penalty, scope]
+
+relationship_extraction:
+  edge_types:
+    DEVELOPS:
+      from: COMPANY
+      to: TECHNOLOGY
+      example: "NVIDIA DEVELOPS H200"
+    ACQUIRES:
+      from: COMPANY
+      to: COMPANY
+      required_evidence: "공식 발표 또는 규제 서류"
+    COMPETES_WITH:
+      from: COMPANY
+      to: COMPANY
+      symmetric: true
+    PARTNERS_WITH:
+      from: COMPANY
+      to: COMPANY
+      attributes: [partnership_type, start_date]
+    REGULATES:
+      from: REGULATION
+      to: COMPANY
+      attributes: [impact_level, compliance_deadline]
+    INVESTS_IN:
+      from: COMPANY
+      to: COMPANY
+      attributes: [amount_usd_m, investment_type, date]
+    EW_SIGNAL:
+      from: EVENT
+      to: COMPANY
+      attributes: [signal_type, severity, detected_week]
+      note: "EW 탐지 시 자동 생성"
+
+versioning_rules:
+  major_bump:
+    - "EW CRITICAL 탐지"
+    - "패러다임 전환급 기술 등장"
+    - "대형 M&A 완료 (>$10B)"
+  minor_bump:
+    - "신규 노드 5개 이상 추가"
+    - "EW HIGH 탐지"
+    - "새 도메인 신규 진입"
+  patch_bump:
+    - "기존 노드 속성 업데이트"
+    - "메트릭 수치 갱신"
+    - "관계 강도 조정"
+
+output_schema:
+  version: string
+  week: string
+  generated_at: string
+  ew_triggered: boolean
+  summary:
+    new_nodes: integer
+    updated_nodes: integer
+    new_edges: integer
+    updated_edges: integer
+  nodes: []
+  edges: []
+  change_rationale: string
