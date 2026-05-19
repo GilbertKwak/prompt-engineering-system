@@ -1,291 +1,330 @@
 #!/usr/bin/env python3
 """
-kg_delta_generator.py — Knowledge Graph Delta Generator
+kg_delta_generator.py  —  Knowledge Graph Delta Generator
 
-수집된 AI 인텔로부터 지식 그래프 노드/엣지 델타를 자동 생성합니다.
-- key_facts에서 엔티티 추출 (21개 주요 키워드 매핑)
-- EW 시그널별 전용 엣지 타입 삽입
-- 버전 메타데이터 포함 JSON 출력
+Reads collected intel JSON files and produces a version-controlled KG delta:
+  - New ENTITY nodes (companies, models, technologies, concepts)
+  - RELATIONSHIP edges with typed predicates
+  - EW-triggered special edges when signals are present
+  - Metadata: version, week, provenance, confidence scores
+
+Usage:
+  python kg_delta_generator.py \
+    --intel-dir      output/ai_intel \
+    --current-version 4.25 \
+    --next-version    4.26 \
+    --week            2026-W21 \
+    --run-date        2026-05-20 \
+    --ew-signals      '' \
+    --output          knowledge_graph_v4.26_delta.json
 """
+
+from __future__ import annotations
 
 import argparse
 import json
-import os
 import re
-import sys
 from datetime import datetime
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Set, Tuple
 
-# ──────────────────────────────────────────
-# 엔티티 추출 매핑 (키워드 → 노드 타입)
-# ──────────────────────────────────────────
-ENTITY_MAP = {
-    # LLM / 모델
-    "gpt-4": "MODEL", "gpt-5": "MODEL", "gpt4": "MODEL",
-    "claude": "MODEL", "gemini": "MODEL", "llama": "MODEL",
-    "mistral": "MODEL", "qwen": "MODEL", "deepseek": "MODEL",
-    "phi-": "MODEL", "falcon": "MODEL",
-    # 기업
-    "openai": "COMPANY", "anthropic": "COMPANY", "google": "COMPANY",
-    "microsoft": "COMPANY", "meta": "COMPANY", "nvidia": "COMPANY",
-    "amazon": "COMPANY", "aws": "COMPANY", "azure": "COMPANY",
-    "hugging face": "COMPANY", "mistralai": "COMPANY",
-    "cohere": "COMPANY", "databricks": "COMPANY", "snowflake": "COMPANY",
-    # 프레임워크 / 도구
-    "langchain": "FRAMEWORK", "langraph": "FRAMEWORK",
-    "llamaindex": "FRAMEWORK", "dspy": "FRAMEWORK",
-    "autogen": "FRAMEWORK", "crewai": "FRAMEWORK",
-    "semantic kernel": "FRAMEWORK", "haystack": "FRAMEWORK",
-    "vllm": "FRAMEWORK", "triton": "FRAMEWORK",
-    # 기술 개념
-    "rag": "CONCEPT", "retrieval augmented": "CONCEPT",
-    "agentic": "CONCEPT", "multi-agent": "CONCEPT",
-    "fine-tuning": "CONCEPT", "finetune": "CONCEPT",
-    "inference": "CONCEPT", "embedding": "CONCEPT",
-    "context window": "CONCEPT", "mixture of experts": "CONCEPT",
-    "moe": "CONCEPT", "quantization": "CONCEPT",
-    # 하드웨어
-    "h100": "HARDWARE", "h200": "HARDWARE", "b200": "HARDWARE",
-    "a100": "HARDWARE", "tpu": "HARDWARE", "hbm": "HARDWARE",
-    "gb200": "HARDWARE", "blackwell": "HARDWARE", "hopper": "HARDWARE",
+
+# ---------------------------------------------------------------------------
+# Entity Catalog  (keyword → {id, type, label})
+# ---------------------------------------------------------------------------
+
+ENTITY_CATALOG: Dict[str, Dict] = {
+    # Companies
+    "openai":      {"id": "openai",      "type": "company",     "label": "OpenAI"},
+    "anthropic":   {"id": "anthropic",   "type": "company",     "label": "Anthropic"},
+    "google":      {"id": "google",      "type": "company",     "label": "Google DeepMind"},
+    "deepmind":    {"id": "google",      "type": "company",     "label": "Google DeepMind"},
+    "meta":        {"id": "meta_ai",     "type": "company",     "label": "Meta AI"},
+    "microsoft":   {"id": "microsoft",   "type": "company",     "label": "Microsoft"},
+    "nvidia":      {"id": "nvidia",      "type": "company",     "label": "NVIDIA"},
+    "mistral":     {"id": "mistral",     "type": "company",     "label": "Mistral AI"},
+    "cohere":      {"id": "cohere",      "type": "company",     "label": "Cohere"},
+    "hugging face":{"id": "huggingface", "type": "company",     "label": "Hugging Face"},
+    "xai":         {"id": "xai",         "type": "company",     "label": "xAI"},
+    "groq":        {"id": "groq",        "type": "company",     "label": "Groq"},
+    "cerebras":    {"id": "cerebras",    "type": "company",     "label": "Cerebras"},
+    # Models
+    "gpt-4o":      {"id": "gpt4o",       "type": "model",      "label": "GPT-4o"},
+    "gpt-5":       {"id": "gpt5",        "type": "model",      "label": "GPT-5"},
+    "claude":      {"id": "claude4",     "type": "model",      "label": "Claude"},
+    "gemini":      {"id": "gemini25",    "type": "model",      "label": "Gemini 2.5"},
+    "llama":       {"id": "llama4",      "type": "model",      "label": "Llama 4"},
+    "grok":        {"id": "grok3",       "type": "model",      "label": "Grok-3"},
+    # Technologies
+    "rag":         {"id": "rag",         "type": "technology", "label": "RAG"},
+    "fine-tuning": {"id": "fine_tuning", "type": "technology", "label": "Fine-Tuning"},
+    "agentic":     {"id": "agentic_ai",  "type": "technology", "label": "Agentic AI"},
+    "multi-agent": {"id": "multi_agent", "type": "technology", "label": "Multi-Agent"},
+    "langchain":   {"id": "langchain",   "type": "technology", "label": "LangChain"},
+    "langgraph":   {"id": "langgraph",   "type": "technology", "label": "LangGraph"},
+    "mcp":         {"id": "mcp_protocol","type": "technology", "label": "MCP Protocol"},
+    "a2a":         {"id": "a2a_protocol","type": "technology", "label": "A2A Protocol"},
+    "h100":        {"id": "h100",        "type": "hardware",   "label": "NVIDIA H100"},
+    "b200":        {"id": "b200",        "type": "hardware",   "label": "NVIDIA B200"},
+    "hbm":         {"id": "hbm",         "type": "hardware",   "label": "HBM Memory"},
 }
 
-# EW 시그널 → 엣지 타입 매핑
-EW_EDGE_MAP = {
-    "rag": "EW_RAG_MIGRATION",
-    "agentic": "EW_AGENTIC_SHIFT",
-    "nvidia": "EW_NVIDIA_DOMINANCE",
-    "langchain": "EW_FRAMEWORK_ADOPTION",
-    "claude": "EW_CLAUDE_SURGE",
-    "openai": "EW_OPENAI_MOVE",
-    "inference": "EW_INFERENCE_COST_DROP",
-    "multi-agent": "EW_MULTI_AGENT_RISE",
-    "default": "EW_GENERAL_SIGNAL",
+# Relationship predicate inference rules
+REL_RULES: List[Dict] = [
+    {"pattern": r"(\w+)\s+(?:releases?|launches?|introduces?)\s+(\w+)",
+     "predicate": "RELEASES", "conf": 0.85},
+    {"pattern": r"(\w+)\s+(?:partners?|collaborates?|integrates?)\s+with\s+(\w+)",
+     "predicate": "PARTNERS_WITH", "conf": 0.80},
+    {"pattern": r"(\w+)\s+(?:acquires?|buys?|purchases?)\s+(\w+)",
+     "predicate": "ACQUIRES", "conf": 0.90},
+    {"pattern": r"(\w+)\s+(?:competes?|rivals?)\s+(?:with\s+)?(\w+)",
+     "predicate": "COMPETES_WITH", "conf": 0.75},
+    {"pattern": r"(\w+)\s+(?:replaces?|supersedes?)\s+(\w+)",
+     "predicate": "REPLACES", "conf": 0.85},
+    {"pattern": r"(\w+)\s+(?:uses?|adopts?|deploys?)\s+(\w+)",
+     "predicate": "ADOPTS", "conf": 0.70},
+    {"pattern": r"(\w+)\s+(?:powers?|runs?)\s+on\s+(\w+)",
+     "predicate": "RUNS_ON", "conf": 0.80},
+]
+
+# EW signal → special edge predicate
+EW_EDGE_MAP: Dict[str, str] = {
+    "enterprise_ai_adoption_rapid": "EW_ENTERPRISE_ADOPTION_SPIKE",
+    "rag_replacement_threshold":    "EW_RAG_MIGRATION",
+    "gpu_demand_spike":             "EW_GPU_DEMAND_SURGE",
+    "open_source_dominance":        "EW_OSS_DOMINANCE",
+    "reasoning_model_latency_drop": "EW_LATENCY_BREAKTHROUGH",
+    "cost_reduction_steep":         "EW_COST_COLLAPSE",
 }
 
 
-def extract_entities_from_text(text: str) -> list[dict]:
-    """텍스트에서 엔티티 추출."""
-    text_lower = text.lower()
-    found = {}
-    for keyword, node_type in ENTITY_MAP.items():
-        if keyword in text_lower:
-            canonical = keyword.replace("-", "_").replace(" ", "_").upper()
-            if canonical not in found:
-                found[canonical] = {
-                    "id": canonical,
-                    "label": keyword.title(),
-                    "type": node_type,
-                    "source_mention": keyword,
-                }
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _collect_text(obj: Any, acc: List[str]) -> None:
+    if isinstance(obj, str):
+        acc.append(obj)
+    elif isinstance(obj, dict):
+        for v in obj.values():
+            _collect_text(v, acc)
+    elif isinstance(obj, list):
+        for item in obj:
+            _collect_text(item, acc)
+
+
+def _entity_slug(label: str) -> str:
+    return re.sub(r"[^a-z0-9_]", "_", label.lower()).strip("_")
+
+
+def _extract_entities_from_text(text: str) -> List[Dict]:
+    """Match entity catalog keywords in text, return unique entity dicts."""
+    found: Dict[str, Dict] = {}
+    tl = text.lower()
+    for keyword, meta in ENTITY_CATALOG.items():
+        if keyword in tl:
+            found[meta["id"]] = meta.copy()
     return list(found.values())
 
 
-def extract_entities_from_intel(intel_data: dict) -> list[dict]:
-    """인텔 데이터 전체에서 엔티티 추출."""
-    text_parts = []
-    for field in ["key_facts", "summary", "analysis", "content", "title",
-                  "headline", "description", "raw_text"]:
-        val = intel_data.get(field, "")
-        if isinstance(val, list):
-            text_parts.extend([str(v) for v in val])
-        elif isinstance(val, str):
-            text_parts.append(val)
-    return extract_entities_from_text(" ".join(text_parts))
-
-
-def generate_edges_from_entities(entities: list[dict], domain: str) -> list[dict]:
-    """엔티티 간 기본 관계 엣지 생성."""
-    edges = []
-    models = [e for e in entities if e["type"] == "MODEL"]
-    companies = [e for e in entities if e["type"] == "COMPANY"]
-    frameworks = [e for e in entities if e["type"] == "FRAMEWORK"]
-    concepts = [e for e in entities if e["type"] == "CONCEPT"]
-    hardware = [e for e in entities if e["type"] == "HARDWARE"]
-
-    # MODEL ← COMPANY
-    for model in models:
-        for company in companies:
-            edges.append({
-                "source": company["id"],
-                "target": model["id"],
-                "relation": "DEVELOPS",
-                "domain": domain,
+def _extract_relations_from_text(text: str, known_ids: Set[str]) -> List[Dict]:
+    """Pattern-match relationship sentences."""
+    rels: List[Dict] = []
+    seen: Set[Tuple] = set()
+    tl = text.lower()
+    for rule in REL_RULES:
+        for m in re.finditer(rule["pattern"], tl):
+            src_raw, tgt_raw = m.group(1), m.group(2)
+            # resolve to entity IDs
+            src_id = next(
+                (meta["id"] for kw, meta in ENTITY_CATALOG.items() if kw in src_raw), None
+            )
+            tgt_id = next(
+                (meta["id"] for kw, meta in ENTITY_CATALOG.items() if kw in tgt_raw), None
+            )
+            if not src_id or not tgt_id or src_id == tgt_id:
+                continue
+            key = (src_id, rule["predicate"], tgt_id)
+            if key in seen:
+                continue
+            seen.add(key)
+            rels.append({
+                "source": src_id,
+                "predicate": rule["predicate"],
+                "target": tgt_id,
+                "confidence": rule["conf"],
+                "evidence_snippet": text[max(0, m.start() - 40): m.end() + 40].strip(),
             })
-
-    # FRAMEWORK → CONCEPT
-    for fw in frameworks:
-        for concept in concepts:
-            edges.append({
-                "source": fw["id"],
-                "target": concept["id"],
-                "relation": "IMPLEMENTS",
-                "domain": domain,
-            })
-
-    # MODEL ↔ HARDWARE
-    for model in models:
-        for hw in hardware:
-            edges.append({
-                "source": model["id"],
-                "target": hw["id"],
-                "relation": "RUNS_ON",
-                "domain": domain,
-            })
-
-    return edges[:20]  # 엣지 수 제한
+    return rels
 
 
-def generate_ew_edges(ew_signals: list[str], existing_entities: list[dict]) -> list[dict]:
-    """EW 시그널별 특수 엣지 삽입."""
-    edges = []
-    existing_ids = {e["id"] for e in existing_entities}
-
-    for signal in ew_signals:
-        signal_lower = signal.lower()
-        edge_type = EW_EDGE_MAP.get(
-            next((k for k in EW_EDGE_MAP if k != "default" and k in signal_lower), "default"),
-            EW_EDGE_MAP["default"]
-        )
-
-        # 관련 엔티티 찾기
-        related = [
-            eid for eid in existing_ids
-            if any(k in signal_lower for k in [eid.lower(), signal_lower[:8]])
-        ]
-        if not related:
-            related = ["AI_ECOSYSTEM"]  # 폴백 노드
-
+def _build_ew_edges(ew_signals_str: str) -> List[Dict]:
+    """Generate EW-specific graph edges from signal IDs (comma-separated)."""
+    edges: List[Dict] = []
+    if not ew_signals_str or not ew_signals_str.strip():
+        return edges
+    for sig_id in [s.strip() for s in ew_signals_str.split(",") if s.strip()]:
+        predicate = EW_EDGE_MAP.get(sig_id, f"EW_SIGNAL_{sig_id.upper()}")
         edges.append({
-            "source": "EW_SIGNAL",
-            "target": related[0],
-            "relation": edge_type,
-            "signal_text": signal[:100],
-            "is_ew": True,
+            "source": "ai_intel_system",
+            "predicate": predicate,
+            "target": "knowledge_graph",
+            "confidence": 1.0,
+            "ew_signal_id": sig_id,
+            "is_ew_edge": True,
         })
-
     return edges
 
 
-def process_intel_dir(intel_dir: str) -> tuple[list, list]:
-    """디렉토리의 모든 인텔 파일에서 노드/엣지 수집."""
-    base_dir = Path(intel_dir)
-    all_nodes = []
-    all_edges = []
-    seen_ids = set()
+# ---------------------------------------------------------------------------
+# Domain-level meta-node extraction from intel JSON
+# ---------------------------------------------------------------------------
 
-    if not base_dir.exists():
-        print(f"[WARN] Intel dir not found: {intel_dir}", file=sys.stderr)
-        return all_nodes, all_edges
-
-    for fp in sorted(base_dir.glob("*.json")):
-        try:
-            with open(fp, "r", encoding="utf-8") as f:
-                data = json.load(f)
-        except (json.JSONDecodeError, OSError) as e:
-            print(f"[WARN] Skip {fp.name}: {e}", file=sys.stderr)
-            continue
-
-        items = data if isinstance(data, list) else [data]
-        for item in items:
-            domain = item.get("domain", item.get("topic", fp.stem))
-            entities = extract_entities_from_intel(item)
-
-            for entity in entities:
-                if entity["id"] not in seen_ids:
-                    entity["first_seen_domain"] = domain
-                    all_nodes.append(entity)
-                    seen_ids.add(entity["id"])
-
-            edges = generate_edges_from_entities(entities, domain)
-            all_edges.extend(edges)
-
-    return all_nodes, all_edges
-
-
-def main():
-    parser = argparse.ArgumentParser(description="Knowledge Graph Delta Generator")
-    parser.add_argument("--intel-dir", default="output/ai_intel",
-                        help="인텔 JSON 파일 디렉토리")
-    parser.add_argument("--current-version", default="4.25",
-                        help="현재 KG 버전 (예: 4.25)")
-    parser.add_argument("--next-version", default="4.26",
-                        help="새 KG 버전 (예: 4.26)")
-    parser.add_argument("--week", required=True, help="ISO 주차 (예: 2026-W21)")
-    parser.add_argument("--run-date", default=datetime.utcnow().strftime("%Y-%m-%d"),
-                        help="실행 날짜 (YYYY-MM-DD)")
-    parser.add_argument("--ew-signals", default="",
-                        help="콤마 구분 EW 시그널 문자열")
-    parser.add_argument("--ew-triggered", default="false",
-                        help="EW 발동 여부 (true/false)")
-    parser.add_argument("--output", default="knowledge_graph_delta.json",
-                        help="출력 파일 경로")
-    args = parser.parse_args()
-
-    # EW 시그널 파싱
-    ew_signals = [s.strip() for s in args.ew_signals.split(",") if s.strip()]
-    ew_triggered = args.ew_triggered.lower() == "true"
-
-    # 노드/엣지 생성
-    nodes, edges = process_intel_dir(args.intel_dir)
-
-    # EW 전용 엣지 추가
-    if ew_triggered and ew_signals:
-        ew_edges = generate_ew_edges(ew_signals, nodes)
-        edges.extend(ew_edges)
-        # EW 신호 노드 추가
-        nodes.append({
-            "id": "EW_SIGNAL",
-            "label": "Early Warning Signal",
-            "type": "EW_NODE",
-            "week": args.week,
-        })
-
-    # 버전 메타데이터 계산
+def _extract_from_intel_file(fp: Path) -> Tuple[List[Dict], List[Dict]]:
+    """Return (entities, relations) from a single intel JSON."""
     try:
-        current_ver = float(args.current_version)
-        next_ver = float(args.next_version)
-    except ValueError:
-        current_ver = 4.25
-        next_ver = 4.26
+        data = json.loads(fp.read_text(encoding="utf-8"))
+    except Exception:
+        return [], []
+
+    texts: List[str] = []
+    _collect_text(data, texts)
+    combined = " ".join(texts)
+
+    entities = _extract_entities_from_text(combined)
+    known_ids = {e["id"] for e in entities}
+
+    # Add domain as a concept node
+    domain = data.get("domain", "")
+    if domain:
+        domain_id = _entity_slug(domain)
+        entities.append({"id": domain_id, "type": "domain", "label": domain.replace("_", " ").title()})
+        known_ids.add(domain_id)
+
+    # Add key_facts summary nodes
+    for i, fact in enumerate(data.get("key_facts", [])[:5]):
+        # Extract any entities mentioned in the fact
+        fact_entities = _extract_entities_from_text(fact)
+        entities.extend(fact_entities)
+        known_ids.update(e["id"] for e in fact_entities)
+
+    relations = _extract_relations_from_text(combined, known_ids)
+
+    # Add domain ↔ entity edges
+    if domain:
+        domain_id = _entity_slug(domain)
+        for ent in entities:
+            if ent["id"] != domain_id and ent["type"] in ("company", "model", "technology"):
+                relations.append({
+                    "source": domain_id,
+                    "predicate": "COVERS",
+                    "target": ent["id"],
+                    "confidence": 0.95,
+                    "evidence_snippet": f"domain={domain}",
+                })
+
+    return entities, relations
+
+
+# ---------------------------------------------------------------------------
+# Delta Construction
+# ---------------------------------------------------------------------------
+
+def build_delta(
+    intel_dir: Path,
+    current_version: str,
+    next_version: str,
+    week: str,
+    run_date: str,
+    ew_signals_str: str,
+    output_path: Optional[Path] = None,
+) -> Dict:
+    intel_files = sorted(intel_dir.glob("*.json")) if intel_dir.exists() else []
+
+    all_entities: Dict[str, Dict] = {}
+    all_relations: List[Dict] = []
+    provenance: List[str] = []
+
+    for fp in intel_files:
+        ents, rels = _extract_from_intel_file(fp)
+        provenance.append(fp.name)
+        for ent in ents:
+            if ent["id"] not in all_entities:
+                all_entities[ent["id"]] = {
+                    **ent,
+                    "first_seen_week": week,
+                    "source_file": fp.name,
+                }
+        all_relations.extend(rels)
+
+    # Deduplicate relations
+    seen_rels: Set[Tuple] = set()
+    unique_rels: List[Dict] = []
+    for rel in all_relations:
+        key = (rel["source"], rel["predicate"], rel["target"])
+        if key not in seen_rels:
+            seen_rels.add(key)
+            unique_rels.append({**rel, "week": week})
+
+    # EW edges
+    ew_edges = _build_ew_edges(ew_signals_str)
+    unique_rels.extend(ew_edges)
 
     delta = {
-        "meta": {
-            "week": args.week,
-            "run_date": args.run_date,
+        "metadata": {
+            "kg_version_from": current_version,
+            "kg_version_to": next_version,
+            "week": week,
+            "run_date": run_date,
             "generated_at": datetime.utcnow().isoformat() + "Z",
-            "version_from": args.current_version,
-            "version_to": args.next_version,
-            "version_delta": round(next_ver - current_ver, 3),
-            "ew_triggered": ew_triggered,
-            "ew_signal_count": len(ew_signals),
+            "intel_files_processed": provenance,
+            "ew_signals_applied": ew_signals_str,
         },
-        "nodes": {
-            "added": nodes,
-            "modified": [],
-            "removed": [],
-            "count_added": len(nodes),
+        "summary": {
+            "new_nodes": len(all_entities),
+            "new_edges": len(unique_rels),
+            "ew_edges": len(ew_edges),
         },
-        "edges": {
-            "added": edges,
-            "removed": [],
-            "count_added": len(edges),
-        },
-        "ew_edges": [e for e in edges if e.get("is_ew", False)],
-        "summary": (
-            f"v{args.current_version} → v{args.next_version} | "
-            f"{len(nodes)} nodes, {len(edges)} edges added"
-            + (f" | EW: {len(ew_signals)} signals" if ew_triggered else "")
-        ),
+        "nodes": list(all_entities.values()),
+        "edges": unique_rels,
     }
 
-    out_path = Path(args.output)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(out_path, "w", encoding="utf-8") as f:
-        json.dump(delta, f, ensure_ascii=False, indent=2)
+    if output_path:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(json.dumps(delta, ensure_ascii=False, indent=2), encoding="utf-8")
+        print(f"[KG] Delta written: {output_path}")
 
-    print(f"[KG] Delta: {len(nodes)} nodes | {len(edges)} edges | Output={args.output}")
-    print(delta["summary"])
+    print(
+        f"[KG] v{current_version}→v{next_version}  "
+        f"nodes={len(all_entities)}  edges={len(unique_rels)}  ew_edges={len(ew_edges)}"
+    )
+    return delta
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Knowledge Graph Delta Generator")
+    parser.add_argument("--intel-dir",        required=True)
+    parser.add_argument("--current-version",  required=True)
+    parser.add_argument("--next-version",     required=True)
+    parser.add_argument("--week",             required=True)
+    parser.add_argument("--run-date",         required=True)
+    parser.add_argument("--ew-signals",       default="")
+    parser.add_argument("--output",           default=None)
+    args = parser.parse_args()
+
+    build_delta(
+        intel_dir=Path(args.intel_dir),
+        current_version=args.current_version,
+        next_version=args.next_version,
+        week=args.week,
+        run_date=args.run_date,
+        ew_signals_str=args.ew_signals,
+        output_path=Path(args.output) if args.output else None,
+    )
 
 
 if __name__ == "__main__":
