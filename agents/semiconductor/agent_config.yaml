@@ -1,0 +1,47 @@
+# Semiconductor Analyst — Agent Config
+# Version: 1.0.0 | PE-7 v1.1
+
+agent_id: semiconductor_analyst
+version: "1.0.0"
+category: domain_specialist
+
+focus_areas:
+  hbm:
+    description: "HBM3/HBM3E/HBM4 수급 및 기술 동향"
+    key_players: [SK Hynix, Samsung, Micron]
+    key_metrics:
+      - hbm_production_capacity_units
+      - hbm_price_per_gb
+      - yield_rate
+  cowos:
+    description: "CoWoS/SoIC 어드밴스드 패키징"
+    key_players: [TSMC, ASE, Amkor]
+    key_metrics:
+      - cowos_capacity_wafer_per_month
+      - lead_time_weeks
+  competitive:
+    description: "Foundry 경쟁 구도"
+    key_players: [TSMC, Samsung Foundry, Intel Foundry]
+    key_metrics:
+      - market_share_pct
+      - advanced_node_yield
+  geopolitical:
+    description: "미중 반도체 규제·공급망 리스크"
+    risk_factors:
+      - export_control_expansion
+      - taiwan_strait_tension
+      - china_self_sufficiency
+
+models:
+  default: sonar-pro
+  reasoning: claude-3-5-sonnet
+  fallback: sonar
+
+outputs:
+  dir: output/semiconductor/
+  format: json
+
+pe_integrations:
+  - PE-ICD
+  - PE-DD
+  - PE-STRAT

@@ -1,25 +1,32 @@
-# agents/notion_sync — Notion Sync Agent
+# 🔄 Notion Sync Agent Domain
 
-## 개요
+> Notion C-31 페이지 자동 동기화 도메인
 
-Notion C-31 페이지 동기화 에이전트의 프롬프트 및 설정 디렉토리입니다.
+## 담당 스크립트
 
-## 핵심 설계 원칙
+`automation/notion_c31_updater.py`
 
-- **Append 전용**: 기존 Notion 콘텐츠는 절대 삭제하지 않음
-- **50블록 배치**: API 레이트 리밋 준수
-- **EW 색상 매핑**: 심각도별 callout 배경색 자동 설정
+## 대상 페이지
 
-## EW 색상 규칙
+- **C-31**: `34a55ed436f0814d9cffe6a2f0816e29` (T-09 Mother Page)
 
-| Severity | 배경색 | 아이콘 |
-|----------|--------|--------|
-| NONE | 🟢 green | ✅ |
-| LOW | 🔵 blue | 🔵 |
-| MEDIUM | 🟡 yellow | 🟡 |
-| HIGH | 🟠 orange | 🟠 |
-| CRITICAL | 🔴 red | ⚠️ |
+## 업데이트 방식
 
-## C-31 페이지 ID
+- Notion Blocks API **append** 방식 (기존 내용 보존)
+- 50블록 배치 처리
+- EW 심각도에 따른 callout 배경색 자동 변경
 
-`34a55ed436f0814d9cffe6a2f0816e29`
+## Callout 색상
+
+| EW 레벨 | 색상 |
+|---|---|
+| CRITICAL | 🔴 red |
+| HIGH | 🟠 orange |
+| MEDIUM | 🟡 yellow |
+| LOW | 🔵 blue |
+| NONE | 🟢 green |
+
+## Secrets 필요
+
+- `NOTION_API_KEY` — Notion Integration Token
+- Notion 페이지에 Integration 연결 필수

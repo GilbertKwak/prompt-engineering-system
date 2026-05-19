@@ -1,0 +1,35 @@
+# Notion Sync — Agent Config
+# Version: 1.2.0 | PE-7 v1.1
+
+agent_id: notion_sync
+version: "1.2.0"
+script: automation/notion_c31_updater.py
+depends_on: [kg_builder]
+
+notion:
+  api_version: "2022-06-28"
+  batch_size: 50
+  append_only: true            # 기존 내용 보존, append만
+
+target_pages:
+  c31_mother_page:
+    page_id: "34a55ed436f0814d9cffe6a2f0816e29"
+    title: "T-09 · 프롬프트 엔지니어링 시스템 Mother Page"
+    update_frequency: weekly
+
+callout_colors:
+  CRITICAL: red
+  HIGH: orange
+  MEDIUM: yellow
+  LOW: blue
+  NONE: green
+
+error_prevention:
+  # AGENT-06 오류 예방 규칙
+  pre_fetch_id: true            # 업데이트 전 페이지 ID 유효성 확인
+  use_append_not_update: true   # old_str 매칭 실패 방지
+  batch_on_large_content: true  # 50블록 이상 시 자동 배치 분할
+
+output:
+  log_dir: logs/notion_sync/
+  format: json

@@ -1,0 +1,74 @@
+# KG Builder — Agent Config
+# Version: 1.3.0 | PE-7 v1.1
+
+agent_id: kg_builder
+version: "1.3.0"
+script: automation/kg_delta_generator.py
+depends_on: [ai_intel_collector, ew_detector]
+
+current_kg_version: "4.26"
+
+node_types:
+  COMPANY:
+    required_properties: [name, type, country, founded]
+    optional_properties: [market_cap, employees, public]
+  TECHNOLOGY:
+    required_properties: [name, category, maturity_level]
+    optional_properties: [patent_count, open_source]
+  PERSON:
+    required_properties: [name, title, organization]
+    optional_properties: [linkedin, influence_score]
+  EVENT:
+    required_properties: [name, date, event_type]
+    optional_properties: [impact_score, region]
+  METRIC:
+    required_properties: [name, value, unit, source]
+    optional_properties: [timestamp, confidence]
+  REGULATION:
+    required_properties: [name, jurisdiction, effective_date, status]
+    optional_properties: [penalty, enforcement_body]
+
+edge_types:
+  DEVELOPS: {direction: A→B, properties: [since, role]}
+  ACQUIRES: {direction: A→B, properties: [date, value_usd]}
+  COMPETES_WITH: {direction: A↔B, properties: [market_segment]}
+  PARTNERS_WITH: {direction: A↔B, properties: [partnership_type, since]}
+  REGULATES: {direction: A→B, properties: [regulation_id, effective_date]}
+  INVESTS_IN: {direction: A→B, properties: [amount_usd, round, date]}
+  EW_SIGNAL: {direction: EW→entity, properties: [signal_id, severity, week]}
+
+# 21개 핵심 엔티티 (키워드 매칭)
+core_entities:
+  companies:
+    - NVIDIA
+    - Microsoft
+    - Google
+    - Anthropic
+    - OpenAI
+    - Meta
+    - Amazon
+    - Apple
+    - TSMC
+    - Samsung
+    - SK Hynix
+    - Intel
+    - AMD
+    - Qualcomm
+    - Arm
+  technologies:
+    - HBM
+    - CoWoS
+    - Transformer
+    - LangChain
+    - Claude
+    - GPT
+
+versioning:
+  major_trigger: "EW CRITICAL 또는 paradigm shift"
+  minor_trigger: "신규 노드 5개 이상"
+  patch_trigger: "속성 업데이트만"
+  auto_bump: true
+
+output:
+  format: json
+  naming: "knowledge_graph_v{version}_delta.json"

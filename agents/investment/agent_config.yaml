@@ -1,0 +1,47 @@
+# Investment Analyst — Agent Config
+# Version: 1.0.0 | PE-7 v1.1
+
+agent_id: investment_analyst
+version: "1.0.0"
+category: domain_specialist
+
+focus_areas:
+  funding_rounds:
+    description: "AI·반도체 스타트업 펀딩 라운드"
+    sectors: [AI Infrastructure, Semiconductor, AI Software, Edge AI]
+    deal_size_threshold_m: 10     # $10M 이상만 추적
+  ma_activity:
+    description: "M&A 딜 추적"
+    deal_types: [acquisition, merger, strategic_investment, JV]
+    key_acquirers: [Microsoft, Google, NVIDIA, Qualcomm, Intel, Samsung]
+  pe_scoring:
+    description: "PE 투자 대상 스코어링"
+    scoring_framework: PE-3
+    dimensions:
+      - technology_moat
+      - market_size
+      - management_quality
+      - financial_health
+      - exit_potential
+  valuation:
+    description: "밸류에이션 멀티플 분석"
+    multiples: [EV_Revenue, EV_EBITDA, P_E, P_S]
+    benchmark_companies:
+      - NVIDIA
+      - AMD
+      - TSMC
+      - Arm
+
+models:
+  default: sonar-pro
+  reasoning: claude-3-5-sonnet
+
+pe_integrations:
+  - PE-DD
+  - PE-FIN
+  - PE-STRAT
+  - PE-3
+
+outputs:
+  dir: output/investment/
+  format: json

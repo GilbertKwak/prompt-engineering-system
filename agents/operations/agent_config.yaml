@@ -1,0 +1,42 @@
+# Operations — Agent Config
+# Version: 1.0.0 | PE-7 v1.1
+
+agent_id: operations
+version: "1.0.0"
+category: monitoring
+
+health_checks:
+  perplexity_api:
+    endpoint: "https://api.perplexity.ai"
+    timeout_seconds: 10
+    retry_on_failure: true
+  notion_api:
+    endpoint: "https://api.notion.com/v1"
+    timeout_seconds: 10
+    retry_on_failure: true
+  github_api:
+    endpoint: "https://api.github.com"
+    timeout_seconds: 10
+    retry_on_failure: false
+
+log_management:
+  base_dir: logs/
+  retention_days: 30
+  rotation: daily
+  subdirs:
+    - orchestrator
+    - notion_sync
+    - validation
+    - operations
+
+alerts:
+  slack_webhook:
+    enabled: false
+    webhook_url: ""   # TODO: 설정 필요
+  email:
+    enabled: false
+
+monitoring:
+  prometheus:
+    enabled: false   # TODO: 추후 구현
+  heartbeat_interval_seconds: 30

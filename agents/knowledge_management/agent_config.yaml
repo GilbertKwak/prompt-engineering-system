@@ -1,0 +1,49 @@
+# Knowledge Management — Agent Config
+# Version: 1.0.0 | PE-7 v1.1
+
+agent_id: knowledge_manager
+version: "1.0.0"
+category: sync
+
+triggers:
+  T-AUTO-01:
+    condition: "session_end"
+    action: "notion_session_log_save"
+    priority: P0
+  T-AUTO-02:
+    condition: "mi_resolved"
+    action: "annex_b_auto_update"
+    priority: P0
+  T-AUTO-03:
+    condition: "new_risk_identified"
+    action: "risk_register_append"
+    priority: P1
+  T-AUTO-04:
+    condition: "pe3_score_updated"
+    action: "master_prompt_scorecard_sync"
+    priority: P1
+  T-AUTO-05:
+    condition: "version_bump"
+    action: "github_commit_auto"
+    priority: P1
+  T-AUTO-06:
+    condition: "error_pre_detected"
+    action: "agent06_warning_issue"
+    priority: P0
+  T-AUTO-07:
+    condition: "pe3_score_gte_80"
+    action: "v12_version_bump_trigger"
+    priority: P1
+
+ssot_mapping:
+  notion_pages:
+    mother_page: "34a55ed436f0814d9cffe6a2f0816e29"
+  github:
+    owner: GilbertKwak
+    repo: prompt-engineering-system
+    branch: main
+
+pe3_targets:
+  current_score: 71.8
+  target_score: 80.0
+  version_bump_on_target: "v1.2"

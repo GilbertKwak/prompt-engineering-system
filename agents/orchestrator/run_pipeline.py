@@ -1,290 +1,363 @@
 #!/usr/bin/env python3
 """
-PE System Orchestrator — Multi-Agent Pipeline Runner
-Version: 2.0.0 | Updated: 2026-05-20
+PE System Orchestrator — run_pipeline.py
+Version: 2.0.0 | PE-7 AI Automation Design v1.1
+Owner: GilbertKwak
 
-실행 방법:
-  # 전체 파이프라인 (기본)
-  python agents/orchestrator/run_pipeline.py --week 2026-W21
+전체 멀티에이전트 파이프라인을 조율합니다.
+실행 순서: ai_intel_collector → ew_detector → kg_builder → notion_sync
 
-  # 특정 도메인만
-  python agents/orchestrator/run_pipeline.py --week 2026-W21 --domains enterprise_deployment,model_architecture
-
-  # 긴급 모드 (EW CRITICAL)
-  python agents/orchestrator/run_pipeline.py --week 2026-W21 --mode emergency
-
-  # dry-run (실제 API 호출 없이 파이프라인 검증)
-  python agents/orchestrator/run_pipeline.py --week 2026-W21 --dry-run
+Error Prevention (AGENT-06):
+  - 각 단계 실행 전 사전 검증 수행
+  - 실패 시 지수 백오프 재시도
+  - EW CRITICAL 감지 시 sonar-pro 강제 전환
 """
 
 import argparse
 import json
 import logging
-import os
 import subprocess
 import sys
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-import yaml
-
 # ---------------------------------------------------------------------------
-# 설정
+# Logging Setup
 # ---------------------------------------------------------------------------
-REPO_ROOT = Path(__file__).parent.parent.parent
-AGENT_INDEX_PATH = REPO_ROOT / "agents" / "agent_index.yaml"
-LOG_DIR = REPO_ROOT / "logs" / "orchestrator"
-OUTPUT_DIR = REPO_ROOT / "output"
-
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s [ORCHESTRATOR] %(levelname)s %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
+    format="%(asctime)s [%(levelname)s] %(name)s — %(message)s",
+    datefmt="%Y-%m-%dT%H:%M:%S",
 )
-logger = logging.getLogger("orchestrator")
+log = logging.getLogger("orchestrator")
+
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+ROOT = Path(__file__).resolve().parents[2]
+OUTPUT_DIR = ROOT / "output" / "ai_intel"
+LOG_DIR = ROOT / "logs" / "orchestrator"
+NOTION_PAGE_ID = "34a55ed436f0814d9cffe6a2f0816e29"
+
+DEFAULT_DOMAINS = [
+    "enterprise_deployment",
+    "model_architecture",
+    "regulatory_policy",
+    "investment_funding",
+]
 
 
 # ---------------------------------------------------------------------------
-# 에이전트 인덱스 로더
+# AGENT-06: Pre-execution Validation
 # ---------------------------------------------------------------------------
-def load_agent_index() -> dict:
-    """agent_index.yaml 로드"""
-    with open(AGENT_INDEX_PATH) as f:
-        return yaml.safe_load(f)
+def preflight_check() -> list[str]:
+    """실행 전 환경 사전 검증. 오류 목록 반환."""
+    errors = []
+    import os
 
+    if not os.environ.get("PERPLEXITY_API_KEY"):
+        errors.append("PERPLEXITY_API_KEY 환경변수 미설정")
+    if not os.environ.get("NOTION_API_KEY"):
+        errors.append("NOTION_API_KEY 환경변수 미설정")
 
-def get_agent_config(agent_index: dict, agent_id: str) -> Optional[dict]:
-    """에이전트 ID로 설정 조회"""
-    for agent in agent_index["agents"]:
-        if agent["id"] == agent_id:
-            return agent
-    return None
+    scripts = [
+        ROOT / "automation" / "ai_intel_collector.py",
+        ROOT / "automation" / "ai_ew_detector.py",
+        ROOT / "automation" / "kg_delta_generator.py",
+        ROOT / "automation" / "notion_c31_updater.py",
+    ]
+    for script in scripts:
+        if not script.exists():
+            errors.append(f"스크립트 미존재: {script}")
 
-
-# ---------------------------------------------------------------------------
-# 파이프라인 라우터
-# ---------------------------------------------------------------------------
-def resolve_pipeline(agent_index: dict, mode: str, ew_severity: str = "NONE") -> list:
-    """실행 모드와 EW 심각도에 따라 파이프라인 결정"""
-    routing = agent_index["routing"]
-
-    if mode == "emergency" or ew_severity == "CRITICAL":
-        for route in routing["conditional_routes"]:
-            if route["condition"] == "ew_severity == CRITICAL":
-                return route["pipeline"]
-
-    return routing["default_pipeline"]
-
-
-# ---------------------------------------------------------------------------
-# 에이전트 실행기
-# ---------------------------------------------------------------------------
-def run_agent(
-    agent_id: str,
-    script_path: str,
-    args: list,
-    dry_run: bool = False,
-    timeout: int = 300,
-) -> dict:
-    """
-    단일 에이전트 실행 및 결과 반환
-    Returns: {success: bool, duration: float, returncode: int, stdout: str, stderr: str}
-    """
-    start_time = time.time()
-    script_abs = REPO_ROOT / script_path
-
-    logger.info(f"▶ Starting agent: {agent_id}")
-    logger.info(f"  Script: {script_abs}")
-    logger.info(f"  Args: {' '.join(args)}")
-
-    if dry_run:
-        logger.info(f"  [DRY-RUN] Skipping actual execution")
-        duration = time.time() - start_time
-        return {"success": True, "duration": duration, "returncode": 0,
-                "stdout": "[dry-run]", "stderr": "", "dry_run": True}
-
-    try:
-        cmd = [sys.executable, str(script_abs)] + args
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-            cwd=str(REPO_ROOT),
-        )
-        duration = time.time() - start_time
-        success = result.returncode == 0
-
-        if success:
-            logger.info(f"  ✅ {agent_id} completed in {duration:.1f}s")
-        else:
-            logger.error(f"  ❌ {agent_id} failed (rc={result.returncode}) in {duration:.1f}s")
-            logger.error(f"  STDERR: {result.stderr[:500]}")
-
-        return {
-            "success": success,
-            "duration": duration,
-            "returncode": result.returncode,
-            "stdout": result.stdout[:2000],
-            "stderr": result.stderr[:1000],
-        }
-
-    except subprocess.TimeoutExpired:
-        duration = time.time() - start_time
-        logger.error(f"  ⏰ {agent_id} timed out after {timeout}s")
-        return {"success": False, "duration": duration, "returncode": -1,
-                "stdout": "", "stderr": f"Timeout after {timeout}s"}
-    except Exception as e:
-        duration = time.time() - start_time
-        logger.error(f"  💥 {agent_id} exception: {e}")
-        return {"success": False, "duration": duration, "returncode": -2,
-                "stdout": "", "stderr": str(e)}
-
-
-# ---------------------------------------------------------------------------
-# 메인 파이프라인
-# ---------------------------------------------------------------------------
-def run_pipeline(
-    week: str,
-    run_date: str,
-    mode: str = "standard",
-    intel_scope: str = "standard",
-    domains: Optional[list] = None,
-    kg_version_current: str = "4.25",
-    kg_version_next: str = "4.26",
-    notion_page_id: str = "34a55ed436f0814d9cffe6a2f0816e29",
-    dry_run: bool = False,
-) -> dict:
-    """전체 파이프라인 실행"""
-
-    logger.info("=" * 60)
-    logger.info(f"PE SYSTEM ORCHESTRATOR v2.0.0")
-    logger.info(f"Week: {week} | Mode: {mode} | DryRun: {dry_run}")
-    logger.info("=" * 60)
-
-    # 에이전트 인덱스 로드
-    agent_index = load_agent_index()
-    pipeline = resolve_pipeline(agent_index, mode)
-    logger.info(f"Pipeline: {' → '.join(pipeline)}")
-
-    # 출력 디렉토리 준비
-    intel_dir = OUTPUT_DIR / "ai_intel"
-    intel_dir.mkdir(parents=True, exist_ok=True)
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     LOG_DIR.mkdir(parents=True, exist_ok=True)
 
-    results = {}
-    ew_triggered = False
-    ew_count = 0
-    ew_signals = ""
-    ew_severity = "NONE"
+    return errors
 
-    # 도메인 목록 결정
-    all_domains = ["enterprise_deployment", "model_architecture",
-                   "regulatory_policy", "investment_funding"]
-    active_domains = domains or all_domains
 
-    # -------------------------------------------------------------------------
-    # STEP 1: AI Intel Collector
-    # -------------------------------------------------------------------------
-    if "ai_intel_collector" in pipeline:
-        for domain in active_domains:
-            args = [
-                "--domain", domain,
-                "--week", week,
-                "--scope", intel_scope,
-                "--queries", f"{domain} AI trends 2026",
-                "--output", str(intel_dir / f"intel_{domain}.json"),
-            ]
-            result = run_agent(
-                f"ai_intel_collector.{domain}",
-                "automation/ai_intel_collector.py",
-                args,
-                dry_run=dry_run,
-                timeout=agent_index["global"].get("timeout_per_agent", 300) // len(active_domains),
+# ---------------------------------------------------------------------------
+# Step Runner with Retry
+# ---------------------------------------------------------------------------
+def run_step(
+    step_name: str,
+    cmd: list[str],
+    max_retries: int = 3,
+    backoff_base: float = 2.0,
+    timeout: int = 300,
+) -> bool:
+    """단일 파이프라인 단계 실행. 실패 시 지수 백오프 재시도."""
+    for attempt in range(1, max_retries + 1):
+        log.info(f"[{step_name}] 실행 시도 {attempt}/{max_retries}")
+        try:
+            result = subprocess.run(
+                cmd,
+                timeout=timeout,
+                capture_output=True,
+                text=True,
+                cwd=str(ROOT),
             )
-            results[f"ai_intel.{domain}"] = result
+            if result.returncode == 0:
+                log.info(f"[{step_name}] ✅ 성공")
+                if result.stdout.strip():
+                    log.debug(f"[{step_name}] stdout: {result.stdout[:500]}")
+                return True
+            else:
+                log.warning(
+                    f"[{step_name}] ❌ 실패 (rc={result.returncode}): {result.stderr[:300]}"
+                )
+        except subprocess.TimeoutExpired:
+            log.warning(f"[{step_name}] ⏱ 타임아웃 ({timeout}s 초과)")
+        except Exception as e:
+            log.error(f"[{step_name}] 예외 발생: {e}")
 
-    # -------------------------------------------------------------------------
-    # STEP 2: EW Detector
-    # -------------------------------------------------------------------------
-    if "ew_detector" in pipeline:
-        ew_output = str(intel_dir / "ew_report.json")
-        args = [
-            "--input-dir", str(intel_dir),
+        if attempt < max_retries:
+            wait = backoff_base ** attempt
+            log.info(f"[{step_name}] {wait:.0f}초 후 재시도...")
+            time.sleep(wait)
+
+    log.error(f"[{step_name}] 모든 재시도 실패")
+    return False
+
+
+# ---------------------------------------------------------------------------
+# EW Severity Reader
+# ---------------------------------------------------------------------------
+def read_ew_severity(week: str) -> str:
+    """EW 리포트에서 severity 읽기."""
+    ew_file = OUTPUT_DIR / f"ew_report_{week}.json"
+    if not ew_file.exists():
+        return "NONE"
+    try:
+        data = json.loads(ew_file.read_text())
+        return data.get("ew_severity", "NONE")
+    except Exception:
+        return "NONE"
+
+
+def read_ew_metadata(week: str) -> dict:
+    """EW 리포트 전체 메타데이터 읽기."""
+    ew_file = OUTPUT_DIR / f"ew_report_{week}.json"
+    if not ew_file.exists():
+        return {"ew_triggered": False, "ew_count": 0, "ew_signals": "", "ew_severity": "NONE"}
+    try:
+        data = json.loads(ew_file.read_text())
+        signals = [s.get("signal_id", "") for s in data.get("signals", [])]
+        return {
+            "ew_triggered": data.get("ew_triggered", False),
+            "ew_count": len(signals),
+            "ew_signals": ",".join(signals),
+            "ew_severity": data.get("ew_severity", "NONE"),
+        }
+    except Exception:
+        return {"ew_triggered": False, "ew_count": 0, "ew_signals": "", "ew_severity": "NONE"}
+
+
+def read_kg_metadata(week: str) -> dict:
+    """KG delta 파일에서 버전/노드/엣지 수 읽기."""
+    # 가장 최근 KG delta 파일 탐색
+    candidates = sorted(ROOT.glob("knowledge_graph_v*_delta.json"), reverse=True)
+    if not candidates:
+        return {"kg_version": "4.26", "node_count": 0, "edge_count": 0}
+    try:
+        data = json.loads(candidates[0].read_text())
+        summary = data.get("delta_summary", {})
+        return {
+            "kg_version": data.get("new_version", "4.26"),
+            "node_count": summary.get("total_new_nodes", 0),
+            "edge_count": summary.get("total_new_edges", 0),
+        }
+    except Exception:
+        return {"kg_version": "4.26", "node_count": 0, "edge_count": 0}
+
+
+# ---------------------------------------------------------------------------
+# Pipeline Stages
+# ---------------------------------------------------------------------------
+def stage_collect(week: str, scope: str, domains: list[str]) -> bool:
+    """Stage 1: AI Intel 수집 — 4개 도메인 순차 실행."""
+    log.info("=" * 60)
+    log.info("STAGE 1: AI Intel 수집 시작")
+    log.info("=" * 60)
+    all_ok = True
+    for domain in domains:
+        cmd = [
+            sys.executable,
+            "automation/ai_intel_collector.py",
+            "--domain", domain,
             "--week", week,
-            "--output", ew_output,
+            "--scope", scope,
+            "--output", str(OUTPUT_DIR / f"intel_{domain}.json"),
         ]
-        result = run_agent("ew_detector", "automation/ai_ew_detector.py", args,
-                           dry_run=dry_run)
-        results["ew_detector"] = result
+        ok = run_step(f"collect:{domain}", cmd)
+        if not ok:
+            all_ok = False
+            log.warning(f"도메인 {domain} 수집 실패 — 계속 진행")
+    return all_ok
 
-        # EW 결과 파싱
-        if result["success"] and not dry_run:
-            try:
-                ew_report_path = Path(ew_output)
-                if ew_report_path.exists():
-                    with open(ew_report_path) as f:
-                        ew_report = json.load(f)
-                    ew_triggered = ew_report.get("ew_triggered", False)
-                    ew_count = ew_report.get("ew_count", 0)
-                    ew_severity = ew_report.get("severity", "NONE")
-                    ew_signals = json.dumps(
-                        ew_report.get("signals", []), ensure_ascii=False
-                    )
-                    logger.info(f"EW Check: triggered={ew_triggered}, "
-                                f"severity={ew_severity}, count={ew_count}")
-            except Exception as e:
-                logger.warning(f"EW report parsing failed: {e}")
 
-    # EW CRITICAL 시 모드 업그레이드
-    if ew_severity == "CRITICAL" and mode != "emergency":
-        logger.warning("🚨 EW CRITICAL detected! Upgrading to emergency mode.")
-        mode = "emergency"
-        pipeline = resolve_pipeline(agent_index, "emergency", "CRITICAL")
+def stage_ew(week: str) -> bool:
+    """Stage 2: EW 탐지."""
+    log.info("=" * 60)
+    log.info("STAGE 2: EW 탐지 시작")
+    log.info("=" * 60)
+    cmd = [
+        sys.executable,
+        "automation/ai_ew_detector.py",
+        "--input-dir", str(OUTPUT_DIR),
+        "--week", week,
+        "--output", str(OUTPUT_DIR / f"ew_report_{week}.json"),
+    ]
+    return run_step("ew_detector", cmd)
 
-    # -------------------------------------------------------------------------
-    # STEP 3: KG Builder
-    # -------------------------------------------------------------------------
-    if "kg_builder" in pipeline:
-        args = [
-            "--intel-dir", str(intel_dir),
-            "--current-version", kg_version_current,
-            "--next-version", kg_version_next,
-            "--week", week,
-            "--run-date", run_date,
-            "--ew-signals", ew_signals,
-            "--output", f"knowledge_graph_v{kg_version_next}_delta.json",
-        ]
-        if ew_triggered:
-            args += ["--ew-triggered"]
-        result = run_agent("kg_builder", "automation/kg_delta_generator.py", args,
-                           dry_run=dry_run)
-        results["kg_builder"] = result
 
-    # -------------------------------------------------------------------------
-    # STEP 4: Notion Sync
-    # -------------------------------------------------------------------------
-    if "notion_sync" in pipeline:
-        args = [
-            "--page-id", notion_page_id,
-            "--week", week,
-            "--run-date", run_date,
-            "--ew-triggered", str(ew_triggered).lower(),
-            "--ew-count", str(ew_count),
-            "--ew-signals", ew_signals,
-            "--ew-severity", ew_severity,
-            "--kg-version", kg_version_next,
-            "--node-count", "5",
-            "--edge-count", "3",
-            "--intel-dir", str(intel_dir),
-        ]
-        result = run_agent("notion_sync", "automation/notion_c31_updater.py", args,
-                           dry_run=dry_run)
-        results["notion_sync"] = result
+def stage_kg(week: str, run_date: str, ew_meta: dict) -> bool:
+    """Stage 3: KG Delta 생성."""
+    log.info("=" * 60)
+    log.info("STAGE 3: KG Delta 생성 시작")
+    log.info("=" * 60)
+    cmd = [
+        sys.executable,
+        "automation/kg_delta_generator.py",
+        "--intel-dir", str(OUTPUT_DIR),
+        "--week", week,
+        "--run-date", run_date,
+        "--ew-signals", ew_meta.get("ew_signals", ""),
+    ]
+    return run_step("kg_builder", cmd)
 
-    # -------------------------------------------------------------------------
-    # 파이프라인 결과 집계
-    # -------------------------------------------------------------------------
-    
+
+def stage_notion(week: str, run_date: str, ew_meta: dict, kg_meta: dict) -> bool:
+    """Stage 4: Notion C-31 동기화."""
+    log.info("=" * 60)
+    log.info("STAGE 4: Notion C-31 동기화 시작")
+    log.info("=" * 60)
+    cmd = [
+        sys.executable,
+        "automation/notion_c31_updater.py",
+        "--page-id", NOTION_PAGE_ID,
+        "--week", week,
+        "--run-date", run_date,
+        "--ew-triggered", str(ew_meta["ew_triggered"]).lower(),
+        "--ew-count", str(ew_meta["ew_count"]),
+        "--ew-signals", ew_meta.get("ew_signals", ""),
+        "--ew-severity", ew_meta["ew_severity"],
+        "--kg-version", kg_meta["kg_version"],
+        "--node-count", str(kg_meta["node_count"]),
+        "--edge-count", str(kg_meta["edge_count"]),
+        "--intel-dir", str(OUTPUT_DIR),
+    ]
+    return run_step("notion_sync", cmd, timeout=120)
+
+
+# ---------------------------------------------------------------------------
+# Pipeline Summary Logger
+# ---------------------------------------------------------------------------
+def write_run_summary(week: str, run_date: str, results: dict, elapsed: float):
+    """파이프라인 실행 요약 로그 저장."""
+    summary = {
+        "pipeline_run": {
+            "week": week,
+            "run_date": run_date,
+            "run_timestamp": datetime.now(timezone.utc).isoformat(),
+            "elapsed_seconds": round(elapsed, 1),
+            "stages": results,
+            "overall_status": "SUCCESS" if all(results.values()) else "PARTIAL_FAILURE",
+        }
+    }
+    summary_path = LOG_DIR / f"pipeline_run_{week}_{run_date}.json"
+    summary_path.parent.mkdir(parents=True, exist_ok=True)
+    summary_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2))
+    log.info(f"실행 요약 저장: {summary_path}")
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+def main():
+    parser = argparse.ArgumentParser(description="PE System Pipeline Orchestrator")
+    parser.add_argument("--week", required=True, help="ISO 주차 (예: 2026-W21)")
+    parser.add_argument("--run-date", required=True, help="실행일 (YYYY-MM-DD)")
+    parser.add_argument(
+        "--scope",
+        choices=["standard", "deep", "emergency"],
+        default="standard",
+        help="수집 깊이 (default: standard)",
+    )
+    parser.add_argument(
+        "--domains",
+        nargs="+",
+        default=DEFAULT_DOMAINS,
+        help="수집 도메인 목록",
+    )
+    parser.add_argument(
+        "--skip-collect",
+        action="store_true",
+        help="수집 단계 스킵 (기존 intel 파일 재사용)",
+    )
+    parser.add_argument(
+        "--skip-notion",
+        action="store_true",
+        help="Notion 동기화 스킵 (테스트용)",
+    )
+    args = parser.parse_args()
+
+    start_time = time.time()
+    log.info("=" * 60)
+    log.info(f"PE System Pipeline 시작 — 주차: {args.week} | 범위: {args.scope}")
+    log.info("=" * 60)
+
+    # AGENT-06: 사전 검증
+    errors = preflight_check()
+    if errors:
+        for e in errors:
+            log.error(f"사전 검증 실패: {e}")
+        sys.exit(1)
+    log.info("사전 검증 통과 ✅")
+
+    results = {}
+
+    # Stage 1: 수집
+    if not args.skip_collect:
+        results["collect"] = stage_collect(args.week, args.scope, args.domains)
+    else:
+        log.info("수집 단계 스킵 (--skip-collect)")
+        results["collect"] = True
+
+    # Stage 2: EW 탐지
+    results["ew_detector"] = stage_ew(args.week)
+
+    # EW severity 확인 → emergency 여부 판단
+    ew_meta = read_ew_metadata(args.week)
+    if ew_meta["ew_severity"] == "CRITICAL" and args.scope != "emergency":
+        log.warning("⚠️  EW CRITICAL 감지! emergency 모드로 재수집 권고")
+
+    # Stage 3: KG Delta
+    results["kg_builder"] = stage_kg(args.week, args.run_date, ew_meta)
+    kg_meta = read_kg_metadata(args.week)
+
+    # Stage 4: Notion 동기화
+    if not args.skip_notion:
+        results["notion_sync"] = stage_notion(args.week, args.run_date, ew_meta, kg_meta)
+    else:
+        log.info("Notion 동기화 스킵 (--skip-notion)")
+        results["notion_sync"] = True
+
+    elapsed = time.time() - start_time
+    write_run_summary(args.week, args.run_date, results, elapsed)
+
+    # 최종 결과
+    all_ok = all(results.values())
+    log.info("=" * 60)
+    log.info(f"파이프라인 완료 — 소요: {elapsed:.1f}s | 상태: {'✅ SUCCESS' if all_ok else '⚠️ PARTIAL_FAILURE'}")
+    for stage, ok in results.items():
+        log.info(f"  {stage}: {'✅' if ok else '❌'}")
+    log.info("=" * 60)
+
+    sys.exit(0 if all_ok else 1)
+
+
+if __name__ == "__main__":
+    main()

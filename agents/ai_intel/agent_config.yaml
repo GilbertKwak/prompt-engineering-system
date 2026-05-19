@@ -1,0 +1,98 @@
+# AI Intel Collector — Domain Agent Config
+# Version: 1.2.0 | PE-7 v1.1
+
+agent_id: ai_intel_collector
+version: "1.2.0"
+script: automation/ai_intel_collector.py
+
+domains:
+
+  enterprise_deployment:
+    display_name: "Enterprise AI Deployment"
+    model_standard: sonar
+    model_deep: sonar-pro
+    queries:
+      - "enterprise AI deployment adoption rate 2026"
+      - "enterprise LLM integration ROI case studies"
+      - "AI infrastructure spending enterprise Q2 2026"
+    system_prompt: |
+      You are an enterprise technology analyst specializing in AI adoption.
+      Provide factual, data-driven analysis of enterprise AI deployment trends.
+      Focus on: adoption rates, ROI metrics, vendor market share, deployment patterns.
+      Always include specific numbers, company names, and verifiable sources.
+    key_metrics:
+      - enterprise_ai_adoption_rate
+      - average_deployment_cost
+      - roi_payback_period
+      - top_vendors_market_share
+
+  model_architecture:
+    display_name: "AI Model Architecture & Benchmarks"
+    model_standard: sonar
+    model_deep: sonar-pro
+    queries:
+      - "LLM architecture breakthroughs 2026"
+      - "AI model benchmark MMLU GPQA performance 2026"
+      - "frontier model training compute scaling"
+    system_prompt: |
+      You are an AI research analyst specializing in model architecture and benchmarks.
+      Provide technical, accurate analysis of LLM and AI model developments.
+      Focus on: architecture innovations, benchmark results, training efficiency, capability jumps.
+      Always cite specific model names, paper titles, benchmark scores.
+    key_metrics:
+      - sota_benchmark_score
+      - parameter_count
+      - training_compute_flops
+      - inference_cost_per_token
+
+  regulatory_policy:
+    display_name: "AI Regulatory & Policy"
+    model_standard: sonar
+    model_deep: sonar-pro
+    ew_sensitivity: HIGH
+    queries:
+      - "EU AI Act implementation 2026 compliance"
+      - "US AI executive order policy update"
+      - "semiconductor export control ITAR EAR 2026"
+    system_prompt: |
+      You are a regulatory policy analyst specializing in AI and semiconductor policy.
+      Provide accurate, jurisdiction-specific analysis of regulatory developments.
+      Focus on: enforcement actions, compliance deadlines, geopolitical implications, export controls.
+      Always specify jurisdiction, effective dates, and affected entities.
+    key_metrics:
+      - regulatory_risk_score
+      - compliance_deadline
+      - affected_companies
+      - penalty_provisions
+
+  investment_funding:
+    display_name: "AI Investment & Funding"
+    model_standard: sonar
+    model_deep: sonar-pro
+    queries:
+      - "AI startup funding rounds Q2 2026"
+      - "semiconductor M&A deals 2026"
+      - "AI infrastructure venture capital trends"
+    system_prompt: |
+      You are an investment analyst specializing in AI and semiconductor sectors.
+      Provide factual analysis of funding rounds, M&A activity, and investor trends.
+      Focus on: deal sizes, investors, valuations, strategic rationale, market implications.
+      Always include specific dollar amounts, company names, and dates.
+    key_metrics:
+      - total_funding_volume
+      - average_deal_size
+      - top_investors
+      - valuation_multiples
+
+output:
+  format: json
+  dir: output/ai_intel/
+  schema:
+    required: [domain, week, collected_at, key_facts, key_metrics, confidence_score]
+    confidence_threshold: 0.70
+
+rate_limit:
+  requests_per_minute: 20
+  retry_max: 3
+  retry_backoff_base: 2.0
+  timeout_seconds: 120

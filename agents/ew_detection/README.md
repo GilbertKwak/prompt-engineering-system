@@ -1,21 +1,23 @@
-# agents/ew_detection — EW Detection Agent
+# ⚠️ EW Detection Agent Domain
 
-## 개요
+> Early Warning 시장 변화 신호 탐지 도메인
 
-Early Warning(EW) 탐지 에이전트의 프롬프트 및 설정 디렉토리입니다.
+## 담당 스크립트
+
+`automation/ai_ew_detector.py`
 
 ## 탐지 레이어
 
-| Layer | 방법 | 활성화 조건 |
-|-------|------|------------|
-| 1 | 정량 임계값 (Metric Threshold) | 항상 실행 |
-| 2 | 키워드 휴리스틱 (Keyword Heuristic) | 메트릭 미발견 시 폴백 |
-| 3 | LLM 추론 (선택적) | `enabled: true` 시 |
+1. **메트릭 임계값** — 수치 기반 정량 탐지 (최우선)
+2. **키워드 휴리스틱** — 경고 키워드 hit count 기반 폴백
+3. **LLM 추론** — 컨텍스트 기반 정성 판단 (선택적)
 
-## EW 심각도 기준
+## 심각도 레벨
 
-- **CRITICAL**: 패러다임 전환, 즉각 대응 필요
-- **HIGH**: 2-4주 내 전략 수정
-- **MEDIUM**: 모니터링 강화
-- **LOW**: 트렌드 기록
-- **NONE**: 정상 운영
+| 레벨 | 임계값 | 자동 액션 |
+|---|---|---|
+| CRITICAL | 복수 신호 동시 + 핵심 지표 ≥20% 변화 | sonar-pro 강제 전환 + 즉시 재분석 |
+| HIGH | 단일 핵심 신호 ≥15% | 심층 분석 추가 실행 |
+| MEDIUM | 복수 보조 신호 | 다음 주 추적 강화 |
+| LOW | 단일 보조 신호 | 기록만 |
+| NONE | 정상 범위 | 정기 사이클 유지 |

@@ -1,0 +1,45 @@
+# Strategy Analyst — Agent Config
+# Version: 1.0.0 | PE-7 v1.1
+
+agent_id: strategic_analyst
+version: "1.0.0"
+category: domain_specialist
+
+frameworks:
+  - name: "Porter's Five Forces"
+    id: porter_five_forces
+  - name: "BCG Matrix"
+    id: bcg_matrix
+  - name: "McKinsey 7S"
+    id: mckinsey_7s
+  - name: "Blue Ocean Strategy"
+    id: blue_ocean
+  - name: "Value Chain Analysis"
+    id: value_chain
+
+analysis_types:
+  competitive_landscape:
+    description: "경쟁사 포지셔닝 맵"
+    output_format: competitive_matrix
+  ma_screening:
+    description: "M&A 타깃 스크리닝"
+    criteria: [strategic_fit, synergy_potential, valuation_attractiveness]
+  market_entry:
+    description: "시장 진입 전략"
+    modes: [greenfield, acquisition, JV, partnership]
+  tech_roadmap:
+    description: "기술 로드맵 평가"
+    horizons: [H1_12m, H2_12_36m, H3_36m_plus]
+
+models:
+  default: sonar-pro
+  reasoning: claude-3-5-sonnet
+
+pe_integrations:
+  - PE-CON
+  - PE-STRAT
+  - PE-DD
+
+outputs:
+  dir: output/strategy/
+  format: json

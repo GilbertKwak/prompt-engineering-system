@@ -1,0 +1,55 @@
+# EW Detector — Agent Config
+# Version: 1.1.0 | PE-7 v1.1
+
+agent_id: ew_detector
+version: "1.1.0"
+script: automation/ai_ew_detector.py
+depends_on: [ai_intel_collector]
+
+# 정량 임계값
+thresholds:
+  adoption_rate_delta: 15.0          # % 포인트
+  market_share_delta: 10.0
+  investment_volume_delta: 30.0      # % 변화율
+  regulatory_risk_score: 7.0         # 10점 만점
+  keyword_hit_min: 2                 # 휴리스틱 폴백 최소 hit수
+
+# 고위험 키워드 목록
+high_risk_keywords:
+  disruption:
+    - "paradigm shift"
+    - "breakthrough"
+    - "game-changing"
+    - "disrupts market"
+  regulatory:
+    - "ban"
+    - "embargo"
+    - "sanctions"
+    - "export restriction"
+    - "enforcement action"
+  market:
+    - "market collapse"
+    - "rapid adoption"
+    - "price war"
+    - "supply shortage"
+  geopolitical:
+    - "trade war"
+    - "chip restriction"
+    - "national security"
+
+# 심각도 매핑
+severity_rules:
+  CRITICAL:
+    condition: "critical_signals >= 2 OR (critical_signals >= 1 AND delta >= 20)"
+  HIGH:
+    condition: "critical_signals >= 1 OR delta >= 15"
+  MEDIUM:
+    condition: "keyword_hits >= 3"
+  LOW:
+    condition: "keyword_hits >= 2"
+  NONE:
+    condition: "default"
+
+output:
+  dir: output/ai_intel/
+  naming: "ew_report_{week}.json"
