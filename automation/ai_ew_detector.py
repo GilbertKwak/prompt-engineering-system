@@ -1,25 +1,10 @@
 #!/usr/bin/env python3
 """
-ai_ew_detector.py — Early Warning (EW) Detector v3
-AI Intel Weekly pipeline: Step 2
+ai_ew_detector.py — AI Intel Early Warning Detector
+Detects paradigm shift signals from collected intel JSON files.
 
-New in v3:
-  - Velocity tracking: compares current week vs prev week score (week-over-week delta)
-  - Sentiment scorer: negative sentiment amplification
-  - Multi-source JSON merge: handles nested domain arrays
-  - GITHUB_STEP_SUMMARY markdown output
-  - Dry-run mode: --dry-run flag prints report without writing
-
-Inputs : output/ai_intel/*.json  (from ai_intel_collector.py)
-Outputs: ew_report.json, GITHUB_STEP_SUMMARY
-
-EW Trigger Logic:
-  1. Metric threshold breach  → score += weight
-  2. Keyword frequency hit    → score += weight * min(hits/2, 2.0)
-  3. Sentiment negativity     → score += 0.3 per negative keyword
-  4. Cross-domain correlation → score *= 1.2 bonus
-  5. Velocity spike           → score *= 1.3 if delta > 50%
-  Severity: NONE(<2) / WATCH(2-4) / ALERT(4-6) / CRITICAL(6+)
+Usage:
+    python ai_ew_detector.py --input-dir output/ai_intel --week 2026-W21 --output ew_report.json
 """
 
 import argparse
@@ -31,392 +16,199 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-# ── EW Configuration ──────────────────────────────────────────────────────────
-
-EW_METRIC_THRESHOLDS: dict[str, dict] = {
-    "training_cost_reduction_pct":  {"threshold": 50,  "op": "gte", "weight": 2.0, "domain": "model_architecture"},
-    "inference_cost_reduction_pct": {"threshold": 40,  "op": "gte", "weight": 1.5, "domain": "model_architecture"},
-    "new_model_releases_count":     {"threshold": 3,   "op": "gte", "weight": 1.0, "domain": "model_architecture"},
-    "context_window_tokens":        {"threshold": 500000, "op": "gte", "weight": 1.5, "domain": "model_architecture"},
-    "enterprise_adoption_pct":      {"threshold": 40,  "op": "gte", "weight": 1.5, "domain": "enterprise_deployment"},
-    "rag_migration_rate_pct":       {"threshold": 30,  "op": "gte", "weight": 1.0, "domain": "enterprise_deployment"},
-    "ai_infrastructure_spend_bn":   {"threshold": 20,  "op": "gte", "weight": 1.5, "domain": "enterprise_deployment"},
-    "open_source_share_pct":        {"threshold": 50,  "op": "gte", "weight": 1.5, "domain": "open_source_dynamics"},
-    "open_source_model_count":      {"threshold": 10,  "op": "gte", "weight": 1.0, "domain": "open_source_dynamics"},
-    "regulatory_actions_count":     {"threshold": 2,   "op": "gte", "weight": 2.0, "domain": "regulatory_geopolitical"},
-    "china_export_restriction_new": {"threshold": 1,   "op": "gte", "weight": 2.5, "domain": "regulatory_geopolitical"},
-    "geopolitical_risk_score":      {"threshold": 7,   "op": "gte", "weight": 2.0, "domain": "regulatory_geopolitical"},
-    "gpu_supply_shortage_severity": {"threshold": 7,   "op": "gte", "weight": 2.0, "domain": "hardware_infrastructure"},
-    "hbm_price_change_pct":         {"threshold": 20,  "op": "gte", "weight": 1.5, "domain": "hardware_infrastructure"},
-    "datacenter_capex_bn":          {"threshold": 10,  "op": "gte", "weight": 1.0, "domain": "hardware_infrastructure"},
-    "agent_deployment_incidents":   {"threshold": 3,   "op": "gte", "weight": 1.5, "domain": "agentic_multimodal"},
-    "multimodal_capability_jump":   {"threshold": 1,   "op": "gte", "weight": 1.0, "domain": "agentic_multimodal"},
-    "autonomous_agent_deploy_pct":  {"threshold": 15,  "op": "gte", "weight": 1.5, "domain": "agentic_multimodal"},
+# ── EW threshold config ────────────────────────────────────────────────────────
+EW_THRESHOLDS = {
+    "adoption_rate_enterprise": {"field": "adoption_rate_enterprise", "operator": ">=", "value": 35.0, "label": "Enterprise Adoption Surge"},
+    "model_release_frequency":  {"field": "model_release_frequency",  "operator": ">=", "value": 3.0,  "label": "Rapid Model Release Cycle"},
+    "cost_reduction_pct":       {"field": "cost_reduction_pct",       "operator": ">=", "value": 40.0, "label": "Dramatic Cost Reduction"},
+    "open_source_share":        {"field": "open_source_share",        "operator": ">=", "value": 50.0, "label": "Open Source Dominance"},
+    "agent_autonomy_index":     {"field": "agent_autonomy_index",     "operator": ">=", "value": 0.7,  "label": "High Agent Autonomy"},
+    "multimodal_adoption":      {"field": "multimodal_adoption",      "operator": ">=", "value": 60.0, "label": "Multimodal Mass Adoption"},
 }
 
-EW_KEYWORDS: list[dict] = [
-    {"pattern": r"export.{0,10}restrict|ban.{0,10}chip|sanction.{0,10}(nvidia|tsmc|asml|smic)",
-     "weight": 2.5, "tag": "EW_EXPORT_CONTROL"},
-    {"pattern": r"breakthrough|paradigm.shift|10x.{0,5}(faster|cheaper|better)|order.of.magnitude",
-     "weight": 1.5, "tag": "EW_CAPABILITY_JUMP"},
-    {"pattern": r"(openai|anthropic|google|meta).{0,20}(acqui|merger|partner).{0,20}(microsoft|amazon|apple|nvidia)",
-     "weight": 2.0, "tag": "EW_STRATEGIC_ALLIANCE"},
-    {"pattern": r"regulation.{0,15}(pass|sign|enforce|implement)|EU AI Act|AI Safety.{0,10}(law|bill|mandate|executive)",
-     "weight": 2.0, "tag": "EW_REGULATORY"},
-    {"pattern": r"open.?source.{0,20}(match|surpass|beat|outperform).{0,20}(gpt|claude|gemini|o[234])",
-     "weight": 1.5, "tag": "EW_OPENSOURCE_PARITY"},
-    {"pattern": r"rag.{0,15}(dead|obsolete|replac|displace).{0,15}(fine.?tun|long.context|memory)",
-     "weight": 1.0, "tag": "EW_RAG_MIGRATION"},
-    {"pattern": r"(hbm|gpu|tpu|npu).{0,20}(shortage|supply.{0,10}crunch|allocation.{0,10}cut|lead.time)",
-     "weight": 2.0, "tag": "EW_HW_SUPPLY"},
-    {"pattern": r"agent.{0,20}(autonom|self.direct|unsupervised|recursive).{0,20}(deploy|production|enterprise)",
-     "weight": 1.5, "tag": "EW_AGENT_AUTONOMY"},
-    {"pattern": r"reasoning.{0,20}(replac|supersede|make.obsolete).{0,20}(rag|retrieval|search)",
-     "weight": 1.5, "tag": "EW_REASONING_SHIFT"},
-    {"pattern": r"(deepseek|mistral|qwen|llama).{0,20}(match|beat|outperform).{0,20}(gpt-4|claude|gemini.ultra)",
-     "weight": 2.0, "tag": "EW_CHINA_MODEL_PARITY"},
+EW_KEYWORDS = [
+    "paradigm shift", "breakthrough", "disruption", "transformation",
+    "10x improvement", "order of magnitude", "unprecedented",
+    "emergency", "critical inflection", "game changer", "revolutionary",
 ]
 
-NEGATIVE_SENTIMENT_PATTERNS = [
-    r"crisis|collapse|crash|ban|halt|suspend|shutdown|catastroph",
-    r"major.{0,10}(setback|failure|breach|incident|outage)",
-    r"(emergency|urgent|immediate).{0,10}(action|response|recall)",
-]
-
-SEVERITY_MATRIX = [
-    (6.0, "CRITICAL"),
-    (4.0, "ALERT"),
-    (2.0, "WATCH"),
-    (0.0, "NONE"),
-]
-
-DOMAIN_CROSS_CORRELATIONS: list[set] = [
-    {"model_architecture", "hardware_infrastructure"},
-    {"regulatory_geopolitical", "hardware_infrastructure"},
-    {"enterprise_deployment", "agentic_multimodal"},
-    {"regulatory_geopolitical", "open_source_dynamics"},
-]
+SEVERITY_MAP = {
+    0: "NONE",
+    1: "LOW",
+    2: "MEDIUM",
+    3: "HIGH",
+    4: "CRITICAL",
+}
 
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
+# ── helpers ────────────────────────────────────────────────────────────────────
 
-def _score_severity(score: float) -> str:
-    for threshold, label in SEVERITY_MATRIX:
-        if score >= threshold:
-            return label
-    return "NONE"
-
-
-def _extract_number(value: Any) -> float | None:
-    if isinstance(value, (int, float)):
-        return float(value)
-    if isinstance(value, str):
-        m = re.search(r"[-+]?\d+\.?\d*", value.replace(",", ""))
-        if m:
-            return float(m.group())
-    return None
+def _compare(value: float, operator: str, threshold: float) -> bool:
+    ops = {">=": lambda a, b: a >= b, ">": lambda a, b: a > b,
+           "<=": lambda a, b: a <= b, "<": lambda a, b: a < b,
+           "==": lambda a, b: a == b}
+    fn = ops.get(operator)
+    return fn(value, threshold) if fn else False
 
 
-def _find_metric(data: dict, metric_key: str) -> float | None:
-    """Search metrics dict with 3-level fuzzy key matching."""
-    metrics: dict = data.get("metrics", {})
-    if not metrics:
-        return None
-    if metric_key in metrics:
-        return _extract_number(metrics[metric_key])
-    norm = metric_key.lower().replace("_", "")
-    for k, v in metrics.items():
-        if norm in k.lower().replace("_", ""):
-            return _extract_number(v)
-    # Try numeric extraction from text fields
-    text = _text_body(data)
-    label_pat = metric_key.replace("_", ".{0,5}")
-    m = re.search(label_pat + r".{0,20}(\d+\.?\d*)", text, re.IGNORECASE)
-    if m:
-        return float(m.group(1))
-    return None
-
-
-def _text_body(data: dict) -> str:
-    """Combine all text fields from an intel JSON for scanning."""
-    parts = []
-    for field in ("summary", "analysis", "key_facts", "recommendations",
-                  "raw_content", "insights", "highlights"):
-        val = data.get(field, "")
-        if isinstance(val, list):
-            parts.extend(str(v) for v in val)
-        elif isinstance(val, str):
-            parts.append(val)
-    return " ".join(parts).lower()
-
-
-def _score_sentiment(text: str) -> float:
-    """Returns negative sentiment amplification score."""
-    score = 0.0
-    for pat in NEGATIVE_SENTIMENT_PATTERNS:
-        hits = len(re.findall(pat, text, re.IGNORECASE))
-        score += hits * 0.3
-    return min(score, 2.0)  # cap at 2.0
-
-
-def _load_prev_score(intel_dir: Path, week: str) -> float | None:
-    """Load previous week's EW score for velocity tracking."""
-    # Look for any ew_report_*.json or prev_ew_report.json
-    for fname in ["ew_report_prev.json", "ew_report_previous.json"]:
-        fp = intel_dir / fname
-        if fp.exists():
+def _extract_metric(data: dict, field: str) -> float | None:
+    """Multi-level metric extraction with fuzzy key matching."""
+    # Direct key
+    if field in data:
+        try:
+            return float(data[field])
+        except (TypeError, ValueError):
+            pass
+    # Nested under 'metrics'
+    metrics = data.get("metrics", {})
+    if isinstance(metrics, dict) and field in metrics:
+        try:
+            return float(metrics[field])
+        except (TypeError, ValueError):
+            pass
+    # Fuzzy: partial key match
+    for key, val in {**data, **metrics}.items():
+        if field.replace("_", "") in key.replace("_", ""):
             try:
-                with open(fp) as f:
-                    d = json.load(f)
-                return float(d.get("total_score", 0.0))
-            except Exception:
+                return float(val)
+            except (TypeError, ValueError):
                 pass
+    # Text parsing fallback: look for numbers near the field name in analysis text
+    text = " ".join(str(v) for v in data.values() if isinstance(v, str))
+    pattern = rf"{re.escape(field.replace('_', ' '))}[^\d]*(\d+\.?\d*)"
+    m = re.search(pattern, text, re.IGNORECASE)
+    if m:
+        try:
+            return float(m.group(1))
+        except ValueError:
+            pass
     return None
 
 
-# ── Step Summary (GitHub Actions) ─────────────────────────────────────────────
-
-def _write_step_summary(report: dict) -> None:
-    step_summary = os.environ.get("GITHUB_STEP_SUMMARY", "")
-    if not step_summary:
-        return
-    sev = report["severity"]
-    icon = {"CRITICAL": "🔴", "ALERT": "🟠", "WATCH": "🟡", "NONE": "🟢"}.get(sev, "⚪")
-    lines = [
-        f"## {icon} EW Report — {report['week']}",
-        f"| Field | Value |",
-        f"|---|---|",
-        f"| Severity | **{sev}** |",
-        f"| Score | {report['total_score']} |",
-        f"| Signals | {report['signal_count']} |",
-        f"| Velocity | {report.get('velocity_note', 'N/A')} |",
-        "",
-        "### Signal Tags",
-        ", ".join(f"`{t}`" for t in report["signal_tags"]) or "_none_",
-        "",
-        "### Domain Scores",
-    ]
-    for dom, sc in report.get("domain_scores", {}).items():
-        lines.append(f"- `{dom}`: {sc}")
-    try:
-        with open(step_summary, "a") as f:
-            f.write("\n".join(lines) + "\n")
-    except Exception:
-        pass
+def _keyword_hit_count(data: dict) -> int:
+    """Count EW keyword hits in all string values."""
+    text = json.dumps(data).lower()
+    return sum(1 for kw in EW_KEYWORDS if kw.lower() in text)
 
 
-# ── Core Detection ────────────────────────────────────────────────────────────
+# ── core detection ─────────────────────────────────────────────────────────────
 
-def detect_ew(intel_dir: str, week: str, threshold_override: float = 2.0) -> dict:
-    intel_path = Path(intel_dir)
-    if not intel_path.exists():
-        print(f"[EW] Directory not found: {intel_dir}", file=sys.stderr)
-        sys.exit(1)
-
-    json_files = sorted(intel_path.glob("*.json"))
-    # Exclude ew_report*.json from input
-    json_files = [f for f in json_files if not f.name.startswith("ew_report")]
-    if not json_files:
-        print(f"[EW] No intel JSON files found in {intel_dir}", file=sys.stderr)
-        sys.exit(1)
+def detect_ew_from_file(filepath: Path) -> dict:
+    """Analyse a single intel JSON file for EW signals."""
+    with open(filepath, encoding="utf-8") as f:
+        data = json.load(f)
 
     triggered_signals: list[dict] = []
-    domain_scores: dict[str, float] = {}
-    total_score: float = 0.0
-    domains_triggered: set[str] = set()
-    sentiment_score: float = 0.0
+    metric_values: dict = {}
 
-    for jf in json_files:
+    # Metric-based detection
+    for rule_key, rule in EW_THRESHOLDS.items():
+        val = _extract_metric(data, rule["field"])
+        if val is not None:
+            metric_values[rule["field"]] = val
+            if _compare(val, rule["operator"], rule["value"]):
+                triggered_signals.append({
+                    "signal": rule["label"],
+                    "field": rule["field"],
+                    "detected_value": val,
+                    "threshold": rule["value"],
+                    "operator": rule["operator"],
+                    "source": "metric",
+                })
+
+    # Keyword-based heuristic fallback
+    hit_count = _keyword_hit_count(data)
+    if hit_count >= 2 and not triggered_signals:
+        triggered_signals.append({
+            "signal": "Keyword-based EW Heuristic",
+            "field": "keyword_hits",
+            "detected_value": hit_count,
+            "threshold": 2,
+            "operator": ">=",
+            "source": "keyword",
+        })
+
+    domain = data.get("domain", filepath.stem)
+    return {
+        "file": str(filepath),
+        "domain": domain,
+        "triggered": len(triggered_signals) > 0,
+        "signals": triggered_signals,
+        "metric_values": metric_values,
+        "keyword_hits": hit_count,
+    }
+
+
+def run_detection(input_dir: str, week: str, output_path: str) -> dict:
+    """Run EW detection across all JSON files in input_dir."""
+    intel_files = list(Path(input_dir).glob("*.json"))
+    if not intel_files:
+        print(f"[WARN] No JSON files found in {input_dir}", file=sys.stderr)
+
+    all_results = []
+    all_signals: list[str] = []
+    total_triggered = 0
+
+    for fp in intel_files:
         try:
-            with open(jf, encoding="utf-8") as f:
-                data = json.load(f)
-        except (json.JSONDecodeError, OSError) as e:
-            print(f"[EW] Skip {jf.name}: {e}", file=sys.stderr)
-            continue
+            result = detect_ew_from_file(fp)
+            all_results.append(result)
+            if result["triggered"]:
+                total_triggered += 1
+                all_signals.extend(s["signal"] for s in result["signals"])
+            print(f"  {'🚨' if result['triggered'] else '✅'} {fp.name}: "
+                  f"{len(result['signals'])} signal(s), keyword_hits={result['keyword_hits']}")
+        except Exception as e:
+            print(f"[ERROR] {fp.name}: {e}", file=sys.stderr)
 
-        domain = data.get("domain", jf.stem)
-        text   = _text_body(data)
-
-        # ── 1. Metric threshold checks ──
-        for metric_key, cfg in EW_METRIC_THRESHOLDS.items():
-            target_domain = cfg["domain"]
-            # Match by domain substring or allow 'all'/'overview'
-            domain_match = (
-                target_domain in domain or
-                domain in ("all", "overview", "multi") or
-                target_domain == domain
-            )
-            if not domain_match:
-                continue
-            val = _find_metric(data, metric_key)
-            if val is None:
-                continue
-            threshold = cfg["threshold"]
-            op = cfg["op"]
-            triggered = (
-                (op == "gte" and val >= threshold) or
-                (op == "lte" and val <= threshold) or
-                (op == "gt"  and val >  threshold) or
-                (op == "lt"  and val <  threshold)
-            )
-            if triggered:
-                w = cfg["weight"]
-                total_score += w
-                domain_scores[domain] = domain_scores.get(domain, 0.0) + w
-                domains_triggered.add(target_domain)
-                triggered_signals.append({
-                    "type":        "METRIC_BREACH",
-                    "domain":      domain,
-                    "metric":      metric_key,
-                    "value":       val,
-                    "threshold":   threshold,
-                    "weight":      w,
-                    "tag":         f"EW_{metric_key.upper()}",
-                    "source_file": jf.name,
-                })
-
-        # ── 2. Keyword frequency hits ──
-        for kw_cfg in EW_KEYWORDS:
-            hits = len(re.findall(kw_cfg["pattern"], text, re.IGNORECASE))
-            if hits >= 2:
-                w = kw_cfg["weight"] * min(hits / 2, 2.0)
-                total_score += w
-                domain_scores[domain] = domain_scores.get(domain, 0.0) + w
-                domains_triggered.add(domain)
-                triggered_signals.append({
-                    "type":        "KEYWORD_HIT",
-                    "domain":      domain,
-                    "pattern":     kw_cfg["pattern"][:60],
-                    "hits":        hits,
-                    "weight":      round(w, 2),
-                    "tag":         kw_cfg["tag"],
-                    "source_file": jf.name,
-                })
-
-        # ── 3. Sentiment score ──
-        sent = _score_sentiment(text)
-        if sent > 0:
-            sentiment_score += sent
-            total_score += sent
-            domain_scores[domain] = domain_scores.get(domain, 0.0) + sent
-            triggered_signals.append({
-                "type":        "SENTIMENT_NEG",
-                "domain":      domain,
-                "weight":      round(sent, 2),
-                "tag":         "EW_NEGATIVE_SENTIMENT",
-                "source_file": jf.name,
-            })
-
-    # ── 4. Cross-domain correlation bonus ──
-    cross_bonus_applied = False
-    for corr_set in DOMAIN_CROSS_CORRELATIONS:
-        if corr_set.issubset(domains_triggered):
-            total_score *= 1.2
-            cross_bonus_applied = True
-            triggered_signals.append({
-                "type":    "CROSS_DOMAIN_CORRELATION",
-                "domains": list(corr_set),
-                "bonus":   "×1.2",
-                "tag":     "EW_CROSS_DOMAIN",
-            })
-            break
-
-    # ── 5. Velocity tracking ──
-    velocity_note = "N/A"
-    velocity_multiplier = 1.0
-    prev_score = _load_prev_score(intel_path, week)
-    if prev_score is not None and prev_score > 0:
-        delta_pct = (total_score - prev_score) / prev_score * 100
-        velocity_note = f"+{delta_pct:.1f}%" if delta_pct >= 0 else f"{delta_pct:.1f}%"
-        if delta_pct > 50:
-            velocity_multiplier = 1.3
-            total_score *= 1.3
-            triggered_signals.append({
-                "type":     "VELOCITY_SPIKE",
-                "prev_score": prev_score,
-                "curr_score": round(total_score / 1.3, 2),
-                "delta_pct":  round(delta_pct, 1),
-                "bonus":      "×1.3",
-                "tag":        "EW_VELOCITY_SPIKE",
-            })
-
-    # Apply threshold override
-    severity = _score_severity(total_score)
-    ew_triggered = severity != "NONE" and total_score >= threshold_override
-
-    signal_tags = list(dict.fromkeys(
-        s["tag"] for s in triggered_signals if s.get("tag")
-    ))
+    # Severity
+    severity_level = min(total_triggered, 4)
+    severity = SEVERITY_MAP[severity_level]
 
     report = {
-        "week":             week,
-        "generated_at":     datetime.utcnow().isoformat() + "Z",
-        "ew_triggered":     ew_triggered,
-        "severity":         severity,
-        "total_score":      round(total_score, 2),
-        "signal_count":     len([s for s in triggered_signals if s["type"] not in ("CROSS_DOMAIN_CORRELATION", "VELOCITY_SPIKE")]),
-        "signal_tags":      signal_tags,
-        "domain_scores":    {k: round(v, 2) for k, v in sorted(domain_scores.items(), key=lambda x: -x[1])},
-        "sentiment_score":  round(sentiment_score, 2),
-        "cross_bonus":      cross_bonus_applied,
-        "velocity_note":    velocity_note,
-        "velocity_multiplier": velocity_multiplier,
-        "signals":          triggered_signals,
-        "summary": (
-            f"EW {severity}: score={total_score:.1f}, "
-            f"{len(triggered_signals)} signals across "
-            f"{len(domain_scores)} domains. velocity={velocity_note}"
-        ),
+        "week": week,
+        "run_timestamp": datetime.utcnow().isoformat() + "Z",
+        "ew_triggered": total_triggered > 0,
+        "ew_count": total_triggered,
+        "severity": severity,
+        "ew_signals": list(set(all_signals)),
+        "files_analysed": len(intel_files),
+        "detail": all_results,
     }
+
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(report, f, ensure_ascii=False, indent=2)
+
+    print(f"\n[EW Report] triggered={report['ew_triggered']}, "
+          f"count={report['ew_count']}, severity={severity}")
+    print(f"[EW Report] saved → {output_path}")
     return report
 
 
-# ── CLI ───────────────────────────────────────────────────────────────────────
+# ── CLI ────────────────────────────────────────────────────────────────────────
 
 def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="AI Intel Early Warning Detector v3")
-    p.add_argument("--input-dir",  default="output/ai_intel", help="Directory with intel JSON files")
-    p.add_argument("--week",       required=True,              help="ISO week tag e.g. 2026-W21")
-    p.add_argument("--output",     default="",                 help="Output JSON path")
-    p.add_argument("--threshold",  type=float, default=2.0,    help="Minimum score to trigger EW")
-    p.add_argument("--dry-run",    action="store_true",        help="Print report without writing files")
-    return p.parse_args()
+    parser = argparse.ArgumentParser(
+        description="AI Intel Early Warning Detector",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument("--input-dir",  required=True,  help="Directory containing intel JSON files")
+    parser.add_argument("--week",        required=True,  help="ISO week string e.g. 2026-W21")
+    parser.add_argument("--output",      required=True,  help="Output JSON file path")
+    return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    print(f"[EW v3] Scanning: {args.input_dir}  |  Week: {args.week}")
+    print(f"\n{'='*60}")
+    print(f"AI Intel Early Warning Detector — {args.week}")
+    print(f"{'='*60}")
+    print(f"Input dir : {args.input_dir}")
+    print(f"Output    : {args.output}\n")
 
-    report = detect_ew(args.input_dir, args.week, args.threshold)
-
-    out_path = args.output or str(Path(args.input_dir) / "ew_report.json")
-
-    if args.dry_run:
-        print(json.dumps(report, ensure_ascii=False, indent=2))
-    else:
-        os.makedirs(os.path.dirname(os.path.abspath(out_path)), exist_ok=True)
-        with open(out_path, "w", encoding="utf-8") as f:
-            json.dump(report, f, ensure_ascii=False, indent=2)
-        print(f"[EW] Output   : {out_path}")
-
-    print(f"[EW] Severity : {report['severity']}")
-    print(f"[EW] Score    : {report['total_score']}")
-    print(f"[EW] Signals  : {report['signal_count']}")
-    print(f"[EW] Velocity : {report['velocity_note']}")
-    print(f"[EW] Tags     : {', '.join(report['signal_tags']) or 'none'}")
-
-    _write_step_summary(report)
-
-    gh_output = os.environ.get("GITHUB_OUTPUT", "")
-    if gh_output:
-        with open(gh_output, "a") as f:
-            f.write(f"ew_triggered={str(report['ew_triggered']).lower()}\n")
-            f.write(f"ew_severity={report['severity']}\n")
-            f.write(f"ew_score={report['total_score']}\n")
-            f.write(f"ew_count={report['signal_count']}\n")
-            f.write(f"ew_signals={','.join(report['signal_tags'])}\n")
-
-    sys.exit(0 if not report["ew_triggered"] else 2)
+    report = run_detection(args.input_dir, args.week, args.output)
+    sys.exit(0 if not report["ew_triggered"] else 2)  # exit 2 = EW triggered
 
 
 if __name__ == "__main__":
