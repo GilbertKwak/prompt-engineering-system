@@ -43,26 +43,7 @@ env:
   OUTPUT_DIR: "output/ai_intel"
   KG_BASE_VERSION: "4.25"
   PROTOCOL_PATH: ".github/prompts/execution_protocol_v2.6.md"
-  # 최소 유효 크기 (bytes) — 이보다 작으면 파일 손상으로 간주
   PROTOCOL_MIN_BYTES: "500"
-
-# ─────────────────────────────────────────────────────────────────────────────
-# [공통 매크로] SSOT 주입 패턴 — 각 Job에서 복붙
-#
-#   - name: 실행 프로토콜 주입 (SSOT)
-#     run: |
-#       echo "EXECUTION_PROTOCOL<<__PROTOCOL_EOF__" >> $GITHUB_ENV
-#       cat ${{ env.PROTOCOL_PATH }} >> $GITHUB_ENV
-#       echo "__PROTOCOL_EOF__" >> $GITHUB_ENV
-#       INJECTED=$(wc -c < ${{ env.PROTOCOL_PATH }})
-#       if [ "$INJECTED" -lt "${{ env.PROTOCOL_MIN_BYTES }}" ]; then
-#         echo "::error::프로토콜 주입 크기 이상: ${INJECTED} bytes (최소: ${{ env.PROTOCOL_MIN_BYTES }})"
-#         exit 1
-#       fi
-#       echo "EXECUTION_PROTOCOL_HASH=${{ needs.protocol-check.outputs.protocol_hash }}" >> $GITHUB_ENV
-#       echo "EXECUTION_PROTOCOL_VERSION=${{ needs.protocol-check.outputs.protocol_version }}" >> $GITHUB_ENV
-#       echo "✅ EXECUTION_PROTOCOL 주입 완료 — ${INJECTED} chars"
-# ─────────────────────────────────────────────────────────────────────────────
 
 jobs:
   # ─── Job 0: 프로토콜 검증 ─────────────────────────────────────────────────
@@ -82,7 +63,6 @@ jobs:
         run: |
           if [ ! -f "${{ env.PROTOCOL_PATH }}" ]; then
             echo "::error::SSOT 파일 없음: ${{ env.PROTOCOL_PATH }}"
-            echo "::error::.github/prompts/execution_protocol_v2.6.md 가 누락되었습니다."
             exit 1
           fi
           FILE_BYTES=$(wc -c < "${{ env.PROTOCOL_PATH }}")
@@ -91,7 +71,6 @@ jobs:
           echo "   크기: ${FILE_BYTES} bytes / ${FILE_LINES} lines"
           if [ "$FILE_BYTES" -lt "${{ env.PROTOCOL_MIN_BYTES }}" ]; then
             echo "::error::프로토콜 파일 크기 부족: ${FILE_BYTES} bytes (최소: ${{ env.PROTOCOL_MIN_BYTES }})"
-            echo "::error::파일이 손상되었거나 비어 있습니다."
             exit 1
           fi
 
@@ -167,7 +146,6 @@ jobs:
       - name: 출력 디렉토리 생성
         run: mkdir -p ${{ env.OUTPUT_DIR }}
 
-      # ── SSOT 주입: execution_protocol_v2.6.md → EXECUTION_PROTOCOL ─────────
       - name: 실행 프로토콜 주입 (SSOT)
         run: |
           echo "EXECUTION_PROTOCOL<<__PROTOCOL_EOF__" >> $GITHUB_ENV
@@ -188,7 +166,6 @@ jobs:
           WEEK=$(python3 -c "from datetime import date; d=date.today(); print(f'{d.year}-W{d.isocalendar()[1]:02d}')")
           RUN_DATE=$(date +%Y-%m-%d)
           SCOPE="${{ github.event.inputs.intel_scope || 'standard' }}"
-          # emergency 스코프 → sonar-pro 강제 (환경변수로 스크립트에 전달)
           if [ "$SCOPE" = "emergency" ]; then
             FORCE_MODEL="sonar-pro"
           else
@@ -209,7 +186,6 @@ jobs:
           WEEK="${{ steps.meta.outputs.week }}"
           SCOPE="${{ steps.meta.outputs.scope }}"
 
-          # 도메인별 쿼리 매핑 (2026 Q2 기준)
           declare -A QUERIES
           QUERIES[enterprise_deployment]="enterprise AI deployment ROI 2026 Q2|LLM enterprise governance compliance cost optimization"
           QUERIES[model_performance]="LLM benchmark leaderboard 2026 GPT-4o Claude Gemini comparison|AI model inference latency throughput cost tradeoff"
@@ -265,7 +241,6 @@ jobs:
           path: ${{ env.OUTPUT_DIR }}
           merge-multiple: true
 
-      # ── SSOT 주입 ──────────────────────────────────────────────────────────
       - name: 실행 프로토콜 주입 (SSOT)
         run: |
           echo "EXECUTION_PROTOCOL<<__PROTOCOL_EOF__" >> $GITHUB_ENV
@@ -287,12 +262,10 @@ jobs:
           echo "week=$WEEK" >> $GITHUB_OUTPUT
           echo "run_date=$(date +%Y-%m-%d)" >> $GITHUB_OUTPUT
 
-      # ── fix: FORCE_EW와 OUTPUT_DIR을 하나의 env 블록으로 통합 ──────────────
       - name: EW 탐지 실행
         id: ew
         env:
           FORCE_EW: ${{ github.event.inputs.force_ew_check || 'false' }}
-          OUTPUT_DIR: ${{ env.OUTPUT_DIR }}
         run: |
           python automation/ai_ew_detector.py \
             --input-dir "${{ env.OUTPUT_DIR }}" \
@@ -354,7 +327,6 @@ jobs:
           path: ${{ env.OUTPUT_DIR }}
           merge-multiple: true
 
-      # ── SSOT 주입 ──────────────────────────────────────────────────────────
       - name: 실행 프로토콜 주입 (SSOT)
         run: |
           echo "EXECUTION_PROTOCOL<<__PROTOCOL_EOF__" >> $GITHUB_ENV
@@ -441,7 +413,6 @@ jobs:
           path: ${{ env.OUTPUT_DIR }}
           merge-multiple: true
 
-      # ── SSOT 주입 ──────────────────────────────────────────────────────────
       - name: 실행 프로토콜 주입 (SSOT)
         run: |
           echo "EXECUTION_PROTOCOL<<__PROTOCOL_EOF__" >> $GITHUB_ENV
@@ -496,11 +467,11 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const week      = "${{ needs.ew-detection.outputs.week }}";
-            const signals   = "${{ needs.ew-detection.outputs.ew_signals }}";
-            const severity  = "${{ needs.ew-detection.outputs.ew_severity }}";
-            const pHash     = "${{ needs.protocol-check.outputs.protocol_hash }}";
-            const pVersion  = "${{ needs.protocol-check.outputs.protocol_version }}";
+            const week     = "${{ needs.ew-detection.outputs.week }}";
+            const signals  = "${{ needs.ew-detection.outputs.ew_signals }}";
+            const severity = "${{ needs.ew-detection.outputs.ew_severity }}";
+            const pHash    = "${{ needs.protocol-check.outputs.protocol_hash }}";
+            const pVersion = "${{ needs.protocol-check.outputs.protocol_version }}";
             await github.rest.issues.create({
               owner: context.repo.owner,
               repo:  context.repo.repo,
@@ -540,7 +511,6 @@ jobs:
           P_HASH="${{ needs.protocol-check.outputs.protocol_hash }}"
           P_VER="${{ needs.protocol-check.outputs.protocol_version }}"
 
-          # ── 콘솔 출력 ──────────────────────────────────────────────────────
           echo "════════════════════════════════════════════════════════"
           echo "  PE · AI Intel Weekly Digest — 파이프라인 완료 요약"
           echo "════════════════════════════════════════════════════════"
@@ -557,7 +527,6 @@ jobs:
           echo "  SSOT 경로         : ${{ env.PROTOCOL_PATH }}"
           echo "════════════════════════════════════════════════════════"
 
-          # ── GitHub Step Summary (Actions UI에 표시) ────────────────────────
           cat >> $GITHUB_STEP_SUMMARY << SUMMARY_EOF
           ## 🤖 PE · AI Intel Weekly Digest — ${WEEK}
 
