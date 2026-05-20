@@ -1,19 +1,24 @@
 {
-  "domain": "ai_regulation",
   "week": "2026-W21",
-  "collected_at": "2026-05-20",
+  "run_date": "2026-05-20",
+  "domain": "ai_regulation",
   "key_facts": [
-    "EU AI Act 2026-08-02: 모든 고위험 AI 시스템 의무 전면 적용",
-    "고위험 AI: 위험관리 문서화, 데이터 거버넌스, 자동 로깅, 인간 감독 필수",
-    "CE 마크 + EU 데이터베이스 등록 의무 (시장 출시 전)",
-    "AI 생성 콘텐츠 레이블링: 기계 판독 가능 방식 의무 (딥페이크 포함)",
-    "최대 벌금: €35M 또는 전 세계 연간 매출의 7%",
-    "Trump 행정부 AI 규제 완화 기조 vs EU AI Act 강화 — 글로벌 규제 격차 확대",
-    "범용 AI 모델 제공자 의무: 2025-08-02부터 시행 중"
+    "EU AI Act full enforcement confirmed: 2026-08-02 — D-74 as of 2026-05-20",
+    "GPAI model providers subject to Commission enforcement powers from August 2026",
+    "Maximum fine: 3% of global annual turnover or EUR 15 million, whichever is higher",
+    "High-risk AI: conformity assessment, technical documentation, human oversight, EU DB registration mandatory",
+    "AI Omnibus political agreement: high-risk AI in regulated products extended to 2028-08-02"
+  ],
+  "sources": [
+    "https://artificialintelligenceact.eu/enforcement-of-chapter-v-under-the-eu-ai-act/",
+    "https://www.artificial-intelligence-act.com",
+    "https://www.linkedin.com/pulse/august-2026-eu-ai-act-every-organisation-using-alexandra-car-idwyc",
+    "https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai"
   ],
   "metrics": {
-    "max_fine_million_eur": 35,
-    "max_fine_turnover_pct": 7,
-    "deadline_days_remaining": 74
+    "enforcement_date": "2026-08-02",
+    "days_remaining": 74,
+    "max_fine_pct_global_revenue": 3,
+    "max_fine_fixed_eur": 15000000
   }
 }

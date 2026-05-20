@@ -1,25 +1,104 @@
 {
-  "meta": {
-    "from_version": "4.25",
-    "to_version": "4.26",
-    "week": "2026-W21",
-    "run_date": "2026-05-20",
-    "ew_triggered": true,
-    "ew_count": 8,
-    "ew_severity": "HIGH"
-  },
+  "kg_version": "4.26",
+  "base_version": "4.25",
+  "week": "2026-W21",
+  "run_date": "2026-05-20",
+  "ew_triggered": true,
+  "ew_severity": "MEDIUM",
+  "nodes_added": [
+    {
+      "id": "N-EU-AIACT-ENF-2026",
+      "type": "Regulation",
+      "label": "EU AI Act Full Enforcement Aug 2026",
+      "properties": {
+        "effective_date": "2026-08-02",
+        "days_remaining": 74,
+        "scope": "GPAI_providers_and_high_risk_AI",
+        "max_fine_pct": 3,
+        "max_fine_fixed_eur": 15000000,
+        "high_risk_extension_date": "2028-08-02"
+      }
+    },
+    {
+      "id": "N-NVIDIA-GB300-NVL72",
+      "type": "Product",
+      "label": "NVIDIA GB300 Blackwell Ultra NVL72",
+      "properties": {
+        "status": "ramping_H1_2026",
+        "predecessor": "GB200_NVL72",
+        "fab": "TSMC",
+        "platform": "Blackwell_Ultra"
+      }
+    },
+    {
+      "id": "N-LLM-COST-BENCHMARK-2026",
+      "type": "Market_Metric",
+      "label": "LLM Inference Cost 2026 Benchmark",
+      "properties": {
+        "gpt4_level_usd_per_1m_tokens": 0.40,
+        "yoy_decline_rate": "10x",
+        "decline_since_2023": "75x",
+        "small_model_floor_usd": 0.01
+      }
+    },
+    {
+      "id": "N-ENTERPRISE-AGENTIC-AI-2026",
+      "type": "Technology_Trend",
+      "label": "Enterprise Agentic AI 2026",
+      "properties": {
+        "adoption_rate_pct": 50,
+        "challenge_rate_pct": 79,
+        "roi_barrier_pct": 54,
+        "protocols": ["MCP", "A2A"],
+        "phase": "pilot_to_production"
+      }
+    },
+    {
+      "id": "N-SOVEREIGN-AI-2026",
+      "type": "Technology_Trend",
+      "label": "Sovereign AI 2026",
+      "properties": {
+        "drivers": ["data_control", "regulatory_compliance", "security", "geopolitics"],
+        "sectors": ["government", "finance", "healthcare", "defense"]
+      }
+    }
+  ],
+  "edges_added": [
+    {
+      "source": "N-EU-AIACT-ENF-2026",
+      "target": "N-ENTERPRISE-AGENTIC-AI-2026",
+      "type": "REGULATES",
+      "weight": 0.90,
+      "note": "GPAI/high-risk AI compliance requirement impacts agentic deployments"
+    },
+    {
+      "source": "N-LLM-COST-BENCHMARK-2026",
+      "target": "N-ENTERPRISE-AGENTIC-AI-2026",
+      "type": "ENABLES_SCALE",
+      "weight": 0.85,
+      "note": "Cost deflation removes infrastructure barrier for widespread agent deployment"
+    },
+    {
+      "source": "N-NVIDIA-GB300-NVL72",
+      "target": "N-LLM-COST-BENCHMARK-2026",
+      "type": "INFRASTRUCTURE_DRIVES",
+      "weight": 0.80,
+      "note": "Next-gen GPU throughput improvement contributes to inference cost reduction"
+    },
+    {
+      "source": "N-EU-AIACT-ENF-2026",
+      "target": "N-SOVEREIGN-AI-2026",
+      "type": "EW_REGULATORY_CATALYST",
+      "weight": 0.95,
+      "ew_id": "EW-W21-001",
+      "note": "EU enforcement deadline accelerates Sovereign AI adoption as compliance strategy"
+    }
+  ],
   "summary": {
-    "new_nodes": 26,
-    "new_edges": 24,
-    "ew_events": 8,
-    "domains_updated": ["enterprise_deployment", "llm_inference", "ai_regulation", "semiconductor_ai_chip"],
-    "key_highlights": [
-      "DRAM 가격 70% 상승 — EW HIGH (임계값 50% 초과)",
-      "공급망 원자재 위기: RAMageddon·헬륨 배급제 동시 발생",
-      "EU AI Act 전면 시행 D-74일 (2026-08-02)",
-      "HBM 수요 130% YoY — 공급 제약 지속",
-      "엔터프라이즈 AI ROI 성공률 25% — 구현 품질 격차 확대",
-      "Agentic AI CAGR 44.9%, 시장 본격 성장 구간 진입"
-    ]
+    "nodes_added": 5,
+    "edges_added": 4,
+    "ew_edges": 1,
+    "dominant_theme": "Regulatory countdown (D-74) + LLM cost deflation dual structural pressure",
+    "strategic_implication": "Sovereign AI + domain-specific models optimal response to regulatory/cost dual pressure"
   }
 }

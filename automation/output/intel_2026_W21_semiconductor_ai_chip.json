@@ -1,20 +1,22 @@
 {
-  "domain": "semiconductor_ai_chip",
   "week": "2026-W21",
-  "collected_at": "2026-05-20",
+  "run_date": "2026-05-20",
+  "domain": "semiconductor_ai_chip",
   "key_facts": [
-    "NVIDIA 2026 AI 투자 $45.3B, AI 공급망 재편 중 (DIGITIMES)",
-    "AI 칩 시장 2026년 $100B 달성 예상 (전년 $92B, 29% YoY)",
-    "HBM 수요 2026년 130%+ YoY 증가 전망 (TrendForce)",
-    "DRAM 가격 2026년 70%+ 상승 — 공급 부족 지속 (RAMageddon)",
-    "카타르 헬륨 생산 파업 → 전세계 공급 1/3 차질 → 반도체 팹 헬륨 배급제 시행",
-    "AMD MI455 GPU CES 2026 발표, Ryzen AI 400 출시",
-    "DDR5가 AI 서버 주류 전환 중, 반도체 원자재(전력·구리·헬륨) 부족 심화"
+    "NVIDIA Blackwell GB200 sold out through H1 2026 — backlog estimated at 3.6 million units",
+    "GB300 (Blackwell Ultra) NVL72 platform ramp-up commenced at TSMC",
+    "Full mass production of GB200 entered at start of 2026; transitioning to GB300",
+    "TSMC supply chain ecosystem fully engaged across GB300 component tiers",
+    "Demand driven by hyperscaler AI training and inference workload expansion"
+  ],
+  "sources": [
+    "https://markets.financialcontent.com/wral/article/tokenring-2025-12-29-nvidias-blackwell-dynasty-b200-and-gb200-sold-out-through",
+    "https://intuitionlabs.ai/pdfs/nvidia-gb200-supply-chain-the-global-ecosystem-explained.pdf"
   ],
   "metrics": {
-    "ai_chip_market_size_bn": 100,
-    "hbm_demand_growth_yoy_pct": 130,
-    "dram_price_increase_pct": 70,
-    "nvidia_ai_investment_bn": 45.3
+    "gb200_backlog_units": 3600000,
+    "gb200_status": "sold_out_H1_2026",
+    "gb300_status": "ramping_H1_2026",
+    "fab": "TSMC"
   }
 }
