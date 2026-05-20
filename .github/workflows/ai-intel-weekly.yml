@@ -40,7 +40,6 @@ env:
   KG_BASE_VERSION: "4.25"
   PROTOCOL_PATH: ".github/prompts/execution_protocol_v2.6.md"
   PROTOCOL_MIN_BYTES: "500"
-  NOTION_C31_PAGE_ID_VALUE: "35155ed4-36f0-81a5-87c9-f949d7aaabae"
 
 jobs:
   # ─── Job 0: 프로토콜 검증 ─────────────────────────────────────────────────
@@ -513,26 +512,35 @@ jobs:
           print(f"[META] week={week_str} | range={week_range} | next={next_week} ({next_run_date})")
           PYEOF
 
+      - name: NOTION_C31_PAGE_ID Secret 확인
+        id: secret_check
+        run: |
+          if [ -z "${{ secrets.NOTION_C31_PAGE_ID }}" ]; then
+            echo "::warning::NOTION_C31_PAGE_ID Secret 미설정 — Weekly Report 페이지 생성을 건너뜁니다."
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Notion Weekly Report 페이지 생성
         id: create_page
+        if: steps.secret_check.outputs.skip != 'true'
         env:
           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          NOTION_C31_PAGE_ID: ${{ secrets.NOTION_C31_PAGE_ID }}
+          WEEK: ${{ steps.week_meta.outputs.week }}
+          WEEK_RANGE: ${{ steps.week_meta.outputs.week_range }}
+          NEXT_WEEK: ${{ steps.week_meta.outputs.next_week }}
+          NEXT_RUN_DATE: ${{ steps.week_meta.outputs.next_run_date }}
+          RUN_DATE: ${{ needs.ew-detection.outputs.run_date }}
+          EW_TRIGGERED: ${{ needs.ew-detection.outputs.ew_triggered }}
+          EW_COUNT: ${{ needs.ew-detection.outputs.ew_count }}
+          EW_SIGNALS: ${{ needs.ew-detection.outputs.ew_signals }}
+          EW_SEVERITY: ${{ needs.ew-detection.outputs.ew_severity }}
+          KG_VER: ${{ needs.kg-delta.outputs.kg_next_version }}
+          NODES: ${{ needs.kg-delta.outputs.node_count }}
+          EDGES: ${{ needs.kg-delta.outputs.edge_count }}
         run: |
-          WEEK="${{ steps.week_meta.outputs.week }}"
-          WEEK_RANGE="${{ steps.week_meta.outputs.week_range }}"
-          NEXT_WEEK="${{ steps.week_meta.outputs.next_week }}"
-          NEXT_RUN_DATE="${{ steps.week_meta.outputs.next_run_date }}"
-          RUN_DATE="${{ needs.ew-detection.outputs.run_date }}"
-          EW_TRIGGERED="${{ needs.ew-detection.outputs.ew_triggered }}"
-          EW_COUNT="${{ needs.ew-detection.outputs.ew_count }}"
-          EW_SIGNALS="${{ needs.ew-detection.outputs.ew_signals }}"
-          EW_SEVERITY="${{ needs.ew-detection.outputs.ew_severity }}"
-          KG_VER="${{ needs.kg-delta.outputs.kg_next_version }}"
-          NODES="${{ needs.kg-delta.outputs.node_count }}"
-          EDGES="${{ needs.kg-delta.outputs.edge_count }}"
-          # C-31 PE-EQP-MAP 고정 부모 페이지 ID
-          C31_PAGE_ID="${{ env.NOTION_C31_PAGE_ID_VALUE }}"
-
           python3 << PYEOF
           import os, json, urllib.request, urllib.error, datetime
 
@@ -549,7 +557,7 @@ jobs:
           KG_VER         = os.environ["KG_VER"]
           NODES          = os.environ["NODES"]
           EDGES          = os.environ["EDGES"]
-          C31_PAGE_ID    = os.environ["C31_PAGE_ID"]
+          C31_PAGE_ID    = os.environ["NOTION_C31_PAGE_ID"]
 
           # EW 심각도 이모지 매핑
           severity_emoji = {"HIGH": "🔴", "MEDIUM": "🟡", "LOW": "🟢", "NONE": "⚪️"}.get(EW_SEVERITY, "⚪️")
@@ -668,7 +676,7 @@ jobs:
               heading(1, "🔗 연계 리소스"),
               table_block([
                   ["항목", "링크"],
-                  ["C-31 PE-EQP-MAP", "https://www.notion.so/35155ed436f081a587c9f949d7aaabae"],
+                  ["C-31 PE-EQP-MAP", f"https://www.notion.so/{C31_PAGE_ID.replace('-','')}"],
                   ["GitHub Actions 워크플로우", "https://github.com/GilbertKwak/prompt-engineering-system/blob/main/.github/workflows/ai-intel-weekly.yml"],
                   ["EW 탐지 스크립트", "automation/ai_ew_detector.py"],
                   ["인텔 수집 스크립트", "automation/ai_intel_collector.py"],
@@ -721,20 +729,6 @@ jobs:
                   f.write("page_id=\npage_url=\n")
 
           PYEOF
-        env:
-          WEEK: ${{ steps.week_meta.outputs.week }}
-          WEEK_RANGE: ${{ steps.week_meta.outputs.week_range }}
-          NEXT_WEEK: ${{ steps.week_meta.outputs.next_week }}
-          NEXT_RUN_DATE: ${{ steps.week_meta.outputs.next_run_date }}
-          RUN_DATE: ${{ needs.ew-detection.outputs.run_date }}
-          EW_TRIGGERED: ${{ needs.ew-detection.outputs.ew_triggered }}
-          EW_COUNT: ${{ needs.ew-detection.outputs.ew_count }}
-          EW_SIGNALS: ${{ needs.ew-detection.outputs.ew_signals }}
-          EW_SEVERITY: ${{ needs.ew-detection.outputs.ew_severity }}
-          KG_VER: ${{ needs.kg-delta.outputs.kg_next_version }}
-          NODES: ${{ needs.kg-delta.outputs.node_count }}
-          EDGES: ${{ needs.kg-delta.outputs.edge_count }}
-          C31_PAGE_ID: ${{ env.NOTION_C31_PAGE_ID_VALUE }}
 
       - name: 생성된 페이지 URL 요약 출력
         if: steps.create_page.outputs.page_url != ''
