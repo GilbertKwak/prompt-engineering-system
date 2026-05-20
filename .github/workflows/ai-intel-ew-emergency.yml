@@ -29,10 +29,6 @@ on:
         description: "현재 KG 버전 (예: 4.25)"
         required: false
         default: ""
-      notion_page_id:
-        description: "Notion C-31 페이지 ID"
-        required: false
-        default: "34a55ed436f0814d9cffe6a2f0816e29"
   workflow_call:
     inputs:
       ew_domain:
@@ -49,14 +45,12 @@ on:
         required: false
         type: string
         default: ""
-      notion_page_id:
-        required: false
-        type: string
-        default: "34a55ed436f0814d9cffe6a2f0816e29"
     secrets:
       PERPLEXITY_API_KEY:
         required: true
       NOTION_API_KEY:
+        required: true
+      NOTION_C31_PAGE_ID:
         required: true
 
 env:
@@ -234,10 +228,13 @@ else:
           path: output/ew_emergency/${{ needs.ew-deep-collect.outputs.run_date }}/
         continue-on-error: true
 
+      # ── step-level env 블록으로 분리 ─────────────────────────────────────
       - name: Update Notion C-31 with EW alert
+        env:
+          NOTION_C31_PAGE_ID: ${{ secrets.NOTION_C31_PAGE_ID }}
         run: |
           python automation/notion_c31_updater.py \
-            --page-id "${{ inputs.notion_page_id }}" \
+            --page-id "$NOTION_C31_PAGE_ID" \
             --week "${{ needs.ew-deep-collect.outputs.week_id }}" \
             --run-date "${{ needs.ew-deep-collect.outputs.run_date }}" \
             --ew-triggered true \
