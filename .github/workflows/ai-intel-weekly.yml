@@ -173,7 +173,7 @@ jobs:
           echo "force_model=$FORCE_MODEL" >> $GITHUB_OUTPUT
           echo "📅 주차: $WEEK | 실행일: $RUN_DATE | 스코프: $SCOPE"
 
-      # ── 핵심 수정: step-level env 블록으로 분리 ──────────────────────────
+      # ── step-level env 블록 ───────────────────────────────────────────────
       - name: 인텔 수집 — ${{ matrix.domain }}
         env:
           PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
@@ -259,7 +259,7 @@ jobs:
           echo "week=$WEEK" >> $GITHUB_OUTPUT
           echo "run_date=$(date +%Y-%m-%d)" >> $GITHUB_OUTPUT
 
-      # ── step-level env 블록으로 분리 ─────────────────────────────────────
+      # ── step-level env 블록 ───────────────────────────────────────────────
       - name: EW 탐지 실행
         id: ew
         env:
@@ -437,7 +437,7 @@ jobs:
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
 
-      # ── step-level env 블록으로 분리 ─────────────────────────────────────
+      # ── step-level env 블록 ───────────────────────────────────────────────
       - name: Notion C-31 업데이트
         if: steps.secret_check.outputs.skip != 'true'
         env:
@@ -492,12 +492,10 @@ jobs:
           iso = today.isocalendar()
           year, week = iso[0], iso[1]
 
-          # 이번 주 월~일 범위 계산
           monday = today - timedelta(days=today.weekday())
           sunday = monday + timedelta(days=6)
           week_range = f"{monday.strftime('%Y-%m-%d')} ~ {sunday.strftime('%Y-%m-%d')}"
 
-          # 다음 주 계산 (W+1)
           next_monday = monday + timedelta(days=7)
           next_iso = next_monday.isocalendar()
           next_week = f"{next_iso[0]}-W{next_iso[1]:02d}"
@@ -524,7 +522,7 @@ jobs:
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
 
-      # ── step-level env 블록으로 분리 ─────────────────────────────────────
+      # ── step-level env 블록 — NOTION_C31_PAGE_ID secret으로만 주입 ────────
       - name: Notion Weekly Report 페이지 생성
         id: create_page
         if: steps.secret_check.outputs.skip != 'true'
@@ -548,6 +546,7 @@ jobs:
           import os, json, urllib.request, urllib.error, datetime
 
           NOTION_API_KEY = os.environ["NOTION_API_KEY"]
+          C31_PAGE_ID    = os.environ["NOTION_C31_PAGE_ID"]
           WEEK           = os.environ["WEEK"]
           WEEK_RANGE     = os.environ["WEEK_RANGE"]
           NEXT_WEEK      = os.environ["NEXT_WEEK"]
@@ -560,16 +559,13 @@ jobs:
           KG_VER         = os.environ["KG_VER"]
           NODES          = os.environ["NODES"]
           EDGES          = os.environ["EDGES"]
-          C31_PAGE_ID    = os.environ["NOTION_C31_PAGE_ID"]
 
-          # EW 심각도 이모지 매핑
           severity_emoji = {"HIGH": "🔴", "MEDIUM": "🟡", "LOW": "🟢", "NONE": "⚪️"}.get(EW_SEVERITY, "⚪️")
           ew_status = f"{severity_emoji} EW {EW_TRIGGERED.upper()} — {EW_COUNT}개 신호 ({EW_SEVERITY})" \
                       if EW_TRIGGERED == "true" else "✅ EW 없음"
 
           title = f"📊 Weekly Intel Report — {WEEK}"
 
-          # Notion 블록 구성 (rich_text children API)
           def rt(text, bold=False, code=False):
               annotations = {"bold": bold, "italic": False, "strikethrough": False,
                              "underline": False, "code": code, "color": "default"}
@@ -618,7 +614,6 @@ jobs:
           prev_fdrs = {"ASML": "0.81", "LamResearch": "0.74", "AMAT": "0.68", "KLA": "0.62", "TEL": "0.55"}
 
           children = [
-              # 메타데이터
               heading(1, "📋 리포트 메타데이터"),
               table_block([
                   ["항목", "값"],
@@ -634,7 +629,6 @@ jobs:
               ]),
               divider(),
 
-              # EW 탐지 결과
               heading(1, "🚨 EW (Early Warning) 탐지 결과"),
               callout("이 섹션은 GitHub Actions ew-detection Job 결과가 자동 주입됩니다.", "⚙️"),
               table_block([
@@ -644,7 +638,6 @@ jobs:
               ]),
               divider(),
 
-              # 도메인별 인텔
               heading(1, "📡 도메인별 인텔 수집 결과"),
               callout("이 섹션은 GitHub Actions collect-intel Job 결과가 자동 주입됩니다.", "⚙️"),
               heading(2, "🔧 PE-EQP (첨단 장비)"),
@@ -657,17 +650,15 @@ jobs:
               toggle("ASML EUV → 첨단 노드 연계", f"⏳ {WEEK} 파이프라인 실행 후 자동 채워집니다"),
               divider(),
 
-              # 주간 지표 변화 추적
               heading(1, "📈 주간 지표 변화 추적"),
               table_block([
-                  ["기업", f"EDI ({WEEK.replace(WEEK.split('-W')[1], 'W'+str(int(WEEK.split('-W')[1])-1).zfill(2))})", f"EDI ({WEEK})", f"FDRS (전주)", f"FDRS ({WEEK})", "변화"],
+                  ["기업", f"EDI (전주)", f"EDI ({WEEK})", f"FDRS (전주)", f"FDRS ({WEEK})", "변화"],
               ] + [
                   [c, prev_edi[c], "TBD", prev_fdrs[c], "TBD", "⏳"] for c in companies
               ]),
               quote("수치는 분기 IR 발표 이후 자동 갱신. 주간 리포트는 신규 규제 이벤트 발생 시에만 변동"),
               divider(),
 
-              # 액션 아이템
               heading(1, "🔗 액션 아이템"),
               todo("ASML: NL 수출허가 발표 모니터링 (주간)"),
               todo("TEL: 일본 경제안보추진법 시행령 개정 여부 확인"),
@@ -675,7 +666,6 @@ jobs:
               todo("전체: Q2 2026 IR 시즌 대비 EDI/FDRS 업데이트 준비"),
               divider(),
 
-              # 연계 리소스
               heading(1, "🔗 연계 리소스"),
               table_block([
                   ["항목", "링크"],
@@ -686,7 +676,6 @@ jobs:
               ]),
               divider(),
 
-              # 푸터
               quote(f"🤖 자동 생성: GitHub Actions create-weekly-page Job | cron: 0 1 * * 1"),
               quote(f"📅 다음 리포트: {NEXT_RUN_DATE} ({NEXT_WEEK}) 자동 생성 예정"),
           ]
