@@ -11,19 +11,28 @@ EW Severity → callout background:
   LOW    → orange_background
   NONE   → green_background
 
+Page ID resolution order:
+  1. --page-id CLI argument (highest priority)
+  2. NOTION_C31_PAGE_ID environment variable
+  3. Error if neither is provided
+
 Usage:
-  python notion_c31_updater.py \
-    --page-id        34a55ed436f0814d9cffe6a2f0816e29 \
-    --week           2026-W21 \
-    --run-date       2026-05-20 \
-    --ew-triggered   false \
-    --ew-count       0 \
-    --ew-signals     '' \
-    --ew-severity    NONE \
-    --kg-version     4.26 \
-    --node-count     8 \
-    --edge-count     14 \
+  python notion_c31_updater.py \\
+    --page-id        35355ed4-36f0-8123-b87b-ddd9195d2e54 \\
+    --week           2026-W21 \\
+    --run-date       2026-05-20 \\
+    --ew-triggered   false \\
+    --ew-count       0 \\
+    --ew-signals     '' \\
+    --ew-severity    NONE \\
+    --kg-version     4.26 \\
+    --node-count     8 \\
+    --edge-count     14 \\
     --intel-dir      output/ai_intel
+
+  Or with env var (no --page-id needed):
+  export NOTION_C31_PAGE_ID="35355ed4-36f0-8123-b87b-ddd9195d2e54"
+  python notion_c31_updater.py --week 2026-W21 ...
 """
 
 from __future__ import annotations
@@ -90,7 +99,9 @@ def _api_request(
 
 def append_blocks(page_id: str, token: str, blocks: List[Dict]) -> None:
     """Append blocks in batches of BATCH_SIZE."""
-    url = f"{NOTION_BASE}/blocks/{page_id}/children"
+    # Normalize page_id: strip dashes for API calls
+    normalized_id = page_id.replace("-", "")
+    url = f"{NOTION_BASE}/blocks/{normalized_id}/children"
     for i in range(0, len(blocks), BATCH_SIZE):
         batch = blocks[i: i + BATCH_SIZE]
         _api_request("PATCH", url, token, {"children": batch})
@@ -318,6 +329,29 @@ def _build_blocks(
 
 
 # ---------------------------------------------------------------------------
+# Page ID Resolution
+# ---------------------------------------------------------------------------
+
+def resolve_page_id(cli_page_id: Optional[str]) -> str:
+    """
+    Resolve Notion C-31 page ID with fallback priority:
+      1. --page-id CLI argument
+      2. NOTION_C31_PAGE_ID environment variable
+    """
+    if cli_page_id and cli_page_id.strip():
+        return cli_page_id.strip()
+    env_id = os.environ.get("NOTION_C31_PAGE_ID", "").strip()
+    if env_id:
+        return env_id
+    print(
+        "[ERROR] Notion C-31 page ID not found.\n"
+        "  Provide via --page-id argument OR set NOTION_C31_PAGE_ID env var.",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -355,7 +389,11 @@ def update_c31(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Notion C-31 Page Updater")
-    parser.add_argument("--page-id",       required=True)
+    parser.add_argument(
+        "--page-id",
+        default=None,
+        help="Notion C-31 page ID. Falls back to NOTION_C31_PAGE_ID env var.",
+    )
     parser.add_argument("--week",          required=True)
     parser.add_argument("--run-date",      required=True)
     parser.add_argument("--ew-triggered",  default="false")
@@ -373,8 +411,11 @@ def main() -> None:
         print("[ERROR] NOTION_API_KEY environment variable not set.", file=sys.stderr)
         sys.exit(1)
 
+    page_id = resolve_page_id(args.page_id)
+    print(f"[Notion] Target page ID: {page_id}")
+
     update_c31(
-        page_id=args.page_id,
+        page_id=page_id,
         week=args.week,
         run_date=args.run_date,
         ew_triggered=args.ew_triggered.lower() == "true",
