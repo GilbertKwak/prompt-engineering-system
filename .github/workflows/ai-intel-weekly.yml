@@ -4,6 +4,24 @@
 # workflow_dispatch로 수동 실행 가능
 #
 # [SSOT] .github/prompts/execution_protocol_v2.6.md
+#
+# ── Secret 사용 원칙 ──────────────────────────────────────────────────────────
+# 모든 secrets.*는 job-level env: 블록이 아닌 step-level env: 블록에만 선언합니다.
+# 이유: secrets는 필요한 step에만 최소 노출 (principle of least privilege).
+#
+# ┌─────────────────────────┬───────────────────────────┬────────────────────┐
+# │ Job                     │ Step                      │ Secret             │
+# ├─────────────────────────┼───────────────────────────┼────────────────────┤
+# │ collect-intel           │ 인텔 수집 — {domain}      │ PERPLEXITY_API_KEY │
+# │ ew-detection            │ EW 탐지 실행              │ PERPLEXITY_API_KEY │
+# │ notion-update           │ Notion C-31 업데이트      │ NOTION_API_KEY     │
+# │                         │                           │ NOTION_C31_PAGE_ID │
+# │ create-weekly-page      │ Notion Weekly Report 생성 │ NOTION_API_KEY     │
+# │                         │                           │ NOTION_C31_PAGE_ID │
+# └─────────────────────────┴───────────────────────────┴────────────────────┘
+#
+# ※ kg-delta, protocol-check, ew-alert, pipeline-summary 는
+#   secrets를 직접 사용하지 않으므로 env 선언 불필요.
 # ─────────────────────────────────────────────────────────────────────────────
 name: "PE · AI Intel Weekly Digest"
 
@@ -46,6 +64,7 @@ jobs:
   protocol-check:
     name: "0. 실행 프로토콜 SSOT 검증"
     runs-on: ubuntu-latest
+    # secrets 사용 없음
 
     outputs:
       protocol_hash: ${{ steps.hash.outputs.hash }}
@@ -115,6 +134,7 @@ jobs:
     name: "1. 도메인별 인텔 수집"
     needs: protocol-check
     runs-on: ubuntu-latest
+    # secrets: PERPLEXITY_API_KEY → "인텔 수집 — {domain}" step에만 주입
     strategy:
       matrix:
         domain:
@@ -173,7 +193,7 @@ jobs:
           echo "force_model=$FORCE_MODEL" >> $GITHUB_OUTPUT
           echo "📅 주차: $WEEK | 실행일: $RUN_DATE | 스코프: $SCOPE"
 
-      # ── step-level env 블록 ───────────────────────────────────────────────
+      # ── step-level env 블록 — PERPLEXITY_API_KEY 이 step에만 노출 ─────────
       - name: 인텔 수집 — ${{ matrix.domain }}
         env:
           PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
@@ -212,6 +232,7 @@ jobs:
     name: "2. Early Warning 탐지"
     needs: [protocol-check, collect-intel]
     runs-on: ubuntu-latest
+    # secrets: PERPLEXITY_API_KEY → "EW 탐지 실행" step에만 주입
 
     outputs:
       ew_triggered: ${{ steps.ew.outputs.ew_triggered }}
@@ -259,7 +280,7 @@ jobs:
           echo "week=$WEEK" >> $GITHUB_OUTPUT
           echo "run_date=$(date +%Y-%m-%d)" >> $GITHUB_OUTPUT
 
-      # ── step-level env 블록 ───────────────────────────────────────────────
+      # ── step-level env 블록 — PERPLEXITY_API_KEY 이 step에만 노출 ─────────
       - name: EW 탐지 실행
         id: ew
         env:
@@ -303,6 +324,7 @@ jobs:
     name: "3. Knowledge Graph 델타 생성"
     needs: [protocol-check, ew-detection]
     runs-on: ubuntu-latest
+    # secrets 사용 없음
 
     outputs:
       kg_next_version: ${{ steps.kg.outputs.next_version }}
@@ -395,6 +417,7 @@ jobs:
     name: "4. Notion C-31 업데이트"
     needs: [protocol-check, ew-detection, kg-delta]
     runs-on: ubuntu-latest
+    # secrets: NOTION_API_KEY, NOTION_C31_PAGE_ID → "Notion C-31 업데이트" step에만 주입
 
     steps:
       - uses: actions/checkout@v4
@@ -437,7 +460,7 @@ jobs:
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
 
-      # ── step-level env 블록 ───────────────────────────────────────────────
+      # ── step-level env 블록 — NOTION_API_KEY / NOTION_C31_PAGE_ID 이 step에만 노출 ─
       - name: Notion C-31 업데이트
         if: steps.secret_check.outputs.skip != 'true'
         env:
@@ -462,6 +485,7 @@ jobs:
     name: "4.5. Notion Weekly Intel Report 페이지 생성"
     needs: [protocol-check, ew-detection, kg-delta]
     runs-on: ubuntu-latest
+    # secrets: NOTION_API_KEY, NOTION_C31_PAGE_ID → "Notion Weekly Report 페이지 생성" step에만 주입
 
     outputs:
       page_url: ${{ steps.create_page.outputs.page_url }}
@@ -522,7 +546,8 @@ jobs:
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
 
-      # ── step-level env 블록 — secrets만 주입, 나머지는 env var로 참조 ─────
+      # ── step-level env 블록 — NOTION_API_KEY / NOTION_C31_PAGE_ID 이 step에만 노출 ─
+      # ※ Python 코드에서 os.environ["NOTION_API_KEY"] 로 읽는 구조와 완전히 일치
       - name: Notion Weekly Report 페이지 생성
         id: create_page
         if: steps.secret_check.outputs.skip != 'true'
@@ -750,6 +775,7 @@ jobs:
     needs: [protocol-check, ew-detection]
     runs-on: ubuntu-latest
     if: needs.ew-detection.outputs.ew_triggered == 'true' && needs.ew-detection.outputs.ew_severity == 'HIGH'
+    # secrets 사용 없음 (github-script는 GITHUB_TOKEN 자동 주입)
 
     steps:
       - name: EW 긴급 Issue 생성
@@ -785,6 +811,7 @@ jobs:
     needs: [protocol-check, ew-detection, kg-delta, notion-update, create-weekly-page]
     runs-on: ubuntu-latest
     if: always()
+    # secrets 사용 없음
 
     steps:
       - name: Step Summary 및 로그 출력
