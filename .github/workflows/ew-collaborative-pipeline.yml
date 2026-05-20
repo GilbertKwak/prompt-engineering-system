@@ -310,10 +310,12 @@ print(f'{max(versions):.2f}' if versions else '4.25')
           git push || true
 
       # ── GitHub Issue 자동 생성 (HIGH/CRITICAL) ────────────────
+      # FIX: create_github_issue — workflow_dispatch boolean은 문자열 "true"/"false"로
+      #      전달될 수 있으므로 == true 와 == 'true' 모두 처리
       - name: "[GitHub] EW 알림 Issue 생성"
         id: issue
         if: |
-          (inputs.create_github_issue == true || inputs.create_github_issue == '') &&
+          (inputs.create_github_issue == true || inputs.create_github_issue == 'true' || inputs.create_github_issue == '') &&
           (needs.perplexity-research.outputs.ew_severity == 'HIGH' ||
            needs.perplexity-research.outputs.ew_severity == 'CRITICAL')
         env:
@@ -435,10 +437,10 @@ EOF
             --perplexity-model "${{ needs.perplexity-research.outputs.perplexity_model }}" \
             --intel-dir        "output/ew_collab/${{ needs.perplexity-research.outputs.run_date }}"
 
-          # notion_c31_updater.py가 update_status / page_url을 stdout으로 출력한다고 가정
-          # 실제 스크립트에 맞춰 조정 필요
-          echo "update_status=success"                                           >> $GITHUB_OUTPUT
-          echo "page_url=https://notion.so/$NOTION_C31_PAGE_ID"                 >> $GITHUB_OUTPUT
+          # FIX: page_url output에 secret 값($NOTION_C31_PAGE_ID) 직접 노출 방지
+          #      → notion_c31_updater.py가 출력하는 page_url을 사용하거나 고정 placeholder 사용
+          echo "update_status=success" >> $GITHUB_OUTPUT
+          echo "page_url=https://www.notion.so/c31-dashboard" >> $GITHUB_OUTPUT
 
       # ── Notion → GitHub 피드백 루프: 처리 완료 Issue 코멘트 ───
       - name: "[Notion→GitHub] 처리 완료 피드백"
@@ -509,7 +511,6 @@ Perplexity (수집) → GitHub Actions (처리) → Notion (저장) ✅
           NOTION_C31_PAGE_ID: ${{ secrets.NOTION_C31_PAGE_ID }}
         run: |
           echo "=== [검증-①] Notion Read-back 시작 ==="
-          echo "대상 페이지: $NOTION_C31_PAGE_ID"
           echo "재시도 최대: $NOTION_VERIFY_RETRY_MAX 회"
           echo "재시도 간격: ${NOTION_VERIFY_RETRY_DELAY}초"
           echo ""
@@ -552,10 +553,10 @@ PYEOF
 
             if [ $? -eq 0 ]; then
               READBACK_OK="true"
-              echo "✅ Read-back 성공 (시도 $RETRY)"
+              echo "Read-back 성공 (시도 $RETRY)"
               break
             else
-              echo "⚠️  Read-back 실패 — ${NOTION_VERIFY_RETRY_DELAY}초 후 재시도..."
+              echo "Read-back 실패 — ${NOTION_VERIFY_RETRY_DELAY}초 후 재시도..."
               sleep "$NOTION_VERIFY_RETRY_DELAY"
             fi
           done
@@ -563,7 +564,7 @@ PYEOF
           echo "readback_ok=$READBACK_OK" >> $GITHUB_OUTPUT
 
           if [ "$READBACK_OK" = "false" ]; then
-            echo "❌ Read-back 최대 재시도($NOTION_VERIFY_RETRY_MAX) 초과"
+            echo "Read-back 최대 재시도($NOTION_VERIFY_RETRY_MAX) 초과"
           fi
 
       # ── ② Field-check: 핵심 필드 값 일치 확인 ─────────────────
@@ -664,12 +665,12 @@ for notion_key, (exp_key, mode) in FIELD_MAP.items():
             warnings.append(f"EMPTY    | {notion_key:<18} | (값 없음)")
     elif mode == "exact":
         if actual.strip() == exp_val.strip():
-            passed.append(f"EXACT ✓  | {notion_key:<18} | '{actual}'")
+            passed.append(f"EXACT OK | {notion_key:<18} | '{actual}'")
         else:
             failed.append(f"MISMATCH | {notion_key:<18} | expected='{exp_val}' actual='{actual}'")
     elif mode == "contains":
         if exp_val and exp_val in actual:
-            passed.append(f"CONTAINS✓| {notion_key:<18} | '{actual}' ⊇ '{exp_val}'")
+            passed.append(f"CONT. OK | {notion_key:<18} | '{actual}' contains '{exp_val}'")
         elif not exp_val and actual:
             passed.append(f"NONEMPTY | {notion_key:<18} | '{actual}'")
         else:
@@ -683,11 +684,11 @@ print(f"{'WARNINGS':>8}: {len(warnings)}")
 print()
 
 for line in passed:
-    print(f"  ✅ {line}")
+    print(f"  [OK]  {line}")
 for line in warnings:
-    print(f"  ⚠️  {line}")
+    print(f"  [WRN] {line}")
 for line in failed:
-    print(f"  ❌ {line}")
+    print(f"  [ERR] {line}")
 
 # ── GitHub Output 저장 ──────────────────────────────────────
 with open(os.environ["GITHUB_OUTPUT"], "a") as fout:
@@ -735,26 +736,31 @@ total_score     = readback_score + field_score
 # ── 판정 ────────────────────────────────────────────────────
 if total_score >= pass_thr:
     result = "PASS"
-    icon   = "✅"
+    result_icon = "[PASS]"
 elif total_score >= warn_thr:
     result = "WARN"
-    icon   = "⚠️ "
+    result_icon = "[WARN]"
 else:
     result = "FAIL"
-    icon   = "❌"
+    result_icon = "[FAIL]"
+
+# FIX: 이모지 제거 → ASCII 텍스트로 대체 (멀티바이트 이모지의 고정폭 포맷 정렬 깨짐 수정)
+readback_label = "OK  " if readback_ok else "FAIL"
 
 # ── 보고서 출력 ─────────────────────────────────────────────
+W = 50
+LINE = "=" * W
 print()
-print("╔══════════════════════════════════════════════╗")
-print("║         Notion 검증 체계 최종 결과           ║")
-print("╠══════════════════════════════════════════════╣")
-print(f"║  Read-back    : {'✅ OK' if readback_ok else '❌ FAIL':<8}   ({readback_score:>2}/30점)  ║")
-print(f"║  Field-check  : {fields_passed}/{fields_total} 통과   ({field_score:>2}/70점)  ║")
-print(f"║  ── 실패 필드 : {fields_failed}개                          ║")
-print(f"╠══════════════════════════════════════════════╣")
-print(f"║  최종 점수    : {total_score:>3}점                         ║")
-print(f"║  최종 판정    : {icon} {result:<6}  (기준: PASS≥{pass_thr}, WARN≥{warn_thr})  ║")
-print("╚══════════════════════════════════════════════╝")
+print(f"+{LINE}+")
+print(f"| {'Notion 검증 체계 최종 결과':<{W-1}}|")
+print(f"+{LINE}+")
+print(f"| {'Read-back    : ' + readback_label:<{W-1}}({readback_score:>2}/30점) |")
+print(f"| {f'Field-check  : {fields_passed}/{fields_total} 통과':<{W-1}}({field_score:>2}/70점) |")
+print(f"| {'  실패 필드  : ' + str(fields_failed) + '개':<{W-1}}|")
+print(f"+{LINE}+")
+print(f"| {'최종 점수    : ' + str(total_score) + '점':<{W-1}}|")
+print(f"| {result_icon + ' ' + result + f'  (기준: PASS>={pass_thr}, WARN>={warn_thr})':<{W-1}}|")
+print(f"+{LINE}+")
 print()
 
 # ── GitHub Output 저장 ──────────────────────────────────────
@@ -766,10 +772,10 @@ with open(os.environ["GITHUB_OUTPUT"], "a") as fout:
 
 # FAIL이면 워크플로우를 실패로 처리
 if result == "FAIL":
-    print("❌ 검증 FAIL — Notion 동기화 상태 점검 필요", file=sys.stderr)
+    print("[FAIL] 검증 실패 — Notion 동기화 상태 점검 필요", file=sys.stderr)
     sys.exit(1)
 elif result == "WARN":
-    print("⚠️  검증 WARN — 일부 필드 불일치, 수동 확인 권장")
+    print("[WARN] 검증 경고 — 일부 필드 불일치, 수동 확인 권장")
 
 sys.exit(0)
 PYEOF
@@ -789,16 +795,16 @@ PYEOF
           FIELDS_FAILED="${{ steps.field_check.outputs.fields_failed || '0' }}"
           READBACK_OK="${{ steps.readback.outputs.readback_ok }}"
 
-          if   [ "$VERIFY_RESULT" = "PASS" ]; then ICON="✅"; COLOR="🟢"
-          elif [ "$VERIFY_RESULT" = "WARN" ]; then ICON="⚠️";  COLOR="🟡"
-          else                                     ICON="❌"; COLOR="🔴"
+          if   [ "$VERIFY_RESULT" = "PASS" ]; then ICON="[PASS]"; COLOR="GREEN"
+          elif [ "$VERIFY_RESULT" = "WARN" ]; then ICON="[WARN]"; COLOR="YELLOW"
+          else                                     ICON="[FAIL]"; COLOR="RED"
           fi
 
           # FIX: READBACK_OK 변수를 이중 따옴표로 감싸 정상적으로 치환되도록 수정
           if [ "$READBACK_OK" = "true" ]; then
-            READBACK_STATUS="🟢 성공"
+            READBACK_STATUS="성공"
           else
-            READBACK_STATUS="🔴 실패"
+            READBACK_STATUS="실패"
           fi
 
           gh issue comment "$ISSUE_NUM" \
@@ -806,11 +812,11 @@ PYEOF
 
 | 검증 항목 | 결과 |
 |----------|------|
-| **①  Read-back** | $READBACK_STATUS |
+| **① Read-back** | $READBACK_STATUS |
 | **② Field-check** | $FIELDS_PASSED 통과 / $FIELDS_FAILED 실패 |
-| **③ 최종 판정** | $COLOR **$VERIFY_RESULT** ($VERIFY_SCORE/100점) |
+| **③ 최종 판정** | **$VERIFY_RESULT** ($VERIFY_SCORE/100점) |
 
-> 검증 기준: PASS ≥ ${NOTION_VERIFY_PASS_THRESHOLD}점, WARN ≥ ${NOTION_VERIFY_WARN_THRESHOLD}점
+> 검증 기준: PASS >= ${NOTION_VERIFY_PASS_THRESHOLD}점, WARN >= ${NOTION_VERIFY_WARN_THRESHOLD}점
 
 *EW Collaborative Pipeline v$PIPELINE_VERSION — Notion 검증 체계*" \
             --repo "${{ github.repository }}" || true
@@ -887,24 +893,24 @@ PYEOF
           P35_STATUS="${{ needs.notion-verification.result }}"
 
           if [ "$P1" != "success" ]; then
-            echo "❌ PHASE 1 (Perplexity Research) 실패 — 파이프라인 이상"
+            echo "[FAIL] PHASE 1 (Perplexity Research) 실패 — 파이프라인 이상"
             exit 1
           fi
 
           if [ "$P3" = "failure" ]; then
-            echo "⚠️  PHASE 3 (Notion Sync) 실패 — Notion 업데이트 수동 확인 필요"
+            echo "[WARN] PHASE 3 (Notion Sync) 실패 — Notion 업데이트 수동 확인 필요"
             exit 1
           fi
 
           if [ "$P35_STATUS" = "failure" ] || [ "$P35_RESULT" = "FAIL" ]; then
-            echo "❌ PHASE 3.5 (Notion 검증) FAIL — Notion 동기화 품질 이상"
+            echo "[FAIL] PHASE 3.5 (Notion 검증) FAIL — Notion 동기화 품질 이상"
             echo "   검증 점수: ${{ needs.notion-verification.outputs.verify_score }}/100"
             exit 1
           fi
 
           if [ "$P35_RESULT" = "WARN" ]; then
-            echo "⚠️  PHASE 3.5 (Notion 검증) WARN — 일부 필드 불일치, 수동 확인 권장"
+            echo "[WARN] PHASE 3.5 (Notion 검증) WARN — 일부 필드 불일치, 수동 확인 권장"
           fi
 
-          echo "✅ 파이프라인 전체 완료 — 모든 Phase 정상"
+          echo "[OK] 파이프라인 전체 완료 — 모든 Phase 정상"
           echo "   Notion 검증 점수: ${{ needs.notion-verification.outputs.verify_score }}/100 ($P35_RESULT)"
