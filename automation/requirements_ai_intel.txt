@@ -1,5 +1,32 @@
-# AI Intel Weekly - Python dependencies
+# ============================================================
+# requirements_ai_intel.txt
+# AI Intel Weekly Pipeline — 4 scripts dependency manifest
+# ai_intel_collector.py / ai_ew_detector.py /
+# kg_delta_generator.py / notion_c31_updater.py
+# Last updated: 2026-05-20
+# ============================================================
+
+# ── HTTP / API ──────────────────────────────────────────────
 requests>=2.31.0
-python-dotenv>=1.0.0
-openai>=1.0.0
-httpx>=0.25.0
+httpx>=0.27.0            # async HTTP (ai_intel_collector fallback)
+
+# ── Notion API ──────────────────────────────────────────────
+notion-client>=2.2.1     # notion_c31_updater.py
+
+# ── Data processing ─────────────────────────────────────────
+python-dateutil>=2.9.0   # date parsing across all scripts
+pydantic>=2.7.0          # data validation / schema (kg_delta_generator)
+
+# ── CLI / Environment ────────────────────────────────────────
+python-dotenv>=1.0.1     # load .env for local testing
+click>=8.1.7             # CLI argument parsing (collector, updater)
+
+# ── Logging / Utilities ─────────────────────────────────────
+rich>=13.7.1             # colored terminal output
+tenacity>=8.3.0          # retry logic with exponential backoff
+
+# ── JSON / Parsing ──────────────────────────────────────────
+jsonschema>=4.22.0       # kg_delta_generator schema validation
+
+# ── Type hints (Python < 3.11 compat) ───────────────────────
+typing-extensions>=4.11.0
