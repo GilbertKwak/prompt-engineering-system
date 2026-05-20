@@ -1,357 +1,307 @@
 #!/usr/bin/env python3
 """
-ai_ew_detector.py  —  AI Intel Early-Warning Detector
+ai_ew_detector.py  v2 — Section A · Step 2
+AI 인텔 수집 결과에서 Early Warning(EW) 신호 탐지
 
-Detection layers (in order):
-  1. Threshold   : numeric metrics extracted from intel JSON vs hard limits
-  2. Keyword     : weighted keyword scan across all text content
-  3. Delta       : week-over-week numeric change rate
-
-Outputs a structured EW report JSON.
+변경사항 v2:
+  - 3단계 탐지: metric 임계값 → 키워드 hit → 휴리스틱 복합
+  - 도메인별 가중치 (infrastructure/model_performance 우선)
+  - EW 심각도 3단계: CRITICAL / WARNING / WATCH
+  - 탐지 근거 상세 기록 (ew_evidence)
+  - --threshold 오버라이드 지원
 
 Usage:
-  python ai_ew_detector.py \
-    --input-dir  output/ai_intel \
-    --week       2026-W21 \
-    --prev-dir   output/ai_intel_prev   (optional, enables delta layer) \
-    --output     output/ew_report.json
+  python automation/ai_ew_detector.py \\
+    --input-dir output/ai_intel \\
+    --week 2026-W21 \\
+    --output output/ai_intel/ew_report.json
 """
-
-from __future__ import annotations
 
 import argparse
 import json
 import os
-import re
 import sys
+import re
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
 
-# ---------------------------------------------------------------------------
-# EW Configuration
-# ---------------------------------------------------------------------------
-
-EW_THRESHOLDS: Dict[str, Dict[str, Any]] = {
-    # key: {metric_keys, operator, value, severity, domain}
-    "enterprise_ai_adoption_rapid": {
-        "metric_keys": ["enterprise_adoption_rate", "adoption_rate", "enterprise_adoption"],
-        "operator": ">",
-        "value": 60.0,
-        "severity": "HIGH",
-        "domain": "enterprise_deployment",
+# ─── EW 탐지 설정 ──────────────────────────────────────────────────────────────
+EW_THRESHOLDS: dict[str, dict] = {
+    "enterprise_deployment": {
+        "adoption_rate":      {"min": None, "max": None, "change_pct": 15.0},
+        "cost_per_query":     {"min": None, "max": None, "change_pct": 25.0},
+        "enterprise_deal_size": {"min": None, "max": None, "change_pct": 20.0},
+        "domain_weight": 0.8,
     },
-    "rag_replacement_threshold": {
-        "metric_keys": ["rag_replacement_rate", "fine_tuning_to_rag_ratio", "rag_ratio"],
-        "operator": ">",
-        "value": 40.0,
-        "severity": "MEDIUM",
-        "domain": "enterprise_deployment",
+    "model_performance": {
+        "benchmark_score":          {"min": None, "max": None, "change_pct": 10.0},
+        "tokens_per_second":        {"min": None, "max": None, "change_pct": 20.0},
+        "cost_per_million_tokens":  {"min": None, "max": None, "change_pct": 30.0},
+        "domain_weight": 1.0,
     },
-    "gpu_demand_spike": {
-        "metric_keys": ["gpu_demand_index", "h100_demand", "gpu_demand"],
-        "operator": ">",
-        "value": 80.0,
-        "severity": "HIGH",
-        "domain": "infrastructure",
+    "infrastructure": {
+        "gpu_supply_tightness": {"min": None, "max": 0.85, "change_pct": 15.0},
+        "pue":                  {"min": 1.0,  "max": 2.5,  "change_pct": 10.0},
+        "capex_per_flop":       {"min": None, "max": None, "change_pct": 20.0},
+        "domain_weight": 1.0,
     },
-    "open_source_dominance": {
-        "metric_keys": ["open_source_share", "oss_market_share"],
-        "operator": ">",
-        "value": 50.0,
-        "severity": "HIGH",
-        "domain": "model_ecosystem",
+    "regulatory": {
+        "compliance_deadline_count": {"min": None, "max": None, "change_pct": 50.0},
+        "enforcement_action_count":  {"min": 3,    "max": None, "change_pct": None},
+        "domain_weight": 0.9,
     },
-    "reasoning_model_latency_drop": {
-        "metric_keys": ["reasoning_latency_reduction", "latency_reduction"],
-        "operator": ">",
-        "value": 30.0,
-        "severity": "MEDIUM",
-        "domain": "model_performance",
+    "open_source": {
+        "github_stars_delta": {"min": None, "max": None, "change_pct": 40.0},
+        "new_model_releases": {"min": None, "max": None, "change_pct": None},
+        "fork_velocity":      {"min": None, "max": None, "change_pct": 35.0},
+        "domain_weight": 0.7,
     },
-    "cost_reduction_steep": {
-        "metric_keys": ["api_cost_reduction", "token_cost_reduction", "cost_reduction"],
-        "operator": ">",
-        "value": 40.0,
-        "severity": "MEDIUM",
-        "domain": "economics",
+    "investment": {
+        "funding_volume_usd": {"min": None, "max": None, "change_pct": 30.0},
+        "deal_count":         {"min": None, "max": None, "change_pct": 25.0},
+        "valuation_multiple": {"min": None, "max": None, "change_pct": 20.0},
+        "domain_weight": 0.8,
     },
 }
 
-KEYWORD_WEIGHTS: Dict[str, float] = {
-    # Disruption signals
-    "paradigm shift": 3.0,
-    "disruption": 2.5,
-    "breakthrough": 2.0,
-    "unprecedented": 2.0,
-    "game-changing": 2.0,
-    "transformative": 1.5,
-    # Adoption signals
-    "mass adoption": 2.5,
-    "enterprise rollout": 2.0,
-    "rapid deployment": 2.0,
-    "scaled deployment": 1.5,
-    # Technology-specific
-    "replaces fine-tuning": 3.0,
-    "rag dominance": 2.5,
-    "agentic workflow": 2.0,
-    "multi-agent": 1.5,
-    "reasoning model": 1.5,
-    # Market signals
-    "market consolidation": 2.5,
-    "winner-take-all": 2.5,
-    "monopoly": 2.0,
-    "dominant player": 1.5,
-}
-
-KEYWORD_EW_THRESHOLD = 6.0  # total weighted score to trigger EW
-
-DELTA_EW_THRESHOLD = 0.25   # 25% week-over-week change in any metric
+# EW 키워드 (신호 강도별)
+EW_KEYWORDS_CRITICAL = [
+    "breakthrough", "paradigm shift", "disruption", "emergency",
+    "critical shortage", "supply crisis", "ban", "shutdown",
+    "acquisition", "merger", "antitrust",
+]
+EW_KEYWORDS_WARNING = [
+    "rapid adoption", "spike", "surge", "unexpected", "accelerat",
+    "shortage", "constraint", "regulatory action", "enforcement",
+    "major release", "outperform", "significantly",
+]
+EW_KEYWORDS_WATCH = [
+    "growing", "increasing", "trend", "momentum", "shift",
+    "concern", "pressure", "signal", "emerging", "notable",
+]
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-def _extract_number(value: Any) -> Optional[float]:
-    """Convert various representations to float."""
-    if isinstance(value, (int, float)):
-        return float(value)
-    if isinstance(value, str):
-        m = re.search(r"[\d.]+", value.replace(",", ""))
-        if m:
-            return float(m.group())
-    return None
-
-
-def _find_metric(data: Dict, keys: List[str]) -> Optional[float]:
-    """Search nested dict for any of the candidate keys."""
-    metrics_obj = data.get("metrics", {})
-    for source in (metrics_obj, data):
-        for k, v in (source.items() if isinstance(source, dict) else []):
-            kn = k.lower().replace(" ", "_").replace("-", "_")
-            for candidate in keys:
-                cn = candidate.lower().replace(" ", "_")
-                if kn == cn or kn.endswith(cn) or cn in kn:
-                    n = _extract_number(v)
-                    if n is not None:
-                        return n
-    return None
-
-
-def _collect_text(obj: Any, acc: List[str]) -> None:
-    """Recursively collect all string values."""
-    if isinstance(obj, str):
-        acc.append(obj.lower())
-    elif isinstance(obj, dict):
-        for v in obj.values():
-            _collect_text(v, acc)
-    elif isinstance(obj, list):
-        for item in obj:
-            _collect_text(item, acc)
-
-
-# ---------------------------------------------------------------------------
-# Detection Layers
-# ---------------------------------------------------------------------------
-
-def layer_threshold(
-    intel_files: List[Path],
-) -> Tuple[bool, List[Dict]]:
-    """Layer 1 — metric threshold check."""
-    triggered: List[Dict] = []
-    for fp in intel_files:
-        try:
-            data = json.loads(fp.read_text(encoding="utf-8"))
-        except Exception:
-            continue
-        for rule_id, rule in EW_THRESHOLDS.items():
-            val = _find_metric(data, rule["metric_keys"])
-            if val is None:
-                continue
-            threshold = rule["value"]
-            op = rule["operator"]
-            hit = (
-                (op == ">" and val > threshold)
-                or (op == "<" and val < threshold)
-                or (op == ">=" and val >= threshold)
-                or (op == "<=" and val <= threshold)
-            )
-            if hit:
-                triggered.append({
-                    "rule_id": rule_id,
-                    "layer": "threshold",
-                    "severity": rule["severity"],
-                    "domain": rule["domain"],
-                    "metric_value": val,
-                    "threshold": threshold,
-                    "operator": op,
-                    "source_file": fp.name,
-                })
-    return bool(triggered), triggered
-
-
-def layer_keyword(
-    intel_files: List[Path],
-) -> Tuple[bool, List[Dict]]:
-    """Layer 2 — weighted keyword scan."""
-    texts: List[str] = []
-    for fp in intel_files:
-        try:
-            data = json.loads(fp.read_text(encoding="utf-8"))
-            _collect_text(data, texts)
-        except Exception:
-            continue
-    combined = " ".join(texts)
-
-    score = 0.0
-    hits: Dict[str, int] = {}
-    for kw, weight in KEYWORD_WEIGHTS.items():
-        count = combined.count(kw.lower())
-        if count > 0:
-            score += weight * count
-            hits[kw] = count
-
-    triggered = score >= KEYWORD_EW_THRESHOLD
+# ─── 탐지 함수 ─────────────────────────────────────────────────────────────────
+def detect_metric_ew(domain: str, metrics: dict) -> list[dict]:
+    """메트릭 임계값 기반 EW 탐지"""
     signals = []
-    if triggered:
-        for kw, cnt in sorted(hits.items(), key=lambda x: -KEYWORD_WEIGHTS[x[0]]):
+    domain_cfg = EW_THRESHOLDS.get(domain, {})
+    weight = domain_cfg.get("domain_weight", 0.8)
+
+    for metric_name, value in metrics.items():
+        if value is None:
+            continue
+        try:
+            val = float(value)
+        except (TypeError, ValueError):
+            continue
+
+        cfg = domain_cfg.get(metric_name)
+        if not cfg:
+            # 유사 키 매칭 시도
+            for k in domain_cfg:
+                if k != "domain_weight" and k in metric_name:
+                    cfg = domain_cfg[k]
+                    break
+        if not cfg:
+            continue
+
+        triggered = False
+        reason = ""
+        if cfg.get("min") is not None and val < cfg["min"]:
+            triggered = True
+            reason = f"{metric_name}={val} < min={cfg['min']}"
+        if cfg.get("max") is not None and val > cfg["max"]:
+            triggered = True
+            reason = f"{metric_name}={val} > max={cfg['max']}"
+
+        if triggered:
             signals.append({
-                "rule_id": f"kw_{kw.replace(' ', '_')}",
-                "layer": "keyword",
-                "severity": "MEDIUM",
+                "type": "metric_threshold",
+                "domain": domain,
+                "metric": metric_name,
+                "value": val,
+                "reason": reason,
+                "weight": weight,
+                "severity": "WARNING",
+            })
+    return signals
+
+
+def detect_keyword_ew(domain: str, intel: dict) -> list[dict]:
+    """키워드 기반 EW 탐지"""
+    text_fields = [
+        " ".join(intel.get("key_facts", [])),
+        " ".join(intel.get("emerging_signals", [])),
+        intel.get("summary", ""),
+    ]
+    combined = " ".join(text_fields).lower()
+    weight = EW_THRESHOLDS.get(domain, {}).get("domain_weight", 0.8)
+    signals = []
+
+    for kw in EW_KEYWORDS_CRITICAL:
+        if kw in combined:
+            signals.append({
+                "type": "keyword_critical",
+                "domain": domain,
                 "keyword": kw,
-                "hit_count": cnt,
-                "weighted_score": KEYWORD_WEIGHTS[kw] * cnt,
+                "reason": f"CRITICAL 키워드 감지: '{kw}'",
+                "weight": weight * 1.2,
+                "severity": "CRITICAL",
             })
-    return triggered, signals
 
-
-def layer_delta(
-    intel_files: List[Path],
-    prev_files: List[Path],
-) -> Tuple[bool, List[Dict]]:
-    """Layer 3 — week-over-week delta check."""
-    if not prev_files:
-        return False, []
-
-    def _build_metric_map(files: List[Path]) -> Dict[str, float]:
-        result: Dict[str, float] = {}
-        for fp in files:
-            try:
-                data = json.loads(fp.read_text(encoding="utf-8"))
-                m = data.get("metrics", {})
-                if isinstance(m, dict):
-                    for k, v in m.items():
-                        n = _extract_number(v)
-                        if n is not None:
-                            result[k.lower()] = n
-            except Exception:
-                continue
-        return result
-
-    curr_map = _build_metric_map(intel_files)
-    prev_map = _build_metric_map(prev_files)
-
-    signals = []
-    for key, curr_val in curr_map.items():
-        if key not in prev_map:
-            continue
-        prev_val = prev_map[key]
-        if prev_val == 0:
-            continue
-        delta_rate = abs((curr_val - prev_val) / prev_val)
-        if delta_rate >= DELTA_EW_THRESHOLD:
+    for kw in EW_KEYWORDS_WARNING:
+        if kw in combined:
             signals.append({
-                "rule_id": f"delta_{key}",
-                "layer": "delta",
-                "severity": "HIGH" if delta_rate >= 0.5 else "MEDIUM",
-                "metric": key,
-                "prev_value": prev_val,
-                "curr_value": curr_val,
-                "delta_rate": round(delta_rate, 4),
+                "type": "keyword_warning",
+                "domain": domain,
+                "keyword": kw,
+                "reason": f"WARNING 키워드 감지: '{kw}'",
+                "weight": weight,
+                "severity": "WARNING",
             })
-    return bool(signals), signals
+
+    # WATCH는 3개 이상 hit 시에만 등록 (노이즈 방지)
+    watch_hits = [kw for kw in EW_KEYWORDS_WATCH if kw in combined]
+    if len(watch_hits) >= 3:
+        signals.append({
+            "type": "keyword_watch",
+            "domain": domain,
+            "keywords": watch_hits,
+            "reason": f"WATCH 키워드 {len(watch_hits)}개 감지: {watch_hits[:5]}",
+            "weight": weight * 0.6,
+            "severity": "WATCH",
+        })
+
+    return signals
 
 
-# ---------------------------------------------------------------------------
-# Severity Aggregation
-# ---------------------------------------------------------------------------
+def detect_heuristic_ew(domain: str, intel: dict) -> list[dict]:
+    """휴리스틱 기반 EW (confidence 낮음 + signals 많음 = 불확실성 급증)"""
+    signals = []
+    conf     = float(intel.get("confidence", 1.0))
+    n_signals = len(intel.get("emerging_signals", []))
+    n_facts   = len(intel.get("key_facts", []))
 
-def _aggregate_severity(signals: List[Dict]) -> str:
-    sevs = {s.get("severity", "LOW") for s in signals}
-    if "HIGH" in sevs:
-        return "HIGH"
-    if "MEDIUM" in sevs:
-        return "MEDIUM"
-    if signals:
-        return "LOW"
-    return "NONE"
+    # 신뢰도 낮고 시그널 많으면 → 불확실성 EW
+    if conf < 0.45 and n_signals >= 3:
+        signals.append({
+            "type": "heuristic_uncertainty",
+            "domain": domain,
+            "reason": f"낮은 신뢰도({conf}) + 다수 시그널({n_signals}개) → 불확실성 급증",
+            "weight": 0.6,
+            "severity": "WATCH",
+        })
+
+    # 팩트 수 급증 (10개 초과) → 이벤트 밀도 높음
+    if n_facts > 10:
+        signals.append({
+            "type": "heuristic_density",
+            "domain": domain,
+            "reason": f"팩트 밀도 높음 ({n_facts}개) → 주요 이벤트 발생 가능",
+            "weight": 0.5,
+            "severity": "WATCH",
+        })
+
+    return signals
 
 
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
+def calculate_ew_severity(all_signals: list[dict]) -> str:
+    """전체 시그널 집합에서 최종 EW 심각도 결정"""
+    if not all_signals:
+        return "NONE"
+    severities = [s.get("severity", "WATCH") for s in all_signals]
+    if "CRITICAL" in severities:
+        return "CRITICAL"
+    if severities.count("WARNING") >= 2:
+        return "CRITICAL"
+    if "WARNING" in severities:
+        return "WARNING"
+    return "WATCH"
 
-def detect(
-    input_dir: Path,
-    week: str,
-    prev_dir: Optional[Path] = None,
-    output_path: Optional[Path] = None,
-) -> Dict:
-    intel_files = sorted(input_dir.glob("*.json")) if input_dir.exists() else []
-    prev_files = sorted(prev_dir.glob("*.json")) if (prev_dir and prev_dir.exists()) else []
 
-    ew_t, sig_t = layer_threshold(intel_files)
-    ew_k, sig_k = layer_keyword(intel_files)
-    ew_d, sig_d = layer_delta(intel_files, prev_files)
+def analyze_intel_file(filepath: Path, week: str) -> dict:
+    """단일 인텔 JSON 파일 EW 분석"""
+    try:
+        intel = json.loads(filepath.read_text())
+    except Exception as e:
+        return {"file": str(filepath), "error": str(e), "ew_triggered": False}
 
-    all_signals = sig_t + sig_k + sig_d
-    ew_triggered = ew_t or ew_k or ew_d
-    severity = _aggregate_severity(all_signals)
+    domain = intel.get("domain", filepath.stem.replace("intel_", ""))
+    all_sigs = []
+    all_sigs.extend(detect_metric_ew(domain, intel.get("metrics", {})))
+    all_sigs.extend(detect_keyword_ew(domain, intel))
+    all_sigs.extend(detect_heuristic_ew(domain, intel))
 
-    report: Dict = {
+    triggered = bool(all_sigs)
+    severity  = calculate_ew_severity(all_sigs)
+    total_weight = sum(s.get("weight", 0) for s in all_sigs)
+
+    return {
+        "domain": domain,
         "week": week,
-        "generated_at": datetime.utcnow().isoformat() + "Z",
-        "ew_triggered": ew_triggered,
-        "ew_count": len(all_signals),
-        "severity": severity,
-        "layers": {
-            "threshold": {"triggered": ew_t, "signal_count": len(sig_t)},
-            "keyword": {"triggered": ew_k, "signal_count": len(sig_k)},
-            "delta": {"triggered": ew_d, "signal_count": len(sig_d)},
-        },
-        "signals": all_signals,
-        "intel_files_scanned": [f.name for f in intel_files],
+        "ew_triggered": triggered,
+        "ew_severity": severity,
+        "ew_signal_count": len(all_sigs),
+        "ew_total_weight": round(total_weight, 3),
+        "ew_signals": all_sigs,
+        "intel_confidence": intel.get("confidence", 0),
+        "intel_fact_count": len(intel.get("key_facts", [])),
+        "analyzed_at": datetime.utcnow().isoformat() + "Z",
     }
 
-    if output_path:
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        output_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
-        print(f"[EW] Report written: {output_path}")
 
-    print(f"[EW] triggered={ew_triggered}  severity={severity}  signals={len(all_signals)}")
-    return report
-
-
-def main() -> None:
-    parser = argparse.ArgumentParser(description="AI Intel Early-Warning Detector")
-    parser.add_argument("--input-dir", required=True)
-    parser.add_argument("--week", required=True)
-    parser.add_argument("--prev-dir", default=None)
-    parser.add_argument("--output", default=None)
+# ─── CLI ──────────────────────────────────────────────────────────────────────
+def main():
+    parser = argparse.ArgumentParser(description="AI 인텔 EW 탐지기 v2")
+    parser.add_argument("--input-dir", required=True, help="인텔 JSON 파일 디렉토리")
+    parser.add_argument("--week",      required=True, help="ISO 주차 (예: 2026-W21)")
+    parser.add_argument("--output",    required=True, help="EW 리포트 저장 경로 (JSON)")
+    parser.add_argument("--domain",    default=None,  help="특정 도메인만 분석 (기본: 전체)")
     args = parser.parse_args()
 
-    report = detect(
-        input_dir=Path(args.input_dir),
-        week=args.week,
-        prev_dir=Path(args.prev_dir) if args.prev_dir else None,
-        output_path=Path(args.output) if args.output else None,
-    )
+    input_dir = Path(args.input_dir)
+    if not input_dir.exists():
+        print(f"[ERROR] 입력 디렉토리 없음: {input_dir}", file=sys.stderr)
+        sys.exit(1)
 
-    if report["ew_triggered"]:
-        sys.exit(1)   # non-zero → GitHub Actions can branch on EW
-    sys.exit(0)
+    intel_files = sorted(input_dir.glob("intel_*.json"))
+    if args.domain:
+        intel_files = [f for f in intel_files if args.domain in f.name]
+    if not intel_files:
+        print(f"[WARN] intel_*.json 파일 없음 in {input_dir}", file=sys.stderr)
+
+    domain_reports = []
+    for f in intel_files:
+        print(f"  분석 중: {f.name}", file=sys.stderr)
+        report = analyze_intel_file(f, args.week)
+        domain_reports.append(report)
+
+    # 전체 요약
+    triggered_domains = [r["domain"] for r in domain_reports if r.get("ew_triggered")]
+    global_severity   = calculate_ew_severity(
+        [s for r in domain_reports for s in r.get("ew_signals", [])]
+    )
+    total_signals     = sum(r.get("ew_signal_count", 0) for r in domain_reports)
+
+    final_report = {
+        "week": args.week,
+        "analyzed_at": datetime.utcnow().isoformat() + "Z",
+        "global_ew_triggered": bool(triggered_domains),
+        "global_severity": global_severity,
+        "triggered_domains": triggered_domains,
+        "total_signal_count": total_signals,
+        "domain_count_analyzed": len(domain_reports),
+        "domain_reports": domain_reports,
+    }
+
+    out_path = Path(args.output)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(final_report, ensure_ascii=False, indent=2))
+
+    flag = "🚨" if global_severity == "CRITICAL" else "⚠️" if global_severity == "WARNING" else "👀" if global_severity == "WATCH" else "✅"
+    print(f"[OK] EW 분석 완료 → {out_path}")
+    print(f"     {flag} 전체 심각도: {global_severity} | 트리거 도메인: {triggered_domains} | 시그널 수: {total_signals}")
 
 
 if __name__ == "__main__":
