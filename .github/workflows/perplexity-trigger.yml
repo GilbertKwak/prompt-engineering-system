@@ -1,0 +1,221 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Perplexity Trigger Workflow
+# Perplexity MCP 도구(push_files)로 이 파일을 push하면 즉시 실행됨
+# 사용법: Perplexity에서 .github/trigger/run.json 파일을 push → 이 워크플로우 자동 트리거
+# ─────────────────────────────────────────────────────────────────────────────
+name: "PE · Perplexity Trigger"
+
+on:
+  # 1) 수동 실행 (Perplexity MCP에서 workflow_dispatch 직접 트리거)
+  workflow_dispatch:
+    inputs:
+      target_workflow:
+        description: "실행할 워크플로우 (weekly / ew-emergency)"
+        required: true
+        default: "weekly"
+        type: choice
+        options:
+          - weekly
+          - ew-emergency
+      intel_scope:
+        description: "수집 깊이 (weekly 전용)"
+        required: false
+        default: "standard"
+        type: choice
+        options: ["standard", "deep", "emergency"]
+      force_ew_check:
+        description: "EW 강제 재검사 (weekly 전용)"
+        required: false
+        default: "false"
+        type: boolean
+      ew_domain:
+        description: "EW 도메인 (ew-emergency 전용)"
+        required: false
+        default: "enterprise_deployment"
+      ew_severity:
+        description: "EW 심각도 (ew-emergency 전용)"
+        required: false
+        default: "MEDIUM"
+        type: choice
+        options: ["MEDIUM", "HIGH", "CRITICAL"]
+      ew_signals:
+        description: "EW 시그널 (comma-separated)"
+        required: false
+        default: ""
+      dry_run:
+        description: "Dry Run (실제 실행 없이 파라미터만 확인)"
+        required: false
+        default: "false"
+        type: boolean
+
+  # 2) 파일 push 트리거 (.github/trigger/run.json 변경 시 자동 실행)
+  push:
+    branches: [main]
+    paths:
+      - '.github/trigger/run.json'
+
+env:
+  GH_REPO: GilbertKwak/prompt-engineering-system
+
+jobs:
+  # ─── Job: 트리거 파라미터 파싱 및 검증 ──────────────────────────────────
+  parse-trigger:
+    name: "트리거 파라미터 파싱"
+    runs-on: ubuntu-latest
+
+    outputs:
+      target_workflow: ${{ steps.parse.outputs.target_workflow }}
+      intel_scope: ${{ steps.parse.outputs.intel_scope }}
+      force_ew_check: ${{ steps.parse.outputs.force_ew_check }}
+      ew_domain: ${{ steps.parse.outputs.ew_domain }}
+      ew_severity: ${{ steps.parse.outputs.ew_severity }}
+      ew_signals: ${{ steps.parse.outputs.ew_signals }}
+      dry_run: ${{ steps.parse.outputs.dry_run }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 트리거 소스 감지 및 파라미터 파싱
+        id: parse
+        run: |
+          # push 트리거인 경우: .github/trigger/run.json에서 파라미터 읽기
+          if [ -f ".github/trigger/run.json" ] && [ "${{ github.event_name }}" = "push" ]; then
+            echo "[TRIGGER] 소스: push (.github/trigger/run.json)"
+            TARGET=$(jq -r '.target_workflow // "weekly"' .github/trigger/run.json)
+            SCOPE=$(jq -r '.intel_scope // "standard"' .github/trigger/run.json)
+            FORCE_EW=$(jq -r '.force_ew_check // "false"' .github/trigger/run.json)
+            EW_DOMAIN=$(jq -r '.ew_domain // "enterprise_deployment"' .github/trigger/run.json)
+            EW_SEV=$(jq -r '.ew_severity // "MEDIUM"' .github/trigger/run.json)
+            EW_SIG=$(jq -r '.ew_signals // ""' .github/trigger/run.json)
+            DRY=$(jq -r '.dry_run // "false"' .github/trigger/run.json)
+          else
+            echo "[TRIGGER] 소스: workflow_dispatch"
+            TARGET="${{ github.event.inputs.target_workflow || 'weekly' }}"
+            SCOPE="${{ github.event.inputs.intel_scope || 'standard' }}"
+            FORCE_EW="${{ github.event.inputs.force_ew_check || 'false' }}"
+            EW_DOMAIN="${{ github.event.inputs.ew_domain || 'enterprise_deployment' }}"
+            EW_SEV="${{ github.event.inputs.ew_severity || 'MEDIUM' }}"
+            EW_SIG="${{ github.event.inputs.ew_signals || '' }}"
+            DRY="${{ github.event.inputs.dry_run || 'false' }}"
+          fi
+
+          echo "target_workflow=$TARGET" >> $GITHUB_OUTPUT
+          echo "intel_scope=$SCOPE" >> $GITHUB_OUTPUT
+          echo "force_ew_check=$FORCE_EW" >> $GITHUB_OUTPUT
+          echo "ew_domain=$EW_DOMAIN" >> $GITHUB_OUTPUT
+          echo "ew_severity=$EW_SEV" >> $GITHUB_OUTPUT
+          echo "ew_signals=$EW_SIG" >> $GITHUB_OUTPUT
+          echo "dry_run=$DRY" >> $GITHUB_OUTPUT
+
+          echo "════════════════════════════════════════"
+          echo "  Perplexity Trigger 파라미터"
+          echo "════════════════════════════════════════"
+          echo "  target   : $TARGET"
+          echo "  scope    : $SCOPE"
+          echo "  force_ew : $FORCE_EW"
+          echo "  ew_domain: $EW_DOMAIN"
+          echo "  ew_sev   : $EW_SEV"
+          echo "  ew_sig   : $EW_SIG"
+          echo "  dry_run  : $DRY"
+          echo "════════════════════════════════════════"
+
+  # ─── Job: Dry Run 확인 ───────────────────────────────────────────────────
+  dry-run-check:
+    name: "Dry Run 확인 (실제 실행 건너뜀)"
+    needs: parse-trigger
+    runs-on: ubuntu-latest
+    if: needs.parse-trigger.outputs.dry_run == 'true'
+
+    steps:
+      - name: Dry Run 요약
+        run: |
+          echo "✅ [DRY RUN] 실제 워크플로우 실행 없이 파라미터 검증 완료"
+          echo "   target_workflow : ${{ needs.parse-trigger.outputs.target_workflow }}"
+          echo "   intel_scope     : ${{ needs.parse-trigger.outputs.intel_scope }}"
+          echo "   force_ew_check  : ${{ needs.parse-trigger.outputs.force_ew_check }}"
+          echo "   ew_domain       : ${{ needs.parse-trigger.outputs.ew_domain }}"
+          echo "   ew_severity     : ${{ needs.parse-trigger.outputs.ew_severity }}"
+          echo "   ew_signals      : ${{ needs.parse-trigger.outputs.ew_signals }}"
+
+  # ─── Job: Weekly 워크플로우 트리거 ──────────────────────────────────────
+  trigger-weekly:
+    name: "Weekly Intel 워크플로우 트리거"
+    needs: parse-trigger
+    runs-on: ubuntu-latest
+    if: needs.parse-trigger.outputs.target_workflow == 'weekly' && needs.parse-trigger.outputs.dry_run != 'true'
+
+    steps:
+      - name: GitHub CLI로 Weekly 워크플로우 dispatch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run ai-intel-weekly.yml \
+            --repo "${{ env.GH_REPO }}" \
+            --field intel_scope="${{ needs.parse-trigger.outputs.intel_scope }}" \
+            --field force_ew_check="${{ needs.parse-trigger.outputs.force_ew_check }}"
+
+          echo "✅ ai-intel-weekly.yml 워크플로우 트리거 완료"
+          echo "   scope      : ${{ needs.parse-trigger.outputs.intel_scope }}"
+          echo "   force_ew   : ${{ needs.parse-trigger.outputs.force_ew_check }}"
+          echo "   Actions URL: https://github.com/${{ env.GH_REPO }}/actions/workflows/ai-intel-weekly.yml"
+
+  # ─── Job: EW Emergency 워크플로우 트리거 ────────────────────────────────
+  trigger-ew-emergency:
+    name: "EW Emergency 워크플로우 트리거"
+    needs: parse-trigger
+    runs-on: ubuntu-latest
+    if: needs.parse-trigger.outputs.target_workflow == 'ew-emergency' && needs.parse-trigger.outputs.dry_run != 'true'
+
+    steps:
+      - name: GitHub CLI로 EW Emergency 워크플로우 dispatch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run ai-intel-ew-emergency.yml \
+            --repo "${{ env.GH_REPO }}" \
+            --field ew_domain="${{ needs.parse-trigger.outputs.ew_domain }}" \
+            --field ew_severity="${{ needs.parse-trigger.outputs.ew_severity }}" \
+            --field ew_signals="${{ needs.parse-trigger.outputs.ew_signals }}"
+
+          echo "✅ ai-intel-ew-emergency.yml 워크플로우 트리거 완료"
+          echo "   domain     : ${{ needs.parse-trigger.outputs.ew_domain }}"
+          echo "   severity   : ${{ needs.parse-trigger.outputs.ew_severity }}"
+          echo "   signals    : ${{ needs.parse-trigger.outputs.ew_signals }}"
+          echo "   Actions URL: https://github.com/${{ env.GH_REPO }}/actions/workflows/ai-intel-ew-emergency.yml"
+
+  # ─── Job: 트리거 완료 요약 ───────────────────────────────────────────────
+  trigger-summary:
+    name: "트리거 완료 요약"
+    needs: [parse-trigger, trigger-weekly, trigger-ew-emergency]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Step Summary 출력
+        run: |
+          TARGET="${{ needs.parse-trigger.outputs.target_workflow }}"
+          DRY="${{ needs.parse-trigger.outputs.dry_run }}"
+
+          if [ "$DRY" = "true" ]; then
+            STATUS="🔵 DRY RUN"
+          elif [ "$TARGET" = "weekly" ]; then
+            STATUS="🟢 weekly 트리거 완료"
+          elif [ "$TARGET" = "ew-emergency" ]; then
+            STATUS="🔴 ew-emergency 트리거 완료"
+          else
+            STATUS="⚪ 알 수 없음"
+          fi
+
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          ## 🚀 Perplexity Trigger 결과
+
+          | 항목 | 값 |
+          |---|---|
+          | 상태 | ${STATUS} |
+          | 대상 워크플로우 | ${TARGET} |
+          | Intel Scope | ${{ needs.parse-trigger.outputs.intel_scope }} |
+          | EW Domain | ${{ needs.parse-trigger.outputs.ew_domain }} |
+          | EW Severity | ${{ needs.parse-trigger.outputs.ew_severity }} |
+          | Dry Run | ${DRY} |
+          | Actions | [보기](https://github.com/${{ env.GH_REPO }}/actions) |
+          EOF
