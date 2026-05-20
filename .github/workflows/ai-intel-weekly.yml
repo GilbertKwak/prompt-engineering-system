@@ -1,6 +1,6 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # AI Intel Weekly · Section A — 전체 파이프라인
-# 매주 월요일 09:00 KST (00:00 UTC) 자동 실행
+# 매주 월요일 01:00 UTC (cron: '0 1 * * 1') 자동 실행
 # workflow_dispatch로 수동 실행 가능
 #
 # [SSOT] .github/prompts/execution_protocol_v2.6.md
@@ -9,7 +9,7 @@ name: "PE · AI Intel Weekly Digest"
 
 on:
   schedule:
-    - cron: "0 0 * * 1"
+    - cron: "0 1 * * 1"
   workflow_dispatch:
     inputs:
       intel_scope:
@@ -40,6 +40,7 @@ env:
   KG_BASE_VERSION: "4.25"
   PROTOCOL_PATH: ".github/prompts/execution_protocol_v2.6.md"
   PROTOCOL_MIN_BYTES: "500"
+  NOTION_C31_PAGE_ID_VALUE: "35155ed4-36f0-81a5-87c9-f949d7aaabae"
 
 jobs:
   # ─── Job 0: 프로토콜 검증 ─────────────────────────────────────────────────
@@ -259,7 +260,7 @@ jobs:
           echo "week=$WEEK" >> $GITHUB_OUTPUT
           echo "run_date=$(date +%Y-%m-%d)" >> $GITHUB_OUTPUT
 
-      # ── 핵심 수정: step-level env 블록으로 분리 ──────────────────────────
+      # ── step-level env 블록으로 분리 ─────────────────────────────────────
       - name: EW 탐지 실행
         id: ew
         env:
@@ -455,6 +456,308 @@ jobs:
             --edge-count "${{ needs.kg-delta.outputs.edge_count }}" \
             --intel-dir "${{ env.OUTPUT_DIR }}"
 
+  # ─── Job 4.5: Notion Weekly Report 페이지 자동 생성 ─────────────────────
+  create-weekly-page:
+    name: "4.5. Notion Weekly Intel Report 페이지 생성"
+    needs: [protocol-check, ew-detection, kg-delta]
+    runs-on: ubuntu-latest
+
+    outputs:
+      page_url: ${{ steps.create_page.outputs.page_url }}
+      page_id: ${{ steps.create_page.outputs.page_id }}
+      week: ${{ steps.week_meta.outputs.week }}
+      week_range: ${{ steps.week_meta.outputs.week_range }}
+      next_week: ${{ steps.week_meta.outputs.next_week }}
+      next_run_date: ${{ steps.week_meta.outputs.next_run_date }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+
+      - run: pip install -r automation/requirements_ai_intel.txt
+
+      - name: 주차 및 리포트 메타 계산
+        id: week_meta
+        run: |
+          python3 << 'PYEOF'
+          import os
+          from datetime import date, timedelta
+
+          today = date.today()
+          iso = today.isocalendar()
+          year, week = iso[0], iso[1]
+
+          # 이번 주 월~일 범위 계산
+          monday = today - timedelta(days=today.weekday())
+          sunday = monday + timedelta(days=6)
+          week_range = f"{monday.strftime('%Y-%m-%d')} ~ {sunday.strftime('%Y-%m-%d')}"
+
+          # 다음 주 계산 (W+1)
+          next_monday = monday + timedelta(days=7)
+          next_iso = next_monday.isocalendar()
+          next_week = f"{next_iso[0]}-W{next_iso[1]:02d}"
+          next_run_date = next_monday.strftime('%Y-%m-%d')
+
+          week_str = f"{year}-W{week:02d}"
+
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"week={week_str}\n")
+              f.write(f"week_range={week_range}\n")
+              f.write(f"next_week={next_week}\n")
+              f.write(f"next_run_date={next_run_date}\n")
+
+          print(f"[META] week={week_str} | range={week_range} | next={next_week} ({next_run_date})")
+          PYEOF
+
+      - name: Notion Weekly Report 페이지 생성
+        id: create_page
+        env:
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+        run: |
+          WEEK="${{ steps.week_meta.outputs.week }}"
+          WEEK_RANGE="${{ steps.week_meta.outputs.week_range }}"
+          NEXT_WEEK="${{ steps.week_meta.outputs.next_week }}"
+          NEXT_RUN_DATE="${{ steps.week_meta.outputs.next_run_date }}"
+          RUN_DATE="${{ needs.ew-detection.outputs.run_date }}"
+          EW_TRIGGERED="${{ needs.ew-detection.outputs.ew_triggered }}"
+          EW_COUNT="${{ needs.ew-detection.outputs.ew_count }}"
+          EW_SIGNALS="${{ needs.ew-detection.outputs.ew_signals }}"
+          EW_SEVERITY="${{ needs.ew-detection.outputs.ew_severity }}"
+          KG_VER="${{ needs.kg-delta.outputs.kg_next_version }}"
+          NODES="${{ needs.kg-delta.outputs.node_count }}"
+          EDGES="${{ needs.kg-delta.outputs.edge_count }}"
+          # C-31 PE-EQP-MAP 고정 부모 페이지 ID
+          C31_PAGE_ID="${{ env.NOTION_C31_PAGE_ID_VALUE }}"
+
+          python3 << PYEOF
+          import os, json, urllib.request, urllib.error, datetime
+
+          NOTION_API_KEY = os.environ["NOTION_API_KEY"]
+          WEEK           = os.environ["WEEK"]
+          WEEK_RANGE     = os.environ["WEEK_RANGE"]
+          NEXT_WEEK      = os.environ["NEXT_WEEK"]
+          NEXT_RUN_DATE  = os.environ["NEXT_RUN_DATE"]
+          RUN_DATE       = os.environ["RUN_DATE"]
+          EW_TRIGGERED   = os.environ["EW_TRIGGERED"]
+          EW_COUNT       = os.environ["EW_COUNT"]
+          EW_SIGNALS     = os.environ["EW_SIGNALS"]
+          EW_SEVERITY    = os.environ["EW_SEVERITY"]
+          KG_VER         = os.environ["KG_VER"]
+          NODES          = os.environ["NODES"]
+          EDGES          = os.environ["EDGES"]
+          C31_PAGE_ID    = os.environ["C31_PAGE_ID"]
+
+          # EW 심각도 이모지 매핑
+          severity_emoji = {"HIGH": "🔴", "MEDIUM": "🟡", "LOW": "🟢", "NONE": "⚪️"}.get(EW_SEVERITY, "⚪️")
+          ew_status = f"{severity_emoji} EW {EW_TRIGGERED.upper()} — {EW_COUNT}개 신호 ({EW_SEVERITY})" \
+                      if EW_TRIGGERED == "true" else "✅ EW 없음"
+
+          title = f"📊 Weekly Intel Report — {WEEK}"
+
+          # Notion 블록 구성 (rich_text children API)
+          def rt(text, bold=False, code=False):
+              annotations = {"bold": bold, "italic": False, "strikethrough": False,
+                             "underline": False, "code": code, "color": "default"}
+              return {"type": "text", "text": {"content": text}, "annotations": annotations}
+
+          def heading(level, text):
+              return {"object": "block", "type": f"heading_{level}",
+                      f"heading_{level}": {"rich_text": [rt(text)]}}
+
+          def para(items):
+              return {"object": "block", "type": "paragraph",
+                      "paragraph": {"rich_text": items if isinstance(items, list) else [rt(items)]}}
+
+          def divider():
+              return {"object": "block", "type": "divider", "divider": {}}
+
+          def callout(text, emoji="⚙️"):
+              return {"object": "block", "type": "callout",
+                      "callout": {"rich_text": [rt(text)], "icon": {"type": "emoji", "emoji": emoji}}}
+
+          def table_row(cells):
+              return {"type": "table_row", "table_row": {
+                  "cells": [[rt(c)] for c in cells]}}
+
+          def table_block(rows, has_header=True):
+              return {"object": "block", "type": "table",
+                      "table": {"table_width": len(rows[0]), "has_column_header": has_header,
+                                "has_row_header": False,
+                                "children": [table_row(r) for r in rows]}}
+
+          def todo(text):
+              return {"object": "block", "type": "to_do",
+                      "to_do": {"rich_text": [rt(text)], "checked": False}}
+
+          def toggle(summary, children_text):
+              return {"object": "block", "type": "toggle",
+                      "toggle": {"rich_text": [rt(summary)],
+                                 "children": [para(children_text)]}}
+
+          def quote(text):
+              return {"object": "block", "type": "quote",
+                      "quote": {"rich_text": [rt(text)]}}
+
+          companies = ["ASML", "LamResearch", "AMAT", "KLA", "TEL"]
+          prev_edi  = {"ASML": "0.78", "LamResearch": "0.71", "AMAT": "0.65", "KLA": "0.58", "TEL": "0.52"}
+          prev_fdrs = {"ASML": "0.81", "LamResearch": "0.74", "AMAT": "0.68", "KLA": "0.62", "TEL": "0.55"}
+
+          children = [
+              # 메타데이터
+              heading(1, "📋 리포트 메타데이터"),
+              table_block([
+                  ["항목", "값"],
+                  ["리포트 ID", f"INTEL-{WEEK.replace('-','')}-AUTO"],
+                  ["대상 기간", WEEK_RANGE],
+                  ["생성일", f"{RUN_DATE} KST (자동)"],
+                  ["도메인", "C-31 PE-EQP-MAP"],
+                  ["커버 기업", "ASML · LamResearch · AMAT · KLA · TEL"],
+                  ["EW 상태", ew_status],
+                  ["KG 버전", f"v{KG_VER} ({NODES} nodes / {EDGES} edges)"],
+                  ["생성 방식", "GitHub Actions 자동 파이프라인 (cron: 0 1 * * 1)"],
+                  ["상태", "🟢 파이프라인 완료"],
+              ]),
+              divider(),
+
+              # EW 탐지 결과
+              heading(1, "🚨 EW (Early Warning) 탐지 결과"),
+              callout("이 섹션은 GitHub Actions ew-detection Job 결과가 자동 주입됩니다.", "⚙️"),
+              table_block([
+                  ["기업", "FSM State", "EDI", "FDRS", "ExportShock", "긴급도"],
+              ] + [
+                  [c, "—", "TBD", "TBD", "TBD", "⏳"] for c in companies
+              ]),
+              divider(),
+
+              # 도메인별 인텔
+              heading(1, "📡 도메인별 인텔 수집 결과"),
+              callout("이 섹션은 GitHub Actions collect-intel Job 결과가 자동 주입됩니다.", "⚙️"),
+              heading(2, "🔧 PE-EQP (첨단 장비)"),
+              toggle("ASML — 주간 동향", f"⏳ {WEEK} 파이프라인 실행 후 자동 채워집니다"),
+              toggle("LamResearch — 주간 동향", f"⏳ {WEEK} 파이프라인 실행 후 자동 채워집니다"),
+              toggle("AMAT / KLA / TEL — 주간 동향", f"⏳ {WEEK} 파이프라인 실행 후 자동 채워집니다"),
+              heading(2, "🤖 PE-AI (AI 플랫폼)"),
+              toggle("AI 인프라 장비 연계 동향", f"⏳ {WEEK} 파이프라인 실행 후 자동 채워집니다"),
+              heading(2, "💾 PE-SEMI (반도체 공급망)"),
+              toggle("ASML EUV → 첨단 노드 연계", f"⏳ {WEEK} 파이프라인 실행 후 자동 채워집니다"),
+              divider(),
+
+              # 주간 지표 변화 추적
+              heading(1, "📈 주간 지표 변화 추적"),
+              table_block([
+                  ["기업", f"EDI ({WEEK.replace(WEEK.split('-W')[1], 'W'+str(int(WEEK.split('-W')[1])-1).zfill(2))})", f"EDI ({WEEK})", f"FDRS (전주)", f"FDRS ({WEEK})", "변화"],
+              ] + [
+                  [c, prev_edi[c], "TBD", prev_fdrs[c], "TBD", "⏳"] for c in companies
+              ]),
+              quote("수치는 분기 IR 발표 이후 자동 갱신. 주간 리포트는 신규 규제 이벤트 발생 시에만 변동"),
+              divider(),
+
+              # 액션 아이템
+              heading(1, "🔗 액션 아이템"),
+              todo("ASML: NL 수출허가 발표 모니터링 (주간)"),
+              todo("TEL: 일본 경제안보추진법 시행령 개정 여부 확인"),
+              todo("KLA: Inspection 이중용도 재심 결과 추적"),
+              todo("전체: Q2 2026 IR 시즌 대비 EDI/FDRS 업데이트 준비"),
+              divider(),
+
+              # 연계 리소스
+              heading(1, "🔗 연계 리소스"),
+              table_block([
+                  ["항목", "링크"],
+                  ["C-31 PE-EQP-MAP", "https://www.notion.so/35155ed436f081a587c9f949d7aaabae"],
+                  ["GitHub Actions 워크플로우", "https://github.com/GilbertKwak/prompt-engineering-system/blob/main/.github/workflows/ai-intel-weekly.yml"],
+                  ["EW 탐지 스크립트", "automation/ai_ew_detector.py"],
+                  ["인텔 수집 스크립트", "automation/ai_intel_collector.py"],
+              ]),
+              divider(),
+
+              # 푸터
+              quote(f"🤖 자동 생성: GitHub Actions create-weekly-page Job | cron: 0 1 * * 1"),
+              quote(f"📅 다음 리포트: {NEXT_RUN_DATE} ({NEXT_WEEK}) 자동 생성 예정"),
+          ]
+
+          payload = {
+              "parent": {"type": "page_id", "page_id": C31_PAGE_ID},
+              "icon": {"type": "emoji", "emoji": "📊"},
+              "properties": {
+                  "title": {"title": [{"type": "text", "text": {"content": title}}]}
+              },
+              "children": children
+          }
+
+          headers = {
+              "Authorization": f"Bearer {NOTION_API_KEY}",
+              "Content-Type": "application/json",
+              "Notion-Version": "2022-06-28"
+          }
+
+          req = urllib.request.Request(
+              "https://api.notion.com/v1/pages",
+              data=json.dumps(payload).encode("utf-8"),
+              headers=headers,
+              method="POST"
+          )
+
+          try:
+              with urllib.request.urlopen(req) as resp:
+                  result = json.loads(resp.read().decode("utf-8"))
+              page_id  = result["id"]
+              page_url = result["url"]
+              print(f"✅ Notion 페이지 생성 완료!")
+              print(f"   제목  : {title}")
+              print(f"   ID    : {page_id}")
+              print(f"   URL   : {page_url}")
+              with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+                  f.write(f"page_id={page_id}\n")
+                  f.write(f"page_url={page_url}\n")
+          except urllib.error.HTTPError as e:
+              body = e.read().decode("utf-8")
+              print(f"::error::Notion API 오류 {e.code}: {body}")
+              with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+                  f.write("page_id=\npage_url=\n")
+
+          PYEOF
+        env:
+          WEEK: ${{ steps.week_meta.outputs.week }}
+          WEEK_RANGE: ${{ steps.week_meta.outputs.week_range }}
+          NEXT_WEEK: ${{ steps.week_meta.outputs.next_week }}
+          NEXT_RUN_DATE: ${{ steps.week_meta.outputs.next_run_date }}
+          RUN_DATE: ${{ needs.ew-detection.outputs.run_date }}
+          EW_TRIGGERED: ${{ needs.ew-detection.outputs.ew_triggered }}
+          EW_COUNT: ${{ needs.ew-detection.outputs.ew_count }}
+          EW_SIGNALS: ${{ needs.ew-detection.outputs.ew_signals }}
+          EW_SEVERITY: ${{ needs.ew-detection.outputs.ew_severity }}
+          KG_VER: ${{ needs.kg-delta.outputs.kg_next_version }}
+          NODES: ${{ needs.kg-delta.outputs.node_count }}
+          EDGES: ${{ needs.kg-delta.outputs.edge_count }}
+          C31_PAGE_ID: ${{ env.NOTION_C31_PAGE_ID_VALUE }}
+
+      - name: 생성된 페이지 URL 요약 출력
+        if: steps.create_page.outputs.page_url != ''
+        run: |
+          echo "════════════════════════════════════════════════════════"
+          echo "  📊 Weekly Intel Report 페이지 생성 완료"
+          echo "════════════════════════════════════════════════════════"
+          echo "  주차  : ${{ steps.week_meta.outputs.week }}"
+          echo "  URL   : ${{ steps.create_page.outputs.page_url }}"
+          echo "  ID    : ${{ steps.create_page.outputs.page_id }}"
+          echo "════════════════════════════════════════════════════════"
+
+          cat >> $GITHUB_STEP_SUMMARY << SUMMARY_EOF
+          ## 📊 Weekly Intel Report 페이지 생성
+
+          | 항목 | 값 |
+          |---|---|
+          | 주차 | ${{ steps.week_meta.outputs.week }} |
+          | 대상 기간 | ${{ steps.week_meta.outputs.week_range }} |
+          | Notion URL | ${{ steps.create_page.outputs.page_url }} |
+          | 다음 리포트 | ${{ steps.week_meta.outputs.next_week }} (${{ steps.week_meta.outputs.next_run_date }}) |
+          SUMMARY_EOF
+
   # ─── Job 5: EW 긴급 알림 ─────────────────────────────────────────────────
   ew-alert:
     name: "5. EW 긴급 알림"
@@ -493,7 +796,7 @@ jobs:
   # ─── Job 6: 파이프라인 완료 요약 ─────────────────────────────────────────
   pipeline-summary:
     name: "6. 파이프라인 완료 요약"
-    needs: [protocol-check, ew-detection, kg-delta, notion-update]
+    needs: [protocol-check, ew-detection, kg-delta, notion-update, create-weekly-page]
     runs-on: ubuntu-latest
     if: always()
 
@@ -510,6 +813,8 @@ jobs:
           EDGES="${{ needs.kg-delta.outputs.edge_count }}"
           P_HASH="${{ needs.protocol-check.outputs.protocol_hash }}"
           P_VER="${{ needs.protocol-check.outputs.protocol_version }}"
+          PAGE_URL="${{ needs.create-weekly-page.outputs.page_url }}"
+          PAGE_WEEK="${{ needs.create-weekly-page.outputs.week }}"
 
           echo "════════════════════════════════════════════════════════"
           echo "  PE · AI Intel Weekly Digest — 파이프라인 완료 요약"
@@ -522,6 +827,7 @@ jobs:
           echo "  KG 버전           : ${KG_VER}"
           echo "  노드 수           : ${NODES}"
           echo "  엣지 수           : ${EDGES}"
+          echo "  Weekly Page URL   : ${PAGE_URL:-생성 실패}"
           echo "  프로토콜 해시     : ${P_HASH}"
           echo "  프로토콜 버전     : ${P_VER}"
           echo "  SSOT 경로         : ${{ env.PROTOCOL_PATH }}"
@@ -539,6 +845,7 @@ jobs:
           | KG 버전 | ${KG_VER} |
           | 신규 노드 | ${NODES} |
           | 신규 엣지 | ${EDGES} |
+          | 📊 Weekly Report | ${PAGE_URL:-생성 실패} |
           | 프로토콜 | \`${P_VER}\` (hash: \`${P_HASH}\`) |
           | SSOT | \`.github/prompts/execution_protocol_v2.6.md\` |
           SUMMARY_EOF
