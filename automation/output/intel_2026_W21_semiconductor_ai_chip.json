@@ -1,0 +1,20 @@
+{
+  "domain": "semiconductor_ai_chip",
+  "week": "2026-W21",
+  "collected_at": "2026-05-20",
+  "key_facts": [
+    "NVIDIA 2026 AI 투자 $45.3B, AI 공급망 재편 중 (DIGITIMES)",
+    "AI 칩 시장 2026년 $100B 달성 예상 (전년 $92B, 29% YoY)",
+    "HBM 수요 2026년 130%+ YoY 증가 전망 (TrendForce)",
+    "DRAM 가격 2026년 70%+ 상승 — 공급 부족 지속 (RAMageddon)",
+    "카타르 헬륨 생산 파업 → 전세계 공급 1/3 차질 → 반도체 팹 헬륨 배급제 시행",
+    "AMD MI455 GPU CES 2026 발표, Ryzen AI 400 출시",
+    "DDR5가 AI 서버 주류 전환 중, 반도체 원자재(전력·구리·헬륨) 부족 심화"
+  ],
+  "metrics": {
+    "ai_chip_market_size_bn": 100,
+    "hbm_demand_growth_yoy_pct": 130,
+    "dram_price_increase_pct": 70,
+    "nvidia_ai_investment_bn": 45.3
+  }
+}

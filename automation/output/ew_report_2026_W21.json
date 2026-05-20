@@ -1,0 +1,17 @@
+{
+  "week": "2026-W21",
+  "run_date": "2026-05-20",
+  "ew_triggered": true,
+  "ew_count": 8,
+  "overall_severity": "HIGH",
+  "events": [
+    {"type": "METRIC", "metric": "hbm_demand_growth_yoy_pct", "value": 130, "threshold": 100, "operator": ">=", "domain": "semiconductor_ai_chip", "severity": "MEDIUM"},
+    {"type": "METRIC", "metric": "dram_price_increase_pct", "value": 70, "threshold": 50, "operator": ">=", "domain": "semiconductor_ai_chip", "severity": "HIGH"},
+    {"type": "METRIC", "metric": "deadline_days_remaining", "value": 74, "threshold": 90, "operator": "<=", "domain": "ai_regulation", "severity": "MEDIUM"},
+    {"type": "METRIC", "metric": "success_rate_pct", "value": 25, "threshold": 30, "operator": "<=", "domain": "enterprise_deployment", "severity": "MEDIUM"},
+    {"type": "KEYWORD", "signal": "helium_shortage_supply_disruption", "hits": 2, "keywords_matched": ["헬륨", "배급제"], "severity": "MEDIUM"},
+    {"type": "KEYWORD", "signal": "supply_chain_raw_material_crisis", "hits": 3, "keywords_matched": ["RAMageddon", "공급망 재편", "원자재"], "severity": "HIGH"},
+    {"type": "KEYWORD", "signal": "regulatory_enforcement_imminent", "hits": 4, "keywords_matched": ["EU AI Act", "의무 전면", "벌금", "고위험"], "severity": "HIGH"},
+    {"type": "KEYWORD", "signal": "inference_cost_optimization_wave", "hits": 2, "keywords_matched": ["캐싱", "모델 라우팅"], "severity": "MEDIUM"}
+  ]
+}

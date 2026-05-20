@@ -1,0 +1,25 @@
+{
+  "meta": {
+    "from_version": "4.25",
+    "to_version": "4.26",
+    "week": "2026-W21",
+    "run_date": "2026-05-20",
+    "ew_triggered": true,
+    "ew_count": 8,
+    "ew_severity": "HIGH"
+  },
+  "summary": {
+    "new_nodes": 26,
+    "new_edges": 24,
+    "ew_events": 8,
+    "domains_updated": ["enterprise_deployment", "llm_inference", "ai_regulation", "semiconductor_ai_chip"],
+    "key_highlights": [
+      "DRAM 가격 70% 상승 — EW HIGH (임계값 50% 초과)",
+      "공급망 원자재 위기: RAMageddon·헬륨 배급제 동시 발생",
+      "EU AI Act 전면 시행 D-74일 (2026-08-02)",
+      "HBM 수요 130% YoY — 공급 제약 지속",
+      "엔터프라이즈 AI ROI 성공률 25% — 구현 품질 격차 확대",
+      "Agentic AI CAGR 44.9%, 시장 본격 성장 구간 진입"
+    ]
+  }
+}

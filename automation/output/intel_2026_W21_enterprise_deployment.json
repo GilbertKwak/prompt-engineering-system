@@ -1,0 +1,19 @@
+{
+  "domain": "enterprise_deployment",
+  "week": "2026-W21",
+  "collected_at": "2026-05-20",
+  "key_facts": [
+    "McKinsey: AI 투자 대비 5.8x ROI, 배포 후 14개월 내 실현 (단, 25%만 기대 ROI 달성)",
+    "Agentic AI 글로벌 시장 2030년 $50B+ 목표, CAGR 44.9%",
+    "Gartner: Agentic AI가 2027년까지 엔터프라이즈 소프트웨어 매출의 30% 기여 (best-case)",
+    "엔터프라이즈 AI 에이전트 payback: buy/configure 8-18개월, build 18-36개월",
+    "ROI 확실 영역: 고객서비스, 이커머스, 금융 자동화, 소프트웨어 엔지니어링",
+    "RAG 기반 에이전트는 데이터 품질 의존도 높음 — 데이터 엔지니어링 비용 지속 과소평가",
+    "US agentic AI 시장 2024년 $769.5M, CAGR 43.6% 전망 (2025-2030)"
+  ],
+  "metrics": {
+    "roi_multiplier": 5.8,
+    "success_rate_pct": 25,
+    "market_cagr_pct": 44.9
+  }
+}

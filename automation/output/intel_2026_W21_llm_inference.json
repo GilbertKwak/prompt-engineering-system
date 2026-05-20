@@ -1,0 +1,16 @@
+{
+  "domain": "llm_inference",
+  "week": "2026-W21",
+  "collected_at": "2026-05-20",
+  "key_facts": [
+    "2026 추론 효율화: TTFT 측정 → 프롬프트 캐시 재사용 → disaggregated prefill",
+    "Redis LLMOps: 시맨틱 캐싱 + 모델 라우팅으로 반복 쿼리 비용 절감",
+    "간단한 쿼리 → 저비용 모델, 복잡 추론 → frontier 모델 라우팅 표준화",
+    "NVIDIA GTC26: LLM 처리량 최대화 및 GPU 효율 개선 기법 발표",
+    "멀티레이어 캐싱: 고반복 시나리오 비용 예측불가성 문제 해결"
+  ],
+  "metrics": {
+    "cost_reduction_potential_pct": 40,
+    "cache_hit_rate_target_pct": 60
+  }
+}
