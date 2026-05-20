@@ -1,0 +1,501 @@
+# ================================================================
+# EW Collaborative Intelligence Pipeline v2.0
+# ================================================================
+# Architecture: Perplexity (Research) ↔ GitHub (Orchestration)
+#               ↔ Notion (Knowledge Base & Dashboard)
+#
+# 3-Way Collaboration Flow:
+#   [P1] GitHub Actions 트리거 → Perplexity sonar-pro EW 수집
+#   [P2] GitHub Actions → KG Delta 생성 + Git commit + Issue 자동 생성
+#   [P3] GitHub Actions → Notion C-31 대시보드 자동 업데이트
+#        Notion 완료 → GitHub Issue 피드백 코멘트 (피드백 루프)
+#   [P4] 전체 파이프라인 상태 요약 & 헬스 체크
+# ================================================================
+name: "EW · Collaborative Intelligence Pipeline"
+
+on:
+  # ── 정기 실행 (매일 09:00 KST = 00:00 UTC) ────────────────────
+  schedule:
+    - cron: "0 0 * * *"
+
+  # ── 수동 실행 ────────────────────────────────────────────────
+  workflow_dispatch:
+    inputs:
+      ew_domain:
+        description: "EW 탐지 도메인"
+        required: true
+        default: "enterprise_ai"
+        type: choice
+        options:
+          - enterprise_ai
+          - semiconductor_hbm
+          - ai_infrastructure
+          - geopolitical_tech
+          - all_domains
+      ew_severity_threshold:
+        description: "최소 심각도 임계값"
+        required: false
+        default: "MEDIUM"
+        type: choice
+        options:
+          - LOW
+          - MEDIUM
+          - HIGH
+          - CRITICAL
+      force_notion_update:
+        description: "Notion 강제 업데이트 여부"
+        required: false
+        default: "false"
+        type: boolean
+      create_github_issue:
+        description: "GitHub Issue 자동 생성 여부"
+        required: false
+        default: "true"
+        type: boolean
+
+  # ── 외부 워크플로우에서 호출 가능 ────────────────────────────
+  workflow_call:
+    inputs:
+      ew_domain:
+        required: true
+        type: string
+      ew_severity_threshold:
+        required: false
+        type: string
+        default: "MEDIUM"
+      force_notion_update:
+        required: false
+        type: boolean
+        default: false
+      create_github_issue:
+        required: false
+        type: boolean
+        default: true
+    secrets:
+      PERPLEXITY_API_KEY:
+        required: true
+      NOTION_API_KEY:
+        required: true
+      NOTION_C31_PAGE_ID:
+        required: true
+
+# ── 전역 환경변수 (워크플로우 레벨, secrets 제외) ───────────────
+env:
+  PYTHONUNBUFFERED: "1"
+  PIPELINE_VERSION: "2.0.0"
+  PIPELINE_NAME: "EW-Collaborative"
+
+jobs:
+  # ================================================================
+  # PHASE 1: Perplexity Research Engine
+  # ─ 역할: 실시간 EW 시그널을 Perplexity sonar-pro로 수집·분석
+  # ─ 출력: JSON 인텔 파일 → GitHub artifact
+  # ================================================================
+  perplexity-research:
+    name: "[P1] Perplexity Research Engine"
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    outputs:
+      run_date:         ${{ steps.meta.outputs.run_date }}
+      week_id:          ${{ steps.meta.outputs.week_id }}
+      intel_dir:        ${{ steps.meta.outputs.intel_dir }}
+      ew_detected:      ${{ steps.analyze.outputs.ew_detected }}
+      ew_count:         ${{ steps.analyze.outputs.ew_count }}
+      ew_severity:      ${{ steps.analyze.outputs.ew_severity }}
+      ew_domains:       ${{ steps.analyze.outputs.ew_domains }}
+      perplexity_model: ${{ steps.collect.outputs.model_used }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Python 3.11 설정
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: automation/requirements.txt
+
+      - name: 의존성 설치
+        run: pip install -r automation/requirements.txt
+
+      # ── 실행 메타데이터 ────────────────────────────────────────
+      - name: 파이프라인 메타데이터 설정
+        id: meta
+        run: |
+          RUN_DATE=$(date -u +%Y-%m-%d)
+          WEEK_ID=$(date -u +%Y-W%V)
+          INTEL_DIR="output/ew_collab/${RUN_DATE}"
+          mkdir -p "$INTEL_DIR"
+          echo "run_date=$RUN_DATE"   >> $GITHUB_OUTPUT
+          echo "week_id=$WEEK_ID"     >> $GITHUB_OUTPUT
+          echo "intel_dir=$INTEL_DIR" >> $GITHUB_OUTPUT
+          echo "=== Pipeline v$PIPELINE_VERSION ==="
+          echo "Date   : $RUN_DATE"
+          echo "Week   : $WEEK_ID"
+          echo "Domain : ${{ inputs.ew_domain || 'enterprise_ai' }}"
+
+      # ── Perplexity API 호출 (step-level env 분리) ─────────────
+      - name: "[Perplexity] EW 시그널 수집"
+        id: collect
+        env:
+          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
+        run: |
+          DOMAIN="${{ inputs.ew_domain || 'enterprise_ai' }}"
+          INTEL_DIR="${{ steps.meta.outputs.intel_dir }}"
+          WEEK_ID="${{ steps.meta.outputs.week_id }}"
+
+          python automation/ai_intel_collector.py \
+            --domain "$DOMAIN" \
+            --week   "$WEEK_ID" \
+            --scope  deep \
+            --model  sonar-pro \
+            --queries \
+              "${DOMAIN} AI breakthrough disruption signal 2026 latest" \
+              "${DOMAIN} enterprise adoption rate sudden shift signals" \
+              "${DOMAIN} competitive landscape unexpected change" \
+              "${DOMAIN} investment M&A strategic move recent" \
+              "${DOMAIN} regulatory policy change impact" \
+            --output "$INTEL_DIR/ew_intel_${DOMAIN}.json"
+
+          echo "model_used=sonar-pro" >> $GITHUB_OUTPUT
+          echo "[Perplexity] 수집 완료: $INTEL_DIR/ew_intel_${DOMAIN}.json"
+
+      # ── EW 탐지 분석 (step-level env 분리) ────────────────────
+      - name: "[Perplexity] EW 탐지 분석"
+        id: analyze
+        env:
+          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
+        run: |
+          DOMAIN="${{ inputs.ew_domain || 'enterprise_ai' }}"
+          THRESHOLD="${{ inputs.ew_severity_threshold || 'MEDIUM' }}"
+          INTEL_DIR="${{ steps.meta.outputs.intel_dir }}"
+
+          python automation/ew_detector.py \
+            --intel-file "$INTEL_DIR/ew_intel_${DOMAIN}.json" \
+            --domain     "$DOMAIN" \
+            --threshold  "$THRESHOLD" \
+            --output     "$INTEL_DIR/ew_detection_result.json"
+
+          EW_DETECTED=$(python -c "
+import json
+with open('$INTEL_DIR/ew_detection_result.json') as f:
+    d = json.load(f)
+print(str(d.get('ew_detected', False)).lower())
+")
+          EW_COUNT=$(python -c "
+import json
+with open('$INTEL_DIR/ew_detection_result.json') as f:
+    d = json.load(f)
+print(d.get('ew_count', 0))
+")
+          EW_SEVERITY=$(python -c "
+import json
+with open('$INTEL_DIR/ew_detection_result.json') as f:
+    d = json.load(f)
+print(d.get('max_severity', 'NONE'))
+")
+          EW_DOMAINS=$(python -c "
+import json
+with open('$INTEL_DIR/ew_detection_result.json') as f:
+    d = json.load(f)
+print(','.join(d.get('triggered_domains', [])))
+")
+          echo "ew_detected=$EW_DETECTED" >> $GITHUB_OUTPUT
+          echo "ew_count=$EW_COUNT"       >> $GITHUB_OUTPUT
+          echo "ew_severity=$EW_SEVERITY" >> $GITHUB_OUTPUT
+          echo "ew_domains=$EW_DOMAINS"   >> $GITHUB_OUTPUT
+
+          echo "=== EW 탐지 결과 ==="
+          echo "탐지 여부 : $EW_DETECTED"
+          echo "EW 건수  : $EW_COUNT"
+          echo "심각도   : $EW_SEVERITY"
+          echo "도메인   : $EW_DOMAINS"
+
+      - name: Perplexity 인텔 Artifact 저장
+        uses: actions/upload-artifact@v4
+        with:
+          name: "perplexity-intel-${{ steps.meta.outputs.run_date }}"
+          path: ${{ steps.meta.outputs.intel_dir }}/
+          retention-days: 30
+
+  # ================================================================
+  # PHASE 2: GitHub Orchestration Layer
+  # ─ 역할: KG Delta 생성 + Git commit + Issue 자동 생성
+  # ─ 조건: EW 탐지된 경우만 실행 (또는 강제 실행)
+  # ================================================================
+  github-orchestration:
+    name: "[P2] GitHub Orchestration"
+    needs: perplexity-research
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: |
+      needs.perplexity-research.outputs.ew_detected == 'true' ||
+      inputs.force_notion_update == true
+    outputs:
+      kg_version:   ${{ steps.kg.outputs.next_version }}
+      issue_number: ${{ steps.issue.outputs.issue_number }}
+      issue_url:    ${{ steps.issue.outputs.issue_url }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Python 3.11 설정
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: automation/requirements.txt
+
+      - name: 의존성 설치
+        run: pip install -r automation/requirements.txt
+
+      - name: Artifact 다운로드
+        uses: actions/download-artifact@v4
+        with:
+          name: "perplexity-intel-${{ needs.perplexity-research.outputs.run_date }}"
+          path: output/ew_collab/${{ needs.perplexity-research.outputs.run_date }}/
+
+      # ── KG 버전 계산 ──────────────────────────────────────────
+      - name: KG Delta 버전 계산
+        id: kg
+        run: |
+          CURRENT=$(python -c "
+import glob, re
+files = glob.glob('knowledge_graph_v*.json')
+versions = []
+for f in files:
+    m = re.search(r'v(\d+\.\d+)', f)
+    if m: versions.append(float(m.group(1)))
+print(f'{max(versions):.2f}' if versions else '4.25')
+")
+          MAJOR=$(echo $CURRENT | cut -d. -f1)
+          MINOR=$(echo $CURRENT | cut -d. -f2)
+          NEXT="${MAJOR}.$((MINOR + 1))_EW"
+          echo "current_version=$CURRENT" >> $GITHUB_OUTPUT
+          echo "next_version=$NEXT"       >> $GITHUB_OUTPUT
+          echo "KG 버전: $CURRENT → $NEXT"
+
+      # ── KG Delta 생성 & Git 커밋 ──────────────────────────────
+      - name: KG Delta 생성 및 Git 커밋
+        run: |
+          INTEL_DIR="output/ew_collab/${{ needs.perplexity-research.outputs.run_date }}"
+          KG_FILE="knowledge_graph_v${{ steps.kg.outputs.next_version }}_delta.json"
+
+          python automation/kg_delta_generator.py \
+            --intel-dir       "$INTEL_DIR" \
+            --current-version "${{ steps.kg.outputs.current_version }}" \
+            --next-version    "${{ steps.kg.outputs.next_version }}" \
+            --week            "${{ needs.perplexity-research.outputs.week_id }}" \
+            --run-date        "${{ needs.perplexity-research.outputs.run_date }}" \
+            --output          "$KG_FILE"
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "$KG_FILE" || true
+          git diff --staged --quiet || \
+            git commit -m "kg(ew): collaborative delta v${{ steps.kg.outputs.next_version }} [${{ needs.perplexity-research.outputs.ew_severity }}] $(date -u +%Y-%m-%d)"
+          git push || true
+
+      # ── GitHub Issue 자동 생성 (HIGH/CRITICAL) ────────────────
+      - name: "[GitHub] EW 알림 Issue 생성"
+        id: issue
+        if: |
+          (inputs.create_github_issue == true || inputs.create_github_issue == '') &&
+          (needs.perplexity-research.outputs.ew_severity == 'HIGH' ||
+           needs.perplexity-research.outputs.ew_severity == 'CRITICAL')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          SEVERITY="${{ needs.perplexity-research.outputs.ew_severity }}"
+          DOMAIN="${{ inputs.ew_domain || 'enterprise_ai' }}"
+          COUNT="${{ needs.perplexity-research.outputs.ew_count }}"
+          RUN_DATE="${{ needs.perplexity-research.outputs.run_date }}"
+          KG_VER="${{ steps.kg.outputs.next_version }}"
+          MODEL="${{ needs.perplexity-research.outputs.perplexity_model }}"
+
+          if [ "$SEVERITY" = "CRITICAL" ]; then
+            LABEL="priority:critical,ew-alert,automated"
+            EMOJI="🚨"
+          else
+            LABEL="priority:high,ew-alert,automated"
+            EMOJI="⚠️"
+          fi
+
+          BODY=$(cat <<EOF
+## $EMOJI EW Early Warning Alert — $SEVERITY
+
+| 항목 | 값 |
+|------|----|
+| **탐지 도메인** | \`$DOMAIN\` |
+| **심각도** | **$SEVERITY** |
+| **EW 건수** | $COUNT |
+| **KG 버전** | $KG_VER |
+| **탐지 일시** | $RUN_DATE |
+| **Perplexity 모델** | $MODEL |
+| **파이프라인** | EW Collaborative v$PIPELINE_VERSION |
+
+### 탐지 출처 (3-Way Collaboration)
+- 🔍 **Perplexity sonar-pro** — 실시간 웹 인텔리전스 수집
+- 🔄 **GitHub Actions** — 자동 오케스트레이션 & KG 업데이트
+- 📊 **Notion C-31** — 대시보드 업데이트 예정
+
+### 권장 액션
+- [ ] Notion C-31 대시보드 확인
+- [ ] KG Delta \`$KG_VER\` 검토
+- [ ] 관련 도메인 전략 리뷰 스케줄링
+
+---
+*자동 생성: EW Collaborative Pipeline v$PIPELINE_VERSION*
+EOF
+)
+
+          ISSUE_URL=$(gh issue create \
+            --title "$EMOJI [EW-$SEVERITY] $DOMAIN 이상 신호 탐지 — $RUN_DATE" \
+            --body  "$BODY" \
+            --label "$LABEL" \
+            --repo  "${{ github.repository }}" 2>/dev/null || echo "")
+
+          if [ -n "$ISSUE_URL" ]; then
+            ISSUE_NUM=$(echo "$ISSUE_URL" | grep -oE '[0-9]+$')
+            echo "issue_number=$ISSUE_NUM" >> $GITHUB_OUTPUT
+            echo "issue_url=$ISSUE_URL"    >> $GITHUB_OUTPUT
+            echo "[GitHub] Issue 생성 완료: $ISSUE_URL"
+          else
+            echo "issue_number=" >> $GITHUB_OUTPUT
+            echo "issue_url="    >> $GITHUB_OUTPUT
+            echo "[GitHub] Issue 생성 스킵 (라벨 미설정 또는 오류)"
+          fi
+
+  # ================================================================
+  # PHASE 3: Notion Knowledge Base Sync
+  # ─ 역할: C-31 대시보드 자동 업데이트 + 피드백 루프
+  # ─ 조건: Phase 1 성공 시 항상 실행
+  # ================================================================
+  notion-kb-sync:
+    name: "[P3] Notion KB Sync"
+    needs: [perplexity-research, github-orchestration]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: always() && needs.perplexity-research.result == 'success'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Python 3.11 설정
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: automation/requirements.txt
+
+      - name: 의존성 설치
+        run: pip install -r automation/requirements.txt
+
+      - name: Artifact 다운로드
+        uses: actions/download-artifact@v4
+        with:
+          name: "perplexity-intel-${{ needs.perplexity-research.outputs.run_date }}"
+          path: output/ew_collab/${{ needs.perplexity-research.outputs.run_date }}/
+        continue-on-error: true
+
+      # ── Notion C-31 업데이트 (step-level env 분리) ─────────────
+      - name: "[Notion] C-31 대시보드 업데이트"
+        env:
+          NOTION_API_KEY:     ${{ secrets.NOTION_API_KEY }}
+          NOTION_C31_PAGE_ID: ${{ secrets.NOTION_C31_PAGE_ID }}
+        run: |
+          python automation/notion_c31_updater.py \
+            --page-id          "$NOTION_C31_PAGE_ID" \
+            --week             "${{ needs.perplexity-research.outputs.week_id }}" \
+            --run-date         "${{ needs.perplexity-research.outputs.run_date }}" \
+            --ew-triggered     "${{ needs.perplexity-research.outputs.ew_detected }}" \
+            --ew-count         "${{ needs.perplexity-research.outputs.ew_count }}" \
+            --ew-severity      "${{ needs.perplexity-research.outputs.ew_severity }}" \
+            --ew-domains       "${{ needs.perplexity-research.outputs.ew_domains }}" \
+            --kg-version       "${{ needs.github-orchestration.outputs.kg_version || 'N/A' }}" \
+            --github-issue-url "${{ needs.github-orchestration.outputs.issue_url || '' }}" \
+            --pipeline-version "${{ env.PIPELINE_VERSION }}" \
+            --perplexity-model "${{ needs.perplexity-research.outputs.perplexity_model }}" \
+            --intel-dir        "output/ew_collab/${{ needs.perplexity-research.outputs.run_date }}"
+
+      # ── Notion → GitHub 피드백 루프: 처리 완료 Issue 코멘트 ───
+      - name: "[Notion→GitHub] 처리 완료 피드백"
+        if: needs.github-orchestration.outputs.issue_number != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ISSUE_NUM="${{ needs.github-orchestration.outputs.issue_number }}"
+          KG_VER="${{ needs.github-orchestration.outputs.kg_version }}"
+
+          gh issue comment "$ISSUE_NUM" \
+            --body "## ✅ Notion C-31 업데이트 완료
+
+| 항목 | 상태 |
+|------|------|
+| **Notion C-31** | 🟢 업데이트 완료 |
+| **KG 버전** | \`$KG_VER\` |
+| **처리 일시** | $(date -u +%Y-%m-%dT%H:%M:%SZ) |
+
+### 3-Way 협력 파이프라인 완료
+\`\`\`
+Perplexity (수집) → GitHub Actions (처리) → Notion (저장) ✅
+\`\`\`
+
+*EW Collaborative Pipeline v$PIPELINE_VERSION 자동 처리*" \
+            --repo "${{ github.repository }}" || true
+
+  # ================================================================
+  # PHASE 4: Pipeline Summary & Health Check
+  # ─ 역할: 전체 파이프라인 실행 요약 및 상태 리포트
+  # ================================================================
+  pipeline-summary:
+    name: "[P4] Pipeline Summary"
+    needs: [perplexity-research, github-orchestration, notion-kb-sync]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: 파이프라인 실행 요약
+        run: |
+          echo ""
+          echo "╔══════════════════════════════════════════════════╗"
+          echo "║   EW Collaborative Intelligence Pipeline         ║"
+          echo "║   Version: $PIPELINE_VERSION                         ║"
+          echo "╠══════════════════════════════════════════════════╣"
+          echo "║ PHASE 1 — Perplexity Research                    ║"
+          echo "║   Status  : ${{ needs.perplexity-research.result }}"
+          echo "║   EW 탐지 : ${{ needs.perplexity-research.outputs.ew_detected }}"
+          echo "║   심각도  : ${{ needs.perplexity-research.outputs.ew_severity }}"
+          echo "║   EW 건수 : ${{ needs.perplexity-research.outputs.ew_count }}"
+          echo "╠══════════════════════════════════════════════════╣"
+          echo "║ PHASE 2 — GitHub Orchestration                   ║"
+          echo "║   Status  : ${{ needs.github-orchestration.result }}"
+          echo "║   KG 버전 : ${{ needs.github-orchestration.outputs.kg_version }}"
+          echo "║   Issue   : ${{ needs.github-orchestration.outputs.issue_url }}"
+          echo "╠══════════════════════════════════════════════════╣"
+          echo "║ PHASE 3 — Notion KB Sync                         ║"
+          echo "║   Status  : ${{ needs.notion-kb-sync.result }}"
+          echo "╠══════════════════════════════════════════════════╣"
+          echo "║ DATE: ${{ needs.perplexity-research.outputs.run_date }}"
+          echo "║ WEEK: ${{ needs.perplexity-research.outputs.week_id }}"
+          echo "╚══════════════════════════════════════════════════╝"
+          echo ""
+
+      - name: 파이프라인 상태 검증
+        run: |
+          P1="${{ needs.perplexity-research.result }}"
+          P3="${{ needs.notion-kb-sync.result }}"
+
+          if [ "$P1" != "success" ]; then
+            echo "❌ PHASE 1 (Perplexity Research) 실패 — 파이프라인 이상"
+            exit 1
+          fi
+
+          if [ "$P3" = "failure" ]; then
+            echo "⚠️  PHASE 3 (Notion Sync) 실패 — Notion 업데이트 수동 확인 필요"
+            exit 1
+          fi
+
+          echo "✅ 파이프라인 전체 완료 — 모든 Phase 정상"
