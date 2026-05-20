@@ -1,19 +1,25 @@
 {
   "meta": {
-    "generated_at": "2026-05-19T10:11:36.000000+00:00",
-    "version": "6.1",
-    "kg_version_label": "KG v6.1",
-    "total_nodes": 58,
-    "total_edges": 68,
-    "delta_nodes": 6,
-    "delta_edges": 8,
-    "trigger_event": "C-35 PE-OPTICAL v1.1 신규 편입 · OPTICAL-MODULE-DEEP v2.1",
-    "trigger_commit": "f14713f6",
-    "triggered_at": "2026-05-19T18:34:00+09:00",
+    "generated_at": "2026-05-20T01:54:00.000000+00:00",
+    "version": "6.2",
+    "kg_version_label": "KG v6.2",
+    "total_nodes": 63,
+    "total_edges": 75,
+    "delta_nodes": 5,
+    "delta_edges": 7,
+    "trigger_event": "C-36 INV-STRAT 신규 편입 · INV-STRAT-MASTER v1.0 (NerdWallet 기반 → 기관급 의사결정 변환)",
+    "trigger_commit": "ad4c26d4",
+    "triggered_at": "2026-05-20T10:54:00+09:00",
     "scan_dirs": ["docs", "engines", "prompts"],
     "sha_enabled": false,
     "version_extract": false,
     "changelog": [
+      {
+        "version": "6.2",
+        "date": "2026-05-20",
+        "delta": "+5 nodes / +7 edges",
+        "summary": "C-36 INV-STRAT 도메인 신규 편입: INV-STRAT-HUB / INV-STRAT-MASTER-v1.0 / INV-STRATEGY-7 / INV-LIFECYCLE / INV-KR-MAP · 연계: INV-STRAT→PE-RISK/PE-DD/PE-INV/PE-AI-ECO/T-09/PE-FIN/PE-STRAT"
+      },
       {
         "version": "6.1",
         "date": "2026-05-19",
@@ -155,6 +161,71 @@
       "notion_url": null,
       "file_path": "prompts/PE-OPTICAL/pe_optical_01_deep_v2.1.md",
       "sha": null
+    },
+    {
+      "id": "INV-STRAT-HUB",
+      "type": "domain_hub",
+      "title": "💰 C-36 INV-STRAT · 개인투자 전략 마스터 프레임워크 라이브러리 v1.0",
+      "status": "active",
+      "version": "v1.0",
+      "date": "2026-05-20",
+      "tags": ["INV-STRAT", "C-36", "C36", "investment-strategy", "personal-finance"],
+      "notion_url": "https://www.notion.so/36555ed436f081369cf5c9c5996ac264",
+      "file_path": "prompts/INV-STRAT/inv_strat_master_v1.0.md",
+      "github_sha": "ad4c26d4",
+      "pe3_score": 92,
+      "sha": null
+    },
+    {
+      "id": "INV-STRAT-MASTER-v1.0",
+      "type": "prompt",
+      "title": "INV-STRAT-MASTER v1.0 — 개인투자 전략 마스터 프레임워크 (NerdWallet 기반 → 기관급 의사결정 변환)",
+      "status": "active",
+      "version": "v1.0",
+      "date": "2026-05-20",
+      "tags": ["INV-STRAT", "investment", "strategy", "NerdWallet", "PE-3-92"],
+      "notion_url": "https://www.notion.so/36555ed436f081369cf5c9c5996ac264",
+      "file_path": "prompts/INV-STRAT/inv_strat_master_v1.0.md",
+      "pe3_score": 92,
+      "pe3_target": 97,
+      "pe3_next_version": "v1.1",
+      "sha": null
+    },
+    {
+      "id": "INV-STRATEGY-7",
+      "type": "component",
+      "title": "7대 투자 전략 최적화 모델 — 성장/가치/배당/모멘텀/퀀트/글로벌/대안",
+      "status": "active",
+      "version": "v1.0",
+      "date": "2026-05-20",
+      "tags": ["INV-STRAT", "7-strategy", "investment-model"],
+      "notion_url": null,
+      "file_path": "prompts/INV-STRAT/inv_strat_master_v1.0.md",
+      "sha": null
+    },
+    {
+      "id": "INV-LIFECYCLE",
+      "type": "component",
+      "title": "생애주기 전략 전환 맵 — 축적기/전환기/인출기 3단계",
+      "status": "active",
+      "version": "v1.0",
+      "date": "2026-05-20",
+      "tags": ["INV-STRAT", "lifecycle", "investment-phase"],
+      "notion_url": null,
+      "file_path": "prompts/INV-STRAT/inv_strat_master_v1.0.md",
+      "sha": null
+    },
+    {
+      "id": "INV-KR-MAP",
+      "type": "component",
+      "title": "한국 시장 현지화 맵 — KR 세제/규제/ISA/IRP 특화",
+      "status": "active",
+      "version": "v1.0",
+      "date": "2026-05-20",
+      "tags": ["INV-STRAT", "KR-market", "ISA", "IRP", "localization"],
+      "notion_url": null,
+      "file_path": "prompts/INV-STRAT/inv_strat_master_v1.0.md",
+      "sha": null
     }
   ],
   "edges": [
@@ -225,6 +296,13 @@
     {"source": "PE-OPTICAL-HUB", "target": "PE-RISK-HUB", "relation": "cross_domain_link"},
     {"source": "PE-OPTICAL-HUB", "target": "PE-PAT-HUB", "relation": "cross_domain_link"},
     {"source": "PE-OPTICAL-HUB", "target": "T-09-MOTHER", "relation": "child_of"},
-    {"source": "PE-OPTICAL-HUB", "target": "PE-STRAT-ORCH", "relation": "orchestration_input"}
+    {"source": "PE-OPTICAL-HUB", "target": "PE-STRAT-ORCH", "relation": "orchestration_input"},
+    {"source": "INV-STRAT-HUB", "target": "PE-RISK-HUB", "relation": "cross_domain_link"},
+    {"source": "INV-STRAT-HUB", "target": "PE-DD-HUB", "relation": "cross_domain_link"},
+    {"source": "INV-STRAT-HUB", "target": "PE-INV-HUB", "relation": "cross_domain_link"},
+    {"source": "INV-STRAT-HUB", "target": "PE-AI-ECO-HUB", "relation": "cross_domain_link"},
+    {"source": "INV-STRAT-HUB", "target": "T-09-MOTHER", "relation": "child_of"},
+    {"source": "INV-STRAT-HUB", "target": "PE-FIN-HUB", "relation": "cross_domain_link"},
+    {"source": "INV-STRAT-HUB", "target": "PE-STRAT-HUB", "relation": "cross_domain_link"}
   ]
 }
