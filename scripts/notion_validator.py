@@ -1,6 +1,14 @@
 #!/usr/bin/env python3
 """
-Notion 검증 체계 — notion_validator.py v1.0
+Notion 검증 체계 — notion_validator.py v1.1
+
+변경 이력:
+  v1.1 (2026-05-20)
+    - _is_iso8601(): 정규식 끝 $ 추가 → 부분 매칭 방지
+    - verify_post(): float 캐스팅 TypeError 방어 처리
+    - validate_and_create(): raise 후 불필요한 return None 제거
+    - RICH_TEXT_LIMIT 상수화 (1990자, Notion 블록당 2000자 제한 안전 여유)
+    - SCHEMA에 'c-31-weekly' 모드 추가 (EW 탐지 파이프라인 연동)
 
 3단계 검증:
   Stage 1 (Pre-Write)  : Notion API 호출 전 페이로드 유효성 검사
@@ -34,6 +42,12 @@ except ImportError:
 
 
 # ─────────────────────────────────────────────
+# 상수
+# ─────────────────────────────────────────────
+RICH_TEXT_LIMIT = 1990  # Notion rich_text 블록당 2000자 제한 — 안전 여유 10자
+
+
+# ─────────────────────────────────────────────
 # Result 구조체
 # ─────────────────────────────────────────────
 @dataclass
@@ -59,8 +73,8 @@ class ValidationResult:
 # 공통 헬퍼
 # ─────────────────────────────────────────────
 def _is_iso8601(value: str) -> bool:
-    """YYYY-MM-DD 또는 YYYY-MM-DDTHH:MM:SS 형식 확인"""
-    return bool(re.match(r"^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2})?", value or ""))
+    """YYYY-MM-DD 또는 YYYY-MM-DDTHH:MM:SS 형식 확인 ($ 앵커로 부분 매칭 방지)"""
+    return bool(re.match(r"^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2})?$", value or ""))
 
 
 def _is_url(value: str) -> bool:
@@ -108,7 +122,6 @@ def _extract_checkbox(props: dict, prop_name: str) -> Optional[bool]:
 # Stage 1: Pre-Write 검증
 # ─────────────────────────────────────────────
 # 모드별 스키마 정의
-# fmt: {field_name: {"required": bool, "type": str, "min": float, "max": float}}
 SCHEMA: Dict[str, Dict[str, Any]] = {
     "ew3-weekly": {
         "required_fields": ["gallium_qoq_delta", "germanium_qoq_delta", "lithium_qoq_delta", "pe3_score"],
@@ -136,6 +149,21 @@ SCHEMA: Dict[str, Dict[str, Any]] = {
         },
         "bool_fields": [],
         "select_fields": {"s4_status": ["ACTIVE", "INACTIVE", "MONITOR"]},
+    },
+    # ── EW 탐지 파이프라인 연동 (C-31 Weekly) ──────────────────────────
+    "c-31-weekly": {
+        "required_fields": ["ew_signal", "ew_score", "detected_at", "domain"],
+        "number_ranges": {
+            "ew_score": (0.0, 100.0),
+        },
+        "bool_fields": ["ew_signal"],
+        "date_fields": ["detected_at"],
+        "select_fields": {
+            "domain": [
+                "semiconductor", "ai-infra", "supply-chain",
+                "geopolitics", "macro", "energy",
+            ],
+        },
     },
 }
 
@@ -250,6 +278,12 @@ def verify_post(
             "Total_Non_CN": (_extract_number(props, "Total_Non_CN"), expected.get("total_non_cn_tons")),
             "S4_Status": (_extract_select(props, "S4_Status"), expected.get("s4_status")),
         }
+    elif mode == "c-31-weekly":
+        checks = {
+            "EW_Score": (_extract_number(props, "EW_Score"), expected.get("ew_score")),
+            "EW_Signal": (_extract_checkbox(props, "EW_Signal"), expected.get("ew_signal")),
+            "Domain": (_extract_select(props, "Domain"), expected.get("domain")),
+        }
     else:
         checks = {}
         warnings.append(f"[SCHEMA] mode '{mode}' 에 대한 Post-Write 비교 스키마 없음 — 기본 검사만 수행")
@@ -260,9 +294,12 @@ def verify_post(
         if actual is None:
             errors.append(f"[MISSING] Notion에서 '{field_name}' 값 없음")
         elif isinstance(exp_val, float):
-            # float 비교: 0.001 허용 오차
-            if abs(float(actual) - exp_val) > 0.001:
-                errors.append(f"[MISMATCH] '{field_name}': 기대={exp_val}, 실제={actual}")
+            # float 비교: 0.001 허용 오차 (캐스팅 실패 방어)
+            try:
+                if abs(float(actual) - exp_val) > 0.001:
+                    errors.append(f"[MISMATCH] '{field_name}': 기대={exp_val}, 실제={actual}")
+            except (TypeError, ValueError):
+                errors.append(f"[TYPE] '{field_name}' float 변환 불가: 실제={actual!r}")
         else:
             if str(actual) != str(exp_val):
                 errors.append(f"[MISMATCH] '{field_name}': 기대='{exp_val}', 실제='{actual}'")
@@ -287,7 +324,7 @@ def write_validation_report(
     Stage 3: 검증 통합 결과를 Notion 페이지 프로퍼티에 기록
     Notion DB에 아래 3개 필드가 있어야 함:
       - Validation Status (Select): PASS / FAIL / WARN
-      - Validation Log (Rich Text)
+      - Validation Log (Rich Text)  ← 블록당 최대 2000자, RICH_TEXT_LIMIT 상수 사용
       - Validated At (Date)
     """
     all_passed = all(r.passed for r in results)
@@ -303,7 +340,7 @@ def write_validation_report(
     log_lines: List[str] = []
     for r in results:
         log_lines.append(r.summary())
-    log_text = "\n".join(log_lines)[:1800]  # Notion rich_text 2000자 제한
+    log_text = "\n".join(log_lines)[:RICH_TEXT_LIMIT]
 
     now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")
 
@@ -346,8 +383,7 @@ def validate_and_create(
     results.append(pre)
     print(pre.summary())
     if not pre.passed and fail_on_error:
-        pre.raise_if_failed()
-        return None
+        pre.raise_if_failed()  # raise 후 함수 종료 (return None 불필요)
 
     # DB 엔트리 생성
     try:
@@ -384,13 +420,14 @@ def validate_and_create(
 # CLI (단독 실행)
 # ─────────────────────────────────────────────
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Notion 검증 체계 v1.0")
+    parser = argparse.ArgumentParser(description="Notion 검증 체계 v1.1")
     parser.add_argument("--mode", required=True,
                         choices=["pre", "post"],
                         help="검증 단계: pre=Pre-Write, post=Post-Write")
     parser.add_argument("--payload", required=True, help="JSON 페이로드 파일 경로")
     parser.add_argument("--schema-mode", default="ew3-weekly",
-                        help="스키마 모드 (ew3-weekly / ga-s4-monthly / pejv-partner-update)")
+                        choices=list(SCHEMA.keys()),
+                        help=f"스키마 모드 ({' / '.join(SCHEMA.keys())})")
     parser.add_argument("--page-id", default="",
                         help="Post-Write 검증 대상 Notion 페이지 ID")
     parser.add_argument("--fail-on-error", action="store_true",
