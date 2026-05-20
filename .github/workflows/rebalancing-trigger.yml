@@ -1,0 +1,423 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Rebalancing Trigger · 포트폴리오 리밸런싱 트리거 워크플로우
+#
+# 트리거 조건:
+#   1. ai-intel-weekly 파이프라인 완료 후 EW_SEVERITY=HIGH 감지
+#   2. 수동 workflow_dispatch (force_rebalance=true)
+#   3. 매월 첫째 주 월요일 09:00 UTC 정기 점검
+#
+# [SSOT] .github/prompts/execution_protocol_v2.6.md
+#
+# ── Secret 사용 원칙 ──────────────────────────────────────────────────────────
+# secrets.NOTION_API_KEY → "리밸런싱 Notion 업데이트" step에만 주입
+# secrets.NOTION_C31_PAGE_ID → 동일 step에만 주입
+# ─────────────────────────────────────────────────────────────────────────────
+name: "PE · Portfolio Rebalancing Trigger"
+
+on:
+  # ① ai-intel-weekly 완료 후 자동 연계
+  workflow_run:
+    workflows: ["PE · AI Intel Weekly Digest"]
+    types: [completed]
+
+  # ② 수동 실행
+  workflow_dispatch:
+    inputs:
+      force_rebalance:
+        description: "강제 리밸런싱 트리거 (EW 조건 무시)"
+        required: false
+        default: "false"
+        type: boolean
+      rebalance_scope:
+        description: "리밸런싱 범위"
+        required: false
+        default: "full"
+        type: choice
+        options: ["full", "pe_eqp_only", "pe_ai_only", "pe_semi_only"]
+      threshold_override:
+        description: "EW 임계값 오버라이드 (NONE/LOW/MEDIUM/HIGH)"
+        required: false
+        default: ""
+        type: string
+      dry_run:
+        description: "Dry-run 모드 (실제 업데이트 없이 시뮬레이션만)"
+        required: false
+        default: "false"
+        type: boolean
+
+  # ③ 정기 점검: 매월 1일 09:00 UTC
+  schedule:
+    - cron: "0 9 1 * *"
+
+env:
+  PYTHON_VERSION: "3.11"
+  OUTPUT_DIR: "output/rebalancing"
+  # 리밸런싱 발동 임계값 (workflow_run 자동 연계 시)
+  EW_THRESHOLD: "HIGH"
+  PROTOCOL_PATH: ".github/prompts/execution_protocol_v2.6.md"
+
+jobs:
+  # ─── Job 0: 트리거 조건 평가 ─────────────────────────────────────────────
+  evaluate-trigger:
+    name: "0. 리밸런싱 트리거 조건 평가"
+    runs-on: ubuntu-latest
+    # secrets 사용 없음
+
+    outputs:
+      should_rebalance: ${{ steps.eval.outputs.should_rebalance }}
+      trigger_reason: ${{ steps.eval.outputs.trigger_reason }}
+      rebalance_scope: ${{ steps.eval.outputs.rebalance_scope }}
+      ew_severity: ${{ steps.eval.outputs.ew_severity }}
+      dry_run: ${{ steps.eval.outputs.dry_run }}
+
+    steps:
+      - name: 트리거 조건 평가
+        id: eval
+        run: |
+          FORCE="${{ github.event.inputs.force_rebalance || 'false' }}"
+          SCOPE="${{ github.event.inputs.rebalance_scope || 'full' }}"
+          DRY_RUN="${{ github.event.inputs.dry_run || 'false' }}"
+          THRESHOLD_OVR="${{ github.event.inputs.threshold_override || '' }}"
+          EVENT_NAME="${{ github.event_name }}"
+          WF_CONCLUSION="${{ github.event.workflow_run.conclusion || '' }}"
+
+          # workflow_run 이벤트: 업스트림 파이프라인의 EW 상태는
+          # ai-intel-weekly의 Step Summary 또는 artifact에서 읽어야 하나,
+          # 여기서는 workflow_run.conclusion 기반으로 단순 평가합니다.
+          # 고도화 시 artifact 다운로드로 EW 상태 읽기 가능 (TODO v8.0).
+
+          EW_SEV="UNKNOWN"
+          THRESHOLD="${THRESHOLD_OVR:-${{ env.EW_THRESHOLD }}}"
+
+          SHOULD="false"
+          REASON="N/A"
+
+          if [ "$FORCE" = "true" ]; then
+            SHOULD="true"
+            REASON="FORCE_MANUAL (workflow_dispatch)"
+            EW_SEV="FORCED"
+            echo "🔴 강제 리밸런싱 트리거 활성화"
+
+          elif [ "$EVENT_NAME" = "schedule" ]; then
+            SHOULD="true"
+            REASON="SCHEDULE_MONTHLY (cron: 0 9 1 * *)"
+            EW_SEV="SCHEDULED"
+            echo "📅 정기 리밸런싱 점검 트리거"
+
+          elif [ "$EVENT_NAME" = "workflow_run" ]; then
+            if [ "$WF_CONCLUSION" = "success" ]; then
+              # 업스트림 성공 → 트리거 (EW 상태는 artifact 기반 확인 필요, 현재는 success=HIGH로 간주)
+              # TODO v8.0: artifact 다운로드로 실제 EW_SEVERITY 확인
+              SHOULD="true"
+              REASON="UPSTREAM_PIPELINE_SUCCESS (ai-intel-weekly)"
+              EW_SEV="${THRESHOLD}"
+              echo "✅ 업스트림 파이프라인 성공 → 리밸런싱 평가 진행"
+            else
+              SHOULD="false"
+              REASON="UPSTREAM_PIPELINE_NOT_SUCCESS (conclusion=${WF_CONCLUSION})"
+              echo "⚠️ 업스트림 파이프라인 비성공 (${WF_CONCLUSION}) → 리밸런싱 건너뜀"
+            fi
+          fi
+
+          echo "should_rebalance=${SHOULD}" >> $GITHUB_OUTPUT
+          echo "trigger_reason=${REASON}" >> $GITHUB_OUTPUT
+          echo "rebalance_scope=${SCOPE}" >> $GITHUB_OUTPUT
+          echo "ew_severity=${EW_SEV}" >> $GITHUB_OUTPUT
+          echo "dry_run=${DRY_RUN}" >> $GITHUB_OUTPUT
+
+          echo "📊 평가 결과: should=${SHOULD} | reason=${REASON} | scope=${SCOPE} | ew_sev=${EW_SEV} | dry_run=${DRY_RUN}"
+
+  # ─── Job 1: 리밸런싱 시그널 생성 ─────────────────────────────────────────
+  generate-rebalancing-signal:
+    name: "1. 리밸런싱 시그널 생성"
+    needs: evaluate-trigger
+    runs-on: ubuntu-latest
+    if: needs.evaluate-trigger.outputs.should_rebalance == 'true'
+    # secrets 사용 없음
+
+    outputs:
+      signal_json: ${{ steps.signal.outputs.signal_json }}
+      signal_count: ${{ steps.signal.outputs.signal_count }}
+      top_action: ${{ steps.signal.outputs.top_action }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+
+      - run: pip install -r automation/requirements_ai_intel.txt 2>/dev/null || echo "[WARN] requirements 없음 — 기본 모드"
+
+      - name: 리밸런싱 시그널 생성
+        id: signal
+        env:
+          REBALANCE_SCOPE: ${{ needs.evaluate-trigger.outputs.rebalance_scope }}
+          EW_SEVERITY: ${{ needs.evaluate-trigger.outputs.ew_severity }}
+          TRIGGER_REASON: ${{ needs.evaluate-trigger.outputs.trigger_reason }}
+          DRY_RUN: ${{ needs.evaluate-trigger.outputs.dry_run }}
+        run: |
+          mkdir -p ${{ env.OUTPUT_DIR }}
+
+          python3 << 'PYEOF'
+          import os, json, datetime
+
+          scope   = os.environ["REBALANCE_SCOPE"]
+          sev     = os.environ["EW_SEVERITY"]
+          reason  = os.environ["TRIGGER_REASON"]
+          dry_run = os.environ["DRY_RUN"] == "true"
+          today   = datetime.date.today().isoformat()
+
+          # 도메인 → 리밸런싱 후보 매핑 (v7.0 기준)
+          domain_map = {
+              "pe_eqp_only":  ["ASML", "LamResearch", "AMAT", "KLA", "TEL"],
+              "pe_ai_only":   ["NVDA", "AMD", "TSMC", "Marvell"],
+              "pe_semi_only": ["Samsung", "SK Hynix", "Micron", "TSMC"],
+              "full":         ["ASML", "LamResearch", "AMAT", "KLA", "TEL",
+                               "NVDA", "AMD", "TSMC", "Marvell", "Samsung", "SK Hynix"],
+          }
+          tickers = domain_map.get(scope, domain_map["full"])
+
+          severity_weight = {"HIGH": 1.0, "MEDIUM": 0.7, "LOW": 0.4,
+                             "NONE": 0.1, "FORCED": 1.0, "SCHEDULED": 0.5,
+                             "UNKNOWN": 0.3}
+          weight = severity_weight.get(sev, 0.3)
+
+          signals = []
+          for ticker in tickers:
+              signals.append({
+                  "ticker": ticker,
+                  "action": "REVIEW",          # REVIEW / BUY / SELL / HOLD
+                  "priority_score": round(weight, 2),
+                  "reason": reason,
+                  "ew_severity": sev,
+                  "scope": scope,
+                  "dry_run": dry_run,
+                  "date": today,
+              })
+
+          top = signals[0]["ticker"] if signals else "N/A"
+
+          output = {
+              "generated_at": today,
+              "trigger_reason": reason,
+              "ew_severity": sev,
+              "scope": scope,
+              "dry_run": dry_run,
+              "signal_count": len(signals),
+              "top_action": top,
+              "signals": signals,
+          }
+
+          out_path = os.path.join(os.environ.get("OUTPUT_DIR", "output/rebalancing"), "rebalancing_signal.json")
+          with open(out_path, "w") as f:
+              json.dump(output, f, indent=2, ensure_ascii=False)
+
+          with open(os.environ["GITHUB_OUTPUT"], "a") as gf:
+              gf.write(f"signal_count={len(signals)}\n")
+              gf.write(f"top_action={top}\n")
+              gf.write(f"signal_json={out_path}\n")
+
+          print(f"[SIGNAL] count={len(signals)} | top={top} | sev={sev} | dry_run={dry_run}")
+          PYEOF
+
+      - name: 시그널 아티팩트 업로드
+        uses: actions/upload-artifact@v4
+        with:
+          name: rebalancing-signal
+          path: ${{ env.OUTPUT_DIR }}/rebalancing_signal.json
+          retention-days: 30
+
+  # ─── Job 2: Notion 리밸런싱 로그 업데이트 ────────────────────────────────
+  notion-rebalancing-log:
+    name: "2. Notion 리밸런싱 로그 업데이트"
+    needs: [evaluate-trigger, generate-rebalancing-signal]
+    runs-on: ubuntu-latest
+    if: needs.evaluate-trigger.outputs.dry_run != 'true'
+    # secrets: NOTION_API_KEY, NOTION_C31_PAGE_ID → 이 step에만 주입
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 시그널 아티팩트 다운로드
+        uses: actions/download-artifact@v4
+        with:
+          name: rebalancing-signal
+          path: ${{ env.OUTPUT_DIR }}
+
+      - name: NOTION Secret 확인
+        id: secret_check
+        run: |
+          if [ -z "${{ secrets.NOTION_C31_PAGE_ID }}" ]; then
+            echo "::warning::NOTION_C31_PAGE_ID 미설정 — Notion 업데이트 건너뜀"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      # ── step-level env — NOTION secrets 이 step에만 노출 ─────────────────
+      - name: 리밸런싱 Notion 업데이트
+        if: steps.secret_check.outputs.skip != 'true'
+        env:
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          NOTION_C31_PAGE_ID: ${{ secrets.NOTION_C31_PAGE_ID }}
+          TRIGGER_REASON: ${{ needs.evaluate-trigger.outputs.trigger_reason }}
+          EW_SEVERITY: ${{ needs.evaluate-trigger.outputs.ew_severity }}
+          SCOPE: ${{ needs.evaluate-trigger.outputs.rebalance_scope }}
+          SIGNAL_COUNT: ${{ needs.generate-rebalancing-signal.outputs.signal_count }}
+          TOP_ACTION: ${{ needs.generate-rebalancing-signal.outputs.top_action }}
+        run: |
+          python3 << 'PYEOF'
+          import os, json, urllib.request, urllib.error, datetime
+
+          API_KEY    = os.environ["NOTION_API_KEY"]
+          PAGE_ID    = os.environ["NOTION_C31_PAGE_ID"]
+          REASON     = os.environ["TRIGGER_REASON"]
+          SEV        = os.environ["EW_SEVERITY"]
+          SCOPE      = os.environ["SCOPE"]
+          COUNT      = os.environ["SIGNAL_COUNT"]
+          TOP        = os.environ["TOP_ACTION"]
+          TODAY      = datetime.date.today().isoformat()
+
+          sev_emoji = {"HIGH": "🔴", "MEDIUM": "🟡", "LOW": "🟢",
+                       "NONE": "⚪️", "FORCED": "🔵", "SCHEDULED": "📅"}.get(SEV, "⚪️")
+
+          def rt(text, bold=False, code=False):
+              return {"type": "text", "text": {"content": text},
+                      "annotations": {"bold": bold, "italic": False, "strikethrough": False,
+                                       "underline": False, "code": code, "color": "default"}}
+
+          block = {
+              "object": "block",
+              "type": "callout",
+              "callout": {
+                  "rich_text": [
+                      rt(f"[리밸런싱 트리거] {TODAY} | {sev_emoji} {SEV} | scope={SCOPE} | signals={COUNT} | top={TOP} | reason={REASON}")
+                  ],
+                  "icon": {"type": "emoji", "emoji": "⚖️"}
+              }
+          }
+
+          payload = {"children": [block]}
+          headers = {
+              "Authorization": f"Bearer {API_KEY}",
+              "Content-Type": "application/json",
+              "Notion-Version": "2022-06-28"
+          }
+
+          url = f"https://api.notion.com/v1/blocks/{PAGE_ID}/children"
+          req = urllib.request.Request(
+              url,
+              data=json.dumps(payload).encode("utf-8"),
+              headers=headers,
+              method="PATCH"
+          )
+
+          try:
+              with urllib.request.urlopen(req) as resp:
+                  result = json.loads(resp.read().decode("utf-8"))
+              print(f"✅ Notion 리밸런싱 로그 업데이트 완료: {TODAY}")
+          except urllib.error.HTTPError as e:
+              body = e.read().decode("utf-8")
+              print(f"::warning::Notion API 오류 {e.code}: {body}")
+          PYEOF
+
+  # ─── Job 3: 리밸런싱 GitHub Issue 생성 ───────────────────────────────────
+  rebalancing-issue:
+    name: "3. 리밸런싱 GitHub Issue 생성"
+    needs: [evaluate-trigger, generate-rebalancing-signal]
+    runs-on: ubuntu-latest
+    if: |
+      needs.evaluate-trigger.outputs.should_rebalance == 'true' &&
+      needs.evaluate-trigger.outputs.dry_run != 'true'
+    # secrets 사용 없음 (GITHUB_TOKEN 자동 주입)
+
+    steps:
+      - name: 리밸런싱 Issue 생성
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const reason  = "${{ needs.evaluate-trigger.outputs.trigger_reason }}";
+            const sev     = "${{ needs.evaluate-trigger.outputs.ew_severity }}";
+            const scope   = "${{ needs.evaluate-trigger.outputs.rebalance_scope }}";
+            const count   = "${{ needs.generate-rebalancing-signal.outputs.signal_count }}";
+            const top     = "${{ needs.generate-rebalancing-signal.outputs.top_action }}";
+            const today   = new Date().toISOString().slice(0,10);
+
+            const sevEmoji = {HIGH: "🔴", MEDIUM: "🟡", LOW: "🟢",
+                              NONE: "⚪️", FORCED: "🔵", SCHEDULED: "📅"}[sev] || "⚪️";
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo:  context.repo.repo,
+              title: `⚖️ [REBALANCING] ${sevEmoji} ${sev} — ${scope} · ${today}`,
+              body: [
+                "## 포트폴리오 리밸런싱 트리거",
+                "",
+                `| 항목 | 값 |`,
+                `|---|---|`,
+                `| **날짜** | ${today} |`,
+                `| **트리거 이유** | ${reason} |`,
+                `| **EW 심각도** | ${sevEmoji} ${sev} |`,
+                `| **리밸런싱 범위** | ${scope} |`,
+                `| **시그널 수** | ${count} |`,
+                `| **최우선 종목** | ${top} |`,
+                "",
+                "## 액션 아이템",
+                "- [ ] 시그널 아티팩트 다운로드 및 검토",
+                "- [ ] 각 종목별 리밸런싱 방향 확인 (REVIEW/BUY/SELL/HOLD)",
+                "- [ ] EW 원인 분석 및 대응 전략 수립",
+                "- [ ] Notion C-31 페이지 업데이트 완료 확인",
+                "",
+                "> 자동 생성: GitHub Actions rebalancing-trigger.yml"
+              ].join("\n"),
+              labels: ["rebalancing", "portfolio", "ai-intel"]
+            });
+
+  # ─── Job 4: 파이프라인 요약 ──────────────────────────────────────────────
+  rebalancing-summary:
+    name: "4. 리밸런싱 파이프라인 요약"
+    needs: [evaluate-trigger, generate-rebalancing-signal]
+    runs-on: ubuntu-latest
+    if: always()
+    # secrets 사용 없음
+
+    steps:
+      - name: Step Summary 출력
+        run: |
+          SHOULD="${{ needs.evaluate-trigger.outputs.should_rebalance }}"
+          REASON="${{ needs.evaluate-trigger.outputs.trigger_reason }}"
+          SEV="${{ needs.evaluate-trigger.outputs.ew_severity }}"
+          SCOPE="${{ needs.evaluate-trigger.outputs.rebalance_scope }}"
+          COUNT="${{ needs.generate-rebalancing-signal.outputs.signal_count || 'N/A' }}"
+          TOP="${{ needs.generate-rebalancing-signal.outputs.top_action || 'N/A' }}"
+          DRY="${{ needs.evaluate-trigger.outputs.dry_run }}"
+          TODAY=$(date +%Y-%m-%d)
+
+          echo "════════════════════════════════════════════════════════"
+          echo "  PE · Portfolio Rebalancing Trigger — 요약"
+          echo "════════════════════════════════════════════════════════"
+          echo "  날짜             : ${TODAY}"
+          echo "  리밸런싱 발동    : ${SHOULD}"
+          echo "  트리거 이유      : ${REASON}"
+          echo "  EW 심각도        : ${SEV}"
+          echo "  리밸런싱 범위    : ${SCOPE}"
+          echo "  시그널 수        : ${COUNT}"
+          echo "  최우선 종목      : ${TOP}"
+          echo "  Dry-run 모드     : ${DRY}"
+          echo "════════════════════════════════════════════════════════"
+
+          cat >> $GITHUB_STEP_SUMMARY << SUMMARY_EOF
+          ## ⚖️ PE · Portfolio Rebalancing Trigger — ${TODAY}
+
+          | 항목 | 값 |
+          |---|---|
+          | 리밸런싱 발동 | ${SHOULD} |
+          | 트리거 이유 | ${REASON} |
+          | EW 심각도 | ${SEV} |
+          | 리밸런싱 범위 | ${SCOPE} |
+          | 시그널 수 | ${COUNT} |
+          | 최우선 종목 | ${TOP} |
+          | Dry-run 모드 | ${DRY} |
+          SUMMARY_EOF
