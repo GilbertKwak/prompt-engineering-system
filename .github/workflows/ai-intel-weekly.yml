@@ -58,6 +58,8 @@ env:
   KG_BASE_VERSION: "4.25"
   PROTOCOL_PATH: ".github/prompts/execution_protocol_v2.6.md"
   PROTOCOL_MIN_BYTES: "500"
+  # ✅ [오류2 수정] NOTION_C31_PAGE_ID_VALUE 평문 하드코딩 제거.
+  # 페이지 ID는 secrets.NOTION_C31_PAGE_ID 로만 접근합니다.
 
 jobs:
   # ─── Job 0: 프로토콜 검증 ─────────────────────────────────────────────────
@@ -287,10 +289,18 @@ jobs:
           PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
           FORCE_EW: ${{ github.event.inputs.force_ew_check || 'false' }}
         run: |
+          # ✅ [오류3 수정] FORCE_EW=true 일 때 --force 플래그를 스크립트에 전달
+          FORCE_FLAG=""
+          if [ "$FORCE_EW" = "true" ]; then
+            FORCE_FLAG="--force"
+            echo "🔴 FORCE_EW=true → --force 플래그 활성화"
+          fi
+
           python automation/ai_ew_detector.py \
             --input-dir "${{ env.OUTPUT_DIR }}" \
             --week "${{ steps.meta.outputs.week }}" \
-            --output "${{ env.OUTPUT_DIR }}/ew_report.json"
+            --output "${{ env.OUTPUT_DIR }}/ew_report.json" \
+            $FORCE_FLAG
 
           python3 << 'PYEOF'
           import json, os
