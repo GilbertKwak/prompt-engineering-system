@@ -437,13 +437,15 @@ jobs:
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
 
+      # ── step-level env 블록으로 분리 ─────────────────────────────────────
       - name: Notion C-31 업데이트
         if: steps.secret_check.outputs.skip != 'true'
         env:
           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          NOTION_C31_PAGE_ID: ${{ secrets.NOTION_C31_PAGE_ID }}
         run: |
           python automation/notion_c31_updater.py \
-            --page-id "${{ secrets.NOTION_C31_PAGE_ID }}" \
+            --page-id "$NOTION_C31_PAGE_ID" \
             --week "${{ needs.ew-detection.outputs.week }}" \
             --run-date "${{ needs.ew-detection.outputs.run_date }}" \
             --ew-triggered "${{ needs.ew-detection.outputs.ew_triggered }}" \
@@ -522,6 +524,7 @@ jobs:
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
 
+      # ── step-level env 블록으로 분리 ─────────────────────────────────────
       - name: Notion Weekly Report 페이지 생성
         id: create_page
         if: steps.secret_check.outputs.skip != 'true'
