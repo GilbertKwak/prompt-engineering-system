@@ -291,7 +291,7 @@ jobs:
           PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
           FORCE_EW: ${{ github.event.inputs.force_ew_check || 'false' }}
         run: |
-          # FORCE_EW 환경변수 → --force 플래그 변환
+          # ✅ FORCE_EW 환경변수 → --force 플래그 변환
           FORCE_FLAG=""
           if [ "$FORCE_EW" = "true" ]; then
             FORCE_FLAG="--force"
