@@ -1,18 +1,11 @@
 {
-  "_comment": "Perplexity MCP에서 이 파일을 수정하면 perplexity-trigger.yml이 자동 실행됩니다",
-  "_usage": {
-    "weekly_standard": {"target_workflow": "weekly", "intel_scope": "standard", "force_ew_check": "false"},
-    "weekly_deep": {"target_workflow": "weekly", "intel_scope": "deep", "force_ew_check": "false"},
-    "weekly_force_ew": {"target_workflow": "weekly", "intel_scope": "standard", "force_ew_check": "true"},
-    "ew_emergency": {"target_workflow": "ew-emergency", "ew_domain": "enterprise_deployment", "ew_severity": "HIGH", "ew_signals": "signal1,signal2"}
-  },
+  "_comment": "이 파일을 수정하고 push하면 perplexity-trigger.yml이 자동 실행됩니다",
+  "_last_triggered": "2026-05-20T12:36:00+09:00",
   "target_workflow": "weekly",
   "intel_scope": "standard",
   "force_ew_check": "false",
   "ew_domain": "enterprise_deployment",
   "ew_severity": "MEDIUM",
   "ew_signals": "",
-  "dry_run": "true",
-  "triggered_by": "perplexity",
-  "triggered_at": "2026-05-20T12:34:00+09:00"
+  "dry_run": "false"
 }
