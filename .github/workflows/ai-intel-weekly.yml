@@ -41,6 +41,11 @@ on:
         required: false
         default: "false"
         type: boolean
+      force_all_p1:
+        description: "모든 도메인 P1 강제 실행 (우선순위 필터 무시)"
+        required: false
+        default: "false"
+        type: boolean
       kg_version_override:
         description: "KG 버전 직접 지정 (비워두면 자동 +0.01)"
         required: false
@@ -197,14 +202,25 @@ jobs:
           echo "📅 주차: $WEEK | 실행일: $RUN_DATE | 스코프: $SCOPE"
 
       # ── step-level env 블록 — PERPLEXITY_API_KEY 이 step에만 노출 ─────────
+      # FORCE_ALL_P1=true 이면 --priority p1 플래그를 Python 스크립트에 전달
       - name: 인텔 수집 — ${{ matrix.domain }}
         env:
           PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
           FORCE_MODEL: ${{ steps.meta.outputs.force_model }}
+          FORCE_ALL_P1: ${{ github.event.inputs.force_all_p1 || 'false' }}
         run: |
           DOMAIN="${{ matrix.domain }}"
           WEEK="${{ steps.meta.outputs.week }}"
           SCOPE="${{ steps.meta.outputs.scope }}"
+
+          # FORCE_ALL_P1=true → --priority p1 플래그 활성화
+          PRIORITY_FLAG=""
+          if [ "$FORCE_ALL_P1" = "true" ]; then
+            PRIORITY_FLAG="--priority p1"
+            echo "🔴 FORCE_ALL_P1=true → 도메인 '${DOMAIN}' P1 강제 실행"
+          else
+            echo "✅ 우선순위 필터 정상 동작 (FORCE_ALL_P1=false)"
+          fi
 
           declare -A QUERIES
           QUERIES[enterprise_deployment]="enterprise AI deployment ROI 2026 Q2|LLM enterprise governance compliance cost optimization"
@@ -221,7 +237,8 @@ jobs:
             --week "$WEEK" \
             --scope "$SCOPE" \
             --queries "${Q_ARRAY[@]}" \
-            --output "${{ env.OUTPUT_DIR }}/intel_${DOMAIN}.json"
+            --output "${{ env.OUTPUT_DIR }}/intel_${DOMAIN}.json" \
+            $PRIORITY_FLAG
 
       - name: 인텔 아티팩트 업로드
         uses: actions/upload-artifact@v4
@@ -290,8 +307,9 @@ jobs:
         env:
           PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
           FORCE_EW: ${{ github.event.inputs.force_ew_check || 'false' }}
+          FORCE_ALL_P1: ${{ github.event.inputs.force_all_p1 || 'false' }}
         run: |
-          # ✅ FORCE_EW 환경변수 → --force 플래그 변환
+          # FORCE_EW 환경변수 → --force 플래그 변환
           FORCE_FLAG=""
           if [ "$FORCE_EW" = "true" ]; then
             FORCE_FLAG="--force"
@@ -300,11 +318,19 @@ jobs:
             echo "✅ FORCE_EW=false → 정상 탐지 모드"
           fi
 
+          # FORCE_ALL_P1=true → --priority p1 플래그 변환
+          PRIORITY_FLAG=""
+          if [ "$FORCE_ALL_P1" = "true" ]; then
+            PRIORITY_FLAG="--priority p1"
+            echo "🔴 FORCE_ALL_P1=true → EW 탐지도 P1 강제 실행"
+          fi
+
           python automation/ai_ew_detector.py \
             --input-dir "${{ env.OUTPUT_DIR }}" \
             --week "${{ steps.meta.outputs.week }}" \
             --output "${{ env.OUTPUT_DIR }}/ew_report.json" \
-            $FORCE_FLAG
+            $FORCE_FLAG \
+            $PRIORITY_FLAG
 
           python3 << 'PYEOF'
           import json, os
@@ -844,12 +870,14 @@ jobs:
           P_VER="${{ needs.protocol-check.outputs.protocol_version }}"
           PAGE_URL="${{ needs.create-weekly-page.outputs.page_url }}"
           PAGE_WEEK="${{ needs.create-weekly-page.outputs.week }}"
+          FORCE_P1="${{ github.event.inputs.force_all_p1 || 'false' }}"
 
           echo "════════════════════════════════════════════════════════"
           echo "  PE · AI Intel Weekly Digest — 파이프라인 완료 요약"
           echo "════════════════════════════════════════════════════════"
           echo "  주차              : ${WEEK}"
           echo "  실행일            : ${RUN_DATE}"
+          echo "  전체 P1 강제 실행 : ${FORCE_P1}"
           echo "  EW 발동           : ${EW_TRIGGERED}"
           echo "  EW 심각도         : ${EW_SEVERITY}"
           echo "  EW 신호           : ${EW_SIGNALS:-없음}"
@@ -868,6 +896,7 @@ jobs:
           | 항목 | 값 |
           |---|---|
           | 실행일 | ${RUN_DATE} |
+          | 전체 P1 강제 실행 | ${FORCE_P1} |
           | EW 발동 | ${EW_TRIGGERED} |
           | EW 심각도 | ${EW_SEVERITY} |
           | EW 신호 | ${EW_SIGNALS:-없음} |
