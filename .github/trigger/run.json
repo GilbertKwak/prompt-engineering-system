@@ -1,6 +1,6 @@
 {
   "_comment": "이 파일을 수정하고 push하면 perplexity-trigger.yml이 자동 실행됩니다",
-  "_last_triggered": "2026-05-20T12:36:00+09:00",
+  "_last_triggered": "2026-05-20T20:23:00+09:00",
   "target_workflow": "weekly",
   "intel_scope": "standard",
   "force_ew_check": "false",
