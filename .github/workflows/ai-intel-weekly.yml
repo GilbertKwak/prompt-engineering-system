@@ -259,9 +259,11 @@ jobs:
           echo "week=$WEEK" >> $GITHUB_OUTPUT
           echo "run_date=$(date +%Y-%m-%d)" >> $GITHUB_OUTPUT
 
+      # ── 핵심 수정: step-level env 블록으로 분리 ──────────────────────────
       - name: EW 탐지 실행
         id: ew
         env:
+          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
           FORCE_EW: ${{ github.event.inputs.force_ew_check || 'false' }}
         run: |
           python automation/ai_ew_detector.py \
