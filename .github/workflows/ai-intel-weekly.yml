@@ -522,7 +522,7 @@ jobs:
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
 
-      # ── step-level env 블록 — NOTION_C31_PAGE_ID secret으로만 주입 ────────
+      # ── step-level env 블록 — secrets만 주입, 나머지는 env var로 참조 ─────
       - name: Notion Weekly Report 페이지 생성
         id: create_page
         if: steps.secret_check.outputs.skip != 'true'
