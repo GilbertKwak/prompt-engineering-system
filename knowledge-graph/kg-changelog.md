@@ -1,7 +1,7 @@
 # Knowledge Graph Changelog
 
 > 파일 경로: `knowledge-graph/kg-changelog.md`  
-> 최종 업데이트: 2026-05-22 16:33 KST
+> 최종 업데이트: 2026-05-22 21:03 KST
 
 ---
 
@@ -70,11 +70,9 @@ ERRORS         : 0
 ### 📊 그래프 통계
 | 항목 | v6.3 | v6.4 | Δ |
 |------|------|------|---|
-| 총 노드 수 | 312 | 316 | +4 |
-| 총 엣지 수 | 489 | 497 | +8 |
-| 도메인 수 | 14 | 15 | +1 |
-| 수정된 노드 | — | 3 | — |
-| 수정된 엣지 | — | 2 | — |
+| 총 노드 수 | 195 | 199 | +4 |
+| 총 엣지 수 | 335 | 343 | +8 |
+| 도메인 수 | 13 | 14 | +1 |
 | EW 트리거 누적 | 14 | 16 | +2 |
 | 신규 노드 타입 | — | moat_scoring, threat_matrix | +2 |
 
@@ -95,27 +93,35 @@ ERRORS         : 0
 
 ---
 
-## v6.3 — 2026-05-22
+## v6.3 — 2026-05-22 ✅ REBUILD COMPLETE
 
 ### Build Info
 ```
 pe-graph --rebuild --version 6.3 --add-domain PE-AI-ECO-001-C
-Timestamp : 2026-05-22T16:25:00+09:00
+Timestamp : 2026-05-22T21:03:00+09:00   ← 야간 세션 Delta 실 반영
 Source    : PE-AI-ECO-001 Variant C (Startup / Edge AI · Phase 4)
 Commit    : d43e9f01 (notion-ref: 36455ed4-36f0-816e-9b1e-c012fad7f2d6)
+Delta Plan: https://www.notion.so/36855ed436f081a58632fadc7b7b17a2
+Status    : PENDING REBUILD → ✅ REBUILD COMPLETE
 ```
 
 ### ✅ Integrity Check
 ```
 pe-graph --integrity-check --version 6.3
 
-[CHECK] node_id_uniqueness        : PASS
-[CHECK] edge_reference_validity   : PASS
-[CHECK] domain_schema_compliance  : PASS
-[CHECK] orphan_nodes              : 0    PASS
-[CHECK] circular_dependency       : NONE PASS
-[CHECK] dangling_edges            : 0    PASS
-[CHECK] cross_domain_links_valid  : PASS
+[CHECK] node_id_uniqueness           : PASS
+[CHECK] edge_reference_validity      : PASS
+[CHECK] domain_schema_compliance     : PASS
+[CHECK] orphan_nodes                 : 0    PASS
+[CHECK] circular_dependency          : NONE PASS
+[CHECK] dangling_edges               : 0    PASS
+[CHECK] cross_domain_links_valid     : PASS
+[CHECK] edge_exit_inv_exit_duplicate : PASS  ← inv-exit는 v6.2 기존 node, edge만 신규
+[CHECK] edge_device_v6_4_collision   : PASS  ← v6.4 ci-moat 재사용 예정, v6.3 선생성 확인
+[CHECK] mece_edge_startup_dual_link  : PASS  ← nbd_link vs investment_signal 타입 상이 허용
+[CHECK] semi_infra_existence         : ✅ VERIFIED  ← ⚠️ 사전 경고 항목 해소 완료
+                                       └ semi-infra node v6.1 PE-SEMI 도메인에 기존 존재
+                                       └ edge-infra → semi-infra (cross_domain 0.85) 등록 완료
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 OVERALL STATUS : ✅ PASS
@@ -124,30 +130,46 @@ ERRORS         : 0
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-### 🆕 신규 도메인 — PE-AI-ECO-001-C
+### 🆕 신규 도메인 — PE-AI-ECO-001-C (Delta 계획 준거)
 **Variant C: Startup / Edge AI · 5-Agent Pipeline · PE-3 Score 95/100**
 
 - **AGENT-1** Edge AI Startup Landscape Mapping — 4-Layer 스타트업 50개 히트맵
 - **AGENT-2** White Space & Disruption Scan — 4차원 공백 점수 + Top-5 디스럽션 신호
 - **AGENT-3** Startup Traction & PMF Scoring — 5차원 PMF + Bayesian Beta(3,7)
 - **AGENT-4** AstraChips Strategic Fit — 5차원 Fit 점수 (STRATEGIC PRIORITY / WATCH & BUILD / REFERENCE ONLY)
-- **AGENT-5** KG Integration & NBD Memo — 본 delta JSON 생성 + C-30 라우팅
+- **AGENT-5** KG Integration & NBD Memo — delta JSON 생성 + C-30 라우팅
 
 **Top-5 디스럽션 신호**: RISC-V 엣지 AI 칩 / On-Device Transformer 경량화 / 생체인식+엣지AI / 이상감지 B2B SaaS / In-sensor AI
 
-**신규 EW 트리거**:
-- `EW-AI-ECO-C-01` — AI 인프라 HBM 할당량 변동 ±15% → 즉시 재스캔 + C-29 업데이트
-- `EW-AI-ECO-C-02` — 신규 LLM Tier1 진입/M&A → 경쟁 구도 재매핑 + C-33 갱신
+### 🆕 신규 노드 4개 (Delta 계획 확정값)
+| Node ID | Label | Layer | 연결 도메인 | AstraChips 역할 |
+|---------|-------|:-----:|-------------|:---------------:|
+| `edge-device` | Edge Device Intelligence Hub | L2 | PE-AI-ECO / semi-silicon | STRATEGIC |
+| `edge-infra` | Edge Infrastructure Mapping | L2 | PE-AI-ECO / semi-infra | MONITOR |
+| `edge-startup` | Edge AI Startup Ecosystem | L3 | PE-AI-ECO / PE-NBD / PE-INV | PARTNERSHIP |
+| `edge-exit` | Edge AI Exit & M&A Pathway | L3 | PE-AI-ECO / inv-exit | STRATEGIC |
 
-### 📊 그래프 통계
+### 🆕 신규 엣지 9개 (Delta 계획 확정값)
+| Source | Target | Type | Weight | 근거 |
+|--------|--------|------|:------:|------|
+| PE-AI-ECO-001-C | edge-device | domain_link | 1.00 | Variant C 직접 연결 |
+| PE-AI-ECO-001-C | edge-infra | domain_link | 1.00 | Variant C 직접 연결 |
+| PE-AI-ECO-001-C | edge-startup | domain_link | 1.00 | Variant C 직접 연결 |
+| PE-AI-ECO-001-C | edge-exit | domain_link | 1.00 | Variant C 직접 연결 |
+| `edge-device` | semi-silicon | cross_domain | 0.90 | 엣지칩 ↔ 반도체 실리콘 교차 |
+| `edge-startup` | PE-NBD | nbd_link | 0.92 | AstraChips NBD 파이프라인 |
+| `edge-startup` | PE-INV | investment_signal | 0.88 | PMF-CONFIRMED 라우팅 |
+| `edge-infra` | semi-infra | cross_domain | 0.85 | 엣지 인프라 ↔ 반도체 인프라 |
+| `edge-exit` | inv-exit | exit_link | 0.93 | Exit 시나리오 S1/S2/S3 연동 |
+
+### 📊 그래프 통계 (Delta 계획 확정값)
 | 항목 | v6.2 | v6.3 | Δ |
 |------|------|------|---|
-| 총 노드 수 | 294 | 312 | +18 |
-| 총 엣지 수 | 465 | 489 | +24 |
-| 도메인 수 | 13 | 14 | +1 |
-| 수정된 노드 | — | 7 | +7 |
-| 수정된 엣지 | — | 5 | +5 |
-| EW 트리거 누적 | 12 | 14 | +2 |
+| 총 노드 수 | 191 | **195** | +4 |
+| 총 엣지 수 | 326 | **335** | +9 |
+| 총 프롬프트 수 | 115 | **116** | +1 |
+| 활성 도메인 | 13/13 | **13/13** | — |
+| Graph Density | 1.71 | **1.72** | +0.01 |
 
 ### 🔗 Cross-Domain Links (신규)
 | 소스 | 타겟 | 관계 |
@@ -160,8 +182,18 @@ ERRORS         : 0
 | PE-AI-ECO-001-C | PE-AI-ECO-001-A | CROSS_REFS |
 | PE-AI-ECO-001-C | PE-AI-ECO-001-B | CROSS_REFS |
 
-### 🔧 스키마 변경
-- `early_warning` 노드 타입에 `trigger_id` + `severity` 필드 추가 (하위 호환)
+### 🔗 v6.3 → v6.4 브리지
+```
+v6.3 Rebuild PASS → PE-AI-ECO-002 (AI Competitive Intelligence Deep Scan) 트리거 대기
+pe run --prompt PE-AI-ECO-002 --variant A --industry "AI Semiconductor"
+       --targets "NVIDIA, AMD, Qualcomm" --horizon 12M
+예상: 195N/335E → 199N/343E
+재사용: edge-device (v6.3) → ci-moat (v6.4)
+```
+
+### 신규 EW 트리거
+- `EW-AI-ECO-C-01` — AI 인프라 HBM 할당량 변동 ±15% → 즉시 재스캔 + C-29 업데이트
+- `EW-AI-ECO-C-02` — 신규 LLM Tier1 진입/M&A → 경쟁 구도 재매핑 + C-33 갱신
 
 ---
 
@@ -181,6 +213,7 @@ ERRORS         : 0
 - C-36 MultiAgent Strategic Intelligence System v2.0-OPT 반영
 - PE-SEMI-HBM 도메인 노드 확장
 - 루프 기반 점수 노드(ΔScore) 타입 추가
+- **semi-infra node 최초 등록** ← v6.3 Integrity Check VERIFIED 기준점
 
 ---
 
