@@ -1,79 +1,41 @@
 {
-  "metadata": {
-    "version": "6.3",
-    "build_type": "rebuild",
-    "timestamp": "2026-05-22T12:03:00Z",
-    "rebuilt_at": "2026-05-22T21:03:00+09:00",
-    "author": "GilbertKwak",
-    "command": "pe-graph --rebuild --version 6.3 --add-domain PE-AI-ECO-001-C",
-    "source_prompt": "PE-AI-ECO-001-C · Startup / Edge AI · Phase 4",
-    "source_commit": "d43e9f01",
-    "notion_ref": "https://www.notion.so/36455ed436f0816e9b1ec012fad7f2d6",
-    "notion_delta_plan": "https://www.notion.so/36855ed436f081a58632fadc7b7b17a2",
-    "integrity_check": "PASS",
-    "integrity_timestamp": "2026-05-22T21:03:30+09:00",
-    "integrity_command": "pe-graph --integrity-check --version 6.3",
-    "rebuild_session": "2026-05-22 야간 세션 — Delta 계획 실 반영 완료"
+  "version": "6.3",
+  "rebuild_date": "2026-05-22",
+  "rebuild_time": "21:13 KST",
+  "trigger": "PE-AI-ECO-001-C",
+  "trigger_commit": "d43e9f01",
+  "command": "pe-graph --rebuild --version 6.3 --add-domain PE-AI-ECO-001-C",
+  "status": "REBUILT",
+  "base_version": "6.2",
+  "integrity_check": {
+    "edge_exit_inv_exit_duplicate": "PASS",
+    "edge_device_ci_moat_conflict": "PASS",
+    "semi_infra_node_exists": "ASSUMED_PASS",
+    "semi_infra_note": "semi-infra 존재 여부는 v6.2 base 검증 필요. 미존재 시 nodes +1 (196개로 수정)",
+    "edge_startup_mece_double_link": "PASS",
+    "mece_note": "type 상이(nbd_link vs investment_signal)로 허용"
   },
-  "graph_stats": {
-    "prev_version": "6.2",
-    "nodes_prev": 191,
-    "nodes_added": 4,
-    "nodes_total": 195,
-    "edges_prev": 326,
-    "edges_added": 9,
-    "edges_total": 335,
-    "prompts_prev": 115,
-    "prompts_added": 1,
-    "prompts_total": 116,
-    "domains_total": 13,
-    "domains_added": ["PE-AI-ECO-001-C"],
-    "graph_density_prev": 1.71,
-    "graph_density_v6_3": 1.72,
-    "note": "Delta 계획 확정값 기준 — v6.2(191N/326E) → v6.3(195N/335E) · 2026-05-22 Notion 설계서 준거"
+  "summary": {
+    "nodes":  { "before": 191, "after": 195, "delta": 4 },
+    "edges":  { "before": 326, "after": 335, "delta": 9 },
+    "prompts": { "before": 115, "after": 116, "delta": 1 },
+    "active_domains": "13/13",
+    "graph_density": { "before": 1.71, "after": 1.72 }
   },
-  "integrity": {
-    "status": "PASS",
-    "checks": {
-      "node_id_uniqueness": "PASS",
-      "edge_reference_validity": "PASS",
-      "domain_schema_compliance": "PASS",
-      "orphan_nodes": 0,
-      "circular_dependency": "NONE",
-      "dangling_edges": 0,
-      "cross_domain_links_valid": "PASS",
-      "edge_exit_inv_exit_duplicate": "PASS",
-      "edge_device_ci_moat_v6_4_collision": "PASS",
-      "mece_edge_startup_dual_link": "PASS"
-    },
-    "semi_infra_check": {
-      "status": "VERIFIED",
-      "node_id": "semi-infra",
-      "label": "Semiconductor Infrastructure Mapping",
-      "origin": "v6.1 PE-SEMI 도메인 기존 노드 — 사전 존재 확인 완료",
-      "edge_infra_link": "edge-infra → semi-infra (cross_domain 0.85) 연결 유효",
-      "verified_at": "2026-05-22T21:03:00+09:00",
-      "note": "⚠️ Integrity Pre-Check 경고 항목 → ✅ VERIFIED: semi-infra node v6.1부터 존재, cross_domain edge 정상 등록"
-    },
-    "warnings": [],
-    "errors": []
-  },
-  "delta_nodes": [
+  "new_nodes": [
     {
       "id": "edge-device",
       "label": "Edge Device Intelligence Hub",
       "layer": "L2",
       "domains": ["PE-AI-ECO", "semi-silicon"],
-      "astrachips_role": "STRATEGIC",
-      "note": "v6.4에서 ci-moat 재사용 대상 — v6.3 선생성 필수 확인 완료"
+      "astrachips_role": "STRATEGIC"
     },
     {
       "id": "edge-infra",
       "label": "Edge Infrastructure Mapping",
       "layer": "L2",
       "domains": ["PE-AI-ECO", "semi-infra"],
-      "astrachips_role": "MONITOR",
-      "semi_infra_verified": true
+      "astrachips_role": "MONITOR"
     },
     {
       "id": "edge-startup",
@@ -90,87 +52,40 @@
       "astrachips_role": "STRATEGIC"
     }
   ],
-  "delta_edges": [
-    { "source": "PE-AI-ECO-001-C", "target": "edge-device",  "type": "domain_link",        "weight": 1.00 },
-    { "source": "PE-AI-ECO-001-C", "target": "edge-infra",   "type": "domain_link",        "weight": 1.00 },
-    { "source": "PE-AI-ECO-001-C", "target": "edge-startup", "type": "domain_link",        "weight": 1.00 },
-    { "source": "PE-AI-ECO-001-C", "target": "edge-exit",    "type": "domain_link",        "weight": 1.00 },
-    { "source": "edge-device",     "target": "semi-silicon", "type": "cross_domain",       "weight": 0.90, "desc": "엣지칩 ↔ 반도체 실리콘 교차" },
-    { "source": "edge-startup",    "target": "PE-NBD",       "type": "nbd_link",           "weight": 0.92, "desc": "AstraChips NBD 파이프라인" },
-    { "source": "edge-startup",    "target": "PE-INV",       "type": "investment_signal",  "weight": 0.88, "desc": "PMF-CONFIRMED 라우팅" },
-    { "source": "edge-infra",      "target": "semi-infra",   "type": "cross_domain",       "weight": 0.85, "desc": "엣지 인프라 ↔ 반도체 인프라 — semi-infra 존재 VERIFIED" },
-    { "source": "edge-exit",       "target": "inv-exit",     "type": "exit_link",          "weight": 0.93, "desc": "Exit 시나리오 S1/S2/S3 연동" }
+  "new_edges": [
+    { "source": "PE-AI-ECO-001-C", "target": "edge-device",  "type": "domain_link",       "weight": 1.00, "rationale": "Variant C 직접 연결" },
+    { "source": "PE-AI-ECO-001-C", "target": "edge-infra",   "type": "domain_link",       "weight": 1.00, "rationale": "Variant C 직접 연결" },
+    { "source": "PE-AI-ECO-001-C", "target": "edge-startup", "type": "domain_link",       "weight": 1.00, "rationale": "Variant C 직접 연결" },
+    { "source": "PE-AI-ECO-001-C", "target": "edge-exit",    "type": "domain_link",       "weight": 1.00, "rationale": "Variant C 직접 연결" },
+    { "source": "edge-device",     "target": "semi-silicon", "type": "cross_domain",      "weight": 0.90, "rationale": "엣지칩 ↔ 반도체 실리콘 교차" },
+    { "source": "edge-startup",    "target": "PE-NBD",       "type": "nbd_link",          "weight": 0.92, "rationale": "AstraChips NBD 파이프라인" },
+    { "source": "edge-startup",    "target": "PE-INV",       "type": "investment_signal", "weight": 0.88, "rationale": "PMF-CONFIRMED 라우팅" },
+    { "source": "edge-infra",      "target": "semi-infra",   "type": "cross_domain",      "weight": 0.85, "rationale": "엣지 인프라 ↔ 반도체 인프라" },
+    { "source": "edge-exit",       "target": "inv-exit",     "type": "exit_link",         "weight": 0.93, "rationale": "Exit 시나리오 S1/S2/S3 연동" }
   ],
   "cross_domain_map": {
-    "diagram": "PE-AI-ECO-001-C → edge-device ──→ semi-silicon (0.90) | edge-infra ──→ semi-infra (0.85) | edge-startup ──→ PE-NBD (0.92) + PE-INV (0.88) | edge-exit ──→ inv-exit (0.93)",
-    "v6_4_bridge": {
-      "trigger": "KG v6.3 Rebuild PASS",
-      "next_command": "pe run --prompt PE-AI-ECO-002 --variant A --industry \"AI Semiconductor\"",
-      "expected_nodes": 199,
-      "expected_edges": 343,
-      "new_nodes": ["ci-radar (L1)", "ci-dna (L2)", "ci-moat (L2)", "ci-threat (L3)"],
-      "reuse_from_v6_3": "edge-device → ci-moat"
-    }
-  },
-  "new_domain": {
-    "domain_id": "PE-AI-ECO-001-C",
-    "domain_name": "AI Ecosystem Intelligence — Startup / Edge AI Layer C",
-    "variant": "C",
-    "description": "AI 생태계 스타트업·엣지 AI 발굴 도메인. 5-Agent Pipeline 기반 PMF 스코어링, White Space 4차원 분석, AstraChips Strategic Fit 심층평가 결과를 KG로 통합.",
-    "parent_domain": "PE-AI-ECO-001",
-    "layer": "C",
-    "pe3_score": 95,
-    "bayesian_prior": "Beta(3,7)",
-    "created_at": "2026-05-18T11:36:00+09:00",
-    "kg_registered_at": "2026-05-22T21:03:00+09:00",
-    "agent_pipeline": {
-      "count": 5,
-      "agents": [
-        { "id": "AGENT-1", "role": "Edge AI Startup Landscape Mapping",   "output": "4-Layer 스타트업 50개 히트맵 + 12개월 IR/라운드" },
-        { "id": "AGENT-2", "role": "White Space & Disruption Scan",         "output": "4차원 공백 점수 + Top-5 디스럽션 신호" },
-        { "id": "AGENT-3", "role": "Startup Traction & PMF Scoring",        "output": "5차원 PMF 점수 + 단계 분류" },
-        { "id": "AGENT-4", "role": "AstraChips Strategic Fit Assessment",   "output": "5차원 Fit 점수 + 파트너십 로드맵" },
-        { "id": "AGENT-5", "role": "KG Integration & NBD Memo",             "output": "KG delta JSON + AstraChips NBD 메모" }
-      ]
-    },
-    "disruption_signals": [
-      "RISC-V 엣지 AI 칩 생태계 확장",
-      "Transformer On-Device 경량화 (LoRA/Quantization)",
-      "생체인식 + 엣지AI 융합 디바이스",
-      "이상감지 B2B SaaS (제조·물류)",
-      "In-sensor AI (Sony IMX 계열 경쟁)"
-    ],
-    "pmf_scorecard": {
-      "dimensions": ["Revenue Quality", "Customer Lock-in", "Team Depth", "Ecosystem Traction", "AstraChips Fit"],
-      "thresholds": { "PMF_CONFIRMED": ">=85", "PMF_DEVELOPING": "65-84", "PMF_EARLY": "<65" }
-    },
-    "astrachips_fit": {
-      "dimensions": [
-        { "id": "A1", "name": "NPU Roadmap Alignment",  "desc": "AstraChips NPU 아키텍처 시너지" },
-        { "id": "A2", "name": "OSAT Value-add",          "desc": "패키징/어셈블리 6~18개월 주기" },
-        { "id": "A3", "name": "Distribution Lever",      "desc": "글로벌 채널 확장 (KR/US/EU/JP)" },
-        { "id": "A4", "name": "Competitive Defense",     "desc": "경쟁사 엣지 AI 포트폴리오 방어" },
-        { "id": "A5", "name": "Revenue Contribution",    "desc": "3년 내 P&L 기여 경로" }
+    "PE-AI-ECO-001-C": {
+      "edge-device":  { "target": "semi-silicon", "type": "cross_domain",      "weight": 0.90 },
+      "edge-infra":   { "target": "semi-infra",   "type": "cross_domain",      "weight": 0.85 },
+      "edge-startup": [
+        { "target": "PE-NBD", "type": "nbd_link",          "weight": 0.92 },
+        { "target": "PE-INV", "type": "investment_signal", "weight": 0.88 }
       ],
-      "thresholds": { "STRATEGIC_PRIORITY": ">=20", "WATCH_AND_BUILD": "13-19", "REFERENCE_ONLY": "<=12" }
-    },
-    "ecosystem_routing": {
-      "PE-NBD (C-30)": "AstraChips NBD 메모 라우팅",
-      "PE-INV (C-35)": "PMF-CONFIRMED → IC 메모 자동 라우팅",
-      "PE-STRAT (C-33)": "White Space ≥80 → 기회 갱신",
-      "AstraChips-Strategy": "STRATEGIC PRIORITY → 상세 파일럿 자동 저장",
-      "Variant A": "엣지 실리콘 교차 분석",
-      "Variant B": "Exit 시나리오 (S1/S2/S3) 연동"
+      "edge-exit": { "target": "inv-exit", "type": "exit_link", "weight": 0.93 }
     }
   },
-  "delta_from_v6_2": {
-    "added_domains": ["PE-AI-ECO-001-C"],
-    "added_nodes": 4,
-    "added_edges": 9,
-    "removed_nodes": 0,
-    "removed_edges": 0,
-    "final_nodes": 195,
-    "final_edges": 335,
-    "schema_changes": "없음 (v6.3 Delta 신규 노드 4개 + 신규 엣지 9개만 추가, 기존 스키마 하위 호환)"
+  "v64_bridge": {
+    "trigger_prompt": "PE-AI-ECO-002",
+    "trigger_name": "AI Competitive Intelligence Deep Scan",
+    "status": "READY",
+    "expected_nodes": 199,
+    "expected_edges": 343,
+    "new_nodes_preview": [
+      { "id": "ci-radar",  "layer": "L1", "role": "Market Radar Hub" },
+      { "id": "ci-dna",    "layer": "L2", "role": "Competitor DNA Hub" },
+      { "id": "ci-moat",   "layer": "L2", "role": "Tech Moat Scoring Hub" },
+      { "id": "ci-threat", "layer": "L3", "role": "Threat Matrix Hub" }
+    ],
+    "note": "edge-device node는 v6.4 ci-moat와 충돌 없음 — 재사용 예정"
   }
 }
