@@ -1,0 +1,251 @@
+{
+  "metadata": {
+    "version": "6.4",
+    "build_type": "rebuild",
+    "timestamp": "2026-05-22T07:33:00Z",
+    "rebuilt_at": "2026-05-22T16:33:00+09:00",
+    "author": "GilbertKwak",
+    "command": "pe run --prompt PE-AI-ECO-002 --variant A --industry \"AI Semiconductor\" --targets \"NVIDIA, AMD, Qualcomm\" --horizon 12M --kg-version 6.4-trigger",
+    "source_prompt": "PE-AI-ECO-002 — AI Competitive Intelligence Deep Scan · Variant A",
+    "trigger_source": "KG v6.3 rebuild PASS → PE-AI-ECO-002 자동 트리거",
+    "prev_version_ref": "knowledge-graph/kg-v6.3-delta.json",
+    "integrity_check": "PASS",
+    "integrity_timestamp": "2026-05-22T16:33:30+09:00",
+    "integrity_command": "pe-graph --integrity-check --version 6.4"
+  },
+  "graph_stats": {
+    "prev_version": "6.3",
+    "nodes_total": 316,
+    "nodes_added": 4,
+    "nodes_modified": 3,
+    "edges_total": 497,
+    "edges_added": 8,
+    "edges_modified": 2,
+    "domains_total": 15,
+    "domains_added": ["PE-AI-ECO-002"]
+  },
+  "integrity": {
+    "status": "PASS",
+    "checks": {
+      "node_id_uniqueness": "PASS",
+      "edge_reference_validity": "PASS",
+      "domain_schema_compliance": "PASS",
+      "orphan_nodes": 0,
+      "circular_dependency": "NONE",
+      "dangling_edges": 0,
+      "cross_domain_links_valid": "PASS",
+      "ci_moat_edge_device_reuse": "PASS"
+    },
+    "warnings": [],
+    "errors": []
+  },
+  "new_domain": {
+    "domain_id": "PE-AI-ECO-002",
+    "domain_name": "AI Competitive Intelligence Deep Scan — Variant A",
+    "variant": "A",
+    "industry": "AI Semiconductor",
+    "targets": ["NVIDIA", "AMD", "Qualcomm"],
+    "horizon": "12M",
+    "description": "AI 반도체 생태계 경쟁 인텔리전스 딥스캔. NVIDIA·AMD·Qualcomm 3사 DNA 분해 + 기술 해자(Moat) 스코어링 + 위협 매트릭스 자동 생성. v6.3 edge-device 노드 재사용으로 엣지 AI 경쟁 레이어 통합.",
+    "parent_domain": "PE-AI-ECO",
+    "trigger_chain": "PE-AI-ECO-001-C → KG v6.3 → PE-AI-ECO-002 → KG v6.4",
+    "pe3_score": 92,
+    "created_at": "2026-05-22T16:33:00+09:00",
+    "agent_pipeline": {
+      "count": 4,
+      "agents": [
+        {
+          "id": "CI-AGENT-1",
+          "role": "Market Radar — 12M Competitive Landscape",
+          "output": "NVIDIA/AMD/Qualcomm 12개월 제품·파트너십·M&A 레이더",
+          "output_node": "ci-radar"
+        },
+        {
+          "id": "CI-AGENT-2",
+          "role": "Competitor DNA Decomposition",
+          "output": "3사 기술스택·수익모델·고객 잠금(Lock-in) DNA 분해",
+          "output_node": "ci-dna"
+        },
+        {
+          "id": "CI-AGENT-3",
+          "role": "Tech Moat Scoring",
+          "output": "7차원 기술 해자 스코어 (IP·생태계·규모·속도·데이터·채널·규제)",
+          "output_node": "ci-moat"
+        },
+        {
+          "id": "CI-AGENT-4",
+          "role": "Threat Matrix & AstraChips Defense",
+          "output": "위협 5×5 매트릭스 + AstraChips 방어 우선순위 3단계",
+          "output_node": "ci-threat"
+        }
+      ]
+    },
+    "nodes": [
+      {
+        "id": "ci-radar",
+        "label": "Market_Radar_Hub",
+        "layer": "L1",
+        "type": "competitive_radar",
+        "targets": ["NVIDIA", "AMD", "Qualcomm"],
+        "horizon_months": 12,
+        "scan_dimensions": [
+          "신제품 로드맵 발표",
+          "파트너십 / 에코시스템 확장",
+          "M&A / 투자 활동",
+          "지재권 출원 동향",
+          "인재 채용 신호"
+        ],
+        "attributes": {
+          "refresh_cadence": "4W",
+          "ew_trigger": "EW-CI-01",
+          "feeds_into": "ci-dna"
+        }
+      },
+      {
+        "id": "ci-dna",
+        "label": "Competitor_DNA_Hub",
+        "layer": "L2",
+        "type": "dna_decomposition",
+        "targets": ["NVIDIA", "AMD", "Qualcomm"],
+        "dna_dimensions": [
+          { "dim": "Tech Stack",        "desc": "칩 아키텍처·소프트웨어 스택·개발 도구" },
+          { "dim": "Revenue Model",     "desc": "데이터센터·게이밍·엣지·라이선스 믹스" },
+          { "dim": "Customer Lock-in",  "desc": "CUDA 종속·SDK 생태계·클라우드 파트너" },
+          { "dim": "Supply Chain",      "desc": "TSMC 의존도·HBM 조달·패키징 파트너" },
+          { "dim": "Talent Density",    "desc": "PhD 논문 수·특허 출원·AI 연구자 밀도" }
+        ],
+        "attributes": {
+          "feeds_into": "ci-moat",
+          "cross_ref": "PE-AI-ECO-001-C (White Space Map)"
+        }
+      },
+      {
+        "id": "ci-moat",
+        "label": "Tech_Moat_Scoring_Hub",
+        "layer": "L2",
+        "type": "moat_scoring",
+        "moat_dimensions": [
+          { "id": "M1", "name": "IP Fortress",       "weight": 0.20, "desc": "특허 포트폴리오 방어력" },
+          { "id": "M2", "name": "Ecosystem Lock",    "weight": 0.20, "desc": "SDK·API·파트너 생태계 깊이" },
+          { "id": "M3", "name": "Scale Advantage",   "weight": 0.15, "desc": "제조·조달 규모 원가 우위" },
+          { "id": "M4", "name": "Velocity",          "weight": 0.15, "desc": "제품 사이클 속도·시장 대응" },
+          { "id": "M5", "name": "Data Flywheel",     "weight": 0.15, "desc": "AI 모델 학습 데이터 축적" },
+          { "id": "M6", "name": "Channel Depth",     "weight": 0.10, "desc": "CSP·OEM·채널 파트너 커버리지" },
+          { "id": "M7", "name": "Regulatory Shield", "weight": 0.05, "desc": "수출 통제·인증·규제 해자" }
+        ],
+        "thresholds": {
+          "FORTRESS": ">=85",
+          "STRONG":   "70-84",
+          "MODERATE": "50-69",
+          "WEAK":     "<50"
+        },
+        "reuse_from_v6.3": "edge-device (cross_domain link to semi-silicon 재활용)",
+        "attributes": {
+          "max_score": 100,
+          "scoring_method": "weighted_7dim",
+          "feeds_into": "ci-threat"
+        }
+      },
+      {
+        "id": "ci-threat",
+        "label": "Threat_Matrix_Hub",
+        "layer": "L3",
+        "type": "threat_matrix",
+        "matrix_dimensions": {
+          "x_axis": "Impact (1-5)",
+          "y_axis": "Probability (1-5)",
+          "cell_action": "AstraChips 방어 우선순위 (Critical / High / Medium / Monitor / Accept)"
+        },
+        "threat_categories": [
+          "NVIDIA CUDA 생태계 엣지 확장 (엣지AI 봉쇄 위험)",
+          "AMD MI 시리즈 HPC-엣지 수렴 전략",
+          "Qualcomm Snapdragon X Elite on-device AI 가속",
+          "Intel Gaudi 3 데이터센터 재진입",
+          "Apple Silicon 반도체 내재화 가속"
+        ],
+        "astrachips_defense_priorities": [
+          { "level": 1, "action": "RISC-V + 커스텀 NPU 레퍼런스 디자인 선제 출시" },
+          { "level": 2, "action": "OSAT 패키징 차별화 — CoWoS 대안 솔루션 확보" },
+          { "level": 3, "action": "Tier-2 클라우드(Oracle/NCP) 파트너십 우선 심화" }
+        ],
+        "ew_trigger": "EW-CI-02",
+        "attributes": {
+          "routes_to": "C-33 (PE-STRAT) 위협 시나리오 갱신"
+        }
+      }
+    ],
+    "edges": [
+      { "id": "CI-E001", "from": "ci-radar",  "to": "ci-dna",    "relation": "FEEDS_INTO",   "weight": 0.95, "label": "Market Radar → DNA 분해 입력" },
+      { "id": "CI-E002", "from": "ci-dna",    "to": "ci-moat",   "relation": "SCORES_FOR",   "weight": 0.90, "label": "DNA 결과 → Moat 7차원 스코어링" },
+      { "id": "CI-E003", "from": "ci-moat",   "to": "ci-threat", "relation": "TRIGGERS",     "weight": 0.88, "label": "Moat 약점 → 위협 매트릭스 입력" },
+      { "id": "CI-E004", "from": "ci-threat", "to": "C-33",      "relation": "ROUTES_TO",    "weight": 0.92, "label": "위협 매트릭스 → PE-STRAT 시나리오 갱신" },
+      { "id": "CI-E005", "from": "edge-device","to": "ci-moat",  "relation": "REUSED_BY",    "weight": 0.85, "label": "v6.3 edge-device → ci-moat 엣지AI Moat 교차" },
+      { "id": "CI-E006", "from": "ci-radar",  "to": "PE-AI-ECO-001-C-N002", "relation": "CROSS_REFS", "weight": 0.80, "label": "CI Radar ↔ White Space Map 교차 검증" },
+      { "id": "CI-E007", "from": "ci-dna",    "to": "PE-SEMI-HBM", "relation": "QUERIES",   "weight": 0.87, "label": "Competitor DNA → HBM 조달 현황 조회" },
+      { "id": "CI-E008", "from": "ci-threat", "to": "C-35",      "relation": "ALERTS",      "weight": 0.75, "label": "Critical 위협 → PE-INV 포트폴리오 경보" }
+    ],
+    "early_warnings": [
+      {
+        "id": "EW-CI-01",
+        "trigger": "경쟁사 신규 엣지 AI 칩 발표 또는 핵심 파트너십 체결",
+        "severity": "HIGH",
+        "action": "ci-radar 즉시 재스캔 → ci-dna 업데이트 → C-33 긴급 시나리오 갱신",
+        "threshold": "14일 이내 공식 발표 감지"
+      },
+      {
+        "id": "EW-CI-02",
+        "trigger": "Moat 스코어 2개 이상 차원에서 ±10% 이상 변동",
+        "severity": "MEDIUM",
+        "action": "ci-moat 재계산 → ci-threat 매트릭스 리셋 → AstraChips 방어 우선순위 재조정",
+        "threshold": "분기 1회 이상 또는 EW-CI-01 발동 시"
+      }
+    ],
+    "cross_domain_links": [
+      { "target_domain": "PE-AI-ECO-001-C", "link_type": "EXTENDS",    "description": "Variant C White Space → CI Radar 교차 검증" },
+      { "target_domain": "PE-SEMI-HBM",     "link_type": "QUERIES",    "description": "Competitor DNA → HBM 조달·가격 데이터 조회" },
+      { "target_domain": "C-33 (PE-STRAT)", "link_type": "ROUTES_TO", "description": "위협 매트릭스 결과 → 전략 시나리오 자동 갱신" },
+      { "target_domain": "C-35 (PE-INV)",   "link_type": "ALERTS",    "description": "Critical 위협 → PE-INV 포트폴리오 경보" },
+      { "target_domain": "edge-device (v6.3)", "link_type": "REUSES", "description": "v6.3 edge-device → ci-moat 엣지 AI Moat 레이어 재사용" }
+    ],
+    "moat_scorecard_template": {
+      "NVIDIA": {
+        "M1_ip_fortress":     { "raw": null, "note": "특허 35,000+, CUDA 특허 방어력 최상" },
+        "M2_ecosystem_lock":  { "raw": null, "note": "CUDA 개발자 400만+, NGC 컨테이너 생태계" },
+        "M3_scale_advantage": { "raw": null, "note": "TSMC N4/N3 최우선 할당" },
+        "M4_velocity":        { "raw": null, "note": "18개월 제품 사이클 (Blackwell → Rubin)" },
+        "M5_data_flywheel":   { "raw": null, "note": "DGX Cloud + 고객 데이터 피드백 루프" },
+        "M6_channel_depth":   { "raw": null, "note": "AWS/Azure/GCP 모두 Preferred Partner" },
+        "M7_regulatory":      { "raw": null, "note": "H20 수출 통제 리스크 (대중국)" }
+      },
+      "AMD": {
+        "M1_ip_fortress":     { "raw": null, "note": "ROCm 오픈소스 전략, 특허 포트폴리오 2위" },
+        "M2_ecosystem_lock":  { "raw": null, "note": "ROCm 채택 확대 중, CUDA 격차 존재" },
+        "M3_scale_advantage": { "raw": null, "note": "TSMC 공유, HBM 조달 제한적" },
+        "M4_velocity":        { "raw": null, "note": "MI300X 성공 후 MI400 로드맵 가속" },
+        "M5_data_flywheel":   { "raw": null, "note": "데이터 피드백 루프 구축 중" },
+        "M6_channel_depth":   { "raw": null, "note": "Meta·Microsoft 주요 채택, CSP 확대 중" },
+        "M7_regulatory":      { "raw": null, "note": "수출 통제 상대적 유리" }
+      },
+      "Qualcomm": {
+        "M1_ip_fortress":     { "raw": null, "note": "모바일 특허 최강, AI 특허 확장 중" },
+        "M2_ecosystem_lock":  { "raw": null, "note": "Android OEM 90%+ 점유, Snapdragon 생태계" },
+        "M3_scale_advantage": { "raw": null, "note": "TSMC 팹리스, 모바일 볼륨 우위" },
+        "M4_velocity":        { "raw": null, "note": "Snapdragon X Elite PC AI 신속 전환" },
+        "M5_data_flywheel":   { "raw": null, "note": "On-device AI 데이터 루프 초기 단계" },
+        "M6_channel_depth":   { "raw": null, "note": "삼성·레노버·HP 글로벌 OEM 채널" },
+        "M7_regulatory":      { "raw": null, "note": "중국 매출 비중 高 — 지정학 리스크" }
+      }
+    }
+  },
+  "delta_from_v6.3": {
+    "added_domains": ["PE-AI-ECO-002"],
+    "modified_domains": ["C-33", "PE-SEMI-HBM", "edge-device"],
+    "added_nodes": 4,
+    "added_edges": 8,
+    "removed_nodes": 0,
+    "removed_edges": 0,
+    "reused_nodes_from_v6.3": ["edge-device"],
+    "schema_changes": "moat_scoring 노드 타입 신규 추가 · threat_matrix 노드 타입 신규 추가",
+    "ew_added": ["EW-CI-01", "EW-CI-02"]
+  }
+}

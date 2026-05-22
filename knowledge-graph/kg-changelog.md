@@ -1,7 +1,97 @@
 # Knowledge Graph Changelog
 
 > 파일 경로: `knowledge-graph/kg-changelog.md`  
-> 최종 업데이트: 2026-05-22 16:25 KST
+> 최종 업데이트: 2026-05-22 16:33 KST
+
+---
+
+## v6.4 — 2026-05-22
+
+### Build Info
+```
+pe run --prompt PE-AI-ECO-002 --variant A --industry "AI Semiconductor"
+       --targets "NVIDIA, AMD, Qualcomm" --horizon 12M --kg-version 6.4-trigger
+Timestamp : 2026-05-22T16:33:00+09:00
+Trigger   : KG v6.3 rebuild PASS → PE-AI-ECO-002 자동 트리거
+Source    : PE-AI-ECO-002 — AI Competitive Intelligence Deep Scan · Variant A
+```
+
+### ✅ Integrity Check
+```
+pe-graph --integrity-check --version 6.4
+
+[CHECK] node_id_uniqueness        : PASS
+[CHECK] edge_reference_validity   : PASS
+[CHECK] domain_schema_compliance  : PASS
+[CHECK] orphan_nodes              : 0    PASS
+[CHECK] circular_dependency       : NONE PASS
+[CHECK] dangling_edges            : 0    PASS
+[CHECK] cross_domain_links_valid  : PASS
+[CHECK] ci_moat_edge_device_reuse : PASS  ← v6.3 node 재사용 검증
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+OVERALL STATUS : ✅ PASS
+WARNINGS       : 0
+ERRORS         : 0
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+### 🆕 신규 도메인 — PE-AI-ECO-002 (Variant A)
+**AI Competitive Intelligence Deep Scan · 4-Agent CI Pipeline · PE-3 Score 92/100**
+
+트리거 체인: `PE-AI-ECO-001-C → KG v6.3 → PE-AI-ECO-002 → KG v6.4`
+
+- **CI-AGENT-1** Market Radar — NVIDIA/AMD/Qualcomm 12M 레이더 → `ci-radar (L1)`
+- **CI-AGENT-2** Competitor DNA Decomposition — 5차원 DNA 분해 → `ci-dna (L2)`
+- **CI-AGENT-3** Tech Moat Scoring — 7차원 가중 해자 스코어 → `ci-moat (L2)`
+- **CI-AGENT-4** Threat Matrix & AstraChips Defense — 5×5 위협 매트릭스 → `ci-threat (L3)`
+
+**신규 노드 4개 (L1~L3)**:
+| Node ID | Layer | 역할 |
+|---------|:-----:|------|
+| `ci-radar` | L1 | Market Radar Hub — 12M 경쟁 레이더 |
+| `ci-dna` | L2 | Competitor DNA Hub — 5차원 DNA 분해 |
+| `ci-moat` | L2 | Tech Moat Scoring Hub — 7차원 해자 스코어 |
+| `ci-threat` | L3 | Threat Matrix Hub — 5×5 위협 + AstraChips 방어 |
+
+**v6.3 재사용 노드**: `edge-device` → `ci-moat` (엣지 AI Moat 교차 레이어)
+
+**신규 EW 트리거**:
+- `EW-CI-01` — 경쟁사 신규 엣지 AI 칩 발표 / 핵심 파트너십 감지 → 즉시 ci-radar 재스캔
+- `EW-CI-02` — Moat 스코어 2개 이상 ±10% 변동 → ci-threat 매트릭스 리셋
+
+**Moat 7차원 스코어카드**: NVIDIA · AMD · Qualcomm 3사 템플릿 생성 완료
+
+**AstraChips 방어 우선순위 3단계**:
+1. RISC-V + 커스텀 NPU 레퍼런스 디자인 선제 출시
+2. OSAT 패키징 차별화 — CoWoS 대안 솔루션 확보
+3. Tier-2 클라우드(Oracle/NCP) 파트너십 우선 심화
+
+### 📊 그래프 통계
+| 항목 | v6.3 | v6.4 | Δ |
+|------|------|------|---|
+| 총 노드 수 | 312 | 316 | +4 |
+| 총 엣지 수 | 489 | 497 | +8 |
+| 도메인 수 | 14 | 15 | +1 |
+| 수정된 노드 | — | 3 | — |
+| 수정된 엣지 | — | 2 | — |
+| EW 트리거 누적 | 14 | 16 | +2 |
+| 신규 노드 타입 | — | moat_scoring, threat_matrix | +2 |
+
+### 🔗 Cross-Domain Links (신규)
+| 소스 | 타겟 | 관계 |
+|------|------|------|
+| PE-AI-ECO-002 | PE-AI-ECO-001-C | EXTENDS |
+| PE-AI-ECO-002 | PE-SEMI-HBM | QUERIES |
+| PE-AI-ECO-002 | C-33 (PE-STRAT) | ROUTES_TO |
+| PE-AI-ECO-002 | C-35 (PE-INV) | ALERTS |
+| ci-moat | edge-device (v6.3) | REUSES |
+| ci-radar | White_Space_Map (v6.3) | CROSS_REFS |
+
+### 🔧 스키마 변경
+- `moat_scoring` 노드 타입 신규 추가 (7차원 가중 스코어 + 임계값 3단계)
+- `threat_matrix` 노드 타입 신규 추가 (5×5 Impact×Probability 매트릭스)
+- `reused_nodes_from_v6.3` 메타데이터 필드 신규 추가
 
 ---
 
