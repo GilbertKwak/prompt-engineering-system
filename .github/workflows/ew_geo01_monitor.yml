@@ -1,235 +1,60 @@
-# ============================================================
-# EW-GEO-01 Monitor Workflow
-# 지정학적 반도체 공급망 리스크 조기경보 모니터링
-# Trigger: 수동(workflow_dispatch) + 매일 06:00 UTC (KST 15:00)
-# Secrets required: OPENAI_API_KEY, PERPLEXITY_API_KEY,
-#                   NOTION_API_KEY, NOTION_C31_PAGE_ID
-# ============================================================
-name: "PE · EW-GEO-01 Monitor"
+name: EW-GEO-01 Monitor
 
 on:
-  workflow_dispatch:
-    inputs:
-      severity_override:
-        description: "심각도 강제 설정 (auto=자동감지)"
-        required: false
-        default: "auto"
-        type: choice
-        options:
-          - auto
-          - LOW
-          - MEDIUM
-          - HIGH
-          - CRITICAL
-      focus_region:
-        description: "집중 모니터링 지역"
-        required: false
-        default: "all"
-        type: choice
-        options:
-          - all
-          - TW_CN
-          - KR_JP
-          - US_EXPORT
-          - EU_CHIPS
-      dry_run:
-        description: "Dry-run (Notion 업데이트 스킵)"
-        required: false
-        default: "false"
-        type: choice
-        options:
-          - "false"
-          - "true"
   schedule:
-    - cron: "0 6 * * *"   # 매일 06:00 UTC = KST 15:00
-
-env:
-  OPENAI_API_KEY:      ${{ secrets.OPENAI_API_KEY }}
-  PERPLEXITY_API_KEY:  ${{ secrets.PERPLEXITY_API_KEY }}
-  NOTION_API_KEY:      ${{ secrets.NOTION_API_KEY }}
-  PYTHONUNBUFFERED:    "1"
+    - cron: '0 */6 * * *'   # 6시간마다 실행 (UTC 기준 00:00, 06:00, 12:00, 18:00)
+  workflow_dispatch:          # 수동 트리거 허용
+    inputs:
+      debug_mode:
+        description: 'Debug mode (true/false)'
+        required: false
+        default: 'false'
 
 jobs:
-  # ─────────────────────────────────────────────────────────
-  # JOB 1: GEO 신호 수집 (Perplexity sonar-pro)
-  # ─────────────────────────────────────────────────────────
-  geo-signal-collect:
-    name: "GEO Signal Collection"
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    outputs:
-      run_date:    ${{ steps.meta.outputs.run_date }}
-      week_id:     ${{ steps.meta.outputs.week_id }}
-      output_dir:  ${{ steps.meta.outputs.output_dir }}
-      signal_file: ${{ steps.meta.outputs.signal_file }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: pip
-          cache-dependency-path: automation/requirements.txt
-
-      - name: Install dependencies
-        run: pip install -r automation/requirements.txt
-
-      - name: Set run metadata
-        id: meta
-        run: |
-          RUN_DATE=$(date -u +%Y-%m-%d)
-          WEEK_ID=$(date -u +%Y-W%V)
-          OUTPUT_DIR="output/ew_geo01/${RUN_DATE}"
-          SIGNAL_FILE="${OUTPUT_DIR}/geo_signals_${RUN_DATE}.json"
-          mkdir -p "$OUTPUT_DIR"
-          echo "run_date=$RUN_DATE"       >> $GITHUB_OUTPUT
-          echo "week_id=$WEEK_ID"         >> $GITHUB_OUTPUT
-          echo "output_dir=$OUTPUT_DIR"   >> $GITHUB_OUTPUT
-          echo "signal_file=$SIGNAL_FILE" >> $GITHUB_OUTPUT
-          echo "=== EW-GEO-01 Monitor Start ==="
-          echo "Date   : $RUN_DATE"
-          echo "Week   : $WEEK_ID"
-          echo "Region : ${{ inputs.focus_region || 'all' }}"
-
-      - name: Collect GEO signals via Perplexity
-        run: |
-          python automation/ew_geo01_monitor.py collect \
-            --output   "${{ steps.meta.outputs.signal_file }}" \
-            --region   "${{ inputs.focus_region || 'all' }}" \
-            --run-date "${{ steps.meta.outputs.run_date }}" \
-            --week     "${{ steps.meta.outputs.week_id }}"
-
-      - name: Upload signals artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: geo-signals-${{ steps.meta.outputs.run_date }}
-          path: ${{ steps.meta.outputs.output_dir }}/
-          retention-days: 30
-
-  # ─────────────────────────────────────────────────────────
-  # JOB 2: GPT-4o 리스크 평가 & 심각도 판정
-  # ─────────────────────────────────────────────────────────
-  geo-risk-assess:
-    name: "GEO Risk Assessment (GPT-4o)"
-    needs: geo-signal-collect
+  geo-monitor:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    outputs:
-      severity:     ${{ steps.assess.outputs.severity }}
-      risk_score:   ${{ steps.assess.outputs.risk_score }}
-      top_signals:  ${{ steps.assess.outputs.top_signals }}
-      ew_triggered: ${{ steps.assess.outputs.ew_triggered }}
-      report_file:  ${{ steps.assess.outputs.report_file }}
+    permissions:
+      contents: write
+      actions: read
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-          cache: pip
-          cache-dependency-path: automation/requirements.txt
+          python-version: '3.11'
+          cache: 'pip'
 
       - name: Install dependencies
-        run: pip install -r automation/requirements.txt
-
-      - name: Download signals artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: geo-signals-${{ needs.geo-signal-collect.outputs.run_date }}
-          path: output/ew_geo01/${{ needs.geo-signal-collect.outputs.run_date }}/
-
-      - name: GPT-4o Risk Assessment
-        id: assess
         run: |
-          python automation/ew_geo01_monitor.py assess \
-            --signals  "${{ needs.geo-signal-collect.outputs.signal_file }}" \
-            --output   "output/ew_geo01/${{ needs.geo-signal-collect.outputs.run_date }}/geo_assessment_${{ needs.geo-signal-collect.outputs.run_date }}.json" \
-            --severity "${{ inputs.severity_override || 'auto' }}" \
-            --run-date "${{ needs.geo-signal-collect.outputs.run_date }}" \
-            --week     "${{ needs.geo-signal-collect.outputs.week_id }}"
-        env:
-          REPORT_FILE: "output/ew_geo01/${{ needs.geo-signal-collect.outputs.run_date }}/geo_assessment_${{ needs.geo-signal-collect.outputs.run_date }}.json"
+          pip install --upgrade pip
+          pip install openai>=1.0.0 requests python-dotenv notion-client
 
-      - name: Upload assessment artifact
+      - name: Run EW-GEO-01 Monitor
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_EW_DB_ID: ${{ secrets.NOTION_EW_DB_ID }}
+          DEBUG_MODE: ${{ github.event.inputs.debug_mode }}
+        run: |
+          mkdir -p output
+          python scripts/ew_geo01_monitor.py
+
+      - name: Commit report to repository
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Actions"
+          git add output/ew_geo01_*.json || true
+          git diff --staged --quiet || git commit -m "chore: EW-GEO-01 report $(date -u +%Y%m%d_%H%M)"
+          git push || true
+
+      - name: Upload report artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: geo-assessment-${{ needs.geo-signal-collect.outputs.run_date }}
-          path: output/ew_geo01/${{ needs.geo-signal-collect.outputs.run_date }}/
+          name: ew-geo01-report-${{ github.run_id }}
+          path: output/ew_geo01_*.json
           retention-days: 30
-
-  # ─────────────────────────────────────────────────────────
-  # JOB 3: Notion C-31 업데이트 + EW 에스컬레이션
-  # ─────────────────────────────────────────────────────────
-  geo-notion-update:
-    name: "GEO Notion Update & Escalation"
-    needs: [geo-signal-collect, geo-risk-assess]
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    if: always()
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: pip
-          cache-dependency-path: automation/requirements.txt
-
-      - name: Install dependencies
-        run: pip install -r automation/requirements.txt
-
-      - name: Download assessment artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: geo-assessment-${{ needs.geo-signal-collect.outputs.run_date }}
-          path: output/ew_geo01/${{ needs.geo-signal-collect.outputs.run_date }}/
-        continue-on-error: true
-
-      - name: Update Notion C-31 (EW-GEO-01)
-        if: ${{ inputs.dry_run != 'true' }}
-        env:
-          NOTION_C31_PAGE_ID: ${{ secrets.NOTION_C31_PAGE_ID }}
-        run: |
-          python automation/ew_geo01_monitor.py notify \
-            --page-id    "$NOTION_C31_PAGE_ID" \
-            --run-date   "${{ needs.geo-signal-collect.outputs.run_date }}" \
-            --week       "${{ needs.geo-signal-collect.outputs.week_id }}" \
-            --severity   "${{ needs.geo-risk-assess.outputs.severity }}" \
-            --risk-score "${{ needs.geo-risk-assess.outputs.risk_score }}" \
-            --signals    "${{ needs.geo-risk-assess.outputs.top_signals }}" \
-            --ew-id      "EW-GEO-01"
-
-      - name: Escalate to EW Emergency (HIGH/CRITICAL only)
-        if: |
-          needs.geo-risk-assess.outputs.ew_triggered == 'true' &&
-          inputs.dry_run != 'true'
-        uses: ./.github/workflows/ai-intel-ew-emergency.yml  # reuse existing
-        with:
-          ew_domain:   "geopolitical_semiconductor"
-          ew_severity: "${{ needs.geo-risk-assess.outputs.severity }}"
-          ew_signals:  "${{ needs.geo-risk-assess.outputs.top_signals }}"
-        secrets:
-          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
-          NOTION_API_KEY:     ${{ secrets.NOTION_API_KEY }}
-          NOTION_C31_PAGE_ID: ${{ secrets.NOTION_C31_PAGE_ID }}
-
-      - name: GEO Monitor Summary
-        if: always()
-        run: |
-          echo "================================================"
-          echo " EW-GEO-01 MONITOR COMPLETE"
-          echo "================================================"
-          echo " Date      : ${{ needs.geo-signal-collect.outputs.run_date }}"
-          echo " Week      : ${{ needs.geo-signal-collect.outputs.week_id }}"
-          echo " Region    : ${{ inputs.focus_region || 'all' }}"
-          echo " Severity  : ${{ needs.geo-risk-assess.outputs.severity }}"
-          echo " Risk Score: ${{ needs.geo-risk-assess.outputs.risk_score }}"
-          echo " EW Trigger: ${{ needs.geo-risk-assess.outputs.ew_triggered }}"
-          echo " Top Signal: ${{ needs.geo-risk-assess.outputs.top_signals }}"
-          echo "================================================"
