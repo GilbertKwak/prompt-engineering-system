@@ -1,0 +1,145 @@
+{
+  "metadata": {
+    "version": "6.3",
+    "build_type": "rebuild",
+    "timestamp": "2026-05-22T07:25:00Z",
+    "author": "GilbertKwak",
+    "command": "pe-graph --rebuild --version 6.3 --add-domain PE-AI-ECO-001-C",
+    "integrity_check": "PASS",
+    "integrity_timestamp": "2026-05-22T07:25:30Z"
+  },
+  "graph_stats": {
+    "prev_version": "6.2",
+    "nodes_total": 312,
+    "nodes_added": 18,
+    "nodes_modified": 7,
+    "edges_total": 489,
+    "edges_added": 24,
+    "edges_modified": 5,
+    "domains_total": 14,
+    "domains_added": ["PE-AI-ECO-001-C"]
+  },
+  "integrity": {
+    "status": "PASS",
+    "checks": {
+      "node_id_uniqueness": "PASS",
+      "edge_reference_validity": "PASS",
+      "domain_schema_compliance": "PASS",
+      "orphan_nodes": 0,
+      "circular_dependency": "NONE",
+      "dangling_edges": 0,
+      "cross_domain_links_valid": "PASS"
+    },
+    "warnings": []
+  },
+  "new_domain": {
+    "domain_id": "PE-AI-ECO-001-C",
+    "domain_name": "AI Ecosystem Intelligence — Competitive Layer C",
+    "description": "AI 생태계 경쟁 구도 분석 도메인. LLM 공급자, AI 인프라 레이어, 반도체-AI 수직 통합 플레이어 간의 관계 및 경쟁 패턴을 모델링.",
+    "parent_domain": "PE-AI-ECO-001",
+    "layer": "C",
+    "created_at": "2026-05-22T07:25:00Z",
+    "nodes": [
+      {
+        "id": "PE-AI-ECO-001-C-N001",
+        "label": "LLM_Provider_Tier1",
+        "type": "competitor_cluster",
+        "entities": ["OpenAI", "Anthropic", "Google DeepMind", "Meta AI"],
+        "attributes": {
+          "market_position": "dominant",
+          "chip_dependency": "NVIDIA_H100/H200/B200",
+          "vertical_integration": "partial"
+        }
+      },
+      {
+        "id": "PE-AI-ECO-001-C-N002",
+        "label": "AI_Infra_Layer",
+        "type": "infrastructure_cluster",
+        "entities": ["AWS", "Azure", "GCP", "CoreWeave", "Lambda Labs"],
+        "attributes": {
+          "role": "compute_provider",
+          "hbm_consumption": "tier1",
+          "capex_2026_usd_bn": 280
+        }
+      },
+      {
+        "id": "PE-AI-ECO-001-C-N003",
+        "label": "Vertical_Integration_Players",
+        "type": "strategic_cluster",
+        "entities": ["Apple", "Samsung", "SK Hynix", "TSMC", "Intel"],
+        "attributes": {
+          "integration_depth": "chip_to_model",
+          "strategic_risk": "medium-high"
+        }
+      },
+      {
+        "id": "PE-AI-ECO-001-C-N004",
+        "label": "PE-AI-ECO-001-C_EW_Trigger",
+        "type": "early_warning",
+        "trigger_id": "EW-AI-ECO-C-01",
+        "condition": "AI 인프라 공급자 HBM 할당량 변동 ±15% 이상",
+        "action": "즉시 분석 루프 재실행 → C-29 업데이트"
+      },
+      {
+        "id": "PE-AI-ECO-001-C-N005",
+        "label": "PE-AI-ECO-001-C_EW_Trigger_2",
+        "type": "early_warning",
+        "trigger_id": "EW-AI-ECO-C-02",
+        "condition": "신규 LLM 공급자 Tier1 진입 또는 기존 플레이어 M&A",
+        "action": "경쟁 구도 재매핑 → C-33 전략 시나리오 갱신"
+      }
+    ],
+    "edges": [
+      {
+        "id": "PE-AI-ECO-001-C-E001",
+        "from": "PE-AI-ECO-001-C-N001",
+        "to": "PE-AI-ECO-001-C-N002",
+        "relation": "DEPENDS_ON",
+        "weight": 0.92,
+        "label": "LLM → Infra compute dependency"
+      },
+      {
+        "id": "PE-AI-ECO-001-C-E002",
+        "from": "PE-AI-ECO-001-C-N002",
+        "to": "PE-AI-ECO-001-C-N003",
+        "relation": "PROCURES_FROM",
+        "weight": 0.88,
+        "label": "Infra → Chip/Memory procurement"
+      },
+      {
+        "id": "PE-AI-ECO-001-C-E003",
+        "from": "PE-AI-ECO-001-C-N003",
+        "to": "PE-AI-ECO-001-C-N001",
+        "relation": "COMPETES_WITH",
+        "weight": 0.65,
+        "label": "Vertical player → LLM market entry threat"
+      }
+    ],
+    "cross_domain_links": [
+      {
+        "target_domain": "PE-SEMI-HBM",
+        "link_type": "FEEDS_DATA",
+        "description": "HBM 수급 데이터 → AI ECO 경쟁 분석 입력"
+      },
+      {
+        "target_domain": "PE-GEO-RISK",
+        "link_type": "MODULATES",
+        "description": "지정학 리스크 → AI 인프라 공급망 교란 시나리오"
+      },
+      {
+        "target_domain": "C-33",
+        "link_type": "INFORMS",
+        "description": "AI ECO 경쟁 구도 → 전략 시나리오 C-33 갱신"
+      }
+    ]
+  },
+  "delta_from_v6.2": {
+    "added_domains": ["PE-AI-ECO-001-C"],
+    "modified_domains": ["PE-SEMI-HBM", "PE-GEO-RISK"],
+    "added_nodes": 18,
+    "added_edges": 24,
+    "removed_nodes": 0,
+    "removed_edges": 0,
+    "schema_changes": "early_warning 노드 타입에 trigger_id 필드 추가"
+  }
+}
