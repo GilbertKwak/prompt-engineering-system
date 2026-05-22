@@ -3,10 +3,15 @@
     "version": "6.3",
     "build_type": "rebuild",
     "timestamp": "2026-05-22T07:25:00Z",
+    "rebuilt_at": "2026-05-22T16:25:00+09:00",
     "author": "GilbertKwak",
     "command": "pe-graph --rebuild --version 6.3 --add-domain PE-AI-ECO-001-C",
+    "source_prompt": "PE-AI-ECO-001-C · Startup / Edge AI · Phase 4",
+    "source_commit": "d43e9f01",
+    "notion_ref": "https://www.notion.so/36455ed436f0816e9b1ec012fad7f2d6",
     "integrity_check": "PASS",
-    "integrity_timestamp": "2026-05-22T07:25:30Z"
+    "integrity_timestamp": "2026-05-22T16:25:30+09:00",
+    "integrity_command": "pe-graph --integrity-check --version 6.3"
   },
   "graph_stats": {
     "prev_version": "6.2",
@@ -30,116 +35,155 @@
       "dangling_edges": 0,
       "cross_domain_links_valid": "PASS"
     },
-    "warnings": []
+    "warnings": [],
+    "errors": []
   },
   "new_domain": {
     "domain_id": "PE-AI-ECO-001-C",
-    "domain_name": "AI Ecosystem Intelligence — Competitive Layer C",
-    "description": "AI 생태계 경쟁 구도 분석 도메인. LLM 공급자, AI 인프라 레이어, 반도체-AI 수직 통합 플레이어 간의 관계 및 경쟁 패턴을 모델링.",
+    "domain_name": "AI Ecosystem Intelligence — Startup / Edge AI Layer C",
+    "variant": "C",
+    "description": "AI 생태계 스타트업·엣지 AI 발굴 도메인. 5-Agent Pipeline 기반 PMF 스코어링, White Space 4차원 분석, AstraChips Strategic Fit 심층평가 결과를 KG로 통합.",
     "parent_domain": "PE-AI-ECO-001",
     "layer": "C",
-    "created_at": "2026-05-22T07:25:00Z",
+    "pe3_score": 95,
+    "bayesian_prior": "Beta(3,7)",
+    "created_at": "2026-05-22T16:25:00+09:00",
+    "agent_pipeline": {
+      "count": 5,
+      "agents": [
+        { "id": "AGENT-1", "role": "Edge AI Startup Landscape Mapping", "output": "4-Layer 스타트업 50개 히트맵 + 12개월 IR/라운드" },
+        { "id": "AGENT-2", "role": "White Space & Disruption Scan", "output": "4차원 공백 점수 + Top-5 디스럽션 신호" },
+        { "id": "AGENT-3", "role": "Startup Traction & PMF Scoring", "output": "5차원 PMF 점수 + 단계 분류" },
+        { "id": "AGENT-4", "role": "AstraChips Strategic Fit Assessment", "output": "5차원 Fit 점수 + 파트너십 로드맵" },
+        { "id": "AGENT-5", "role": "KG Integration & NBD Memo", "output": "KG delta JSON + AstraChips NBD 메모" }
+      ]
+    },
+    "white_space_dimensions": [
+      { "dim": "Market Void Score",    "experts": ["Expert A (YC)", "Expert E (Sequoia)"] },
+      { "dim": "Technology Gap Score", "experts": ["Expert B (Arm)", "Expert C (NVIDIA)"] },
+      { "dim": "Regulatory Tailwind",  "experts": ["Expert D (Samsung Next)"] },
+      { "dim": "AstraChips Synergy",   "experts": ["Expert D", "Expert B"] }
+    ],
+    "disruption_signals": [
+      "RISC-V 엣지 AI 칩 생태계 확장",
+      "Transformer On-Device 경량화 (LoRA/Quantization)",
+      "생체인식 + 엣지AI 융합 디바이스",
+      "이상감지 B2B SaaS (제조·물류)",
+      "In-sensor AI (Sony IMX 계열 경쟁)"
+    ],
+    "pmf_scorecard": {
+      "dimensions": ["Revenue Quality", "Customer Lock-in", "Team Depth", "Ecosystem Traction", "AstraChips Fit"],
+      "thresholds": {
+        "PMF_CONFIRMED": ">=85",
+        "PMF_DEVELOPING": "65-84",
+        "PMF_EARLY": "<65"
+      }
+    },
+    "astrachips_fit": {
+      "dimensions": [
+        { "id": "A1", "name": "NPU Roadmap Alignment", "desc": "AstraChips NPU 아키텍처 시너지" },
+        { "id": "A2", "name": "OSAT Value-add", "desc": "패키징/어셈블리 6~18개월 주기" },
+        { "id": "A3", "name": "Distribution Lever", "desc": "글로벌 채널 확장 (KR/US/EU/JP)" },
+        { "id": "A4", "name": "Competitive Defense", "desc": "경쟁사 엣지 AI 포트폴리오 방어" },
+        { "id": "A5", "name": "Revenue Contribution", "desc": "3년 내 P&L 기여 경로" }
+      ],
+      "thresholds": {
+        "STRATEGIC_PRIORITY": ">=20",
+        "WATCH_AND_BUILD": "13-19",
+        "REFERENCE_ONLY": "<=12"
+      }
+    },
     "nodes": [
       {
         "id": "PE-AI-ECO-001-C-N001",
-        "label": "LLM_Provider_Tier1",
-        "type": "competitor_cluster",
-        "entities": ["OpenAI", "Anthropic", "Google DeepMind", "Meta AI"],
-        "attributes": {
-          "market_position": "dominant",
-          "chip_dependency": "NVIDIA_H100/H200/B200",
-          "vertical_integration": "partial"
-        }
+        "label": "Edge_AI_Startup_Landscape",
+        "type": "landscape_map",
+        "layers": ["Layer-1: Chip/HW", "Layer-2: OS/Firmware", "Layer-3: Framework/SDK", "Layer-4: Application"],
+        "startup_count": 50,
+        "attributes": { "scan_period": "12M", "geo_focus": ["KR", "US", "IL", "UK", "JP"] }
       },
       {
         "id": "PE-AI-ECO-001-C-N002",
-        "label": "AI_Infra_Layer",
-        "type": "infrastructure_cluster",
-        "entities": ["AWS", "Azure", "GCP", "CoreWeave", "Lambda Labs"],
-        "attributes": {
-          "role": "compute_provider",
-          "hbm_consumption": "tier1",
-          "capex_2026_usd_bn": 280
-        }
+        "label": "White_Space_Map",
+        "type": "opportunity_space",
+        "dimensions": 4,
+        "top_signals": ["RISC-V Edge", "On-Device Transformer", "Bio+Edge", "B2B Anomaly SaaS", "In-sensor AI"],
+        "attributes": { "max_score": 100, "scoring_method": "weighted_expert" }
       },
       {
         "id": "PE-AI-ECO-001-C-N003",
-        "label": "Vertical_Integration_Players",
-        "type": "strategic_cluster",
-        "entities": ["Apple", "Samsung", "SK Hynix", "TSMC", "Intel"],
-        "attributes": {
-          "integration_depth": "chip_to_model",
-          "strategic_risk": "medium-high"
-        }
+        "label": "PMF_Scorecard",
+        "type": "scoring_model",
+        "attributes": { "dimensions": 5, "max_score": 100, "bayesian_prior": "Beta(3,7)" }
       },
       {
         "id": "PE-AI-ECO-001-C-N004",
-        "label": "PE-AI-ECO-001-C_EW_Trigger",
-        "type": "early_warning",
-        "trigger_id": "EW-AI-ECO-C-01",
-        "condition": "AI 인프라 공급자 HBM 할당량 변동 ±15% 이상",
-        "action": "즉시 분석 루프 재실행 → C-29 업데이트"
+        "label": "AstraChips_Fit_Model",
+        "type": "fit_assessment",
+        "attributes": { "dimensions": 5, "max_score": 25, "output": ["STRATEGIC_PRIORITY", "WATCH_AND_BUILD", "REFERENCE_ONLY"] }
       },
       {
         "id": "PE-AI-ECO-001-C-N005",
-        "label": "PE-AI-ECO-001-C_EW_Trigger_2",
+        "label": "EW-AI-ECO-C-01",
+        "type": "early_warning",
+        "trigger_id": "EW-AI-ECO-C-01",
+        "condition": "AI 인프라 공급자 HBM 할당량 변동 ±15% 이상",
+        "action": "즉시 분석 루프 재실행 → C-29 업데이트",
+        "severity": "HIGH"
+      },
+      {
+        "id": "PE-AI-ECO-001-C-N006",
+        "label": "EW-AI-ECO-C-02",
         "type": "early_warning",
         "trigger_id": "EW-AI-ECO-C-02",
         "condition": "신규 LLM 공급자 Tier1 진입 또는 기존 플레이어 M&A",
-        "action": "경쟁 구도 재매핑 → C-33 전략 시나리오 갱신"
+        "action": "경쟁 구도 재매핑 → C-33 전략 시나리오 갱신",
+        "severity": "MEDIUM"
+      },
+      {
+        "id": "PE-AI-ECO-001-C-N007",
+        "label": "NBD_Memo_Router",
+        "type": "output_router",
+        "routes": {
+          "PMF_CONFIRMED": "PE-INV (C-35) IC 메모 자동 라우팅",
+          "STRATEGIC_PRIORITY": "AstraChips-Strategy 파일럿 자동 저장",
+          "WHITE_SPACE_GTE_80": "PE-STRAT (C-33) 기회 갱신"
+        }
       }
     ],
     "edges": [
-      {
-        "id": "PE-AI-ECO-001-C-E001",
-        "from": "PE-AI-ECO-001-C-N001",
-        "to": "PE-AI-ECO-001-C-N002",
-        "relation": "DEPENDS_ON",
-        "weight": 0.92,
-        "label": "LLM → Infra compute dependency"
-      },
-      {
-        "id": "PE-AI-ECO-001-C-E002",
-        "from": "PE-AI-ECO-001-C-N002",
-        "to": "PE-AI-ECO-001-C-N003",
-        "relation": "PROCURES_FROM",
-        "weight": 0.88,
-        "label": "Infra → Chip/Memory procurement"
-      },
-      {
-        "id": "PE-AI-ECO-001-C-E003",
-        "from": "PE-AI-ECO-001-C-N003",
-        "to": "PE-AI-ECO-001-C-N001",
-        "relation": "COMPETES_WITH",
-        "weight": 0.65,
-        "label": "Vertical player → LLM market entry threat"
-      }
+      { "id": "PE-AI-ECO-001-C-E001", "from": "PE-AI-ECO-001-C-N001", "to": "PE-AI-ECO-001-C-N002", "relation": "FEEDS_INTO", "weight": 0.92, "label": "Landscape → White Space 분석 입력" },
+      { "id": "PE-AI-ECO-001-C-E002", "from": "PE-AI-ECO-001-C-N002", "to": "PE-AI-ECO-001-C-N003", "relation": "FILTERS_INTO", "weight": 0.85, "label": "White Space 고점수 → PMF 스코어링 대상" },
+      { "id": "PE-AI-ECO-001-C-E003", "from": "PE-AI-ECO-001-C-N003", "to": "PE-AI-ECO-001-C-N004", "relation": "QUALIFIES_FOR", "weight": 0.88, "label": "PMF-CONFIRMED/DEVELOPING → AstraChips Fit 평가" },
+      { "id": "PE-AI-ECO-001-C-E004", "from": "PE-AI-ECO-001-C-N004", "to": "PE-AI-ECO-001-C-N007", "relation": "TRIGGERS", "weight": 1.0, "label": "Fit 결과 → NBD 메모 라우터" },
+      { "id": "PE-AI-ECO-001-C-E005", "from": "PE-AI-ECO-001-C-N005", "to": "PE-AI-ECO-001-C-N001", "relation": "RESCANS", "weight": 0.95, "label": "EW-C-01 트리거 → Landscape 재스캔" },
+      { "id": "PE-AI-ECO-001-C-E006", "from": "PE-AI-ECO-001-C-N006", "to": "PE-AI-ECO-001-C-N002", "relation": "INVALIDATES", "weight": 0.80, "label": "EW-C-02 트리거 → White Space 재계산" }
     ],
     "cross_domain_links": [
-      {
-        "target_domain": "PE-SEMI-HBM",
-        "link_type": "FEEDS_DATA",
-        "description": "HBM 수급 데이터 → AI ECO 경쟁 분석 입력"
-      },
-      {
-        "target_domain": "PE-GEO-RISK",
-        "link_type": "MODULATES",
-        "description": "지정학 리스크 → AI 인프라 공급망 교란 시나리오"
-      },
-      {
-        "target_domain": "C-33",
-        "link_type": "INFORMS",
-        "description": "AI ECO 경쟁 구도 → 전략 시나리오 C-33 갱신"
-      }
-    ]
+      { "target_domain": "PE-SEMI-HBM", "link_type": "FEEDS_DATA",   "description": "HBM 수급·가격 데이터 → AI ECO 경쟁 분석 입력" },
+      { "target_domain": "PE-GEO-RISK", "link_type": "MODULATES",    "description": "지정학 리스크 → AI 인프라 공급망 교란 시나리오" },
+      { "target_domain": "C-33",        "link_type": "INFORMS",       "description": "White Space ≥80 → 전략 시나리오 C-33 갱신" },
+      { "target_domain": "C-35 (PE-INV)", "link_type": "ROUTES_TO",  "description": "PMF-CONFIRMED → IC 메모 자동 라우팅" },
+      { "target_domain": "C-30 (PE-NBD)", "link_type": "ROUTES_TO",  "description": "AstraChips Fit → NBD 메모 라우팅" },
+      { "target_domain": "PE-AI-ECO-001-A", "link_type": "CROSS_REFS", "description": "Variant A 실리콘 에코 교차 분석" },
+      { "target_domain": "PE-AI-ECO-001-B", "link_type": "CROSS_REFS", "description": "Variant B Exit 시나리오 연동" }
+    ],
+    "ecosystem_routing": {
+      "PE-NBD (C-30)": "AstraChips NBD 메모 라우팅",
+      "PE-INV (C-35)": "PMF-CONFIRMED → IC 메모 자동 라우팅",
+      "PE-STRAT (C-33)": "White Space ≥80 → 기회 갱신",
+      "AstraChips-Strategy": "STRATEGIC PRIORITY → 상세 파일럿 자동 저장",
+      "Variant A": "엣지 실리콘 교차 분석",
+      "Variant B": "Exit 시나리오 (S1/S2/S3) 연동"
+    }
   },
   "delta_from_v6.2": {
     "added_domains": ["PE-AI-ECO-001-C"],
-    "modified_domains": ["PE-SEMI-HBM", "PE-GEO-RISK"],
+    "modified_domains": ["PE-SEMI-HBM", "PE-GEO-RISK", "C-33"],
     "added_nodes": 18,
     "added_edges": 24,
     "removed_nodes": 0,
     "removed_edges": 0,
-    "schema_changes": "early_warning 노드 타입에 trigger_id 필드 추가"
+    "schema_changes": "early_warning 노드 타입에 trigger_id + severity 필드 추가 (하위 호환)"
   }
 }
