@@ -10,7 +10,19 @@
 - **Notion & GitHub 생태계 연계 분석** 완료 — CRP 3종 ↔ T-09 허브 통합 포인트 7개 명시
 - **CHANGELOG 하이브리드 전략 소급 적용** — v6.3 커밋 메시지 기준 확립 (commit: `9cb314f6`)
 - **CRP 3종 GitHub 저장 확인** — `prompts/PE-IP/CRP/` 디렉토리 (commit: `cb1c72c6`)
+- **3-role 최적화 프롬프트 자동 검증/개선/증식** 완료 — Herbert Simon·Kuhn·Kahneman / Sam Altman·Demis Hassabis·Jensen Huang / OpenAI+DeepMind+Stripe 역할 통합
+- **기존 프롬프트 대비 장단점 비교** 완료 — 5항목 개선, 이식성 트레이드오프 문서화
+- **최적 보고서 적용 대상 선정** — RPT-AI-ECO-001 (CRP Cognitive Kernel 1호 적용 보고서)
 - **KG v6.4** 업데이트 예정 — CRP 클러스터 +4n/+6e (C-39 세션)
+
+### C-38 세션 타임라인
+
+| 시각 (KST) | 작업 | 결과 |
+|-----------|------|------|
+| 19:49 | CHANGELOG 하이브리드 전략 적용 | commit `9cb314f6` ✅ |
+| 19:51 | CHANGELOG v6.4 초안 반영 | 파일 크기 +4,444 bytes ✅ |
+| 20:04~21:11 | CRP 3종 최적화 프롬프트 생성 + 생태계 분석 | commit `cb1c72c6` ✅ |
+| 21:11 | CHANGELOG v6.4 최종 보완 업데이트 | 본 커밋 ✅ |
 
 ### CRP 도메인 프롬프트 3종 상세
 
@@ -43,6 +55,15 @@
 - `CRP-STRATEGY-001` → C-36 INV-STRAT 하단
 - `CRP-AGENT-FRAMEWORK-001` → PE-7 AI 자동화 하단
 
+### AI Ecosystem Intelligence 보고서 적용 검토
+
+| 적용 대상 | 권장 여부 | 근거 |
+|-----------|-----------|------|
+| RPT-AI-ECO-001 | ✅ 최우선 적용 | CRP Cognitive Kernel 1호 실증 대상 |
+| INV-STRAT 시리즈 | ✅ 적용 권장 | CRP-STRATEGY-001과 직접 연계 |
+| PE-SEMI 심층 보고서 | ⚠️ 선택적 적용 | 기술 도메인 — CRP 프레임 이식성 중간 |
+| PE-FIN 재무 모델 | ⚠️ 제한적 적용 | 정량 모델 중심 — CRP 오버헤드 위험 |
+
 ### C-39 다음 우선 과제
 1. **KG v6.4** — CRP 클러스터 +4n/+6e 등록
 2. **CRP-AGENT-FRAMEWORK → PE-7 통합** — T-09 전체 자동화 품질 시스템 레벨 향상
@@ -52,7 +73,7 @@
 - `prompts/PE-IP/CRP/CRP-THEORY-001.md` (신규, commit: `cb1c72c6`)
 - `prompts/PE-IP/CRP/CRP-STRATEGY-001.md` (신규, commit: `cb1c72c6`)
 - `prompts/PE-IP/CRP/CRP-AGENT-FRAMEWORK-001.md` (신규, commit: `cb1c72c6`)
-- `CHANGELOG.md` (업데이트, commit: `9cb314f6` → 본 커밋)
+- `CHANGELOG.md` (업데이트, commit: `9cb314f6` → `cb1c72c6` → 본 커밋)
 
 ---
 
