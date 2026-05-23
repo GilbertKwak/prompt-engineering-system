@@ -1,0 +1,18 @@
+# KM-PIPE v3.0 — Python Dependencies
+# engines/KM-PIPE_knowledge-output-pipeline/requirements.txt
+
+# Core document generation
+python-docx>=1.1.0
+
+# Visualization (Tufte-styled, 300dpi)
+matplotlib>=3.8.0
+numpy>=1.26.0
+
+# Knowledge graph visualization (optional, for network charts)
+networkx>=3.2.0
+
+# Data processing utilities
+pandas>=2.1.0
+
+# Install:
+# pip install -r requirements.txt
