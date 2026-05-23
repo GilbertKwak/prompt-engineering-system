@@ -1,5 +1,111 @@
 # CHANGELOG — 프롬프트 엔지니어링 시스템
 
+## v6.3 (2026-05-23) — C-37 KM-PIPE 도메인 편입 · Notion↔GitHub 양방향 동기화 파이프라인 오케스트레이터
+
+### 핵심 변경사항
+- **KM-PIPE-MASTER v3.0** 신규 생성 — Notion↔GitHub 양방향 동기화 오케스트레이터 (C-37)
+- **KM-PIPE-A v1.0** 신규 생성 — Notion→GitHub 단방향 동기화 파이프라인
+- **KM-PIPE-B v1.0** 신규 생성 — GitHub→Notion 역방향 동기화 + 세션로그 자동화 파이프라인
+- **KG v6.3** rebuild 완료 — 66 nodes / 80 edges (+3n / +5e from v6.2)
+- **하이브리드 언어 전략** 적용 — 커밋 메시지·파일명·JSON key: 영어 / 문서 본문: 한국어
+
+### KG 변경
+| 구분 | v6.2 | v6.3 | 증가 |
+|---|---|---|---|
+| Nodes | 63 | **66** | +3 |
+| Edges | 75 | **80** | +5 |
+| KM-PIPE 클러스터 | 0 | 3 | +3 |
+
+### 신규 노드 3종
+| Node ID | 타입 | 설명 |
+|---------|------|------|
+| KM-PIPE-MASTER-HUB | domain_hub | C-37 오케스트레이터 허브 |
+| KM-PIPE-A | prompt | Notion→GitHub 단방향 파이프라인 |
+| KM-PIPE-B | prompt | GitHub→Notion 역방향 + 세션로그 |
+
+### 신규 엣지 5종
+| From | To | Relation |
+|------|----|----------|
+| KM-PIPE-MASTER-HUB | T-09-MOTHER | child_of |
+| KM-PIPE-MASTER-HUB | PE-IP-HUB | child_of |
+| KM-PIPE-MASTER-HUB | KM-PIPE-A | orchestrates |
+| KM-PIPE-MASTER-HUB | KM-PIPE-B | orchestrates |
+| KM-PIPE-MASTER-HUB | README.md | cross_domain_link |
+
+### 파일 목록
+- `PE-IP/KM-PIPE/KM-PIPE-MASTER-v3.0.md` (신규)
+- `PE-IP/KM-PIPE/KM-PIPE-A-v1.0.md` (신규)
+- `PE-IP/KM-PIPE/KM-PIPE-B-v1.0.md` (신규)
+- `knowledge_graph.json` → v6.3 (업데이트, commit: `b5a42adb`)
+
+---
+
+## v6.2 (2026-05-20) — C-36 INV-STRAT 도메인 편입 · 개인투자 전략 마스터 프레임워크
+
+### 핵심 변경사항
+- **INV-STRAT-MASTER v1.0** 신규 생성 — NerdWallet 기반 → 기관급 의사결정 변환 프레임워크 (C-36)
+- **7대 투자 전략 최적화 모델** 수록 — 성장/가치/배당/모멘텀/퀀트/글로벌/대안
+- **생애주기 전략 전환 맵** 수록 — 축적기/전환기/인출기 3단계
+- **한국 시장 현지화 맵** 수록 — ISA/IRP/세제/규제 특화
+- **PE-3 스코어 92점** 달성 (목표: v1.1에서 97점)
+- **KG v6.2** rebuild 완료 — 63 nodes / 75 edges (+5n / +7e from v6.1)
+
+### KG 변경
+| 구분 | v6.1 | v6.2 | 증가 |
+|---|---|---|---|
+| Nodes | 58 | **63** | +5 |
+| Edges | 68 | **75** | +7 |
+| INV-STRAT 클러스터 | 0 | 5 | +5 |
+
+### 신규 노드 5종
+| Node ID | 타입 | 설명 |
+|---------|------|------|
+| INV-STRAT-HUB | domain_hub | C-36 투자전략 허브 |
+| INV-STRAT-MASTER-v1.0 | prompt | 마스터 프레임워크 프롬프트 |
+| INV-STRATEGY-7 | component | 7대 투자전략 모델 |
+| INV-LIFECYCLE | component | 생애주기 전환 맵 |
+| INV-KR-MAP | component | 한국 시장 현지화 맵 |
+
+### 파일 목록
+- `prompts/INV-STRAT/inv_strat_master_v1.0.md` (신규)
+- `knowledge_graph.json` → v6.2 (업데이트, commit: `ad4c26d4`)
+
+---
+
+## v6.1 (2026-05-19) — C-35 PE-OPTICAL 도메인 편입 · 광학모듈 투자분석 라이브러리
+
+### 핵심 변경사항
+- **OPTICAL-MODULE-DEEP v2.1** 신규 생성 — 광학모듈 심층 투자분석 프롬프트 (C-35)
+- **I/O Contract v2.0** 수록 — 입출력 계약 명세 (인터페이스 표준화)
+- **Memory Handoff Engine v1.0** 수록 — 세션 간 메모리 핸드오프
+- **Fallback 3조건 Engine v1.0** 수록 — 신뢰도 저하 대응 체계
+- **Version A/B 분기** 수록 — 투자집중형 / 기술심층형 분석 모드
+- **PE-3 스코어 95점** 달성
+- **KG v6.1** rebuild 완료 — 58 nodes / 68 edges (+6n / +8e from v6.0)
+
+### KG 변경
+| 구분 | v6.0 | v6.1 | 증가 |
+|---|---|---|---|
+| Nodes | 52 | **58** | +6 |
+| Edges | 60 | **68** | +8 |
+| PE-OPTICAL 클러스터 | 0 | 6 | +6 |
+
+### 신규 노드 6종
+| Node ID | 타입 | 설명 |
+|---------|------|------|
+| PE-OPTICAL-HUB | domain_hub | C-35 광학모듈 허브 |
+| OPTICAL-MODULE-DEEP-v2.1 | prompt | 심층 투자분석 프롬프트 |
+| OPT-IO-CONTRACT | component | I/O 계약 명세 |
+| OPT-MEMORY-HANDOFF | component | 메모리 핸드오프 엔진 |
+| OPT-FALLBACK-ENGINE | component | Fallback 3조건 엔진 |
+| OPT-VERSION-AB | component | 분석 모드 A/B 분기 |
+
+### 파일 목록
+- `prompts/PE-OPTICAL/pe_optical_01_deep_v2.1.md` (신규)
+- `knowledge_graph.json` → v6.1 (업데이트)
+
+---
+
 ## v4.15 (2026-05-07) — 세션 #1~#5 통합 동기화 · PE-INVEST/GTR-ISR/PE-CON/DD-FIN
 
 ### 핵심 변경사항
