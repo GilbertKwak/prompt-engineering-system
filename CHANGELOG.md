@@ -1,5 +1,53 @@
 # CHANGELOG — 프롬프트 엔지니어링 시스템
 
+## v6.4 (2026-05-23) — C-38 CRP 도메인 초기화 · 최적화 프롬프트 3종 · 하이브리드 전략 적용
+
+### 핵심 변경사항
+- **CRP-THEORY-001** 신규 생성 — 학술 논문 수준 CRP 이론 정식화 프롬프트 (PE-3 목표 95+)
+- **CRP-STRATEGY-001** 신규 생성 — CRP → OpenAI 급 플랫폼 전환 7단계 전략 프롬프트 (PE-3 목표 95+)
+- **CRP-AGENT-FRAMEWORK-001** 신규 생성 — LangGraph/AutoGen/CrewAI 초월 CRP-Native Agent 프레임워크 설계 프롬프트 (PE-3 목표 95+)
+- **하이브리드 전략 v1.0 공식 적용** — 커밋 메시지·파일명·JSON key: 영어 / 문서 본문: 한국어
+- **Notion & GitHub 생태계 연계 분석** 완료 — CRP 3종 ↔ T-09 허브 통합 포인트 7개 명시
+- **KG v6.4** 업데이트 예정 — CRP 클러스터 +4n/+6e (C-39 세션)
+
+### CRP 도메인 프롬프트 3종 상세
+
+| 파일명 | 버전 | PE-3 목표 | 핵심 기능 |
+|--------|------|-----------|-----------|
+| `CRP-THEORY-001.md` | v1.0 | 95+ | 수학적 정의 · Ω 공간 · Reconfiguration Operator R |
+| `CRP-STRATEGY-001.md` | v1.0 | 95+ | 7단계 전략 · KPI 연도별 · 경쟁사 대응 포함 |
+| `CRP-AGENT-FRAMEWORK-001.md` | v1.0 | 95+ | TypeScript 스키마 · T-09 통합 7포인트 |
+
+### 기존 프롬프트 대비 개선사항
+
+| 항목 | 기존 | v6.4 개선 |
+|------|------|-----------|
+| 수식 정밀도 | 서술형 | Ω 공간 + R 연산자 수학적 정의 |
+| 실행 커맨드 | 없음 | PE-3 실행 커맨드 내장 |
+| 생태계 연결 | 암묵적 | T-09 통합 포인트 7개 명시 |
+| 경쟁사 대응 | 일반적 | Workday/SAP/LangGraph 구체 대응 |
+
+### 생태계 연계 맵
+
+| CRP 프롬프트 | 연계 기존 도메인 |
+|-------------|----------------|
+| CRP-THEORY-001 | PE-ARCH-001 · C-31 PE-AI · PE-3 파이프라인 |
+| CRP-STRATEGY-001 | INV-STRAT-MASTER v1.0 · PE-CON-STRAT |
+| CRP-AGENT-FRAMEWORK-001 | PE-7 · KM-PIPE-MASTER v3.0 · PE-3 |
+
+### Notion 저장 권장 위치
+- `CRP-THEORY-001` → C-31 PE-AI 하단 신규 섹션
+- `CRP-STRATEGY-001` → C-36 INV-STRAT 하단
+- `CRP-AGENT-FRAMEWORK-001` → PE-7 AI 자동화 하단
+
+### 파일 목록
+- `prompts/PE-IP/CRP/CRP-THEORY-001.md` (신규)
+- `prompts/PE-IP/CRP/CRP-STRATEGY-001.md` (신규)
+- `prompts/PE-IP/CRP/CRP-AGENT-FRAMEWORK-001.md` (신규)
+- `CHANGELOG.md` (업데이트)
+
+---
+
 ## v6.3 (2026-05-23) — C-37 KM-PIPE 도메인 편입 · Notion↔GitHub 양방향 동기화 파이프라인 오케스트레이터
 
 ### 핵심 변경사항
@@ -118,7 +166,7 @@
 
 ### 세션 이력
 | 세션 | 주요 완료 항목 | 커밋/링크 |
-|------|--------------|----------|
+|------|--------------|---------|
 | 세션 #1 | PE-INVEST-MASTER v5.0.6 · A024~A026 · PE-2: 4.3 | 5c5649f |
 | 세션 #2 | OPT-DD-FIN ↔ PE-FIN Trigger Engine v1.2 · E2E 4/4 | — |
 | 세션 #3 | GTR-ISR v1.0 · PE-3 최적화 · Notion 연계 방안 | — |
