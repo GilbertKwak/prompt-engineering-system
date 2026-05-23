@@ -1,0 +1,308 @@
+name: Notion Session Sync
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'CHANGELOG.md'
+
+  workflow_dispatch:
+    inputs:
+      session_id:
+        description: 'Session ID (e.g. C-38)'
+        required: false
+        default: ''
+      session_title:
+        description: 'Session title override'
+        required: false
+        default: ''
+
+jobs:
+  sync-to-notion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      # ────────────────────────────────────────────────
+      # 1. Checkout
+      # ────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 5
+
+      # ────────────────────────────────────────────────
+      # 2. Parse CHANGELOG for latest session entry
+      # ────────────────────────────────────────────────
+      - name: Parse latest CHANGELOG entry
+        id: parse
+        run: |
+          python3 - <<'PYEOF'
+          import re, os, subprocess, json
+          from datetime import datetime, timezone
+
+          # ── read CHANGELOG ──────────────────────────
+          with open("CHANGELOG.md", encoding="utf-8") as f:
+              content = f.read()
+
+          # ── extract latest h2 block ──────────────────
+          # Pattern: ## [v6.x] — YYYY-MM-DD · description
+          blocks = re.split(r'\n(?=## \[v)', content)
+          latest_block = next((b for b in blocks if b.strip().startswith('## [')), '')
+
+          # ── parse header ─────────────────────────────
+          header_match = re.match(
+              r'## \[(?P<ver>[^\]]+)\][^\—–-]*[—–-]\s*(?P<date>\d{4}-\d{2}-\d{2})\s*[·•]\s*(?P<desc>.+)',
+              latest_block.split('\n')[0]
+          )
+          if not header_match:
+              header_match = re.match(
+                  r'## \[(?P<ver>[^\]]+)\]\s*(?P<date>\d{4}-\d{2}-\d{2})?\s*(?P<desc>.*)',
+                  latest_block.split('\n')[0]
+              )
+
+          version    = header_match.group('ver').strip() if header_match else 'unknown'
+          entry_date = header_match.group('date').strip() if header_match and header_match.group('date') else datetime.now(timezone.utc).strftime('%Y-%m-%d')
+          entry_desc = header_match.group('desc').strip() if header_match and header_match.group('desc') else 'Auto session sync'
+
+          # ── detect session id ─────────────────────────
+          session_match = re.search(r'C-(\d+)', latest_block)
+          session_id = f"C-{session_match.group(1)}" if session_match else "C-??"
+
+          # override from workflow_dispatch
+          dispatch_session = os.environ.get('INPUT_SESSION_ID', '').strip()
+          dispatch_title   = os.environ.get('INPUT_SESSION_TITLE', '').strip()
+          if dispatch_session:
+              session_id = dispatch_session
+          if dispatch_title:
+              entry_desc = dispatch_title
+
+          # ── build page title ──────────────────────────
+          page_title = f"📅 {entry_date} {session_id} — {entry_desc[:80]}"
+
+          # ── extract body bullets (first 20 lines) ────
+          body_lines = [l for l in latest_block.split('\n')[1:] if l.strip()][:20]
+          body_md = '\n'.join(body_lines)
+
+          # ── git metadata ──────────────────────────────
+          commit_sha = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode().strip()
+          commit_msg = subprocess.check_output(['git', 'log', '-1', '--pretty=%s']).decode().strip()
+
+          # ── output ────────────────────────────────────
+          env_file = os.environ['GITHUB_OUTPUT']
+          with open(env_file, 'a') as ef:
+              ef.write(f"page_title={page_title}\n")
+              ef.write(f"session_id={session_id}\n")
+              ef.write(f"version={version}\n")
+              ef.write(f"entry_date={entry_date}\n")
+              ef.write(f"entry_desc={entry_desc[:120]}\n")
+              ef.write(f"commit_sha={commit_sha}\n")
+              ef.write(f"commit_msg={commit_msg[:120]}\n")
+
+          # write body_md to file (avoids multiline env issues)
+          with open('/tmp/session_body.md', 'w', encoding='utf-8') as bf:
+              bf.write(body_md)
+
+          print(f"✅ Parsed: {page_title}")
+          PYEOF
+        env:
+          INPUT_SESSION_ID: ${{ github.event.inputs.session_id }}
+          INPUT_SESSION_TITLE: ${{ github.event.inputs.session_title }}
+
+      # ────────────────────────────────────────────────
+      # 3. Create Notion session page via API
+      # ────────────────────────────────────────────────
+      - name: Create Notion session page
+        id: notion_create
+        run: |
+          python3 - <<'PYEOF'
+          import os, json, re, urllib.request, urllib.error
+          from datetime import datetime, timezone
+
+          NOTION_TOKEN  = os.environ['NOTION_TOKEN']
+          PARENT_PAGE_ID = os.environ['NOTION_SESSION_PARENT_ID']   # T-09 Session Log Hub
+
+          page_title   = os.environ['PAGE_TITLE']
+          session_id   = os.environ['SESSION_ID']
+          version      = os.environ['VERSION']
+          entry_date   = os.environ['ENTRY_DATE']
+          entry_desc   = os.environ['ENTRY_DESC']
+          commit_sha   = os.environ['COMMIT_SHA']
+          commit_msg   = os.environ['COMMIT_MSG']
+          repo         = os.environ['GITHUB_REPOSITORY']
+          run_url      = f"https://github.com/{repo}/actions/runs/{os.environ['GITHUB_RUN_ID']}"
+          changelog_url = f"https://github.com/{repo}/blob/main/CHANGELOG.md"
+
+          # read body
+          try:
+              with open('/tmp/session_body.md', encoding='utf-8') as f:
+                  body_md = f.read()
+          except Exception:
+              body_md = ''
+
+          # ── build body blocks ─────────────────────────
+          def text_block(text, btype='paragraph'):
+              return {
+                  "object": "block",
+                  "type": btype,
+                  btype: {
+                      "rich_text": [{"type": "text", "text": {"content": text[:2000]}}]
+                  }
+              }
+
+          def heading(text, level=2):
+              t = f"heading_{level}"
+              return {"object": "block", "type": t, t: {"rich_text": [{"type": "text", "text": {"content": text}}]}}
+
+          def divider():
+              return {"object": "block", "type": "divider", "divider": {}}
+
+          def callout(text, emoji="🔗"):
+              return {
+                  "object": "block", "type": "callout",
+                  "callout": {
+                      "rich_text": [{"type": "text", "text": {"content": text[:2000]}}],
+                      "icon": {"type": "emoji", "emoji": emoji},
+                      "color": "gray_background"
+                  }
+              }
+
+          def bullet(text):
+              return {
+                  "object": "block", "type": "bulleted_list_item",
+                  "bulleted_list_item": {
+                      "rich_text": [{"type": "text", "text": {"content": text[:2000]}}]
+                  }
+              }
+
+          blocks = [
+              heading("📋 세션 개요", 2),
+              text_block(f"세션 ID: {session_id}  |  버전: {version}  |  날짜: {entry_date}"),
+              text_block(entry_desc),
+              divider(),
+              heading("📝 CHANGELOG 내용", 2),
+          ]
+
+          # convert body lines to bullets
+          for line in body_md.split('\n'):
+              stripped = line.strip()
+              if stripped:
+                  clean = re.sub(r'^[-*#]+\s*', '', stripped)
+                  if clean:
+                      blocks.append(bullet(clean[:500]))
+
+          blocks += [
+              divider(),
+              heading("🔗 GitHub 연결", 2),
+              callout(f"Commit: {commit_sha} — {commit_msg}", "🔀"),
+              callout(f"CHANGELOG: {changelog_url}", "📄"),
+              callout(f"Actions Run: {run_url}", "⚙️"),
+              divider(),
+              heading("✅ 후속 액션", 2),
+              text_block("[ ] 세션 내용 검토 완료"),
+              text_block("[ ] KG 노드/엣지 업데이트"),
+              text_block("[ ] 다음 세션 목표 설정"),
+          ]
+
+          # ── create page payload ───────────────────────
+          payload = {
+              "parent": {"type": "page_id", "page_id": PARENT_PAGE_ID},
+              "icon":   {"type": "emoji", "emoji": "📅"},
+              "properties": {
+                  "title": {
+                      "title": [{"type": "text", "text": {"content": page_title[:255]}}]
+                  }
+              },
+              "children": blocks[:100]   # Notion API limit per request
+          }
+
+          data = json.dumps(payload).encode('utf-8')
+          req = urllib.request.Request(
+              "https://api.notion.com/v1/pages",
+              data=data,
+              headers={
+                  "Authorization": f"Bearer {NOTION_TOKEN}",
+                  "Content-Type": "application/json",
+                  "Notion-Version": "2022-06-28"
+              },
+              method="POST"
+          )
+
+          try:
+              with urllib.request.urlopen(req) as resp:
+                  result = json.loads(resp.read().decode())
+                  page_url = result.get('url', '')
+                  page_id  = result.get('id', '')
+                  print(f"✅ Notion page created: {page_url}")
+                  # write to GITHUB_OUTPUT
+                  with open(os.environ['GITHUB_OUTPUT'], 'a') as ef:
+                      ef.write(f"notion_page_url={page_url}\n")
+                      ef.write(f"notion_page_id={page_id}\n")
+          except urllib.error.HTTPError as e:
+              err_body = e.read().decode()
+              print(f"❌ Notion API error {e.code}: {err_body}")
+              raise SystemExit(1)
+          PYEOF
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_SESSION_PARENT_ID: ${{ secrets.NOTION_SESSION_PARENT_ID }}
+          PAGE_TITLE: ${{ steps.parse.outputs.page_title }}
+          SESSION_ID: ${{ steps.parse.outputs.session_id }}
+          VERSION: ${{ steps.parse.outputs.version }}
+          ENTRY_DATE: ${{ steps.parse.outputs.entry_date }}
+          ENTRY_DESC: ${{ steps.parse.outputs.entry_desc }}
+          COMMIT_SHA: ${{ steps.parse.outputs.commit_sha }}
+          COMMIT_MSG: ${{ steps.parse.outputs.commit_msg }}
+
+      # ────────────────────────────────────────────────
+      # 4. Write back Notion URL to CHANGELOG (optional annotation)
+      # ────────────────────────────────────────────────
+      - name: Annotate CHANGELOG with Notion page URL
+        if: steps.notion_create.outputs.notion_page_url != ''
+        run: |
+          NOTION_URL="${{ steps.notion_create.outputs.notion_page_url }}"
+          SESSION="${{ steps.parse.outputs.session_id }}"
+          DATE="${{ steps.parse.outputs.entry_date }}"
+          NOTE="<!-- notion:${SESSION}:${NOTION_URL} -->"
+
+          # insert note after first h2 block header if not already present
+          if ! grep -q "notion:${SESSION}:" CHANGELOG.md; then
+            python3 -c "
+          import re, sys
+
+          with open('CHANGELOG.md', 'r', encoding='utf-8') as f:
+              c = f.read()
+
+          note = '<!-- notion:${SESSION}:${NOTION_URL} -->'
+          # insert after first matching h2 line
+          pattern = r'(## \[v[^\n]+\n)'
+          new_c = re.sub(pattern, r'\1' + note + '\n', c, count=1)
+
+          with open('CHANGELOG.md', 'w', encoding='utf-8') as f:
+              f.write(new_c)
+          print('✅ Notion URL annotated in CHANGELOG')
+          "
+          fi
+
+      - name: Commit CHANGELOG annotation
+        if: steps.notion_create.outputs.notion_page_url != ''
+        uses: EndBug/add-and-commit@v9
+        with:
+          add: 'CHANGELOG.md'
+          message: "chore(sync): annotate CHANGELOG with Notion URL [${{ steps.parse.outputs.session_id }}]"
+          default_author: github_actions
+
+      # ────────────────────────────────────────────────
+      # 5. Summary
+      # ────────────────────────────────────────────────
+      - name: Job summary
+        run: |
+          echo "## ✅ Notion Session Sync Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| 항목 | 값 |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|-----|" >> $GITHUB_STEP_SUMMARY
+          echo "| Session | ${{ steps.parse.outputs.session_id }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Version | ${{ steps.parse.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Date | ${{ steps.parse.outputs.entry_date }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Notion Page | ${{ steps.notion_create.outputs.notion_page_url }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit | ${{ steps.parse.outputs.commit_sha }} |" >> $GITHUB_STEP_SUMMARY
