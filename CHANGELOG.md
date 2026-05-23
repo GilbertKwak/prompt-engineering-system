@@ -1,6 +1,6 @@
 # CHANGELOG — 프롬프트 엔지니어링 시스템
 
-## v6.4 (2026-05-23) — C-38 CRP 도메인 초기화 · 최적화 프롬프트 3종 · 하이브리드 전략 적용
+## v6.4 (2026-05-23) — C-38 CRP 도메인 초기화 · 최적화 프롬프트 3종 · 하이브리드 전략 공식 적용
 
 ### 핵심 변경사항
 - **CRP-THEORY-001** 신규 생성 — 학술 논문 수준 CRP 이론 정식화 프롬프트 (PE-3 목표 95+)
@@ -8,12 +8,14 @@
 - **CRP-AGENT-FRAMEWORK-001** 신규 생성 — LangGraph/AutoGen/CrewAI 초월 CRP-Native Agent 프레임워크 설계 프롬프트 (PE-3 목표 95+)
 - **하이브리드 전략 v1.0 공식 적용** — 커밋 메시지·파일명·JSON key: 영어 / 문서 본문: 한국어
 - **Notion & GitHub 생태계 연계 분석** 완료 — CRP 3종 ↔ T-09 허브 통합 포인트 7개 명시
+- **CHANGELOG 하이브리드 전략 소급 적용** — v6.3 커밋 메시지 기준 확립 (commit: `9cb314f6`)
+- **CRP 3종 GitHub 저장 확인** — `prompts/PE-IP/CRP/` 디렉토리 (commit: `cb1c72c6`)
 - **KG v6.4** 업데이트 예정 — CRP 클러스터 +4n/+6e (C-39 세션)
 
 ### CRP 도메인 프롬프트 3종 상세
 
 | 파일명 | 버전 | PE-3 목표 | 핵심 기능 |
-|--------|------|-----------|-----------|
+|--------|------|-----------|-----------| 
 | `CRP-THEORY-001.md` | v1.0 | 95+ | 수학적 정의 · Ω 공간 · Reconfiguration Operator R |
 | `CRP-STRATEGY-001.md` | v1.0 | 95+ | 7단계 전략 · KPI 연도별 · 경쟁사 대응 포함 |
 | `CRP-AGENT-FRAMEWORK-001.md` | v1.0 | 95+ | TypeScript 스키마 · T-09 통합 7포인트 |
@@ -21,11 +23,12 @@
 ### 기존 프롬프트 대비 개선사항
 
 | 항목 | 기존 | v6.4 개선 |
-|------|------|-----------|
+|------|------|-----------| 
 | 수식 정밀도 | 서술형 | Ω 공간 + R 연산자 수학적 정의 |
 | 실행 커맨드 | 없음 | PE-3 실행 커맨드 내장 |
 | 생태계 연결 | 암묵적 | T-09 통합 포인트 7개 명시 |
 | 경쟁사 대응 | 일반적 | Workday/SAP/LangGraph 구체 대응 |
+| 언어 전략 | 혼재 | 하이브리드 전략 v1.0 일관 적용 |
 
 ### 생태계 연계 맵
 
@@ -40,11 +43,16 @@
 - `CRP-STRATEGY-001` → C-36 INV-STRAT 하단
 - `CRP-AGENT-FRAMEWORK-001` → PE-7 AI 자동화 하단
 
+### C-39 다음 우선 과제
+1. **KG v6.4** — CRP 클러스터 +4n/+6e 등록
+2. **CRP-AGENT-FRAMEWORK → PE-7 통합** — T-09 전체 자동화 품질 시스템 레벨 향상
+3. **RPT-AI-ECO-001** — CRP Cognitive Kernel 적용 1호 보고서 실행
+
 ### 파일 목록
-- `prompts/PE-IP/CRP/CRP-THEORY-001.md` (신규)
-- `prompts/PE-IP/CRP/CRP-STRATEGY-001.md` (신규)
-- `prompts/PE-IP/CRP/CRP-AGENT-FRAMEWORK-001.md` (신규)
-- `CHANGELOG.md` (업데이트)
+- `prompts/PE-IP/CRP/CRP-THEORY-001.md` (신규, commit: `cb1c72c6`)
+- `prompts/PE-IP/CRP/CRP-STRATEGY-001.md` (신규, commit: `cb1c72c6`)
+- `prompts/PE-IP/CRP/CRP-AGENT-FRAMEWORK-001.md` (신규, commit: `cb1c72c6`)
+- `CHANGELOG.md` (업데이트, commit: `9cb314f6` → 본 커밋)
 
 ---
 
@@ -166,7 +174,7 @@
 
 ### 세션 이력
 | 세션 | 주요 완료 항목 | 커밋/링크 |
-|------|--------------|---------|
+|------|--------------|---------| 
 | 세션 #1 | PE-INVEST-MASTER v5.0.6 · A024~A026 · PE-2: 4.3 | 5c5649f |
 | 세션 #2 | OPT-DD-FIN ↔ PE-FIN Trigger Engine v1.2 · E2E 4/4 | — |
 | 세션 #3 | GTR-ISR v1.0 · PE-3 최적화 · Notion 연계 방안 | — |
