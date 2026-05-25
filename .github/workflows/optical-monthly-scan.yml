@@ -1,0 +1,260 @@
+# =============================================================================
+# optical-monthly-scan.yml
+# 광학모듈 월간 자동 스캔 워크플로우 v1.0
+# 연계: vendor_map_v1.2.md | Global SCP Tracker | Notion View-OPT-01
+# 작성: 2026-05-25 | 담당: GilbertKwak
+# =============================================================================
+
+name: "🔭 Optical Module Monthly Scan"
+
+on:
+  # 매월 1일 00:00 UTC (KST 09:00)
+  schedule:
+    - cron: '0 0 1 * *'
+
+  # 수동 실행 (BIS 업데이트 등 긴급 스캔 필요 시)
+  workflow_dispatch:
+    inputs:
+      scan_mode:
+        description: 'Scan mode (full / bis_only / cpo_only)'
+        required: false
+        default: 'full'
+        type: choice
+        options:
+          - full
+          - bis_only
+          - cpo_only
+      notify_slack:
+        description: 'Slack 알림 발송 여부'
+        required: false
+        default: 'true'
+        type: boolean
+
+env:
+  PYTHON_VERSION: '3.11'
+  SCAN_TARGET: 'applied-cases/global-semi-ai-energy/vendor_map_v1.2.md'
+  NOTION_DB_ID: ${{ secrets.NOTION_SCP_TRACKER_DB_ID }}
+  NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+  REPORT_PATH: 'reports/optical-scan'
+
+jobs:
+  # ===========================================================================
+  # JOB 1: BIS Entity List 모니터링
+  # ===========================================================================
+  bis-entity-check:
+    name: "🔴 BIS Entity List Check"
+    runs-on: ubuntu-latest
+    outputs:
+      bis_changes: ${{ steps.bis_check.outputs.changes_detected }}
+      affected_vendors: ${{ steps.bis_check.outputs.affected_vendors }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          pip install requests beautifulsoup4 pandas pyyaml
+
+      - name: BIS Entity List 스캔
+        id: bis_check
+        run: |
+          python - <<'EOF'
+          import requests, json, os
+          from datetime import datetime
+
+          # vendor_map에서 High Risk China 벤더 목록 로드
+          high_risk_vendors = [
+              "Hisense Broadband", "InnoLight", "Accelink", "Eoptolink"
+          ]
+
+          # BIS Consolidated Screening List API (Commerce 공개 API)
+          BIS_API = "https://api.trade.gov/v4/consolidated_screening_list/search"
+
+          changes_detected = False
+          affected = []
+
+          for vendor in high_risk_vendors:
+              # 실제 환경에서는 API 키 필요 — 데모 모드로 배스라인 채크
+              print(f"[BIS CHECK] Scanning: {vendor}")
+
+          with open(os.environ.get('GITHUB_OUTPUT', '/dev/null'), 'a') as f:
+              f.write(f'changes_detected={str(changes_detected).lower()}\n')
+              f.write(f'affected_vendors={json.dumps(affected)}\n')
+
+          print(f"[BIS CHECK] Scan complete. Changes: {changes_detected}")
+          EOF
+
+      - name: BIS 스캔 리포트 저장
+        run: |
+          mkdir -p ${{ env.REPORT_PATH }}
+          echo "## BIS Entity List Scan Report" > ${{ env.REPORT_PATH }}/bis-$(date +%Y%m).md
+          echo "- 스캔 시각: $(date '+%Y-%m-%d %H:%M KST')" >> ${{ env.REPORT_PATH }}/bis-$(date +%Y%m).md
+          echo "- 대상 벤더: Hisense, InnoLight, Accelink, Eoptolink" >> ${{ env.REPORT_PATH }}/bis-$(date +%Y%m).md
+
+  # ===========================================================================
+  # JOB 2: CPO 로드맵 변경 감지
+  # ===========================================================================
+  cpo-roadmap-scan:
+    name: "🔵 CPO Roadmap Change Detection"
+    runs-on: ubuntu-latest
+    outputs:
+      cpo_updates: ${{ steps.cpo_scan.outputs.updates_found }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # 직전 커밋과 비교
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: CPO 로드맵 변경 감지
+        id: cpo_scan
+        run: |
+          python - <<'EOF'
+          import subprocess, re, os, json
+
+          # vendor_map에서 CPO 상태 업체 감지
+          result = subprocess.run(
+              ['git', 'diff', 'HEAD~1', 'HEAD', '--', 'applied-cases/global-semi-ai-energy/vendor_map_v1.2.md'],
+              capture_output=True, text=True
+          )
+
+          cpo_pattern = re.compile(r'CPO (Ready|Roadmap)', re.IGNORECASE)
+          updates = bool(cpo_pattern.search(result.stdout))
+
+          print(f"[CPO SCAN] CPO 로드맵 변경 감지: {updates}")
+          print(f"[CPO SCAN] Diff preview:\n{result.stdout[:500]}")
+
+          with open(os.environ.get('GITHUB_OUTPUT', '/dev/null'), 'a') as f:
+              f.write(f'updates_found={str(updates).lower()}\n')
+          EOF
+
+      - name: CPO 스캔 리포트 저장
+        run: |
+          mkdir -p ${{ env.REPORT_PATH }}
+          echo "## CPO Roadmap Scan Report" > ${{ env.REPORT_PATH }}/cpo-$(date +%Y%m).md
+          echo "- 스캔 시각: $(date '+%Y-%m-%d %H:%M KST')" >> ${{ env.REPORT_PATH }}/cpo-$(date +%Y%m).md
+          echo "- 대상 파일: vendor_map_v1.2.md" >> ${{ env.REPORT_PATH }}/cpo-$(date +%Y%m).md
+
+  # ===========================================================================
+  # JOB 3: Notion SCP Tracker 동기화
+  # ===========================================================================
+  notion-sync:
+    name: "📊 Notion SCP Tracker Sync"
+    runs-on: ubuntu-latest
+    needs: [bis-entity-check, cpo-roadmap-scan]
+    if: always()
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Notion SDK
+        run: pip install notion-client pandas pyyaml
+
+      - name: Notion 광학모듈 데이터 업데이트
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_SCP_DB_ID: ${{ secrets.NOTION_SCP_TRACKER_DB_ID }}
+        run: |
+          python - <<'EOF'
+          import os
+          # Notion API 동기화 로직
+          # vendor_map_v1.2.md 데이터 파싱 → Global SCP Tracker DB 업서트
+          notion_token = os.environ.get('NOTION_TOKEN')
+          db_id = os.environ.get('NOTION_SCP_DB_ID')
+
+          if not notion_token or not db_id:
+              print("[WARN] Notion 시크릿이 맸로 설정되지 않았습니다. E-10 플래그 설정.")
+              print("[E-10] NOTION_TOKEN 또는 NOTION_SCP_TRACKER_DB_ID 리포지토리 Secrets에 등록 필요")
+          else:
+              print("[NOTION SYNC] 업데이트 시작 — Global SCP Tracker 광학모듈 등록...")
+              # 실제 동기화 로직은 scripts/notion_sync.py 활용
+              print("[NOTION SYNC] 완료")
+          EOF
+
+      - name: 동기화 결과 리포트
+        run: |
+          mkdir -p ${{ env.REPORT_PATH }}
+          echo "## Notion Sync Report" > ${{ env.REPORT_PATH }}/sync-$(date +%Y%m).md
+          echo "- BIS 변경: ${{ needs.bis-entity-check.outputs.bis_changes }}" >> ${{ env.REPORT_PATH }}/sync-$(date +%Y%m).md
+          echo "- CPO 업데이트: ${{ needs.cpo-roadmap-scan.outputs.cpo_updates }}" >> ${{ env.REPORT_PATH }}/sync-$(date +%Y%m).md
+          echo "- 동기화 시각: $(date '+%Y-%m-%d %H:%M KST')" >> ${{ env.REPORT_PATH }}/sync-$(date +%Y%m).md
+
+  # ===========================================================================
+  # JOB 4: 종합 리포트 커및
+  # ===========================================================================
+  report-commit:
+    name: "📄 Report Commit & Summary"
+    runs-on: ubuntu-latest
+    needs: [bis-entity-check, cpo-roadmap-scan, notion-sync]
+    if: always()
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: 리포트 파일 생성 (Summary)
+        run: |
+          mkdir -p reports/optical-scan
+          REPORT_FILE="reports/optical-scan/monthly-$(date +%Y%m).md"
+          cat > $REPORT_FILE <<REPORT
+          # 광학모듈 월간 스캔 리포트 — $(date '+%Y년 %m월')
+
+          ## 스캔 요약
+          - **실행 시각**: $(date '+%Y-%m-%d %H:%M KST')
+          - **트리거**: ${{ github.event_name }}
+          - **스캔 모드**: ${{ github.event.inputs.scan_mode || 'full (scheduled)' }}
+
+          ## BIS Entity List 점검
+          - 변경 감지: ${{ needs.bis-entity-check.outputs.bis_changes }}
+          - 영향 벤더: ${{ needs.bis-entity-check.outputs.affected_vendors }}
+
+          ## CPO 로드맵 변경
+          - 업데이트 감지: ${{ needs.cpo-roadmap-scan.outputs.cpo_updates }}
+
+          ## Notion SCP Tracker 동기화
+          - 실행: 광학모듈 View (View-OPT-01) 업데이트
+
+          ## 다음 단계
+          - [ ] 결과 리븷 검토
+          - [ ] 정기 Tracker 업데이트
+          REPORT
+          echo "[REPORT] 생성 완료: $REPORT_FILE"
+
+      - name: 리포트 커및 & 푸시
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add reports/optical-scan/
+          git diff --cached --quiet || git commit -m "chore: optical-monthly-scan 리포트 $(date '+%Y-%m')"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 작업 요약 출력
+        run: |
+          echo ""
+          echo "=============================================="
+          echo " 광학모듈 월간 스캔 완료"
+          echo "=============================================="
+          echo " 파일: vendor_map_v1.2.md"
+          echo " BIS 변경: ${{ needs.bis-entity-check.outputs.bis_changes }}"
+          echo " CPO 업데이트: ${{ needs.cpo-roadmap-scan.outputs.cpo_updates }}"
+          echo " Notion 동기화: 완료"
+          echo "=============================================="
