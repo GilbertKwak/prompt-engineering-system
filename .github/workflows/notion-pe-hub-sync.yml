@@ -1,167 +1,129 @@
-# ============================================================
-# notion-pe-hub-sync.yml
-# GitHub Actions → Notion PE Hub 자동 Push 파이프라인
-# 트리거: scripts/ 변경 push OR 수동(workflow_dispatch)
-# ============================================================
-name: 🔄 Notion PE Hub Sync
+# =============================================================
+# GitHub Actions → Notion PE 허브 자동 Push 파이프라인
+# 트리거: scripts/ 디렉토리 변경 또는 수동 실행
+# 대상: PE-FIN / PE-CON / PE-IP 3-Engine 실행 결과
+# =============================================================
+name: Notion PE Hub Sync
 
 on:
   push:
     paths:
       - 'scripts/**'
-      - 'engines/**'
       - 'PE-FIN/**'
       - 'PE-CON/**'
       - 'PE-IP/**'
+      - 'engines/**'
+      - 'output/**'
   workflow_dispatch:
     inputs:
       engine:
-        description: '실행할 엔진 (fin / con / ip / all)'
-        required: false
-        default: 'all'
+        description: '실행할 Engine (FIN / CON / IP / ALL)'
+        required: true
+        default: 'ALL'
+        type: choice
+        options:
+          - ALL
+          - FIN
+          - CON
+          - IP
       dry_run:
-        description: 'Dry-run 모드 (Notion 실제 Push 생략)'
+        description: 'Dry-run (Notion에 실제로 Push하지 않음)'
         required: false
-        default: 'false'
+        default: false
+        type: boolean
 
 jobs:
-  # ─────────────────────────────────────────────
-  # JOB 1: scripts/ 실행 → JSON 결과 생성
-  # ─────────────────────────────────────────────
-  run-pe-scripts:
-    name: 🚀 Run PE Scripts
+  pe-notion-sync:
+    name: PE Scripts → Notion Hub
     runs-on: ubuntu-latest
-    outputs:
-      run_id: ${{ steps.meta.outputs.run_id }}
-      engine_scope: ${{ steps.meta.outputs.engine_scope }}
+    timeout-minutes: 15
 
     steps:
-      - name: Checkout repo
+      # ── 1. 체크아웃 ──────────────────────────────────────────
+      - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2   # diff 감지를 위해 2개 커밋 필요
 
+      # ── 2. Python 환경 ────────────────────────────────────────
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
 
+      # ── 3. 의존성 설치 ────────────────────────────────────────
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install numpy-financial requests python-dateutil
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install notion-client numpy-financial requests python-dateutil
+          # requirements.txt가 있으면 추가 설치
+          [ -f requirements.txt ] && pip install -r requirements.txt || true
 
-      - name: Generate run metadata
-        id: meta
+      # ── 4. PE 스크립트 실행 ───────────────────────────────────
+      - name: Run PE scripts (Engine selection)
+        id: run_scripts
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_PE_HUB_DB_ID: ${{ secrets.NOTION_PE_HUB_DB_ID }}
+          ENGINE_TARGET: ${{ github.event.inputs.engine || 'ALL' }}
         run: |
-          RUN_ID="run-$(date +%Y%m%d-%H%M%S)"
-          ENGINE="${{ github.event.inputs.engine || 'all' }}"
-          echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
-          echo "engine_scope=$ENGINE" >> $GITHUB_OUTPUT
-          echo "Run ID: $RUN_ID | Engine: $ENGINE"
+          echo "ENGINE_TARGET=$ENGINE_TARGET" >> $GITHUB_ENV
 
-      - name: Run financial bridge script (PE-FIN)
-        if: ${{ github.event.inputs.engine == 'fin' || github.event.inputs.engine == 'all' || github.event.inputs.engine == '' }}
-        id: run_fin
-        continue-on-error: true
-        run: |
-          mkdir -p output/notion-sync
-          if [ -f scripts/financial_bridge_v1.py ]; then
+          # financial_bridge_v1.py 실행 (PE-FIN Engine)
+          if [[ "$ENGINE_TARGET" == "ALL" || "$ENGINE_TARGET" == "FIN" ]]; then
+            echo "::group::PE-FIN Engine"
             python scripts/financial_bridge_v1.py \
               --capex 2500 \
               --opex 380 \
               --target_yield 0.78 \
-              --output_json output/notion-sync/pe_fin_result.json \
-            || echo '{"engine":"PE-FIN","status":"error","message":"script_failed"}' \
-               > output/notion-sync/pe_fin_result.json
-          else
-            echo '{"engine":"PE-FIN","status":"skipped","message":"script_not_found"}' \
-              > output/notion-sync/pe_fin_result.json
-          fi
-          cat output/notion-sync/pe_fin_result.json
-
-      - name: Run context engine (PE-CON)
-        if: ${{ github.event.inputs.engine == 'con' || github.event.inputs.engine == 'all' || github.event.inputs.engine == '' }}
-        continue-on-error: true
-        run: |
-          mkdir -p output/notion-sync
-          if [ -f engines/context_engine.py ]; then
-            python engines/context_engine.py \
-              --output_json output/notion-sync/pe_con_result.json \
-            || echo '{"engine":"PE-CON","status":"error","message":"script_failed"}' \
-               > output/notion-sync/pe_con_result.json
-          else
-            echo '{"engine":"PE-CON","status":"skipped","message":"script_not_found"}' \
-              > output/notion-sync/pe_con_result.json
+              --output_json output/fin_result.json || true
+            echo "::endgroup::"
           fi
 
-      - name: Run IP engine (PE-IP)
-        if: ${{ github.event.inputs.engine == 'ip' || github.event.inputs.engine == 'all' || github.event.inputs.engine == '' }}
-        continue-on-error: true
-        run: |
-          mkdir -p output/notion-sync
-          if [ -f engines/ip_engine.py ]; then
-            python engines/ip_engine.py \
-              --output_json output/notion-sync/pe_ip_result.json \
-            || echo '{"engine":"PE-IP","status":"error","message":"script_failed"}' \
-               > output/notion-sync/pe_ip_result.json
-          else
-            echo '{"engine":"PE-IP","status":"skipped","message":"script_not_found"}' \
-              > output/notion-sync/pe_ip_result.json
+          # CON / IP 엔진 스크립트가 있으면 실행
+          if [[ "$ENGINE_TARGET" == "ALL" || "$ENGINE_TARGET" == "CON" ]]; then
+            echo "::group::PE-CON Engine"
+            [ -f scripts/con_bridge.py ] && python scripts/con_bridge.py \
+              --output_json output/con_result.json || true
+            echo "::endgroup::"
           fi
 
-      - name: Upload result artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: pe-results-${{ steps.meta.outputs.run_id }}
-          path: output/notion-sync/
-          retention-days: 7
+          if [[ "$ENGINE_TARGET" == "ALL" || "$ENGINE_TARGET" == "IP" ]]; then
+            echo "::group::PE-IP Engine"
+            [ -f scripts/ip_bridge.py ] && python scripts/ip_bridge.py \
+              --output_json output/ip_result.json || true
+            echo "::endgroup::"
+          fi
 
-  # ─────────────────────────────────────────────
-  # JOB 2: Notion PE Hub에 결과 Push
-  # ─────────────────────────────────────────────
-  push-to-notion:
-    name: 📤 Push to Notion PE Hub
-    runs-on: ubuntu-latest
-    needs: run-pe-scripts
-    if: ${{ github.event.inputs.dry_run != 'true' }}
-
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-
-      - name: Install dependencies
-        run: pip install requests python-dateutil
-
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: pe-results-${{ needs.run-pe-scripts.outputs.run_id }}
-          path: output/notion-sync/
-
-      - name: Push results to Notion
+      # ── 5. Notion Push ────────────────────────────────────────
+      - name: Push results to Notion PE Hub
+        if: ${{ github.event.inputs.dry_run != 'true' }}
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           NOTION_PE_HUB_DB_ID: ${{ secrets.NOTION_PE_HUB_DB_ID }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          ENGINE_TARGET: ${{ env.ENGINE_TARGET }}
         run: |
-          python automation/notion_pe_push.py \
-            --results_dir output/notion-sync/ \
-            --run_id "${{ needs.run-pe-scripts.outputs.run_id }}" \
-            --engine_scope "${{ needs.run-pe-scripts.outputs.engine_scope }}"
+          python scripts/notion_pe_hub_push.py \
+            --engine "$ENGINE_TARGET" \
+            --commit "$GITHUB_SHA" \
+            --branch "$GITHUB_REF_NAME"
 
-      - name: Summary
-        if: always()
+      # ── 6. Dry-run 확인 메시지 ───────────────────────────────
+      - name: Dry-run summary
+        if: ${{ github.event.inputs.dry_run == 'true' }}
         run: |
-          echo "## 🔄 Notion PE Hub Sync" >> $GITHUB_STEP_SUMMARY
-          echo "| 항목 | 값 |" >> $GITHUB_STEP_SUMMARY
-          echo "|------|-----|" >> $GITHUB_STEP_SUMMARY
-          echo "| Run ID | ${{ needs.run-pe-scripts.outputs.run_id }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Engine | ${{ needs.run-pe-scripts.outputs.engine_scope }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Triggered by | ${{ github.event_name }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Commit | ${{ github.sha }} |" >> $GITHUB_STEP_SUMMARY
+          echo "[DRY-RUN] Notion Push 생략됨"
+          echo "결과 파일 목록:"
+          ls -lh output/*.json 2>/dev/null || echo "output/ 없음"
+
+      # ── 7. 실행 결과 아티팩트 저장 ───────────────────────────
+      - name: Upload output artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-engine-output-${{ github.run_number }}
+          path: output/
+          retention-days: 30
