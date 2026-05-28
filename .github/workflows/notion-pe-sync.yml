@@ -1,0 +1,110 @@
+# ─────────────────────────────────────────────────────────────
+# notion-pe-sync.yml
+#
+# GitHub Actions → Notion PE Hub 자동 동기화 파이프라인
+# 트리거: main 브랜치에 PE-CON / PE-FIN / PE-IP 변경 Push
+#         + 매일 09:00 KST (00:00 UTC) 정기 실행
+#         + 수동 workflow_dispatch (엔진 선택 가능)
+#
+# 필수 Secrets (Settings → Secrets → Actions):
+#   NOTION_TOKEN        — Notion Integration Bearer Token
+#   NOTION_DATABASE_ID  — PE Hub 데이터베이스 ID
+# ─────────────────────────────────────────────────────────────
+
+name: Notion PE Hub Sync
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'PE-CON/**'
+      - 'PE-FIN/**'
+      - 'PE-IP/**'
+      - 'scripts/notion_pe_sync.py'
+
+  schedule:
+    - cron: '0 0 * * *'   # 매일 09:00 KST
+
+  workflow_dispatch:
+    inputs:
+      engine:
+        description: '동기화할 엔진 (ALL / PE-CON / PE-FIN / PE-IP)'
+        required: false
+        default: 'ALL'
+        type: choice
+        options:
+          - ALL
+          - PE-CON
+          - PE-FIN
+          - PE-IP
+      dry_run:
+        description: 'Dry-run (실제 Notion 호출 없이 미리보기)'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  sync:
+    name: Sync → Notion PE Hub
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      # ── 1. 코드 체크아웃 ──────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2   # 변경 파일 비교용
+
+      # ── 2. Python 환경 설정 ───────────────────────────────────
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      # ── 3. 의존성 설치 ────────────────────────────────────────
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install requests
+          # requirements.txt 가 있으면 추가 설치
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt --quiet
+          fi
+
+      # ── 4. 동기화 실행 ────────────────────────────────────────
+      - name: Run Notion PE Sync
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+        run: |
+          ENGINE="${{ github.event.inputs.engine || 'ALL' }}"
+          DRY_RUN_FLAG=""
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            DRY_RUN_FLAG="--dry-run"
+          fi
+
+          echo "===== Notion PE Hub Sync ====="
+          echo "Engine  : $ENGINE"
+          echo "Dry-run : ${DRY_RUN_FLAG:-false}"
+          echo "Commit  : ${{ github.sha }}"
+          echo "=============================="
+
+          python scripts/notion_pe_sync.py \
+            --engine "$ENGINE" \
+            $DRY_RUN_FLAG
+
+      # ── 5. 실패 시 Slack/이메일 알림 (선택) ──────────────────
+      # 아래 step은 SLACK_WEBHOOK_URL secret 설정 후 주석 해제
+      # - name: Notify on failure
+      #   if: failure()
+      #   uses: slackapi/slack-github-action@v1.26.0
+      #   with:
+      #     payload: |
+      #       {"text": "❌ Notion PE Sync 실패 — ${{ github.repository }}@${{ github.sha }}"}
+      #   env:
+      #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
