@@ -1,120 +1,128 @@
 # ============================================================
-# preflight.yml
-# Runs preflight_validator.py on every push that touches
-# tool_registry.yaml, or on any push to main / pull_request.
-#
-# On success: posts a summary comment to the PR (if applicable)
-#             and optionally syncs the Notion registry page.
-# On failure: blocks the merge and annotates the error.
+# preflight.yml — Tool Registry Preflight Validator
+# Triggers: push to main (tool_registry.yaml 변경 시)
+#           PR to main
+#           수동 dispatch
 # ============================================================
-
-name: 🔍 Preflight — Tool Registry Validation
+name: 🛡️ Preflight Validator
 
 on:
   push:
     branches: [main]
     paths:
-      - tool_registry.yaml
-      - preflight_validator.py
-      - .github/workflows/preflight.yml
+      - 'tool_registry.yaml'
+      - 'preflight_validator.py'
   pull_request:
     branches: [main]
     paths:
-      - tool_registry.yaml
-  workflow_dispatch:   # allow manual trigger from GitHub UI
+      - 'tool_registry.yaml'
+  workflow_dispatch:
+    inputs:
+      notify_notion:
+        description: 'Sync result to Notion after validation'
+        required: false
+        default: 'true'
+        type: boolean
 
 jobs:
   validate:
-    name: Validate tool_registry.yaml
+    name: Validate Tool Registry
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    outputs:
+      total_tools: ${{ steps.validate.outputs.total_tools }}
+      valid_tools: ${{ steps.validate.outputs.valid_tools }}
+      error_count: ${{ steps.validate.outputs.error_count }}
+      last_validated: ${{ steps.validate.outputs.last_validated }}
+      status: ${{ steps.validate.outputs.status }}
 
     steps:
-      # ── Checkout ──────────────────────────────────────────
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ── Python setup ──────────────────────────────────────
-      - name: Set up Python 3.11
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: '3.11'
+          cache: 'pip'
 
       - name: Install dependencies
-        run: pip install pyyaml
+        run: |
+          pip install --upgrade pip
+          pip install pyyaml requests python-dateutil
 
-      # ── Run preflight ─────────────────────────────────────
       - name: Run preflight validator
-        id: preflight
+        id: validate
         run: |
-          python preflight_validator.py
+          python preflight_validator.py --output-github-actions
         env:
-          GITHUB_WORKSPACE: ${{ github.workspace }}
+          REGISTRY_PATH: tool_registry.yaml
 
-      # ── Generate Job Summary ───────────────────────────────
-      - name: Write job summary
+      - name: Upload validation report
         if: always()
-        run: |
-          echo "## 🔍 Preflight Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ steps.preflight.outcome }}" = "success" ]; then
-            echo "### ✅ PASSED" >> $GITHUB_STEP_SUMMARY
-            echo "All tool registry validations passed." >> $GITHUB_STEP_SUMMARY
-          else
-            echo "### ❌ FAILED" >> $GITHUB_STEP_SUMMARY
-            echo "tool_registry.yaml has validation errors. See logs above." >> $GITHUB_STEP_SUMMARY
-          fi
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
-          echo "| Triggered by | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Branch | ${{ github.ref_name }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Commit | ${{ github.sha }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Run | [${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) |" >> $GITHUB_STEP_SUMMARY
+        uses: actions/upload-artifact@v4
+        with:
+          name: preflight-report-${{ github.run_id }}
+          path: preflight_report.json
+          retention-days: 30
 
-      # ── Notion Sync (optional — requires NOTION_TOKEN secret) ──
-      # Uncomment and configure once NOTION_TOKEN and
-      # NOTION_REGISTRY_PAGE_ID are added to repo Secrets.
-      #
-      # - name: Sync registry status to Notion
-      #   if: steps.preflight.outcome == 'success' && github.ref == 'refs/heads/main'
-      #   env:
-      #     NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-      #     NOTION_REGISTRY_PAGE_ID: ${{ secrets.NOTION_REGISTRY_PAGE_ID }}
-      #   run: |
-      #     pip install requests pyyaml
-      #     python scripts/sync_registry_to_notion.py
-
-  # ── Optional: auto-comment on PRs ───────────────────────
-  pr-comment:
-    name: Post PR validation summary
-    runs-on: ubuntu-latest
-    needs: validate
-    if: github.event_name == 'pull_request'
-    permissions:
-      pull-requests: write
-
-    steps:
-      - name: Comment on PR
+      - name: Comment on PR (if validation failed)
+        if: failure() && github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           script: |
-            const outcome = '${{ needs.validate.result }}';
-            const icon = outcome === 'success' ? '✅' : '❌';
-            const status = outcome === 'success' ? 'PASSED' : 'FAILED';
-            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const fs = require('fs');
+            let report = {};
+            try { report = JSON.parse(fs.readFileSync('preflight_report.json', 'utf8')); } catch(e) {}
             const body = [
-              `## ${icon} Preflight: tool_registry.yaml — ${status}`,
+              '## ❌ Preflight Validation Failed',
               '',
-              outcome === 'success'
-                ? 'All registry validations passed. Safe to merge.'
-                : '⚠️ Registry validation failed. Please fix errors before merging.',
+              `**Errors:** ${report.error_count ?? 'unknown'}`,
+              `**Total tools declared:** ${report.meta?.total_tools ?? '?'}`,
+              `**Actual tools found:** ${report.actual_count ?? '?'}`,
               '',
-              `[View full run logs](${runUrl})`,
+              '### Issues',
+              ...(report.errors ?? ['No detail available']).map(e => `- ${e}`),
+              '',
+              '> Fix `tool_registry.yaml` and update `meta.total_tools` + `meta.last_validated` before merging.'
             ].join('\n');
-            await github.rest.issues.createComment({
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body,
+              body
             });
+
+  notify-notion:
+    name: Sync to Notion Registry Page
+    runs-on: ubuntu-latest
+    needs: validate
+    if: |
+      always() &&
+      (github.event_name == 'push' ||
+       (github.event_name == 'workflow_dispatch' && inputs.notify_notion == 'true'))
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install pyyaml requests
+
+      - name: Sync registry status to Notion
+        run: python scripts/notion_registry_sync.py
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_REGISTRY_PAGE_ID: ${{ secrets.NOTION_REGISTRY_PAGE_ID }}
+          VALIDATION_STATUS: ${{ needs.validate.outputs.status }}
+          TOTAL_TOOLS: ${{ needs.validate.outputs.total_tools }}
+          VALID_TOOLS: ${{ needs.validate.outputs.valid_tools }}
+          ERROR_COUNT: ${{ needs.validate.outputs.error_count }}
+          LAST_VALIDATED: ${{ needs.validate.outputs.last_validated }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          COMMIT_SHA: ${{ github.sha }}
+          COMMIT_MSG: ${{ github.event.head_commit.message }}

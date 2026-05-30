@@ -2,207 +2,242 @@
 """
 preflight_validator.py
 ======================
-Validates tool_registry.yaml on every push.
-Runs as part of .github/workflows/preflight.yml.
+Validates tool_registry.yaml for:
+  1. Schema integrity (required fields per tool)
+  2. meta.total_tools == actual tool count
+  3. Duplicate tool IDs
+  4. Version format (semver)
+  5. Category whitelist
+  6. last_validated is recent (warn if > 30 days)
 
-Checks:
-  1. YAML syntax is valid
-  2. meta.total_tools matches the actual count of entries
-  3. meta.last_validated is present and a valid ISO date
-  4. Every tool entry has required fields
-  5. Tool IDs are unique
-  6. Tool paths exist in the repository
-  7. Category values are within the allowed set
-  8. Status values are within the allowed set
-
-Exit codes:
-  0  – all checks passed
-  1  – validation failed (details printed to stdout)
+Outputs:
+  - Console summary
+  - preflight_report.json
+  - GitHub Actions outputs (if --output-github-actions)
 """
 
 import sys
 import os
-import yaml
-from datetime import datetime
+import json
+import re
+import argparse
+from datetime import datetime, timezone
 from pathlib import Path
 
-# ── Configuration ────────────────────────────────────────────
-REGISTRY_FILE = "tool_registry.yaml"
-ALLOWED_CATEGORIES = {"PE", "FIN", "CON", "AGENT", "INFRA", "DATA"}
-ALLOWED_STATUSES = {"active", "beta", "deprecated"}
-REQUIRED_TOOL_FIELDS = {"id", "name", "category", "status", "path", "description", "added"}
+try:
+    import yaml
+except ImportError:
+    print("ERROR: pyyaml not installed. Run: pip install pyyaml")
+    sys.exit(1)
 
-# ── Colour helpers (ANSI — works in GitHub Actions logs) ─────
-GREEN  = "\033[92m"
-RED    = "\033[91m"
-YELLOW = "\033[93m"
-RESET  = "\033[0m"
-BOLD   = "\033[1m"
+# ── Constants ────────────────────────────────────────────────
+REGISTRY_PATH = os.environ.get("REGISTRY_PATH", "tool_registry.yaml")
+REPORT_PATH   = "preflight_report.json"
 
+REQUIRED_META_KEYS = {"version", "total_tools", "last_validated", "maintainer"}
+REQUIRED_TOOL_KEYS = {"id", "name", "category", "version", "status", "description"}
 
-def ok(msg: str) -> None:
-    print(f"{GREEN}  ✓ {msg}{RESET}")
+ALLOWED_CATEGORIES = {
+    "prompt_engineering", "investment", "intelligence",
+    "automation", "data_processing", "knowledge_graph",
+    "validation", "reporting", "integration", "utility"
+}
 
+ALLOWED_STATUSES = {"active", "beta", "deprecated", "experimental", "archived"}
 
-def warn(msg: str) -> None:
-    print(f"{YELLOW}  ⚠ {msg}{RESET}")
-
-
-def fail(msg: str) -> None:
-    print(f"{RED}  ✗ {msg}{RESET}")
+SEMVER_RE = re.compile(r'^\d+\.\d+(\.\d+)?$')
 
 
-def header(msg: str) -> None:
-    print(f"\n{BOLD}{msg}{RESET}")
+# ── Helpers ──────────────────────────────────────────────────
+def github_output(key: str, value: str):
+    """Write to GITHUB_OUTPUT if running in CI."""
+    gho = os.environ.get("GITHUB_OUTPUT")
+    if gho:
+        with open(gho, "a") as f:
+            f.write(f"{key}={value}\n")
 
 
-def validate_registry(repo_root: Path) -> bool:
-    registry_path = repo_root / REGISTRY_FILE
-    errors: list[str] = []
-    warnings: list[str] = []
+def load_registry(path: str) -> dict:
+    with open(path, "r", encoding="utf-8") as f:
+        return yaml.safe_load(f)
 
-    # ── 1. File exists ────────────────────────────────────────
-    header("[1] Checking registry file exists")
-    if not registry_path.exists():
-        fail(f"{REGISTRY_FILE} not found at {registry_path}")
-        return False
-    ok(f"{REGISTRY_FILE} found")
 
-    # ── 2. YAML syntax ───────────────────────────────────────
-    header("[2] Parsing YAML")
-    try:
-        with open(registry_path, "r", encoding="utf-8") as f:
-            data = yaml.safe_load(f)
-        ok("YAML syntax is valid")
-    except yaml.YAMLError as exc:
-        fail(f"YAML parse error: {exc}")
-        return False
+# ── Validators ───────────────────────────────────────────────
+def check_meta(meta: dict, errors: list, warnings: list):
+    missing = REQUIRED_META_KEYS - set(meta.keys())
+    for k in missing:
+        errors.append(f"meta: missing required key '{k}'")
 
-    if not isinstance(data, dict):
-        fail("Root document must be a YAML mapping")
-        return False
-
-    # ── 3. Meta section ──────────────────────────────────────
-    header("[3] Validating meta section")
-    meta = data.get("meta", {})
-
-    # last_validated
-    last_validated_raw = meta.get("last_validated")
-    if last_validated_raw is None:
-        errors.append("meta.last_validated is missing")
-        fail("meta.last_validated is missing")
-    else:
+    if "last_validated" in meta:
         try:
-            datetime.strptime(str(last_validated_raw), "%Y-%m-%d")
-            ok(f"meta.last_validated = {last_validated_raw}")
-        except ValueError:
-            errors.append(f"meta.last_validated '{last_validated_raw}' is not YYYY-MM-DD")
-            fail(f"meta.last_validated '{last_validated_raw}' is not YYYY-MM-DD")
+            lv = datetime.fromisoformat(str(meta["last_validated"]))
+            if lv.tzinfo is None:
+                lv = lv.replace(tzinfo=timezone.utc)
+            age_days = (datetime.now(timezone.utc) - lv).days
+            if age_days > 30:
+                warnings.append(f"meta.last_validated is {age_days} days old — consider updating")
+        except (ValueError, TypeError):
+            errors.append("meta.last_validated is not a valid ISO date")
 
-    # ── 4. Tools list ────────────────────────────────────────
-    header("[4] Validating tools list")
-    tools = data.get("tools", [])
-    if not isinstance(tools, list):
-        fail("'tools' must be a list")
-        return False
-    ok(f"Found {len(tools)} tool entries in registry")
+    if "version" in meta and not SEMVER_RE.match(str(meta["version"])):
+        errors.append(f"meta.version '{meta['version']}' is not valid semver (e.g. 1.0.0)")
 
-    # ── 5. total_tools count ─────────────────────────────────
-    header("[5] Checking meta.total_tools count")
-    declared_count = meta.get("total_tools")
-    actual_count = len(tools)
-    if declared_count != actual_count:
-        msg = (
-            f"meta.total_tools={declared_count} but actual count={actual_count}. "
-            "Update meta.total_tools in tool_registry.yaml."
-        )
-        errors.append(msg)
-        fail(msg)
-    else:
-        ok(f"meta.total_tools={declared_count} matches actual count")
 
-    # ── 6. Per-tool validation ───────────────────────────────
-    header("[6] Validating individual tool entries")
-    seen_ids: set[str] = set()
+def check_tools(tools: list, errors: list, warnings: list) -> int:
+    seen_ids = {}
+    valid_count = 0
 
     for i, tool in enumerate(tools):
-        tool_id = tool.get("id", f"<unknown #{i}>")
-        prefix = f"  [{tool_id}]"
+        tid = tool.get("id", f"<index {i}>")
+        tool_errors = []
 
         # Required fields
-        missing = REQUIRED_TOOL_FIELDS - set(tool.keys())
-        if missing:
-            msg = f"{prefix} missing required fields: {sorted(missing)}"
-            errors.append(msg)
-            fail(msg)
+        missing = REQUIRED_TOOL_KEYS - set(tool.keys())
+        for k in missing:
+            tool_errors.append(f"  [{tid}] missing required field '{k}'")
 
-        # Unique IDs
-        if tool_id in seen_ids:
-            msg = f"{prefix} duplicate tool ID '{tool_id}'"
-            errors.append(msg)
-            fail(msg)
+        # Duplicate ID
+        if "id" in tool:
+            if tool["id"] in seen_ids:
+                tool_errors.append(f"  [{tid}] duplicate ID (first seen at index {seen_ids[tool['id']]})")
+            else:
+                seen_ids[tool["id"]] = i
+
+        # Category
+        if "category" in tool and tool["category"] not in ALLOWED_CATEGORIES:
+            tool_errors.append(
+                f"  [{tid}] unknown category '{tool['category']}'. "
+                f"Allowed: {sorted(ALLOWED_CATEGORIES)}"
+            )
+
+        # Status
+        if "status" in tool and tool["status"] not in ALLOWED_STATUSES:
+            tool_errors.append(
+                f"  [{tid}] unknown status '{tool['status']}'. "
+                f"Allowed: {sorted(ALLOWED_STATUSES)}"
+            )
+
+        # Version format
+        if "version" in tool and not SEMVER_RE.match(str(tool["version"])):
+            warnings.append(f"  [{tid}] version '{tool['version']}' is not semver")
+
+        # Description length
+        if "description" in tool and len(tool["description"]) < 10:
+            warnings.append(f"  [{tid}] description is very short")
+
+        if tool_errors:
+            errors.extend(tool_errors)
         else:
-            seen_ids.add(tool_id)
+            valid_count += 1
 
-        # Category check
-        category = tool.get("category", "")
-        if category not in ALLOWED_CATEGORIES:
-            msg = f"{prefix} invalid category '{category}' (allowed: {ALLOWED_CATEGORIES})"
-            errors.append(msg)
-            fail(msg)
+    return valid_count
 
-        # Status check
-        status = tool.get("status", "")
-        if status not in ALLOWED_STATUSES:
-            msg = f"{prefix} invalid status '{status}' (allowed: {ALLOWED_STATUSES})"
-            errors.append(msg)
-            fail(msg)
 
-        # Path exists (warn, not error — CI may not have full FS)
-        tool_path = tool.get("path", "")
-        full_path = repo_root / tool_path
-        if not full_path.exists():
-            warn(f"{prefix} path does not exist: {tool_path}")
-            warnings.append(f"{tool_id}: path not found ({tool_path})")
-        else:
-            ok(f"{prefix} path OK → {tool_path}")
+def check_count(meta: dict, actual: int, errors: list):
+    declared = meta.get("total_tools")
+    if declared is None:
+        return
+    if int(declared) != actual:
+        errors.append(
+            f"meta.total_tools={declared} but actual tool count={actual}. "
+            f"Update meta.total_tools after adding/removing tools."
+        )
 
-        # Added date format
-        added_raw = tool.get("added", "")
-        try:
-            datetime.strptime(str(added_raw), "%Y-%m-%d")
-        except ValueError:
-            msg = f"{prefix} 'added' date '{added_raw}' is not YYYY-MM-DD"
-            errors.append(msg)
-            fail(msg)
 
-    # ── Summary ──────────────────────────────────────────────
-    print("")
-    print("═" * 60)
+# ── Main ─────────────────────────────────────────────────────
+def main():
+    parser = argparse.ArgumentParser(description="Validate tool_registry.yaml")
+    parser.add_argument("--output-github-actions", action="store_true")
+    parser.add_argument("--registry", default=REGISTRY_PATH)
+    args = parser.parse_args()
+
+    registry_path = args.registry
+
+    print(f"\n{'='*60}")
+    print("  🛡️  PREFLIGHT VALIDATOR")
+    print(f"  Registry: {registry_path}")
+    print(f"  Time: {datetime.now(timezone.utc).isoformat()}")
+    print(f"{'='*60}\n")
+
+    if not Path(registry_path).exists():
+        print(f"❌ FATAL: {registry_path} not found")
+        sys.exit(1)
+
+    try:
+        data = load_registry(registry_path)
+    except yaml.YAMLError as e:
+        print(f"❌ FATAL: YAML parse error:\n{e}")
+        sys.exit(1)
+
+    errors   = []
+    warnings = []
+
+    meta  = data.get("meta", {})
+    tools = data.get("tools", [])
+
+    if not isinstance(meta, dict):
+        errors.append("'meta' section is missing or not a mapping")
+        meta = {}
+
+    if not isinstance(tools, list):
+        errors.append("'tools' section is missing or not a list")
+        tools = []
+
+    check_meta(meta, errors, warnings)
+    valid_count = check_tools(tools, errors, warnings)
+    check_count(meta, len(tools), errors)
+
+    # ── Results ──
+    status = "PASS" if not errors else "FAIL"
+    now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    report = {
+        "status": status,
+        "timestamp": now_iso,
+        "registry": registry_path,
+        "meta": meta,
+        "actual_count": len(tools),
+        "valid_tools": valid_count,
+        "error_count": len(errors),
+        "warning_count": len(warnings),
+        "errors": errors,
+        "warnings": warnings,
+    }
+
+    with open(REPORT_PATH, "w", encoding="utf-8") as f:
+        json.dump(report, f, indent=2, ensure_ascii=False, default=str)
+
+    # Console output
+    if warnings:
+        print("⚠️  WARNINGS:")
+        for w in warnings:
+            print(f"   {w}")
+        print()
+
     if errors:
-        print(f"{RED}{BOLD}PREFLIGHT FAILED — {len(errors)} error(s){RESET}")
+        print("❌ ERRORS:")
         for e in errors:
-            print(f"  • {e}")
-        if warnings:
-            print(f"\n{YELLOW}Warnings ({len(warnings)}):{RESET}")
-            for w in warnings:
-                print(f"  • {w}")
-        return False
-    else:
-        print(f"{GREEN}{BOLD}PREFLIGHT PASSED ✓{RESET}")
-        print(f"  Tools validated : {actual_count}")
-        print(f"  Last validated  : {last_validated_raw}")
-        if warnings:
-            print(f"\n{YELLOW}Warnings ({len(warnings)}):{RESET}")
-            for w in warnings:
-                print(f"  • {w}")
-        return True
+            print(f"   {e}")
+        print()
+
+    print(f"{'─'*60}")
+    print(f"  Status      : {'✅ PASS' if status == 'PASS' else '❌ FAIL'}")
+    print(f"  Total tools : {len(tools)} (declared: {meta.get('total_tools', '?')})")
+    print(f"  Valid tools : {valid_count}")
+    print(f"  Errors      : {len(errors)}")
+    print(f"  Warnings    : {len(warnings)}")
+    print(f"  Report      : {REPORT_PATH}")
+    print(f"{'='*60}\n")
+
+    if args.output_github_actions:
+        github_output("status",        status)
+        github_output("total_tools",   str(len(tools)))
+        github_output("valid_tools",   str(valid_count))
+        github_output("error_count",   str(len(errors)))
+        github_output("last_validated", now_iso)
+
+    sys.exit(0 if status == "PASS" else 1)
 
 
 if __name__ == "__main__":
-    repo_root = Path(os.environ.get("GITHUB_WORKSPACE", "."))
-    print(f"{BOLD}Preflight Validator — tool_registry.yaml{RESET}")
-    print(f"Repo root : {repo_root}")
-    print(f"Registry  : {repo_root / REGISTRY_FILE}")
-    passed = validate_registry(repo_root)
-    sys.exit(0 if passed else 1)
+    main()
