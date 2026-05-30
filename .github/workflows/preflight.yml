@@ -1,0 +1,120 @@
+# ============================================================
+# preflight.yml
+# Runs preflight_validator.py on every push that touches
+# tool_registry.yaml, or on any push to main / pull_request.
+#
+# On success: posts a summary comment to the PR (if applicable)
+#             and optionally syncs the Notion registry page.
+# On failure: blocks the merge and annotates the error.
+# ============================================================
+
+name: 🔍 Preflight — Tool Registry Validation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - tool_registry.yaml
+      - preflight_validator.py
+      - .github/workflows/preflight.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - tool_registry.yaml
+  workflow_dispatch:   # allow manual trigger from GitHub UI
+
+jobs:
+  validate:
+    name: Validate tool_registry.yaml
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      # ── Checkout ──────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── Python setup ──────────────────────────────────────
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install pyyaml
+
+      # ── Run preflight ─────────────────────────────────────
+      - name: Run preflight validator
+        id: preflight
+        run: |
+          python preflight_validator.py
+        env:
+          GITHUB_WORKSPACE: ${{ github.workspace }}
+
+      # ── Generate Job Summary ───────────────────────────────
+      - name: Write job summary
+        if: always()
+        run: |
+          echo "## 🔍 Preflight Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.preflight.outcome }}" = "success" ]; then
+            echo "### ✅ PASSED" >> $GITHUB_STEP_SUMMARY
+            echo "All tool registry validations passed." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ❌ FAILED" >> $GITHUB_STEP_SUMMARY
+            echo "tool_registry.yaml has validation errors. See logs above." >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| Triggered by | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Branch | ${{ github.ref_name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit | ${{ github.sha }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Run | [${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) |" >> $GITHUB_STEP_SUMMARY
+
+      # ── Notion Sync (optional — requires NOTION_TOKEN secret) ──
+      # Uncomment and configure once NOTION_TOKEN and
+      # NOTION_REGISTRY_PAGE_ID are added to repo Secrets.
+      #
+      # - name: Sync registry status to Notion
+      #   if: steps.preflight.outcome == 'success' && github.ref == 'refs/heads/main'
+      #   env:
+      #     NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+      #     NOTION_REGISTRY_PAGE_ID: ${{ secrets.NOTION_REGISTRY_PAGE_ID }}
+      #   run: |
+      #     pip install requests pyyaml
+      #     python scripts/sync_registry_to_notion.py
+
+  # ── Optional: auto-comment on PRs ───────────────────────
+  pr-comment:
+    name: Post PR validation summary
+    runs-on: ubuntu-latest
+    needs: validate
+    if: github.event_name == 'pull_request'
+    permissions:
+      pull-requests: write
+
+    steps:
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const outcome = '${{ needs.validate.result }}';
+            const icon = outcome === 'success' ? '✅' : '❌';
+            const status = outcome === 'success' ? 'PASSED' : 'FAILED';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              `## ${icon} Preflight: tool_registry.yaml — ${status}`,
+              '',
+              outcome === 'success'
+                ? 'All registry validations passed. Safe to merge.'
+                : '⚠️ Registry validation failed. Please fix errors before merging.',
+              '',
+              `[View full run logs](${runUrl})`,
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });

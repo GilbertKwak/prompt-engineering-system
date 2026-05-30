@@ -1,0 +1,152 @@
+# ============================================================
+# Tool Registry — prompt-engineering-system
+# SSOT for all tools in the vault.
+#
+# HOW TO ADD A TOOL:
+#   1. Append an entry under tools:
+#   2. Bump meta.total_tools  (+1)
+#   3. Update meta.last_validated  (YYYY-MM-DD)
+#   4. git add tool_registry.yaml && git commit && git push
+#   → preflight.yml validates automatically on every push.
+# ============================================================
+
+meta:
+  version: "1.0.0"
+  total_tools: 12
+  last_validated: "2026-05-30"
+  owner: GilbertKwak
+  notion_sync: true          # Notion registry page is auto-updated by preflight
+  schema_version: "2"
+
+# ─────────────────────────────────────────────
+# REQUIRED fields per tool:
+#   id          – unique slug (kebab-case)
+#   name        – human-readable display name
+#   category    – PE | FIN | CON | AGENT | INFRA | DATA
+#   status      – active | beta | deprecated
+#   path        – relative path to the tool file / directory
+#   description – one-line summary (< 120 chars)
+#   added       – YYYY-MM-DD
+# OPTIONAL:
+#   version     – semver string
+#   tags        – list of keywords
+#   depends_on  – list of other tool ids this tool relies on
+#   notion_page – Notion page URL for extended docs
+# ─────────────────────────────────────────────
+
+tools:
+
+  # ── Prompt Engineering ──────────────────────────────────
+  - id: crp-framework
+    name: CRP Framework
+    category: PE
+    status: active
+    path: crp_framework/
+    description: Context-Role-Purpose prompt construction framework
+    added: "2025-01-15"
+    version: "3.0.0"
+    tags: [prompt, framework, core]
+
+  - id: master-commands
+    name: Master Commands
+    category: PE
+    status: active
+    path: MASTER_COMMANDS.md
+    description: Canonical command reference for all system interactions
+    added: "2025-02-01"
+    tags: [commands, reference, core]
+
+  - id: pe-con
+    name: PE-CON (Consulting Prompts)
+    category: PE
+    status: active
+    path: PE-CON/
+    description: Prompt templates for consulting & strategy analysis
+    added: "2025-03-10"
+    tags: [consulting, strategy, prompts]
+
+  - id: pe-fin
+    name: PE-FIN (Finance Prompts)
+    category: FIN
+    status: active
+    path: PE-FIN/
+    description: Prompt templates for financial analysis and due diligence
+    added: "2025-03-10"
+    tags: [finance, due-diligence, prompts]
+
+  - id: pe-ip
+    name: PE-IP (IP / Research Prompts)
+    category: PE
+    status: active
+    path: PE-IP/
+    description: Prompt templates for IP research and technology analysis
+    added: "2025-03-15"
+    tags: [research, IP, semiconductor]
+
+  # ── Agents ──────────────────────────────────────────────
+  - id: agents
+    name: Agent Library
+    category: AGENT
+    status: active
+    path: agents/
+    description: Multi-agent orchestration definitions and configs
+    added: "2025-04-01"
+    tags: [agents, orchestration, multi-agent]
+
+  - id: engines
+    name: Reasoning Engines
+    category: AGENT
+    status: active
+    path: engines/
+    description: Core reasoning and inference engine modules
+    added: "2025-04-15"
+    tags: [reasoning, inference, core]
+
+  # ── Knowledge & Data ────────────────────────────────────
+  - id: knowledge-graph
+    name: Knowledge Graph
+    category: DATA
+    status: active
+    path: knowledge_graph/
+    description: Semantic knowledge graph for PE system concepts (v4.25)
+    added: "2025-05-01"
+    version: "4.25.0"
+    tags: [knowledge-graph, semantic, SSOT]
+
+  - id: applied-cases
+    name: Applied Cases
+    category: DATA
+    status: active
+    path: applied-cases/
+    description: Real-world application cases and worked examples
+    added: "2025-05-20"
+    tags: [cases, examples, applied]
+
+  # ── Infrastructure ───────────────────────────────────────
+  - id: automation
+    name: Automation Scripts
+    category: INFRA
+    status: active
+    path: automation/
+    description: Python automation scripts for data collection and processing
+    added: "2025-06-01"
+    tags: [automation, python, pipeline]
+
+  - id: dashboard
+    name: Dashboard
+    category: INFRA
+    status: active
+    path: dashboard/
+    description: Monitoring dashboard for system health and metrics
+    added: "2025-07-01"
+    tags: [dashboard, monitoring, metrics]
+
+  - id: preflight-validator
+    name: Preflight Validator
+    category: INFRA
+    status: active
+    path: preflight_validator.py
+    description: Validates tool_registry.yaml integrity on every push
+    added: "2026-05-30"
+    version: "1.0.0"
+    tags: [validation, CI, registry]
