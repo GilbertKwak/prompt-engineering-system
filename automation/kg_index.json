@@ -1,0 +1,12 @@
+{
+  "version": "6.3",
+  "updated": "2026-07-01T11:17:48Z",
+  "nodes": {
+    "OPT-MASTER-001": {
+      "version": "2.1",
+      "domain": "opt-master",
+      "updated_at": "2026-07-01T11:17:48Z",
+      "status": "active"
+    }
+  }
+}
