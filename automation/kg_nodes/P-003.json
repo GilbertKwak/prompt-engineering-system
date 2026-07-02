@@ -2,15 +2,14 @@
   "id": "P-003",
   "version": "1.0",
   "domain": "prompt-template",
-  "tags": ["monitoring", "tracking", "kpi", "template"],
+  "template_role": "Monitoring",
+  "tags": ["monitoring", "alerting", "real-time", "semiconductor", "AI", "financial"],
   "kg_version": "6.4",
   "created_at": "2026-07-02T10:31:00Z",
   "updated_at": "2026-07-02T10:31:00Z",
-  "notion_url": "",
-  "github_url": "https://github.com/GilbertKwak/prompt-engineering-system/blob/main/automation/kg_nodes/P-003.json",
+  "parent_node": "OPT-MASTER-001",
+  "variant_ref": "V3-Monitoring",
   "status": "active",
-  "template_role": "Monitoring",
-  "description": "성과 모니터링 및 KPI 추적용 프롬프트 템플릿. 실시간 지표 분석 및 알림 생성에 특화되어 있다.",
   "engines": {
     "ENGINE_1": {
       "name": "Auto-Validation",
@@ -27,17 +26,19 @@
     "ENGINE_3": {
       "name": "Auto-Proliferation",
       "ref": "PE-2",
-      "variants": ["V1-Analysis", "V2-Action", "V3-Monitoring", "V4-Report", "V5-Integration"],
+      "variants": ["V3-Monitoring"],
       "temperature": 0.3
     }
   },
   "dimensions": {
-    "Clarity": { "before": 68, "after": 0 },
-    "Structure": { "before": 73, "after": 0 },
-    "Specificity": { "before": 70, "after": 0 },
-    "Actionability": { "before": 67, "after": 0 },
-    "Ecosystem-Fit": { "before": 64, "after": 0 }
+    "Clarity": { "before": 73, "after": 94 },
+    "Structure": { "before": 75, "after": 95 },
+    "Specificity": { "before": 68, "after": 93 },
+    "Actionability": { "before": 65, "after": 92 },
+    "Ecosystem-Fit": { "before": 60, "after": 91 }
   },
-  "score_total": { "before": 342, "after": 0, "delta": 0 },
+  "score_total": { "before": 341, "after": 465, "delta": 124 },
+  "description": "실시간 모니터링 전문 프롬프트 템플릿. KPI 추적, 이상 감지, 알림 생성, 성과 대시보드 업데이트에 최적화.",
+  "use_cases": ["KPI 모니터링", "이상 감지 알림", "실시간 성과 추적", "리스크 모니터링"],
   "history": []
 }

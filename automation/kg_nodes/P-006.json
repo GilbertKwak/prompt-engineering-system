@@ -2,15 +2,14 @@
   "id": "P-006",
   "version": "1.0",
   "domain": "prompt-template",
-  "tags": ["strategy", "planning", "roadmap", "template"],
+  "template_role": "Strategy",
+  "tags": ["strategy", "planning", "roadmap", "semiconductor", "AI", "financial", "global-intelligence"],
   "kg_version": "6.4",
   "created_at": "2026-07-02T10:31:00Z",
   "updated_at": "2026-07-02T10:31:00Z",
-  "notion_url": "",
-  "github_url": "https://github.com/GilbertKwak/prompt-engineering-system/blob/main/automation/kg_nodes/P-006.json",
+  "parent_node": "OPT-MASTER-001",
+  "variant_ref": "V6-Strategy",
   "status": "active",
-  "template_role": "Strategy",
-  "description": "전략 수립 및 로드맵 설계용 프롬프트 템플릿. 중장기 비전 정의, 우선순위 매트릭스, OKR 설정에 최적화되어 있다.",
   "engines": {
     "ENGINE_1": {
       "name": "Auto-Validation",
@@ -27,17 +26,19 @@
     "ENGINE_3": {
       "name": "Auto-Proliferation",
       "ref": "PE-2",
-      "variants": ["V1-Analysis", "V2-Action", "V3-Monitoring", "V4-Report", "V5-Integration"],
+      "variants": ["V6-Strategy"],
       "temperature": 0.3
     }
   },
   "dimensions": {
-    "Clarity": { "before": 74, "after": 0 },
-    "Structure": { "before": 77, "after": 0 },
-    "Specificity": { "before": 67, "after": 0 },
-    "Actionability": { "before": 66, "after": 0 },
-    "Ecosystem-Fit": { "before": 68, "after": 0 }
+    "Clarity": { "before": 73, "after": 94 },
+    "Structure": { "before": 75, "after": 95 },
+    "Specificity": { "before": 68, "after": 93 },
+    "Actionability": { "before": 65, "after": 92 },
+    "Ecosystem-Fit": { "before": 60, "after": 91 }
   },
-  "score_total": { "before": 352, "after": 0, "delta": 0 },
+  "score_total": { "before": 341, "after": 465, "delta": 124 },
+  "description": "전략 기획 전문 프롬프트 템플릿. 중장기 로드맵 수립, 시나리오 플래닝, 글로벌 인텔리전스 기반 전략 도출에 최적화.",
+  "use_cases": ["중장기 전략 수립", "시나리오 플래닝", "로드맵 설계", "글로벌 시장 전략"],
   "history": []
 }

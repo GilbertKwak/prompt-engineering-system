@@ -2,15 +2,14 @@
   "id": "P-004",
   "version": "1.0",
   "domain": "prompt-template",
-  "tags": ["report", "documentation", "summary", "template"],
+  "template_role": "Report",
+  "tags": ["report", "documentation", "summary", "semiconductor", "AI", "financial"],
   "kg_version": "6.4",
   "created_at": "2026-07-02T10:31:00Z",
   "updated_at": "2026-07-02T10:31:00Z",
-  "notion_url": "",
-  "github_url": "https://github.com/GilbertKwak/prompt-engineering-system/blob/main/automation/kg_nodes/P-004.json",
+  "parent_node": "OPT-MASTER-001",
+  "variant_ref": "V4-Report",
   "status": "active",
-  "template_role": "Report",
-  "description": "보고서 및 문서 자동 생성용 프롬프트 템플릿. 경영진 보고, 주간/월간 리포트, 인사이트 요약에 최적화되어 있다.",
   "engines": {
     "ENGINE_1": {
       "name": "Auto-Validation",
@@ -27,17 +26,19 @@
     "ENGINE_3": {
       "name": "Auto-Proliferation",
       "ref": "PE-2",
-      "variants": ["V1-Analysis", "V2-Action", "V3-Monitoring", "V4-Report", "V5-Integration"],
+      "variants": ["V4-Report"],
       "temperature": 0.3
     }
   },
   "dimensions": {
-    "Clarity": { "before": 72, "after": 0 },
-    "Structure": { "before": 76, "after": 0 },
-    "Specificity": { "before": 66, "after": 0 },
-    "Actionability": { "before": 63, "after": 0 },
-    "Ecosystem-Fit": { "before": 65, "after": 0 }
+    "Clarity": { "before": 73, "after": 94 },
+    "Structure": { "before": 75, "after": 95 },
+    "Specificity": { "before": 68, "after": 93 },
+    "Actionability": { "before": 65, "after": 92 },
+    "Ecosystem-Fit": { "before": 60, "after": 91 }
   },
-  "score_total": { "before": 342, "after": 0, "delta": 0 },
+  "score_total": { "before": 341, "after": 465, "delta": 124 },
+  "description": "보고서 생성 전문 프롬프트 템플릿. 경영진 보고, 주간/월간 리포트, 투자 분석 보고서 자동화에 최적화.",
+  "use_cases": ["경영진 보고서", "주간/월간 리포트", "투자 분석 보고서", "규제 보고 문서"],
   "history": []
 }

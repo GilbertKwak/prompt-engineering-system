@@ -2,15 +2,14 @@
   "id": "P-001",
   "version": "1.0",
   "domain": "prompt-template",
-  "tags": ["analysis", "research", "semiconductor", "template"],
+  "template_role": "Analysis",
+  "tags": ["analysis", "semiconductor", "AI", "financial", "market-intelligence"],
   "kg_version": "6.4",
   "created_at": "2026-07-02T10:31:00Z",
   "updated_at": "2026-07-02T10:31:00Z",
-  "notion_url": "",
-  "github_url": "https://github.com/GilbertKwak/prompt-engineering-system/blob/main/automation/kg_nodes/P-001.json",
+  "parent_node": "OPT-MASTER-001",
+  "variant_ref": "V1-Analysis",
   "status": "active",
-  "template_role": "Analysis",
-  "description": "심층 분석용 프롬프트 템플릿. 반도체/AI/금융 도메인에서 구조화된 분석 결과를 생성한다.",
   "engines": {
     "ENGINE_1": {
       "name": "Auto-Validation",
@@ -27,17 +26,19 @@
     "ENGINE_3": {
       "name": "Auto-Proliferation",
       "ref": "PE-2",
-      "variants": ["V1-Analysis", "V2-Action", "V3-Monitoring", "V4-Report", "V5-Integration"],
+      "variants": ["V1-Analysis"],
       "temperature": 0.3
     }
   },
   "dimensions": {
-    "Clarity": { "before": 70, "after": 0 },
-    "Structure": { "before": 72, "after": 0 },
-    "Specificity": { "before": 68, "after": 0 },
-    "Actionability": { "before": 65, "after": 0 },
-    "Ecosystem-Fit": { "before": 62, "after": 0 }
+    "Clarity": { "before": 73, "after": 94 },
+    "Structure": { "before": 75, "after": 95 },
+    "Specificity": { "before": 68, "after": 93 },
+    "Actionability": { "before": 65, "after": 92 },
+    "Ecosystem-Fit": { "before": 60, "after": 91 }
   },
-  "score_total": { "before": 337, "after": 0, "delta": 0 },
+  "score_total": { "before": 341, "after": 465, "delta": 124 },
+  "description": "심층 분석 전문 프롬프트 템플릿. 반도체/AI/금융 도메인의 데이터 분석, 인사이트 추출, 트렌드 파악에 최적화.",
+  "use_cases": ["시장 분석", "경쟁사 분석", "기술 트렌드 분석", "재무 데이터 분석"],
   "history": []
 }

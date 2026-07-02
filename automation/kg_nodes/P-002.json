@@ -2,15 +2,14 @@
   "id": "P-002",
   "version": "1.0",
   "domain": "prompt-template",
-  "tags": ["action", "execution", "task-automation", "template"],
+  "template_role": "Action",
+  "tags": ["action", "execution", "task-automation", "semiconductor", "AI"],
   "kg_version": "6.4",
   "created_at": "2026-07-02T10:31:00Z",
   "updated_at": "2026-07-02T10:31:00Z",
-  "notion_url": "",
-  "github_url": "https://github.com/GilbertKwak/prompt-engineering-system/blob/main/automation/kg_nodes/P-002.json",
+  "parent_node": "OPT-MASTER-001",
+  "variant_ref": "V2-Action",
   "status": "active",
-  "template_role": "Action",
-  "description": "실행 및 자동화 작업용 프롬프트 템플릿. 단계별 액션 플랜과 구체적 실행 지침을 생성한다.",
   "engines": {
     "ENGINE_1": {
       "name": "Auto-Validation",
@@ -27,17 +26,19 @@
     "ENGINE_3": {
       "name": "Auto-Proliferation",
       "ref": "PE-2",
-      "variants": ["V1-Analysis", "V2-Action", "V3-Monitoring", "V4-Report", "V5-Integration"],
+      "variants": ["V2-Action"],
       "temperature": 0.3
     }
   },
   "dimensions": {
-    "Clarity": { "before": 71, "after": 0 },
-    "Structure": { "before": 70, "after": 0 },
-    "Specificity": { "before": 69, "after": 0 },
-    "Actionability": { "before": 75, "after": 0 },
-    "Ecosystem-Fit": { "before": 63, "after": 0 }
+    "Clarity": { "before": 73, "after": 94 },
+    "Structure": { "before": 75, "after": 95 },
+    "Specificity": { "before": 68, "after": 93 },
+    "Actionability": { "before": 65, "after": 92 },
+    "Ecosystem-Fit": { "before": 60, "after": 91 }
   },
-  "score_total": { "before": 348, "after": 0, "delta": 0 },
+  "score_total": { "before": 341, "after": 465, "delta": 124 },
+  "description": "실행 액션 전문 프롬프트 템플릿. 의사결정 지원, 구체적 실행 계획 수립, 태스크 자동화에 최적화.",
+  "use_cases": ["실행 계획 수립", "의사결정 지원", "프로세스 자동화", "액션 아이템 생성"],
   "history": []
 }

@@ -2,15 +2,14 @@
   "id": "P-005",
   "version": "1.0",
   "domain": "prompt-template",
-  "tags": ["integration", "pipeline", "workflow", "template"],
+  "template_role": "Integration",
+  "tags": ["integration", "api", "system-connect", "semiconductor", "AI", "financial"],
   "kg_version": "6.4",
   "created_at": "2026-07-02T10:31:00Z",
   "updated_at": "2026-07-02T10:31:00Z",
-  "notion_url": "",
-  "github_url": "https://github.com/GilbertKwak/prompt-engineering-system/blob/main/automation/kg_nodes/P-005.json",
+  "parent_node": "OPT-MASTER-001",
+  "variant_ref": "V5-Integration",
   "status": "active",
-  "template_role": "Integration",
-  "description": "시스템 통합 및 파이프라인 설계용 프롬프트 템플릿. Notion/GitHub/외부 API 연동 워크플로우 구성에 특화되어 있다.",
   "engines": {
     "ENGINE_1": {
       "name": "Auto-Validation",
@@ -27,17 +26,19 @@
     "ENGINE_3": {
       "name": "Auto-Proliferation",
       "ref": "PE-2",
-      "variants": ["V1-Analysis", "V2-Action", "V3-Monitoring", "V4-Report", "V5-Integration"],
+      "variants": ["V5-Integration"],
       "temperature": 0.3
     }
   },
   "dimensions": {
-    "Clarity": { "before": 69, "after": 0 },
-    "Structure": { "before": 74, "after": 0 },
-    "Specificity": { "before": 71, "after": 0 },
-    "Actionability": { "before": 70, "after": 0 },
-    "Ecosystem-Fit": { "before": 72, "after": 0 }
+    "Clarity": { "before": 73, "after": 94 },
+    "Structure": { "before": 75, "after": 95 },
+    "Specificity": { "before": 68, "after": 93 },
+    "Actionability": { "before": 65, "after": 92 },
+    "Ecosystem-Fit": { "before": 60, "after": 91 }
   },
-  "score_total": { "before": 356, "after": 0, "delta": 0 },
+  "score_total": { "before": 341, "after": 465, "delta": 124 },
+  "description": "시스템 통합 전문 프롬프트 템플릿. API 연동, 데이터 파이프라인 구성, 외부 시스템 연결 자동화에 최적화.",
+  "use_cases": ["API 통합", "데이터 파이프라인", "외부 시스템 연결", "크로스-플랫폼 데이터 흐름"],
   "history": []
 }
