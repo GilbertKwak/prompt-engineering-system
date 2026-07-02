@@ -13,42 +13,42 @@
     {
       "id": "P-001",
       "version": "1.0",
-      "domain": "analysis",
+      "domain": "semiconductor",
       "status": "active",
       "file": "automation/kg_nodes/P-001.json"
     },
     {
       "id": "P-002",
       "version": "1.0",
-      "domain": "action",
+      "domain": "financial",
       "status": "active",
       "file": "automation/kg_nodes/P-002.json"
     },
     {
       "id": "P-003",
       "version": "1.0",
-      "domain": "monitoring",
+      "domain": "AI",
       "status": "active",
       "file": "automation/kg_nodes/P-003.json"
     },
     {
       "id": "P-004",
       "version": "1.0",
-      "domain": "report",
+      "domain": "strategy",
       "status": "active",
       "file": "automation/kg_nodes/P-004.json"
     },
     {
       "id": "P-005",
       "version": "1.0",
-      "domain": "integration",
+      "domain": "report",
       "status": "active",
       "file": "automation/kg_nodes/P-005.json"
     },
     {
       "id": "P-006",
       "version": "1.0",
-      "domain": "optimization",
+      "domain": "monitoring",
       "status": "active",
       "file": "automation/kg_nodes/P-006.json"
     }

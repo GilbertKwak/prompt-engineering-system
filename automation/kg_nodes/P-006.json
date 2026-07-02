@@ -1,19 +1,21 @@
 {
   "id": "P-006",
   "version": "1.0",
-  "domain": "optimization",
-  "title": "Prompt Optimization Meta-Prompt",
+  "domain": "monitoring",
+  "title": "실시간 모니터링 프롬프트",
+  "description": "시스템 상태, 이상 징후 감지, 알림 트리거를 위한 실시간 모니터링 특화 프롬프트",
   "tags": [
-    "meta-prompt",
-    "optimization",
-    "self-improvement",
-    "quality-scoring"
+    "monitoring",
+    "real-time",
+    "anomaly-detection",
+    "alert",
+    "operations"
   ],
   "kg_version": "6.4",
   "created_at": "2026-07-02T10:31:00Z",
   "updated_at": "2026-07-02T10:31:00Z",
   "notion_url": "",
-  "github_url": "https://github.com/GilbertKwak/prompt-engineering-system/blob/main/prompts/optimization/P-006_v1.0.md",
+  "github_url": "https://github.com/GilbertKwak/prompt-engineering-system/blob/main/prompts/monitoring/P-006_v1.0.md",
   "status": "active",
   "engines": {
     "ENGINE_1": {
@@ -36,11 +38,11 @@
     }
   },
   "dimensions": {
-    "Clarity": { "before": 0, "after": 0 },
-    "Structure": { "before": 0, "after": 0 },
-    "Specificity": { "before": 0, "after": 0 },
-    "Actionability": { "before": 0, "after": 0 },
-    "Ecosystem-Fit": { "before": 0, "after": 0 }
+    "Clarity":        { "before": 0, "after": 0 },
+    "Structure":      { "before": 0, "after": 0 },
+    "Specificity":    { "before": 0, "after": 0 },
+    "Actionability":  { "before": 0, "after": 0 },
+    "Ecosystem-Fit":  { "before": 0, "after": 0 }
   },
   "score_total": { "before": 0, "after": 0, "delta": 0 },
   "history": []

@@ -1,19 +1,21 @@
 {
   "id": "P-004",
   "version": "1.0",
-  "domain": "report",
-  "title": "Executive Report Prompt",
+  "domain": "strategy",
+  "title": "전략 기획 프롬프트",
+  "description": "비즈니스 전략 수립, SWOT 분석, 로드맵 설계를 위한 구조화된 프롬프트",
   "tags": [
-    "reporting",
-    "executive-summary",
-    "structured-output",
-    "insights"
+    "strategy",
+    "planning",
+    "SWOT",
+    "roadmap",
+    "business"
   ],
   "kg_version": "6.4",
   "created_at": "2026-07-02T10:31:00Z",
   "updated_at": "2026-07-02T10:31:00Z",
   "notion_url": "",
-  "github_url": "https://github.com/GilbertKwak/prompt-engineering-system/blob/main/prompts/report/P-004_v1.0.md",
+  "github_url": "https://github.com/GilbertKwak/prompt-engineering-system/blob/main/prompts/strategy/P-004_v1.0.md",
   "status": "active",
   "engines": {
     "ENGINE_1": {
@@ -36,11 +38,11 @@
     }
   },
   "dimensions": {
-    "Clarity": { "before": 0, "after": 0 },
-    "Structure": { "before": 0, "after": 0 },
-    "Specificity": { "before": 0, "after": 0 },
-    "Actionability": { "before": 0, "after": 0 },
-    "Ecosystem-Fit": { "before": 0, "after": 0 }
+    "Clarity":        { "before": 0, "after": 0 },
+    "Structure":      { "before": 0, "after": 0 },
+    "Specificity":    { "before": 0, "after": 0 },
+    "Actionability":  { "before": 0, "after": 0 },
+    "Ecosystem-Fit":  { "before": 0, "after": 0 }
   },
   "score_total": { "before": 0, "after": 0, "delta": 0 },
   "history": []

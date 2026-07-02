@@ -1,19 +1,21 @@
 {
   "id": "P-003",
   "version": "1.0",
-  "domain": "monitoring",
-  "title": "Real-Time Monitoring Prompt",
+  "domain": "AI",
+  "title": "AI 기술 동향 분석 프롬프트",
+  "description": "LLM, 멀티모달, 에이전트 AI 등 최신 AI 기술 트렌드를 체계적으로 리서치하고 요약하는 프롬프트",
   "tags": [
-    "monitoring",
-    "real-time",
-    "alerting",
-    "kpi-tracking"
+    "AI",
+    "LLM",
+    "multimodal",
+    "agent",
+    "tech-trend"
   ],
   "kg_version": "6.4",
   "created_at": "2026-07-02T10:31:00Z",
   "updated_at": "2026-07-02T10:31:00Z",
   "notion_url": "",
-  "github_url": "https://github.com/GilbertKwak/prompt-engineering-system/blob/main/prompts/monitoring/P-003_v1.0.md",
+  "github_url": "https://github.com/GilbertKwak/prompt-engineering-system/blob/main/prompts/AI/P-003_v1.0.md",
   "status": "active",
   "engines": {
     "ENGINE_1": {
@@ -36,11 +38,11 @@
     }
   },
   "dimensions": {
-    "Clarity": { "before": 0, "after": 0 },
-    "Structure": { "before": 0, "after": 0 },
-    "Specificity": { "before": 0, "after": 0 },
-    "Actionability": { "before": 0, "after": 0 },
-    "Ecosystem-Fit": { "before": 0, "after": 0 }
+    "Clarity":        { "before": 0, "after": 0 },
+    "Structure":      { "before": 0, "after": 0 },
+    "Specificity":    { "before": 0, "after": 0 },
+    "Actionability":  { "before": 0, "after": 0 },
+    "Ecosystem-Fit":  { "before": 0, "after": 0 }
   },
   "score_total": { "before": 0, "after": 0, "delta": 0 },
   "history": []

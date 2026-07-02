@@ -1,19 +1,21 @@
 {
   "id": "P-002",
   "version": "1.0",
-  "domain": "action",
-  "title": "Strategic Action Prompt",
+  "domain": "financial",
+  "title": "글로벌 금융 인텔리전스 프롬프트",
+  "description": "거시경제 지표, 금리 동향, 환율 변동 등 글로벌 금융 환경을 종합 분석하는 프롬프트",
   "tags": [
-    "strategic-action",
-    "decision-making",
-    "execution",
-    "roadmap"
+    "financial",
+    "macro-economics",
+    "interest-rate",
+    "fx",
+    "global-intelligence"
   ],
   "kg_version": "6.4",
   "created_at": "2026-07-02T10:31:00Z",
   "updated_at": "2026-07-02T10:31:00Z",
   "notion_url": "",
-  "github_url": "https://github.com/GilbertKwak/prompt-engineering-system/blob/main/prompts/action/P-002_v1.0.md",
+  "github_url": "https://github.com/GilbertKwak/prompt-engineering-system/blob/main/prompts/financial/P-002_v1.0.md",
   "status": "active",
   "engines": {
     "ENGINE_1": {
@@ -36,11 +38,11 @@
     }
   },
   "dimensions": {
-    "Clarity": { "before": 0, "after": 0 },
-    "Structure": { "before": 0, "after": 0 },
-    "Specificity": { "before": 0, "after": 0 },
-    "Actionability": { "before": 0, "after": 0 },
-    "Ecosystem-Fit": { "before": 0, "after": 0 }
+    "Clarity":        { "before": 0, "after": 0 },
+    "Structure":      { "before": 0, "after": 0 },
+    "Specificity":    { "before": 0, "after": 0 },
+    "Actionability":  { "before": 0, "after": 0 },
+    "Ecosystem-Fit":  { "before": 0, "after": 0 }
   },
   "score_total": { "before": 0, "after": 0, "delta": 0 },
   "history": []
