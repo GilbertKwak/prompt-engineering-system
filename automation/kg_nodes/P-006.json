@@ -2,7 +2,13 @@
   "id": "P-006",
   "version": "1.0",
   "domain": "optimization",
-  "tags": ["optimization", "feedback-loop", "self-improvement", "scoring"],
+  "title": "Prompt Optimization Meta-Prompt",
+  "tags": [
+    "meta-prompt",
+    "optimization",
+    "self-improvement",
+    "quality-scoring"
+  ],
   "kg_version": "6.4",
   "created_at": "2026-07-02T10:31:00Z",
   "updated_at": "2026-07-02T10:31:00Z",
@@ -30,12 +36,12 @@
     }
   },
   "dimensions": {
-    "Clarity":        { "before": 72, "after": 92 },
-    "Structure":      { "before": 74, "after": 94 },
-    "Specificity":    { "before": 70, "after": 91 },
-    "Actionability":  { "before": 68, "after": 90 },
-    "Ecosystem-Fit":  { "before": 66, "after": 90 }
+    "Clarity": { "before": 0, "after": 0 },
+    "Structure": { "before": 0, "after": 0 },
+    "Specificity": { "before": 0, "after": 0 },
+    "Actionability": { "before": 0, "after": 0 },
+    "Ecosystem-Fit": { "before": 0, "after": 0 }
   },
-  "score_total": { "before": 350, "after": 457, "delta": 107 },
+  "score_total": { "before": 0, "after": 0, "delta": 0 },
   "history": []
 }

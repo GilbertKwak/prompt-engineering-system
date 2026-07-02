@@ -2,7 +2,13 @@
   "id": "P-004",
   "version": "1.0",
   "domain": "report",
-  "tags": ["report", "summarization", "executive-brief"],
+  "title": "Executive Report Prompt",
+  "tags": [
+    "reporting",
+    "executive-summary",
+    "structured-output",
+    "insights"
+  ],
   "kg_version": "6.4",
   "created_at": "2026-07-02T10:31:00Z",
   "updated_at": "2026-07-02T10:31:00Z",
@@ -30,12 +36,12 @@
     }
   },
   "dimensions": {
-    "Clarity":        { "before": 74, "after": 93 },
-    "Structure":      { "before": 76, "after": 95 },
-    "Specificity":    { "before": 69, "after": 90 },
-    "Actionability":  { "before": 66, "after": 88 },
-    "Ecosystem-Fit":  { "before": 62, "after": 87 }
+    "Clarity": { "before": 0, "after": 0 },
+    "Structure": { "before": 0, "after": 0 },
+    "Specificity": { "before": 0, "after": 0 },
+    "Actionability": { "before": 0, "after": 0 },
+    "Ecosystem-Fit": { "before": 0, "after": 0 }
   },
-  "score_total": { "before": 347, "after": 453, "delta": 106 },
+  "score_total": { "before": 0, "after": 0, "delta": 0 },
   "history": []
 }

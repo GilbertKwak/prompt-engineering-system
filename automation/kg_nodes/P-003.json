@@ -2,7 +2,13 @@
   "id": "P-003",
   "version": "1.0",
   "domain": "monitoring",
-  "tags": ["monitoring", "alert", "real-time", "dashboard"],
+  "title": "Real-Time Monitoring Prompt",
+  "tags": [
+    "monitoring",
+    "real-time",
+    "alerting",
+    "kpi-tracking"
+  ],
   "kg_version": "6.4",
   "created_at": "2026-07-02T10:31:00Z",
   "updated_at": "2026-07-02T10:31:00Z",
@@ -30,12 +36,12 @@
     }
   },
   "dimensions": {
-    "Clarity":        { "before": 69, "after": 90 },
-    "Structure":      { "before": 73, "after": 92 },
-    "Specificity":    { "before": 66, "after": 88 },
-    "Actionability":  { "before": 64, "after": 87 },
-    "Ecosystem-Fit":  { "before": 65, "after": 89 }
+    "Clarity": { "before": 0, "after": 0 },
+    "Structure": { "before": 0, "after": 0 },
+    "Specificity": { "before": 0, "after": 0 },
+    "Actionability": { "before": 0, "after": 0 },
+    "Ecosystem-Fit": { "before": 0, "after": 0 }
   },
-  "score_total": { "before": 337, "after": 446, "delta": 109 },
+  "score_total": { "before": 0, "after": 0, "delta": 0 },
   "history": []
 }

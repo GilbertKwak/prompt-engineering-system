@@ -1,48 +1,56 @@
 {
-  "version": "6.4",
-  "updated": "2026-07-02T10:31:00Z",
-  "nodes": {
-    "OPT-MASTER-001": {
+  "kg_version": "6.4",
+  "updated_at": "2026-07-02T10:31:00Z",
+  "total_nodes": 7,
+  "nodes": [
+    {
+      "id": "OPT-MASTER-001",
       "version": "2.1",
       "domain": "opt-master",
-      "updated_at": "2026-07-01T11:17:48Z",
-      "status": "active"
+      "status": "active",
+      "file": "automation/kg_nodes/OPT-MASTER-001.json"
     },
-    "P-001": {
+    {
+      "id": "P-001",
       "version": "1.0",
       "domain": "analysis",
-      "updated_at": "2026-07-02T10:31:00Z",
-      "status": "active"
+      "status": "active",
+      "file": "automation/kg_nodes/P-001.json"
     },
-    "P-002": {
+    {
+      "id": "P-002",
       "version": "1.0",
       "domain": "action",
-      "updated_at": "2026-07-02T10:31:00Z",
-      "status": "active"
+      "status": "active",
+      "file": "automation/kg_nodes/P-002.json"
     },
-    "P-003": {
+    {
+      "id": "P-003",
       "version": "1.0",
       "domain": "monitoring",
-      "updated_at": "2026-07-02T10:31:00Z",
-      "status": "active"
+      "status": "active",
+      "file": "automation/kg_nodes/P-003.json"
     },
-    "P-004": {
+    {
+      "id": "P-004",
       "version": "1.0",
       "domain": "report",
-      "updated_at": "2026-07-02T10:31:00Z",
-      "status": "active"
+      "status": "active",
+      "file": "automation/kg_nodes/P-004.json"
     },
-    "P-005": {
+    {
+      "id": "P-005",
       "version": "1.0",
       "domain": "integration",
-      "updated_at": "2026-07-02T10:31:00Z",
-      "status": "active"
+      "status": "active",
+      "file": "automation/kg_nodes/P-005.json"
     },
-    "P-006": {
+    {
+      "id": "P-006",
       "version": "1.0",
       "domain": "optimization",
-      "updated_at": "2026-07-02T10:31:00Z",
-      "status": "active"
+      "status": "active",
+      "file": "automation/kg_nodes/P-006.json"
     }
-  }
+  ]
 }

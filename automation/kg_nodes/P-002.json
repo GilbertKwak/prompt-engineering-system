@@ -2,7 +2,13 @@
   "id": "P-002",
   "version": "1.0",
   "domain": "action",
-  "tags": ["action", "execution", "task-automation"],
+  "title": "Strategic Action Prompt",
+  "tags": [
+    "strategic-action",
+    "decision-making",
+    "execution",
+    "roadmap"
+  ],
   "kg_version": "6.4",
   "created_at": "2026-07-02T10:31:00Z",
   "updated_at": "2026-07-02T10:31:00Z",
@@ -30,12 +36,12 @@
     }
   },
   "dimensions": {
-    "Clarity":        { "before": 71, "after": 91 },
-    "Structure":      { "before": 70, "after": 90 },
-    "Specificity":    { "before": 67, "after": 89 },
-    "Actionability":  { "before": 72, "after": 93 },
-    "Ecosystem-Fit":  { "before": 64, "after": 88 }
+    "Clarity": { "before": 0, "after": 0 },
+    "Structure": { "before": 0, "after": 0 },
+    "Specificity": { "before": 0, "after": 0 },
+    "Actionability": { "before": 0, "after": 0 },
+    "Ecosystem-Fit": { "before": 0, "after": 0 }
   },
-  "score_total": { "before": 344, "after": 451, "delta": 107 },
+  "score_total": { "before": 0, "after": 0, "delta": 0 },
   "history": []
 }

@@ -2,7 +2,13 @@
   "id": "P-001",
   "version": "1.0",
   "domain": "analysis",
-  "tags": ["analysis", "structured-output", "report"],
+  "title": "Market Analysis Prompt",
+  "tags": [
+    "market-analysis",
+    "semiconductor",
+    "competitive-intelligence",
+    "trend-forecasting"
+  ],
   "kg_version": "6.4",
   "created_at": "2026-07-02T10:31:00Z",
   "updated_at": "2026-07-02T10:31:00Z",
@@ -30,12 +36,12 @@
     }
   },
   "dimensions": {
-    "Clarity":        { "before": 70, "after": 90 },
-    "Structure":      { "before": 72, "after": 91 },
-    "Specificity":    { "before": 68, "after": 89 },
-    "Actionability":  { "before": 65, "after": 88 },
-    "Ecosystem-Fit":  { "before": 63, "after": 87 }
+    "Clarity": { "before": 0, "after": 0 },
+    "Structure": { "before": 0, "after": 0 },
+    "Specificity": { "before": 0, "after": 0 },
+    "Actionability": { "before": 0, "after": 0 },
+    "Ecosystem-Fit": { "before": 0, "after": 0 }
   },
-  "score_total": { "before": 338, "after": 445, "delta": 107 },
+  "score_total": { "before": 0, "after": 0, "delta": 0 },
   "history": []
 }
