@@ -1,0 +1,41 @@
+{
+  "id": "P-001",
+  "version": "1.0",
+  "domain": "analysis",
+  "tags": ["analysis", "structured-output", "report"],
+  "kg_version": "6.4",
+  "created_at": "2026-07-02T10:31:00Z",
+  "updated_at": "2026-07-02T10:31:00Z",
+  "notion_url": "",
+  "github_url": "https://github.com/GilbertKwak/prompt-engineering-system/blob/main/prompts/analysis/P-001_v1.0.md",
+  "status": "active",
+  "engines": {
+    "ENGINE_1": {
+      "name": "Auto-Validation",
+      "ref": "PE-3",
+      "pass_criteria": "all dims >= 85 / total >= 440",
+      "temperature": 0.0
+    },
+    "ENGINE_2": {
+      "name": "Auto-Improvement",
+      "ref": "PE-1",
+      "max_loops": 3,
+      "temperature": 0.0
+    },
+    "ENGINE_3": {
+      "name": "Auto-Proliferation",
+      "ref": "PE-2",
+      "variants": ["V1-Analysis", "V2-Action", "V3-Monitoring", "V4-Report", "V5-Integration"],
+      "temperature": 0.3
+    }
+  },
+  "dimensions": {
+    "Clarity":        { "before": 70, "after": 90 },
+    "Structure":      { "before": 72, "after": 91 },
+    "Specificity":    { "before": 68, "after": 89 },
+    "Actionability":  { "before": 65, "after": 88 },
+    "Ecosystem-Fit":  { "before": 63, "after": 87 }
+  },
+  "score_total": { "before": 338, "after": 445, "delta": 107 },
+  "history": []
+}

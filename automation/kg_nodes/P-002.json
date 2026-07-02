@@ -1,0 +1,41 @@
+{
+  "id": "P-002",
+  "version": "1.0",
+  "domain": "action",
+  "tags": ["action", "execution", "task-automation"],
+  "kg_version": "6.4",
+  "created_at": "2026-07-02T10:31:00Z",
+  "updated_at": "2026-07-02T10:31:00Z",
+  "notion_url": "",
+  "github_url": "https://github.com/GilbertKwak/prompt-engineering-system/blob/main/prompts/action/P-002_v1.0.md",
+  "status": "active",
+  "engines": {
+    "ENGINE_1": {
+      "name": "Auto-Validation",
+      "ref": "PE-3",
+      "pass_criteria": "all dims >= 85 / total >= 440",
+      "temperature": 0.0
+    },
+    "ENGINE_2": {
+      "name": "Auto-Improvement",
+      "ref": "PE-1",
+      "max_loops": 3,
+      "temperature": 0.0
+    },
+    "ENGINE_3": {
+      "name": "Auto-Proliferation",
+      "ref": "PE-2",
+      "variants": ["V1-Analysis", "V2-Action", "V3-Monitoring", "V4-Report", "V5-Integration"],
+      "temperature": 0.3
+    }
+  },
+  "dimensions": {
+    "Clarity":        { "before": 71, "after": 91 },
+    "Structure":      { "before": 70, "after": 90 },
+    "Specificity":    { "before": 67, "after": 89 },
+    "Actionability":  { "before": 72, "after": 93 },
+    "Ecosystem-Fit":  { "before": 64, "after": 88 }
+  },
+  "score_total": { "before": 344, "after": 451, "delta": 107 },
+  "history": []
+}

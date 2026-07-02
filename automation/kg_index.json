@@ -1,11 +1,47 @@
 {
-  "version": "6.3",
-  "updated": "2026-07-01T11:17:48Z",
+  "version": "6.4",
+  "updated": "2026-07-02T10:31:00Z",
   "nodes": {
     "OPT-MASTER-001": {
       "version": "2.1",
       "domain": "opt-master",
       "updated_at": "2026-07-01T11:17:48Z",
+      "status": "active"
+    },
+    "P-001": {
+      "version": "1.0",
+      "domain": "analysis",
+      "updated_at": "2026-07-02T10:31:00Z",
+      "status": "active"
+    },
+    "P-002": {
+      "version": "1.0",
+      "domain": "action",
+      "updated_at": "2026-07-02T10:31:00Z",
+      "status": "active"
+    },
+    "P-003": {
+      "version": "1.0",
+      "domain": "monitoring",
+      "updated_at": "2026-07-02T10:31:00Z",
+      "status": "active"
+    },
+    "P-004": {
+      "version": "1.0",
+      "domain": "report",
+      "updated_at": "2026-07-02T10:31:00Z",
+      "status": "active"
+    },
+    "P-005": {
+      "version": "1.0",
+      "domain": "integration",
+      "updated_at": "2026-07-02T10:31:00Z",
+      "status": "active"
+    },
+    "P-006": {
+      "version": "1.0",
+      "domain": "optimization",
+      "updated_at": "2026-07-02T10:31:00Z",
       "status": "active"
     }
   }

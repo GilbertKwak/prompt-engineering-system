@@ -1,0 +1,41 @@
+{
+  "id": "P-006",
+  "version": "1.0",
+  "domain": "optimization",
+  "tags": ["optimization", "feedback-loop", "self-improvement", "scoring"],
+  "kg_version": "6.4",
+  "created_at": "2026-07-02T10:31:00Z",
+  "updated_at": "2026-07-02T10:31:00Z",
+  "notion_url": "",
+  "github_url": "https://github.com/GilbertKwak/prompt-engineering-system/blob/main/prompts/optimization/P-006_v1.0.md",
+  "status": "active",
+  "engines": {
+    "ENGINE_1": {
+      "name": "Auto-Validation",
+      "ref": "PE-3",
+      "pass_criteria": "all dims >= 85 / total >= 440",
+      "temperature": 0.0
+    },
+    "ENGINE_2": {
+      "name": "Auto-Improvement",
+      "ref": "PE-1",
+      "max_loops": 3,
+      "temperature": 0.0
+    },
+    "ENGINE_3": {
+      "name": "Auto-Proliferation",
+      "ref": "PE-2",
+      "variants": ["V1-Analysis", "V2-Action", "V3-Monitoring", "V4-Report", "V5-Integration"],
+      "temperature": 0.3
+    }
+  },
+  "dimensions": {
+    "Clarity":        { "before": 72, "after": 92 },
+    "Structure":      { "before": 74, "after": 94 },
+    "Specificity":    { "before": 70, "after": 91 },
+    "Actionability":  { "before": 68, "after": 90 },
+    "Ecosystem-Fit":  { "before": 66, "after": 90 }
+  },
+  "score_total": { "before": 350, "after": 457, "delta": 107 },
+  "history": []
+}

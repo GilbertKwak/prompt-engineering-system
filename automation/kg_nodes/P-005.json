@@ -1,0 +1,41 @@
+{
+  "id": "P-005",
+  "version": "1.0",
+  "domain": "integration",
+  "tags": ["integration", "api", "pipeline", "orchestration"],
+  "kg_version": "6.4",
+  "created_at": "2026-07-02T10:31:00Z",
+  "updated_at": "2026-07-02T10:31:00Z",
+  "notion_url": "",
+  "github_url": "https://github.com/GilbertKwak/prompt-engineering-system/blob/main/prompts/integration/P-005_v1.0.md",
+  "status": "active",
+  "engines": {
+    "ENGINE_1": {
+      "name": "Auto-Validation",
+      "ref": "PE-3",
+      "pass_criteria": "all dims >= 85 / total >= 440",
+      "temperature": 0.0
+    },
+    "ENGINE_2": {
+      "name": "Auto-Improvement",
+      "ref": "PE-1",
+      "max_loops": 3,
+      "temperature": 0.0
+    },
+    "ENGINE_3": {
+      "name": "Auto-Proliferation",
+      "ref": "PE-2",
+      "variants": ["V1-Analysis", "V2-Action", "V3-Monitoring", "V4-Report", "V5-Integration"],
+      "temperature": 0.3
+    }
+  },
+  "dimensions": {
+    "Clarity":        { "before": 68, "after": 89 },
+    "Structure":      { "before": 71, "after": 91 },
+    "Specificity":    { "before": 65, "after": 88 },
+    "Actionability":  { "before": 67, "after": 90 },
+    "Ecosystem-Fit":  { "before": 70, "after": 93 }
+  },
+  "score_total": { "before": 341, "after": 451, "delta": 110 },
+  "history": []
+}
