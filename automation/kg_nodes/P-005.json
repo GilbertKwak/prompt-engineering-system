@@ -1,22 +1,16 @@
 {
   "id": "P-005",
   "version": "1.0",
-  "domain": "report",
-  "title": "자동 리포트 생성 프롬프트",
-  "description": "데이터 기반 인사이트를 경영진 보고용 구조화된 리포트로 자동 변환하는 프롬프트",
-  "tags": [
-    "report",
-    "auto-generation",
-    "executive",
-    "insight",
-    "data-driven"
-  ],
+  "domain": "prompt-template",
+  "tags": ["integration", "pipeline", "workflow", "template"],
   "kg_version": "6.4",
   "created_at": "2026-07-02T10:31:00Z",
   "updated_at": "2026-07-02T10:31:00Z",
   "notion_url": "",
-  "github_url": "https://github.com/GilbertKwak/prompt-engineering-system/blob/main/prompts/report/P-005_v1.0.md",
+  "github_url": "https://github.com/GilbertKwak/prompt-engineering-system/blob/main/automation/kg_nodes/P-005.json",
   "status": "active",
+  "template_role": "Integration",
+  "description": "시스템 통합 및 파이프라인 설계용 프롬프트 템플릿. Notion/GitHub/외부 API 연동 워크플로우 구성에 특화되어 있다.",
   "engines": {
     "ENGINE_1": {
       "name": "Auto-Validation",
@@ -38,12 +32,12 @@
     }
   },
   "dimensions": {
-    "Clarity":        { "before": 0, "after": 0 },
-    "Structure":      { "before": 0, "after": 0 },
-    "Specificity":    { "before": 0, "after": 0 },
-    "Actionability":  { "before": 0, "after": 0 },
-    "Ecosystem-Fit":  { "before": 0, "after": 0 }
+    "Clarity": { "before": 69, "after": 0 },
+    "Structure": { "before": 74, "after": 0 },
+    "Specificity": { "before": 71, "after": 0 },
+    "Actionability": { "before": 70, "after": 0 },
+    "Ecosystem-Fit": { "before": 72, "after": 0 }
   },
-  "score_total": { "before": 0, "after": 0, "delta": 0 },
+  "score_total": { "before": 356, "after": 0, "delta": 0 },
   "history": []
 }

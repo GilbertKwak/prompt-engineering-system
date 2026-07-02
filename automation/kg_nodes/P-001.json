@@ -1,22 +1,16 @@
 {
   "id": "P-001",
   "version": "1.0",
-  "domain": "semiconductor",
-  "title": "반도체 시장 분석 프롬프트",
-  "description": "반도체 산업 트렌드, 수급 현황, 주요 플레이어 동향을 구조적으로 분석하는 프롬프트",
-  "tags": [
-    "semiconductor",
-    "market-analysis",
-    "supply-demand",
-    "trend",
-    "industry"
-  ],
+  "domain": "prompt-template",
+  "tags": ["analysis", "research", "semiconductor", "template"],
   "kg_version": "6.4",
   "created_at": "2026-07-02T10:31:00Z",
   "updated_at": "2026-07-02T10:31:00Z",
   "notion_url": "",
-  "github_url": "https://github.com/GilbertKwak/prompt-engineering-system/blob/main/prompts/semiconductor/P-001_v1.0.md",
+  "github_url": "https://github.com/GilbertKwak/prompt-engineering-system/blob/main/automation/kg_nodes/P-001.json",
   "status": "active",
+  "template_role": "Analysis",
+  "description": "심층 분석용 프롬프트 템플릿. 반도체/AI/금융 도메인에서 구조화된 분석 결과를 생성한다.",
   "engines": {
     "ENGINE_1": {
       "name": "Auto-Validation",
@@ -38,12 +32,12 @@
     }
   },
   "dimensions": {
-    "Clarity":        { "before": 0, "after": 0 },
-    "Structure":      { "before": 0, "after": 0 },
-    "Specificity":    { "before": 0, "after": 0 },
-    "Actionability":  { "before": 0, "after": 0 },
-    "Ecosystem-Fit":  { "before": 0, "after": 0 }
+    "Clarity": { "before": 70, "after": 0 },
+    "Structure": { "before": 72, "after": 0 },
+    "Specificity": { "before": 68, "after": 0 },
+    "Actionability": { "before": 65, "after": 0 },
+    "Ecosystem-Fit": { "before": 62, "after": 0 }
   },
-  "score_total": { "before": 0, "after": 0, "delta": 0 },
+  "score_total": { "before": 337, "after": 0, "delta": 0 },
   "history": []
 }

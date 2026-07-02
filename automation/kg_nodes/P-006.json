@@ -1,22 +1,16 @@
 {
   "id": "P-006",
   "version": "1.0",
-  "domain": "monitoring",
-  "title": "실시간 모니터링 프롬프트",
-  "description": "시스템 상태, 이상 징후 감지, 알림 트리거를 위한 실시간 모니터링 특화 프롬프트",
-  "tags": [
-    "monitoring",
-    "real-time",
-    "anomaly-detection",
-    "alert",
-    "operations"
-  ],
+  "domain": "prompt-template",
+  "tags": ["strategy", "planning", "roadmap", "template"],
   "kg_version": "6.4",
   "created_at": "2026-07-02T10:31:00Z",
   "updated_at": "2026-07-02T10:31:00Z",
   "notion_url": "",
-  "github_url": "https://github.com/GilbertKwak/prompt-engineering-system/blob/main/prompts/monitoring/P-006_v1.0.md",
+  "github_url": "https://github.com/GilbertKwak/prompt-engineering-system/blob/main/automation/kg_nodes/P-006.json",
   "status": "active",
+  "template_role": "Strategy",
+  "description": "전략 수립 및 로드맵 설계용 프롬프트 템플릿. 중장기 비전 정의, 우선순위 매트릭스, OKR 설정에 최적화되어 있다.",
   "engines": {
     "ENGINE_1": {
       "name": "Auto-Validation",
@@ -38,12 +32,12 @@
     }
   },
   "dimensions": {
-    "Clarity":        { "before": 0, "after": 0 },
-    "Structure":      { "before": 0, "after": 0 },
-    "Specificity":    { "before": 0, "after": 0 },
-    "Actionability":  { "before": 0, "after": 0 },
-    "Ecosystem-Fit":  { "before": 0, "after": 0 }
+    "Clarity": { "before": 74, "after": 0 },
+    "Structure": { "before": 77, "after": 0 },
+    "Specificity": { "before": 67, "after": 0 },
+    "Actionability": { "before": 66, "after": 0 },
+    "Ecosystem-Fit": { "before": 68, "after": 0 }
   },
-  "score_total": { "before": 0, "after": 0, "delta": 0 },
+  "score_total": { "before": 352, "after": 0, "delta": 0 },
   "history": []
 }

@@ -1,22 +1,16 @@
 {
   "id": "P-003",
   "version": "1.0",
-  "domain": "AI",
-  "title": "AI 기술 동향 분석 프롬프트",
-  "description": "LLM, 멀티모달, 에이전트 AI 등 최신 AI 기술 트렌드를 체계적으로 리서치하고 요약하는 프롬프트",
-  "tags": [
-    "AI",
-    "LLM",
-    "multimodal",
-    "agent",
-    "tech-trend"
-  ],
+  "domain": "prompt-template",
+  "tags": ["monitoring", "tracking", "kpi", "template"],
   "kg_version": "6.4",
   "created_at": "2026-07-02T10:31:00Z",
   "updated_at": "2026-07-02T10:31:00Z",
   "notion_url": "",
-  "github_url": "https://github.com/GilbertKwak/prompt-engineering-system/blob/main/prompts/AI/P-003_v1.0.md",
+  "github_url": "https://github.com/GilbertKwak/prompt-engineering-system/blob/main/automation/kg_nodes/P-003.json",
   "status": "active",
+  "template_role": "Monitoring",
+  "description": "성과 모니터링 및 KPI 추적용 프롬프트 템플릿. 실시간 지표 분석 및 알림 생성에 특화되어 있다.",
   "engines": {
     "ENGINE_1": {
       "name": "Auto-Validation",
@@ -38,12 +32,12 @@
     }
   },
   "dimensions": {
-    "Clarity":        { "before": 0, "after": 0 },
-    "Structure":      { "before": 0, "after": 0 },
-    "Specificity":    { "before": 0, "after": 0 },
-    "Actionability":  { "before": 0, "after": 0 },
-    "Ecosystem-Fit":  { "before": 0, "after": 0 }
+    "Clarity": { "before": 68, "after": 0 },
+    "Structure": { "before": 73, "after": 0 },
+    "Specificity": { "before": 70, "after": 0 },
+    "Actionability": { "before": 67, "after": 0 },
+    "Ecosystem-Fit": { "before": 64, "after": 0 }
   },
-  "score_total": { "before": 0, "after": 0, "delta": 0 },
+  "score_total": { "before": 342, "after": 0, "delta": 0 },
   "history": []
 }

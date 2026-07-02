@@ -13,42 +13,48 @@
     {
       "id": "P-001",
       "version": "1.0",
-      "domain": "semiconductor",
+      "domain": "prompt-template",
+      "template_role": "Analysis",
       "status": "active",
       "file": "automation/kg_nodes/P-001.json"
     },
     {
       "id": "P-002",
       "version": "1.0",
-      "domain": "financial",
+      "domain": "prompt-template",
+      "template_role": "Action",
       "status": "active",
       "file": "automation/kg_nodes/P-002.json"
     },
     {
       "id": "P-003",
       "version": "1.0",
-      "domain": "AI",
+      "domain": "prompt-template",
+      "template_role": "Monitoring",
       "status": "active",
       "file": "automation/kg_nodes/P-003.json"
     },
     {
       "id": "P-004",
       "version": "1.0",
-      "domain": "strategy",
+      "domain": "prompt-template",
+      "template_role": "Report",
       "status": "active",
       "file": "automation/kg_nodes/P-004.json"
     },
     {
       "id": "P-005",
       "version": "1.0",
-      "domain": "report",
+      "domain": "prompt-template",
+      "template_role": "Integration",
       "status": "active",
       "file": "automation/kg_nodes/P-005.json"
     },
     {
       "id": "P-006",
       "version": "1.0",
-      "domain": "monitoring",
+      "domain": "prompt-template",
+      "template_role": "Strategy",
       "status": "active",
       "file": "automation/kg_nodes/P-006.json"
     }
