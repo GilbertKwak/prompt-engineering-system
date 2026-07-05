@@ -1,0 +1,35 @@
+# distill_config.yaml
+# Configuration for distill_output.py — LLM output distillation pipeline
+
+# ── Scoring ────────────────────────────────────────────────────────────────
+score_weights:
+  clarity: 0.30        # How clear and structured the output is
+  relevance: 0.35      # How relevant the output is to the original prompt
+  actionability: 0.35  # How actionable / usable the output is
+
+# Outputs below this threshold are flagged in the report
+min_score_threshold: 0.50
+
+# ── Extraction ─────────────────────────────────────────────────────────────
+# Keys to extract from each output file (JSON / YAML front-matter)
+extract_keys:
+  - verdict
+  - score
+  - reasoning
+  - action_items
+  - tags
+
+# ── Output ─────────────────────────────────────────────────────────────────
+output_dir: output/distilled   # Distilled JSON files saved here
+report_format: markdown        # Options: markdown | json
+
+# ── Batch Behavior ─────────────────────────────────────────────────────────
+input_dir: output              # Source directory for --batch mode
+file_extensions:               # File types to process in batch mode
+  - .json
+  - .md
+  - .txt
+
+# ── Logging ────────────────────────────────────────────────────────────────
+log_level: INFO                # Options: DEBUG | INFO | WARNING | ERROR
+log_file: logs/distill.log     # Set to null to disable file logging
